@@ -54,7 +54,7 @@ export async function redirectLargeToolOutput(
     return normalizedMessage;
   }
   const outputPath = await writeLargeToolOutput(original, options.dataDir, options.sessionId);
-  const content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n原始输出内容已保存于：${outputPath}，请按需检索其中片段。`;
+  const content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n原始输出内容已保存于：\n${outputPath}\n请按需检索其中片段。`;
   return copyToolMessage(message, normalized.replaceText(content), {
     path: outputPath,
     tokens,
