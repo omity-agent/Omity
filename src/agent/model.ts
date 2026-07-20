@@ -1,9 +1,8 @@
 import { AIMessage, type BaseMessage, SystemMessage } from "@langchain/core/messages";
+import type { BaseChatModel, BindToolsInput } from "@langchain/core/language_models/chat_models";
 import type { ModelApi, ModelSettings, Settings } from "../types";
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { ChatOpenAICompletions } from "@langchain/openai";
 import { CompatibleChatOpenAIResponses } from "../infrastructure/openai/compatibleResponses";
-import type { StructuredToolInterface } from "@langchain/core/tools";
 import { codexClientFields } from "../infrastructure/openai/codexAuthentication";
 import { prepareModelImageMessages } from "../runtime/modelImages";
 
@@ -44,7 +43,7 @@ export function buildModel(settings: Settings, sessionId: string, instructions?:
           : { reasoning: { effort: settings.model.reasoning_effort } }),
       });
 }
-export function bindModelTools(model: BaseChatModel, tools: StructuredToolInterface[]) {
+export function bindModelTools(model: BaseChatModel, tools: BindToolsInput[]) {
   if (tools.length === 0) {
     return model;
   }

@@ -9,6 +9,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
 import { readMcpConfiguration } from "../../../src/infrastructure/mcp/config";
+import { sessionModelTools } from "../../../src/infrastructure/mcp/freeformInputs";
 
 test("MCP config reads tool description override paths", () => {
   const root = createTestDirectory("mcp-description-config");
@@ -54,6 +55,46 @@ test("MCP tool description overrides reject empty files", () => {
     expect(() => overrideMcpToolDescriptions([tool("search")], { search: path }, root)).toThrow(
       `MCP 工具 search 的描述覆盖文件不能为空：${path}`,
     );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+test("MCP tool descriptions resolve session placeholders per model binding", () => {
+  const root = createTestDirectory("mcp-session-description");
+  try {
+    const path = join(root, "settings", "prompts", "description.md");
+    mkdirSync(join(root, "settings", "prompts"), { recursive: true });
+    const template = `workspace=\${cwd}\nsession=\${session}`;
+    writeFileSync(path, `${template}\n`);
+    const tools = [tool("search")];
+    overrideMcpToolDescriptions(tools, { search: path }, root);
+    expect(tools[0]?.description).toBe(template);
+    const [modelTool] = sessionModelTools(tools, new Map(), {
+      cwd: join(root, "workspace"),
+      session: join(root, "sessions", "abc"),
+    });
+    expect(modelTool?.description).toBe(
+      `workspace=${join(root, "workspace")}\nsession=${join(root, "sessions", "abc")}`,
+    );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
+test("MCP tool descriptions reject session placeholders outside settings prompts", () => {
+  const root = createTestDirectory("mcp-session-description");
+  try {
+    const path = join(root, "description.md");
+    writeFileSync(path, `session=\${session}\n`);
+    try {
+      overrideMcpToolDescriptions([tool("search")], { search: path }, root);
+      throw new Error("没有拒绝会话占位符");
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toHaveProperty(
+        "cause.message",
+        expect.stringContaining(`会话占位符 \${session} 没有可用值`),
+      );
+    }
   } finally {
     rmSync(root, { recursive: true });
   }

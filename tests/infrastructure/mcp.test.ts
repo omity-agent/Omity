@@ -1,9 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-  expandEnvPlaceholders,
-  normalizeMcpServers,
-  readMcpConfiguration,
-} from "../../src/infrastructure/mcp/config";
+import { normalizeMcpServers, readMcpConfiguration } from "../../src/infrastructure/mcp/config";
 import {
   normalizeMcpToolNameOverrides,
   renameMcpTools,
@@ -33,24 +29,22 @@ function setEnv(key: string, value: string) {
 test("mcp config expands env placeholders recursively", () => {
   setEnv("MCP_API_KEY", "secret");
   setEnv("MCP_TOKEN", "token");
-  expect(
-    expandEnvPlaceholders({
-      mcpServers: {
-        search: {
-          args: ["server", `--key=\${MCP_API_KEY}`],
-          command: "npx",
-          env: {
-            API_KEY: `\${MCP_API_KEY}`,
-          },
-          headers: {
-            Authorization: `Bearer \${MCP_TOKEN}`,
-          },
-          transport: "stdio",
-        },
-      },
-    }),
-  ).toEqual({
-    mcpServers: {
+  const directory = createTestDirectory("mcp");
+  const path = join(directory, "mcp.yaml");
+  try {
+    writeFileSync(
+      path,
+      `mcpServers:
+  search:
+    command: npx
+    args: ["server", "--key=\${MCP_API_KEY}"]
+    env:
+      API_KEY: "\${MCP_API_KEY}"
+    headers:
+      Authorization: "Bearer \${MCP_TOKEN}"
+`,
+    );
+    expect(readMcpConfiguration(path).mcpServers).toEqual({
       search: {
         args: ["server", "--key=secret"],
         command: "npx",
@@ -60,15 +54,34 @@ test("mcp config expands env placeholders recursively", () => {
         headers: {
           Authorization: "Bearer token",
         },
-        transport: "stdio",
+        stderr: "ignore",
       },
-    },
-  });
+    });
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 });
 test("mcp config reports missing env placeholders", () => {
-  expect(() => expandEnvPlaceholders({ env: { API_KEY: `\${MISSING_MCP_KEY}` } })).toThrow(
-    "MCP 配置 settings/mcp.yaml.env.API_KEY 引用了未设置的环境变量 MISSING_MCP_KEY",
-  );
+  const directory = createTestDirectory("mcp");
+  const path = join(directory, "mcp.yaml");
+  try {
+    writeFileSync(path, `mcpServers: { test: { command: "\${MISSING_MCP_KEY}" } }\n`);
+    expect(() => readMcpConfiguration(path)).toThrow(
+      `${path}.mcpServers.test.command 引用了未设置的环境变量 MISSING_MCP_KEY`,
+    );
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+test("mcp config rejects session placeholders", () => {
+  const directory = createTestDirectory("mcp");
+  const path = join(directory, "mcp.yaml");
+  try {
+    writeFileSync(path, `mcpServers: { test: { command: "\${session}" } }\n`);
+    expect(() => readMcpConfiguration(path)).toThrow(`会话占位符 \${session} 没有可用值`);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 });
 test("mcp config rejects unknown top-level fields", () => {
   const directory = createTestDirectory("mcp");

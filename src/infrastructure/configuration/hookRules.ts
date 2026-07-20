@@ -1,6 +1,5 @@
+import { type PlaceholderOptions, readSettingsYaml } from "./placeholders";
 import type { HookRule } from "../../types";
-import YAML from "yaml";
-import { readFileSync } from "node:fs";
 import { z } from "zod";
 
 const argsSchema = z.record(z.string(), z.unknown());
@@ -29,7 +28,23 @@ const hooksFileSchema = z
       ids.add(hook.id);
     }
   });
-export function loadHookRules(path: string): HookRule[] {
-  const parsed: unknown = YAML.parse(readFileSync(path, "utf8"));
+export function loadHookRules(
+  path: string,
+  placeholders: Omit<PlaceholderOptions, "source"> = {
+    deferSession: true,
+  },
+): HookRule[] {
+  const parsed = readSettingsYaml(path, {
+    ...placeholders,
+    deferred: isRuntimeHookPlaceholder,
+  });
   return hooksFileSchema.parse(parsed).hooks;
+}
+function isRuntimeHookPlaceholder(name: string) {
+  return (
+    name === "previousTool.output" ||
+    name.startsWith("previousTool.output.") ||
+    name === "previousTool.structuredOutput" ||
+    name.startsWith("previousTool.structuredOutput.")
+  );
 }

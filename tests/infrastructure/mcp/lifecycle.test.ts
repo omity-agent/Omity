@@ -73,7 +73,7 @@ function loadedMcp(close: LoadedMcp["close"]): LoadedMcp {
   return {
     close,
     freeformToolParameters: new Map(),
-    modelTools: [],
+    modelTools: () => [],
     tools: [],
   };
 }

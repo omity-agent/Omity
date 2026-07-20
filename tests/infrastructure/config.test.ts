@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { safeId, sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import { appDataRoot } from "../../src/infrastructure/configuration/configuredPath";
+import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
 import { createTestDirectory } from "../support/artifacts";
 import { loadHookRules } from "../../src/infrastructure/configuration/hookRules";
 import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";

@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 interface TestConfigurationOptions {
   dataDir?: string;
+  hooksYaml?: string;
   modelYaml?: string;
   systemPrompt?: string;
   skillsPrompt?: string;
@@ -66,7 +67,7 @@ skills:
 `,
   );
   writeFileSync(join(settingsDir, "model.yaml"), options.modelYaml ?? defaultModelYaml);
-  writeFileSync(join(settingsDir, "hooks.yaml"), "hooks: []\n");
+  writeFileSync(join(settingsDir, "hooks.yaml"), options.hooksYaml ?? "hooks: []\n");
   writeFileSync(join(promptsDir, "system.md"), options.systemPrompt ?? "test");
   writeFileSync(join(promptsDir, "skills.md"), options.skillsPrompt ?? "use skills");
   return settingsDir;

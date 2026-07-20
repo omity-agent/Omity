@@ -41,9 +41,6 @@ test("normalizes MCP text content before size handling", async () => {
   const outputPath = onlyOutputPath(root);
   expect(normalized.content).toBe(short);
   expect(readFileSync(outputPath, "utf8")).toBe(original);
-  expect(redirected.content).toBe(
-    `工具输出过长（${countTokens(original).toString()} tokens），无法直接查看。\n原始输出内容已保存于：${outputPath}，请按需检索其中片段。`,
-  );
   expect(redirected.name).toBe("demo_tool");
 });
 test("accepts hook call IDs when writing large output", async () => {

@@ -1,5 +1,7 @@
+import { type SessionPlaceholders, resolvePlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { customTool } from "@langchain/openai";
+import { hasSessionDescription } from "./toolOverrides";
 import { z } from "zod";
 
 export interface FreeformMcpTools {
@@ -59,6 +61,35 @@ export function configureFreeformMcpTools(
     parameters,
   };
 }
+export function sessionModelTools(
+  tools: StructuredToolInterface[],
+  parameters: ReadonlyMap<string, string>,
+  session: Required<SessionPlaceholders>,
+) {
+  return tools.map((tool) => {
+    const custom = parameters.has(tool.name);
+    const dynamicDescription = hasSessionDescription(tool);
+    if (!custom && !dynamicDescription) {
+      return tool;
+    }
+    const description = dynamicDescription
+      ? resolveDescription(tool.description, tool.name, session)
+      : tool.description;
+    if (custom) {
+      return customTool(() => Promise.reject(new Error(`工具定义 ${tool.name} 不能直接用于执行`)), {
+        description,
+        format: { type: "text" },
+        name: tool.name,
+      });
+    }
+    return {
+      description,
+      extras: tool.extras,
+      name: tool.name,
+      schema: tool.schema,
+    };
+  });
+}
 function singleStringParameter(tool: StructuredToolInterface) {
   const { schema } = tool;
   const parsed = toolJsonSchema.safeParse(schema);
@@ -80,4 +111,18 @@ function singleStringParameter(tool: StructuredToolInterface) {
     throw new Error(`MCP free-form 工具 ${tool.name} 的唯一输入参数 ${parameter} 必须是字符串`);
   }
   return parameter;
+}
+function resolveDescription(
+  description: string,
+  name: string,
+  session: Required<SessionPlaceholders>,
+) {
+  const resolved = resolvePlaceholders(description, {
+    session,
+    source: `MCP 工具 ${name} 的描述`,
+  });
+  if (typeof resolved !== "string") {
+    throw new Error(`MCP 工具 ${name} 的描述必须解析为字符串`);
+  }
+  return resolved;
 }

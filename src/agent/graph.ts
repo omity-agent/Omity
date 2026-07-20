@@ -9,6 +9,7 @@ import {
   getConfig,
   task,
 } from "@langchain/langgraph";
+import type { BaseChatModel, BindToolsInput } from "@langchain/core/language_models/chat_models";
 import { type HookPlan, agentPlan, toolPlan } from "../hooks/plan";
 import {
   bindModelTools,
@@ -18,7 +19,6 @@ import {
   resolveModelApi,
 } from "./model";
 import { hookNode, modelNode, toolsNode } from "../hooks/graph/commands";
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { BunSqliteSaver } from "../checkpointer";
 import type { Database } from "bun:sqlite";
 import type { HookRuntime } from "../hooks/runtime";
@@ -54,7 +54,7 @@ interface AgentGraphOptions {
   settings: Settings;
   model: BaseChatModel;
   tools: StructuredToolInterface[];
-  modelTools?: StructuredToolInterface[];
+  modelTools?: BindToolsInput[];
   freeformToolParameters?: ReadonlyMap<string, string>;
   toolExecutions?: ToolExecutions;
   hooks: HookRuntime;

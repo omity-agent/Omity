@@ -1,60 +1,36 @@
-const exactVariable = /^\$\{(?<name>[^}]+)\}$/;
-const embeddedVariable = /\$\{(?<name>[^}]+)\}/g;
+import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
+
 export interface HookVariables {
   cwd: string;
+  session?: string;
   previousTool?: {
     output: unknown;
     structuredOutput?: unknown;
   };
 }
 export function resolveHookArgs(args: Record<string, unknown>, variables: HookVariables) {
-  return resolveRecord(args, variables);
-}
-function resolveValue(value: unknown, variables: HookVariables): unknown {
-  if (typeof value === "string") {
-    return resolveString(value, variables);
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => resolveValue(item, variables));
-  }
-  if (!isRecord(value)) {
-    return value;
-  }
-  return resolveRecord(value, variables);
-}
-function resolveRecord(value: Record<string, unknown>, variables: HookVariables) {
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, resolveValue(item, variables)]),
-  );
-}
-function resolveString(value: string, variables: HookVariables) {
-  const exact = exactVariable.exec(value);
-  if (exact) {
-    return variableValue(requireName(exact), variables);
-  }
-  return value.replace(embeddedVariable, (placeholder, name: string) => {
-    const resolved = variableValue(name, variables);
-    if (!isScalar(resolved)) {
-      throw new Error(`Hook 变量 ${placeholder} 不能将数组或对象嵌入字符串`);
-    }
-    return String(resolved);
+  const resolved = resolvePlaceholders(args, {
+    dynamic: (name) => hookVariableValue(name, variables),
+    session: { cwd: variables.cwd, session: variables.session },
+    source: "Hook 参数",
   });
-}
-function variableValue(name: string, variables: HookVariables) {
-  if (name === "cwd") {
-    return variables.cwd;
+  if (!isRecord(resolved)) {
+    throw new Error("Hook 参数解析结果必须是对象");
   }
-  const output = previousToolValue(name, "output", variables);
+  return resolved;
+}
+function hookVariableValue(name: string, variables: HookVariables) {
+  const output = readPreviousToolValue(name, "output", variables);
   if (output.matched) {
-    return output.value;
+    return output;
   }
-  const structured = previousToolValue(name, "structuredOutput", variables);
+  const structured = readPreviousToolValue(name, "structuredOutput", variables);
   if (structured.matched) {
-    return structured.value;
+    return structured;
   }
-  throw new Error(`未知 Hook 变量：\${${name}}`);
+  return { matched: false };
 }
-function previousToolValue(
+function readPreviousToolValue(
   name: string,
   field: "output" | "structuredOutput",
   variables: HookVariables,
@@ -89,21 +65,6 @@ function readPath(value: unknown, path: string[], variable: string): unknown {
     }
   }
   return current;
-}
-function requireName(match: RegExpExecArray) {
-  const name = match.groups?.["name"];
-  if (!name) {
-    throw new Error(`无效 Hook 变量：${match[0]}`);
-  }
-  return name;
-}
-function isScalar(value: unknown): value is string | number | boolean | null {
-  return (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  );
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

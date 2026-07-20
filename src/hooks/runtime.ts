@@ -22,6 +22,7 @@ export class HookRuntime {
     private readonly logger: Logger,
     readonly sessionId: string,
     readonly workspace: string,
+    readonly sessionDirectory?: string,
   ) {
     this.toolNames = new Set(tools.map((tool) => tool.name));
     if (this.toolNames.size !== tools.length) {
@@ -69,6 +70,7 @@ export class HookRuntime {
       args: resolveHookArgs(rule.args, {
         cwd: this.workspace,
         previousTool: previousOutput,
+        session: this.sessionDirectory,
       }),
       id: createHookCallId(this.sessionId, threadId, details),
       name: rule.tool,

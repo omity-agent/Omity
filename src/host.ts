@@ -30,7 +30,7 @@ export async function runHostSession(
   options: HostRunOptions = {},
 ) {
   const workspace = normalizeWorkspacePath(options.cwd ?? root, root);
-  const loadedSettings = loadSettings(root, { cwd: workspace });
+  const loadedSettings = loadSettings(root, { cwd: workspace, sessionId: mode.sessionId });
   const settings = options.quiet
     ? {
         ...loadedSettings,
@@ -91,10 +91,14 @@ export async function runHostSession(
       logger,
       mode.sessionId,
       db.workspace(mode.sessionId),
+      paths.dir,
     );
     const { graph, checkpointer } = buildGraph(settings, mcp.tools, db.db, hooks, {
       freeformToolParameters: mcp.freeformToolParameters,
-      modelTools: mcp.modelTools,
+      modelTools: mcp.modelTools({
+        cwd: db.workspace(mode.sessionId),
+        session: paths.dir,
+      }),
       toolExecutions,
     });
     options.onReady?.({

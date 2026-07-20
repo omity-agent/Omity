@@ -1,19 +1,20 @@
 import { type Connection, MultiServerMCPClient, loadMcpTools } from "@langchain/mcp-adapters";
+import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
-import type { Logger } from "../logging/logger";
-import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
-import { configureFreeformMcpTools } from "./freeformInputs";
 import { createMcpToolFailureClient } from "./toolFailures";
 import { disableMcpRequestTimeout } from "./requestTimeout";
 import { existsSync } from "node:fs";
+import type { Logger } from "../logging/logger";
 import { readMcpConfiguration } from "./config";
 import { resolve } from "node:path";
+import type { SessionPlaceholders } from "../configuration/placeholders";
+import type { StructuredToolInterface } from "@langchain/core/tools";
 
 export interface LoadedMcp {
   tools: StructuredToolInterface[];
-  modelTools: StructuredToolInterface[];
   freeformToolParameters: ReadonlyMap<string, string>;
+  modelTools: (session: Required<SessionPlaceholders>) => ReturnType<typeof sessionModelTools>;
   close: () => Promise<void>;
 }
 export function createMcpLoadError(error: unknown): Error {
@@ -70,7 +71,7 @@ async function connectMcp(
     return {
       close: () => connectedClient.close(),
       freeformToolParameters: configured.parameters,
-      modelTools: configured.modelTools,
+      modelTools: (session) => sessionModelTools(tools, configured.parameters, session),
       tools,
     };
   } catch (error) {
@@ -151,7 +152,7 @@ function emptyMcp(): LoadedMcp {
   return {
     close: () => Promise.resolve(),
     freeformToolParameters: new Map(),
-    modelTools: [],
+    modelTools: () => [],
     tools: [],
   };
 }
