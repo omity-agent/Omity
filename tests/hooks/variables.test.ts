@@ -14,7 +14,7 @@ import { testSettings } from "../support/settings";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-test("mixed hook modes resolve variables in config order", async () => {
+test("mixed hook modes retain indexed outputs across unhooked tools", async () => {
   const dir = createTestDirectory("hook-variables");
   const db = new AgentDatabase(join(dir, "app.sqlite"));
   db.createSession("session", dir);
@@ -29,8 +29,8 @@ test("mixed hook modes resolve variables in config order", async () => {
       name: "hook",
       schema: z
         .object({
+          history: z.array(z.unknown()).optional(),
           label: z.string(),
-          previous: z.unknown().optional(),
         })
         .strict(),
     },
@@ -40,9 +40,15 @@ test("mixed hook modes resolve variables in config order", async () => {
     name: "original",
     schema: z.object({}),
   });
+  let plainCalls = 0;
+  const plainTool = tool(() => Promise.resolve(`plain-${(++plainCalls).toString()}-result`), {
+    description: "plain",
+    name: "plain",
+    schema: z.object({}),
+  });
   const hooks = new HookRuntime(
     rules(),
-    [hookTool, originalTool],
+    [hookTool, originalTool, plainTool],
     db.db,
     new Logger("error", true),
     "session",
@@ -57,23 +63,48 @@ test("mixed hook modes resolve variables in config order", async () => {
           new AIMessage({
             content: "",
             id: "model-tools",
-            tool_calls: [{ args: {}, id: "original-call", name: "original" }],
+            tool_calls: [
+              { args: {}, id: "plain-call-1", name: "plain" },
+              { args: {}, id: "plain-call-2", name: "plain" },
+              { args: {}, id: "original-call", name: "original" },
+            ],
           }),
         )
         .respond(new AIMessage("done")),
       settings: testSettings(dir),
-      tools: [hookTool, originalTool],
+      tools: [hookTool, originalTool, plainTool],
     });
     const result = await agent.invoke(
-      { messages: [{ content: "run", role: "user" }] },
+      {
+        hookPendingUserIds: ["queue:1"],
+        messages: [{ content: "run", role: "user" }],
+      },
       { configurable: { thread_id: "thread" } },
     );
     expect(received).toEqual([
+      { label: "agent-start" },
       { label: "before-silent" },
-      { label: "before-takeover", previous: "before-silent-result" },
-      { label: "after-silent", previous: "original-result" },
-      { label: "after-takeover", previous: "after-silent-result" },
-      { label: "agent-end", previous: "after-takeover-result" },
+      {
+        history: ["agent-start-result", "before-silent-result"],
+        label: "before-takeover",
+      },
+      {
+        history: ["agent-start-result", "original-result"],
+        label: "after-silent",
+      },
+      {
+        history: ["plain-1-result", "original-result", "after-silent-result"],
+        label: "after-takeover",
+      },
+      {
+        history: [
+          "agent-start-result",
+          "plain-1-result",
+          "plain-2-result",
+          "after-takeover-result",
+        ],
+        label: "agent-end",
+      },
     ]);
     expect(result.messages.slice(-2).map((message) => message.type)).toEqual(["ai", "tool"]);
   } finally {
@@ -81,92 +112,41 @@ test("mixed hook modes resolve variables in config order", async () => {
     rmSync(dir, { force: true, recursive: true });
   }
 });
-test("user takeover receives the preceding silent hook output", async () => {
-  const dir = createTestDirectory("user-hook");
-  const db = new AgentDatabase(join(dir, "app.sqlite"));
-  db.createSession("session", dir);
-  const received: unknown[] = [];
-  const hookTool = tool(
-    ({ previous }) => {
-      received.push(previous);
-      return Promise.resolve("user-hook-result");
-    },
-    {
-      description: "hook",
-      name: "hook",
-      schema: z.object({ previous: z.unknown().optional() }).strict(),
-    },
-  );
-  const hooks = new HookRuntime(
-    [
-      {
-        args: {},
-        id: "silent-user",
-        mode: "silent",
-        runLimit: -1,
-        target: "agent",
-        tool: "hook",
-        when: "before",
-      },
-      {
-        args: { previous: `\${previousTool.output}` },
-        id: "takeover-user",
-        mode: "takeover",
-        runLimit: -1,
-        target: "agent",
-        tool: "hook",
-        when: "before",
-      },
-    ],
-    [hookTool],
-    db.db,
-    new Logger("error", true),
-    "session",
-    dir,
-  );
-  try {
-    const agent = createAgentGraph({
-      checkpointer: new MemorySaver(),
-      hooks,
-      model: fakeModel().respond(new AIMessage("done")),
-      settings: testSettings(dir),
-      tools: [hookTool],
-    });
-    await agent.invoke(
-      {
-        hookPendingUserIds: ["queue:1"],
-        messages: [{ content: "hello", role: "user" }],
-      },
-      { configurable: { thread_id: "thread" } },
-    );
-    expect(received).toEqual([undefined, "user-hook-result"]);
-  } finally {
-    db.close();
-    rmSync(dir, { force: true, recursive: true });
-  }
-});
 function rules(): HookRule[] {
   return [
+    hookRule("agent-start", "before", "silent", { label: "agent-start" }, "agent"),
     hookRule("before-silent", "before", "silent", {
       label: "before-silent",
     }),
     hookRule("before-takeover", "before", "takeover", {
+      history: [`\${toolOutputs.fromStart.1.output}`, `\${toolOutputs.fromEnd.1.output}`],
       label: "before-takeover",
-      previous: `\${previousTool.output}`,
     }),
     hookRule("after-silent", "after", "silent", {
+      history: [`\${toolOutputs.fromStart.1.output}`, `\${toolOutputs.fromEnd.1.output}`],
       label: "after-silent",
-      previous: `\${previousTool.output}`,
     }),
     hookRule("after-takeover", "after", "takeover", {
+      history: [
+        `\${toolOutputs.fromStart.2.output}`,
+        `\${toolOutputs.fromEnd.2.output}`,
+        `\${toolOutputs.fromEnd.1.output}`,
+      ],
       label: "after-takeover",
-      previous: `\${previousTool.output}`,
     }),
     hookRule(
       "agent-end",
       "after",
       "takeover",
-      { label: "agent-end", previous: `\${previousTool.output}` },
+      {
+        history: [
+          `\${toolOutputs.fromStart.1.output}`,
+          `\${toolOutputs.fromStart.2.output}`,
+          `\${toolOutputs.fromStart.3.output}`,
+          `\${toolOutputs.fromEnd.1.output}`,
+        ],
+        label: "agent-end",
+      },
       "agent",
     ),
   ];

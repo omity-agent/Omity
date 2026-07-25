@@ -56,7 +56,7 @@ In your final answer back to the user, focus on the most important information. 
 - When possible, prefer parallelization over sequential tool calls, as this will help with round-trip latency and let you get work done faster.
 - Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.
 - Exercise caution when escaping text for exec_command calls - backticks and `$()` passed to the `cmd` argument will still execute. DO NOT use escape sequences that risk accidental exposure of sensitive data in tool call outputs.
-- 随时可以在 `%TEMP%/agent` 文件夹创建或删除临时文件，无需任何请示。注意这里有一个常见错误：你和你自己使用的脚本应该使用 `%TEMP%/agent` 目录，不代表你写的业务代码也应该在这个目录存放临时文件。
+- 随时可以在 `${session}/temp` 文件夹创建或删除临时文件，无需任何请示。注意这里有一个常见错误：你和你自己使用的脚本应该使用该目录，不代表你写的业务代码也应该在这个目录存放临时文件。
 - 不应擅自对用户的文件做修改，除非得到了命令或许可，尤其当用户发的是疑问句时（如“...能否...”）（不包括反问句）。
 - 系统中有2个常用磁盘，分别是 `C:` 和 `F:`。
 - 可通过 `sudo.exe [OPTIONS] [COMMANDLINE]... [COMMAND]` 在非管理员命令行中临时使用管理员权限。

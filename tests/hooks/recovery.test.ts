@@ -64,6 +64,7 @@ test("host restart resumes after one committed hook boundary", async () => {
     expect(checkpoint.next).toEqual(["hooks"]);
     expect(checkpoint.values).toMatchObject({
       hookPlan: { hookIndex: 1, kind: "agent" },
+      hookToolOutputs: [{ output: "ok" }],
     });
     expect(db.history("session").map((message) => message.type)).toEqual(["human", "ai", "tool"]);
     db.close();
@@ -129,7 +130,7 @@ function runtime(db: AgentDatabase, hookTool: StructuredToolInterface, dir: stri
         when: "before",
       },
       {
-        args: { previous: `\${previousTool.output}` },
+        args: { previous: `\${toolOutputs.fromEnd.1.output}` },
         id: "user-second",
         mode: "silent",
         runLimit: -1,

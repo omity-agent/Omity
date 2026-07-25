@@ -1,5 +1,6 @@
 import { type PlaceholderOptions, readSettingsYaml } from "./placeholders";
 import type { HookRule } from "../../types";
+import { isHookOutputVariable } from "../../hooks/variables";
 import { z } from "zod";
 
 const argsSchema = z.record(z.string(), z.unknown());
@@ -36,15 +37,7 @@ export function loadHookRules(
 ): HookRule[] {
   const parsed = readSettingsYaml(path, {
     ...placeholders,
-    deferred: isRuntimeHookPlaceholder,
+    deferred: isHookOutputVariable,
   });
   return hooksFileSchema.parse(parsed).hooks;
-}
-function isRuntimeHookPlaceholder(name: string) {
-  return (
-    name === "previousTool.output" ||
-    name.startsWith("previousTool.output.") ||
-    name === "previousTool.structuredOutput" ||
-    name.startsWith("previousTool.structuredOutput.")
-  );
 }

@@ -5,9 +5,12 @@
 # - ${ENV_NAME}: 对应的操作系统环境变量
 # - ${cwd}: 当前会话的用户工作目录
 # - ${session}: 当前会话的数据文件夹
-# args 还支持任意深度的前序输出变量：
-# - ${previousTool.output}: 前一个工具的 ToolMessage.content
-# - ${previousTool.structuredOutput}: 前一个 MCP 工具的结构化输出
+# args 还支持按执行顺序引用已完成的工具输出，N 是从 1 开始的正整数：
+# - ${toolOutputs.fromStart.N.output}: 从前往后第 N 个工具的 ToolMessage.content
+# - ${toolOutputs.fromEnd.N.output}: 从后往前第 N 个工具的 ToolMessage.content
+# - ${toolOutputs.fromStart.N.structuredOutput}: 从前往后第 N 个 MCP 工具的结构化输出
+# - ${toolOutputs.fromEnd.N.structuredOutput}: 从后往前第 N 个 MCP 工具的结构化输出
+# 历史在本次 Agent 运行内累计，Hook 工具与 Agent 原始工具都会计入。
 # 变量独占参数值时保留原始类型；嵌入字符串时只能使用标量输出。
 #
 # hooks:
@@ -24,7 +27,7 @@
 #     runLimit: 1
 #     mode: silent
 #     tool: notify
-#     args: { result: "${previousTool.output}" }
+#     args: { result: "${toolOutputs.fromEnd.1.output}" }
 #   - id: check-before-write
 #     target: write_file
 #     when: before
@@ -56,6 +59,16 @@ hooks:
     mode: takeover
     tool: terminal__send_command
     args:
-      tab_id: "${previousTool.structuredOutput.tab_id}"
+      tab_id: "${toolOutputs.fromEnd.1.structuredOutput.tab_id}"
       command: Get-Content -LiteralPath .\AGENTS.md -Raw
+      waiting: 5
+  - id: create-temp-folder
+    target: agent
+    when: before
+    runLimit: 1
+    mode: silent
+    tool: terminal__send_command
+    args:
+      tab_id: ${toolOutputs.fromStart.1.structuredOutput.tab_id}
+      command: New-Item -ItemType Directory -Path "${session}/temp"
       waiting: 5

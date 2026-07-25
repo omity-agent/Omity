@@ -1,15 +1,15 @@
 import { type Connection, MultiServerMCPClient, loadMcpTools } from "@langchain/mcp-adapters";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
+import type { Logger } from "../logging/logger";
+import type { SessionPlaceholders } from "../configuration/placeholders";
+import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
 import { disableMcpRequestTimeout } from "./requestTimeout";
 import { existsSync } from "node:fs";
-import type { Logger } from "../logging/logger";
 import { readMcpConfiguration } from "./config";
 import { resolve } from "node:path";
-import type { SessionPlaceholders } from "../configuration/placeholders";
-import type { StructuredToolInterface } from "@langchain/core/tools";
 
 export interface LoadedMcp {
   tools: StructuredToolInterface[];

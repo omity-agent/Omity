@@ -9,9 +9,9 @@ import { consumeHookUsage } from "./storage/usage";
 import { resolveHookArgs } from "./variables";
 
 interface RunOptions {
-  previousOutput?: HookToolOutput;
   consume: (hookId: string, limit: number) => Promise<boolean>;
   invoke: (call: ReturnType<HookRuntime["resolvedCall"]>) => Promise<ToolMessage>;
+  toolOutputs: readonly HookToolOutput[];
 }
 export class HookRuntime {
   private readonly toolNames: Set<string>;
@@ -49,7 +49,7 @@ export class HookRuntime {
       return null;
     }
     const details = hookCallDetails(rule, sourceId);
-    const call = this.resolvedCall(rule, sourceId, threadId, options.previousOutput);
+    const call = this.resolvedCall(rule, sourceId, threadId, options.toolOutputs);
     this.logger.debug("执行 Hook 节点", {
       hookId: rule.id,
       mode: rule.mode,
@@ -63,14 +63,14 @@ export class HookRuntime {
     rule: HookRule,
     sourceId: string,
     threadId: string,
-    previousOutput?: HookToolOutput,
+    toolOutputs: readonly HookToolOutput[],
   ) {
     const details = hookCallDetails(rule, sourceId);
     return {
       args: resolveHookArgs(rule.args, {
         cwd: this.workspace,
-        previousTool: previousOutput,
         session: this.sessionDirectory,
+        toolOutputs,
       }),
       id: createHookCallId(this.sessionId, threadId, details),
       name: rule.tool,

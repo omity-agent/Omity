@@ -10,7 +10,7 @@ test("parallel tool messages own response and provider metadata exactly once", (
   const messages: AIMessage[] = [];
   const calls = required(original.tool_calls);
   for (const [toolIndex, call] of calls.entries()) {
-    const command = originalToolCommand({ ...plan, toolIndex }, original, call);
+    const command = originalToolCommand({ ...plan, toolIndex }, original, call, []);
     const update = requireToolUpdate(command.update);
     messages.push(required(update.messages[0]));
     plan = update.hookPlan;

@@ -3,6 +3,7 @@ import type { AgentHookPlan, HookPlan, ToolHookPlan } from "../plan";
 import { Command, END } from "@langchain/langgraph";
 import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
+import type { HookToolOutput } from "../storage/outputs";
 import { partitionToolResponse } from "./responsePartition";
 
 export const hookNode = "hooks";
@@ -14,15 +15,12 @@ export function hookCommand(
   rule: HookRule,
   result: HookExecution,
   clearPending: boolean,
+  toolOutputs: HookToolOutput[],
 ) {
-  const advancedPlan = {
-    ...plan,
-    previousOutput: result.value,
-  };
   const nextPlan =
-    rule.mode === "takeover" && advancedPlan.kind === "tools" && advancedPlan.replaceMessageId
-      ? { ...advancedPlan, replaceMessageId: undefined }
-      : advancedPlan;
+    rule.mode === "takeover" && plan.kind === "tools" && plan.replaceMessageId
+      ? { ...plan, replaceMessageId: undefined }
+      : plan;
   const messages =
     rule.mode === "takeover"
       ? [
@@ -34,17 +32,23 @@ export function hookCommand(
           result.output,
         ]
       : undefined;
+  const nextOutputs = [...toolOutputs, result.value];
   return new Command({
     goto: hookNode,
     update: {
       hookPlan: nextPlan,
-      hookPreviousOutput: result.value,
+      hookToolOutputs: nextOutputs,
       ...(clearPending ? { hookPendingUserIds: [] } : {}),
       ...(messages ? { messages } : {}),
     },
   });
 }
-export function originalToolCommand(plan: ToolHookPlan, original: AIMessage, call: ToolCall) {
+export function originalToolCommand(
+  plan: ToolHookPlan,
+  original: AIMessage,
+  call: ToolCall,
+  toolOutputs: HookToolOutput[],
+) {
   if (!call.id) {
     throw new Error(`工具调用缺少 ID：${call.name}`);
   }
@@ -60,6 +64,7 @@ export function originalToolCommand(plan: ToolHookPlan, original: AIMessage, cal
         replaceMessageId: undefined,
         responseEmitted: true,
       },
+      hookToolOutputs: toolOutputs,
       messages: [
         new AIMessage({
           id: plan.replaceMessageId,
@@ -70,27 +75,31 @@ export function originalToolCommand(plan: ToolHookPlan, original: AIMessage, cal
     },
   });
 }
-export function finishAgent(plan: AgentHookPlan, clearPending: boolean) {
+export function finishAgent(
+  plan: AgentHookPlan,
+  clearPending: boolean,
+  toolOutputs: HookToolOutput[],
+) {
   if (plan.when === "before") {
-    return command(null, modelNode, clearPending, plan.previousOutput);
+    return command(null, modelNode, clearPending, toolOutputs);
   }
   const finalMessageId = plan.sources.at(-1);
   if (!finalMessageId) {
     throw new Error("Agent after Hook 缺少最终消息 ID");
   }
-  return command({ finalMessageId, kind: "done" }, END, clearPending, plan.previousOutput);
+  return command({ finalMessageId, kind: "done" }, END, clearPending, toolOutputs);
 }
 export function command(
   plan: HookPlan | null,
   goto: string,
   clearPending: boolean,
-  previousOutput?: unknown,
+  toolOutputs: HookToolOutput[] = [],
 ) {
   return new Command({
     goto,
     update: {
       hookPlan: plan,
-      hookPreviousOutput: previousOutput,
+      hookToolOutputs: toolOutputs,
       ...(clearPending ? { hookPendingUserIds: [] } : {}),
     },
   });

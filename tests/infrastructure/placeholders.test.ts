@@ -38,7 +38,7 @@ test("settings resolve global and session placeholders in their allowed scopes",
     tool: inspect
     args:
       paths: "\${session}|\${cwd}|\${appData}|\${${environmentName}}"
-      output: "\${previousTool.output}"
+      output: "\${toolOutputs.fromEnd.1.output}"
 `,
     modelYaml: `profile: test
 profiles:
@@ -61,7 +61,7 @@ profiles:
   expect(settings.skills.usagePrompt).toBe(`skills: ${expanded}`);
   expect(settings.hooks[0]?.id).toBe(session);
   expect(settings.hooks[0]?.args).toEqual({
-    output: `\${previousTool.output}`,
+    output: `\${toolOutputs.fromEnd.1.output}`,
     paths: expanded,
   });
 });
@@ -78,7 +78,7 @@ test("hook variables resolve the session directory", () => {
   expect(
     resolveHookArgs(
       { path: `\${session}`, summary: `session=\${session}` },
-      { cwd: String.raw`F:\work`, session },
+      { cwd: String.raw`F:\work`, session, toolOutputs: [] },
     ),
   ).toEqual({ path: session, summary: `session=${session}` });
 });

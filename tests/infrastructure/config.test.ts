@@ -135,19 +135,22 @@ test("hook variables preserve exact values and reject ambiguous output", () => {
   const previous = { files: ["a.ts", "b.ts"] };
   expect(
     resolveHookArgs(
-      { cwd: `\${cwd}/src`, exact: `\${previousTool.output}` },
-      { cwd: "F:\\work", previousTool: { output: previous } },
+      { cwd: `\${cwd}/src`, exact: `\${toolOutputs.fromEnd.1.output}` },
+      { cwd: "F:\\work", toolOutputs: [{ output: previous }] },
     ),
   ).toEqual({ cwd: "F:\\work/src", exact: previous });
   expect(() =>
     resolveHookArgs(
-      { invalid: `result=\${previousTool.output}` },
-      { cwd: "F:\\work", previousTool: { output: previous } },
+      { invalid: `result=\${toolOutputs.fromEnd.1.output}` },
+      { cwd: "F:\\work", toolOutputs: [{ output: previous }] },
     ),
   ).toThrow("不能将数组或对象嵌入字符串");
   expect(() =>
-    resolveHookArgs({ missing: `\${previousTool.output}` }, { cwd: "F:\\work" }),
-  ).toThrow("没有可用的前序工具输出");
+    resolveHookArgs(
+      { missing: `\${toolOutputs.fromEnd.1.output}` },
+      { cwd: "F:\\work", toolOutputs: [] },
+    ),
+  ).toThrow("超出工具输出范围");
 });
 function setAppDataRoot(path: string) {
   const previous = {

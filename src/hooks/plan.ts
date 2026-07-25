@@ -16,7 +16,6 @@ export interface AgentHookPlan {
   sources: string[];
   sourceIndex: number;
   hookIndex: number;
-  previousOutput?: HookToolOutput;
 }
 export interface ToolHookPlan {
   kind: "tools";
@@ -24,7 +23,6 @@ export interface ToolHookPlan {
   toolIndex: number;
   stage: "before" | "original" | "after";
   hookIndex: number;
-  previousOutput?: HookToolOutput;
   responseEmitted: boolean;
   replaceMessageId?: string;
   awaiting?: { callId: string };
@@ -34,17 +32,12 @@ export interface HookState {
   messages: BaseMessage[];
   hookPendingUserIds: string[];
   hookPlan: HookPlan | null;
-  hookPreviousOutput?: HookToolOutput;
+  hookToolOutputs: HookToolOutput[];
 }
-export function agentPlan(
-  when: HookWhen,
-  sources: string[],
-  previousOutput?: HookToolOutput,
-): AgentHookPlan {
+export function agentPlan(when: HookWhen, sources: string[]): AgentHookPlan {
   return {
     hookIndex: 0,
     kind: "agent",
-    previousOutput,
     sourceIndex: 0,
     sources,
     when,
@@ -71,20 +64,25 @@ export function restoreOriginal(stored: StoredMessage) {
   }
   return message;
 }
-export function finishAwaited(plan: ToolHookPlan, messages: BaseMessage[]): ToolHookPlan {
+export function finishAwaited(
+  plan: ToolHookPlan,
+  messages: BaseMessage[],
+): { output?: HookToolOutput; plan: ToolHookPlan } {
   if (!plan.awaiting) {
-    return plan;
+    return { plan };
   }
   const output = completedOutput(messages, plan.awaiting.callId);
   if (!output) {
-    return plan;
+    return { plan };
   }
   return {
-    ...plan,
-    awaiting: undefined,
-    hookIndex: 0,
-    previousOutput: readToolOutput(output),
-    stage: "after",
+    output: readToolOutput(output),
+    plan: {
+      ...plan,
+      awaiting: undefined,
+      hookIndex: 0,
+      stage: "after",
+    },
   };
 }
 export function nextToolStage(plan: ToolHookPlan): ToolHookPlan {

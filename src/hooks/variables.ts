@@ -1,13 +1,22 @@
+import type { HookToolOutput } from "./storage/outputs";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
 
 export interface HookVariables {
   cwd: string;
   session?: string;
-  previousTool?: {
-    output: unknown;
-    structuredOutput?: unknown;
-  };
+  toolOutputs: readonly HookToolOutput[];
 }
+type ToolOutputField = "output" | "structuredOutput";
+type ToolOutputOrder = "fromEnd" | "fromStart";
+interface ToolOutputReference {
+  field: ToolOutputField;
+  order: ToolOutputOrder;
+  ordinal: number;
+  path: string[];
+}
+const outputVariablePrefix = "toolOutputs.";
+const outputVariablePattern =
+  /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/;
 export function resolveHookArgs(args: Record<string, unknown>, variables: HookVariables) {
   const resolved = resolvePlaceholders(args, {
     dynamic: (name) => hookVariableValue(name, variables),
@@ -19,47 +28,75 @@ export function resolveHookArgs(args: Record<string, unknown>, variables: HookVa
   }
   return resolved;
 }
-function hookVariableValue(name: string, variables: HookVariables) {
-  const output = readPreviousToolValue(name, "output", variables);
-  if (output.matched) {
-    return output;
-  }
-  const structured = readPreviousToolValue(name, "structuredOutput", variables);
-  if (structured.matched) {
-    return structured;
-  }
-  return { matched: false };
+export function isHookOutputVariable(name: string) {
+  return parseOutputReference(name) !== undefined;
 }
-function readPreviousToolValue(
-  name: string,
-  field: "output" | "structuredOutput",
-  variables: HookVariables,
-): { matched: boolean; value?: unknown } {
-  const variable = `previousTool.${field}`;
-  if (name !== variable && !name.startsWith(`${variable}.`)) {
+function hookVariableValue(name: string, variables: HookVariables) {
+  const reference = parseOutputReference(name);
+  if (!reference) {
     return { matched: false };
   }
-  const previous = variables.previousTool;
-  if (!previous) {
-    throw new Error(`Hook 变量 \${${variable}} 没有可用的前序工具输出`);
+  const output = selectOutput(name, reference, variables.toolOutputs);
+  if (reference.field === "structuredOutput" && !(reference.field in output)) {
+    throw new Error(`Hook 变量 \${${name}} 引用的工具没有结构化输出`);
   }
-  if (field === "structuredOutput" && !(field in previous)) {
-    throw new Error(`Hook 变量 \${${variable}} 没有可用的结构化输出`);
-  }
-  const path = name.slice(variable.length + 1);
-  const value = previous[field];
+  const value = output[reference.field];
   return {
     matched: true,
-    value: path ? readPath(value, path.split("."), name) : value,
+    value: reference.path.length > 0 ? readPath(value, reference.path, name) : value,
   };
+}
+function parseOutputReference(name: string): ToolOutputReference | undefined {
+  if (!name.startsWith(outputVariablePrefix)) {
+    return undefined;
+  }
+  const match = outputVariablePattern.exec(name);
+  if (!match) {
+    throw new Error(
+      `Hook 工具输出变量格式无效：\${${name}}；应使用 \${toolOutputs.fromStart.N.output} 或 \${toolOutputs.fromEnd.N.structuredOutput}`,
+    );
+  }
+  const { field, order, ordinalText, path } = match.groups ?? {};
+  const ordinal = Number(ordinalText);
+  if (
+    (order !== "fromEnd" && order !== "fromStart") ||
+    (field !== "output" && field !== "structuredOutput") ||
+    !Number.isSafeInteger(ordinal)
+  ) {
+    throw new Error(`Hook 工具输出变量索引无效：\${${name}}`);
+  }
+  return { field, order, ordinal, path: path?.split(".") ?? [] };
+}
+function selectOutput(
+  name: string,
+  reference: ToolOutputReference,
+  outputs: readonly HookToolOutput[],
+) {
+  const index =
+    reference.order === "fromStart" ? reference.ordinal - 1 : outputs.length - reference.ordinal;
+  const output = outputs[index];
+  if (!output) {
+    throw new Error(
+      `Hook 变量 \${${name}} 超出工具输出范围：请求第 ${reference.ordinal.toString()} 个，当前共有 ${outputs.length.toString()} 个`,
+    );
+  }
+  return output;
 }
 function readPath(value: unknown, path: string[], variable: string): unknown {
   let current = value;
   for (const segment of path) {
-    if (isRecord(current) && segment in current) {
+    if (Array.isArray(current)) {
+      const index = Number(segment);
+      if (
+        !/^\d+$/.test(segment) ||
+        !Number.isSafeInteger(index) ||
+        !Object.hasOwn(current, index)
+      ) {
+        throw new Error(`Hook 变量 \${${variable}} 的字段不存在：${segment}`);
+      }
+      current = current[index];
+    } else if (isRecord(current) && Object.hasOwn(current, segment)) {
       current = current[segment];
-    } else if (Array.isArray(current) && /^\d+$/.test(segment)) {
-      current = current[Number(segment)];
     } else {
       throw new Error(`Hook 变量 \${${variable}} 的字段不存在：${segment}`);
     }

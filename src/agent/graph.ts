@@ -44,8 +44,8 @@ const AgentState = Annotation.Root({
     default: () => null,
     reducer: (_left, right) => right,
   }),
-  hookPreviousOutput: Annotation<HookToolOutput | undefined>({
-    default: () => undefined,
+  hookToolOutputs: Annotation<HookToolOutput[]>({
+    default: () => [],
     reducer: (_left, right) => right,
   }),
 });
@@ -127,9 +127,7 @@ export function createAgentGraph(options: AgentGraphOptions) {
       modelMessages(options.settings, options.skillsMessage, state.messages),
     );
     return {
-      hookPlan: response.tool_calls?.length
-        ? toolPlan(response)
-        : agentPlan("after", [id], state.hookPreviousOutput),
+      hookPlan: response.tool_calls?.length ? toolPlan(response) : agentPlan("after", [id]),
       messages: [response],
     };
   };
