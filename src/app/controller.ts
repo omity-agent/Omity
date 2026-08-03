@@ -23,7 +23,7 @@ import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadMcp } from "../infrastructure/mcp/loadTools";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
-import { runClient } from "../client";
+import { setSessionControl } from "../client";
 
 export class AppController {
   readonly events: AppEvents;
@@ -118,7 +118,7 @@ export class AppController {
     if (control === "running") {
       await this.ensureHost(session);
     }
-    const result = runClient({ control, sessionId }, this.appRoot);
+    const result = setSessionControl(sessionId, control, this.appRoot);
     this.publishChange(sessionId);
     return result;
   }

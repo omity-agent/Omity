@@ -1,6 +1,15 @@
 #!/usr/bin/env bun
-import { execute } from "@oclif/core";
+import { cliParser } from "./commandLine/parser";
+import { executeCommand } from "./commandLine/execute";
 import { loadUserEnvironment } from "./infrastructure/configuration/settings/files";
+import { message } from "@optique/core/message";
+import { run } from "@optique/run";
 
 loadUserEnvironment();
-await execute({ dir: import.meta.url });
+const command = run(cliParser, {
+  brief: message`AI Agent 执行环境。`,
+  completion: "both",
+  help: "both",
+  programName: "omity",
+});
+await executeCommand(command);

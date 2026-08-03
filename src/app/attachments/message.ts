@@ -1,6 +1,6 @@
 import type { PendingAttachment } from "./contract";
 import type { Settings } from "../../types";
-import { runClient } from "../../client";
+import { appendSessionMessage } from "../../client";
 import { saveMessageAttachments } from "./storage";
 
 export async function enqueueMessageWithAttachments(
@@ -14,7 +14,7 @@ export async function enqueueMessageWithAttachments(
   const saved = await saveMessageAttachments(settings, sessionId, content, attachments);
   try {
     await ensureHost();
-    const result = runClient({ append: saved.content, sessionId }, appRoot);
+    const result = appendSessionMessage(sessionId, saved.content, appRoot);
     return { ...result, content: saved.content };
   } catch (error) {
     await saved.discard();
