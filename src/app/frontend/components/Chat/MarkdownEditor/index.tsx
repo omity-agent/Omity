@@ -39,18 +39,9 @@ function historyBinding(
       if (view.composing || disabled || !navigate) {
         return false;
       }
-      const selection = view.state.selection.main;
-      if (!selection.empty) {
-        return false;
-      }
-      const atStart = selection.head === 0;
-      const atEnd = selection.head === view.state.doc.length;
-      if (direction === "previous" ? !atStart && !atEnd : !atEnd) {
-        return false;
-      }
       const nextValue = navigate(direction);
       if (nextValue === undefined) {
-        return view.state.doc.length === 0;
+        return false;
       }
       view.dispatch({
         changes: {
