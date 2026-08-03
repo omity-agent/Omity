@@ -3,7 +3,7 @@ import { buildModel, resolveModelApi } from "../../src/agent";
 import {
   parseMainSettings,
   parseModelSettings,
-} from "../../src/infrastructure/configuration/settingsSchema";
+} from "../../src/infrastructure/configuration/settings/schema";
 import { rmSync, writeFileSync } from "node:fs";
 import { ChatOpenAIResponses } from "@langchain/openai";
 import type { FetchLike } from "openai-codex-oauth";
@@ -138,36 +138,30 @@ function codexSettings(): Settings {
       idleLogMs: 1,
       pausePollMs: 1,
       pollMs: 1,
-      recursionLimit: 1,
       shutdownTimeoutMs: 1000,
     },
     leases: { hostTtlMs: 30_000 },
     logging: { level: "debug", streamTokens: false },
     paths: { dataDir: "./data" },
     server: { host: "127.0.0.1", port: 3030 },
+  });
+  const model = parseModelSettings({
+    adapter: "codex",
+    model: "gpt-5.3-codex",
+    reasoning_effort: "high",
+    timeoutMs: 120_000,
+  });
+  return {
+    ...main,
+    agent: { recursionLimit: 1, systemPrompt: "test" },
+    hooks: [],
+    model,
     skills: {
       directory: "~/.agents/skills",
       enabled: false,
       skillEnabled: {},
+      usagePrompt: "use skills",
     },
     toolOutput: { maxTokens: 8192 },
-  });
-  const model = parseModelSettings({
-    profile: "codex",
-    profiles: {
-      codex: {
-        adapter: "codex",
-        model: "gpt-5.3-codex",
-        reasoning_effort: "high",
-        timeoutMs: 120_000,
-      },
-    },
-  });
-  return {
-    ...main,
-    agent: { systemPrompt: "test" },
-    hooks: [],
-    model,
-    skills: { ...main.skills, usagePrompt: "use skills" },
   };
 }

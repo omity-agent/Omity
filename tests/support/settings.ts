@@ -9,7 +9,7 @@ export function testSettings(dataDir: string): Settings {
       sessionTtlMs: 43_200_000,
       trustedProxies: ["127.0.0.1/32"],
     },
-    agent: { systemPrompt: "test" },
+    agent: { recursionLimit: 50, systemPrompt: "test" },
     attachments: {
       allowedSuffixes: [".txt", ".md"],
       maxSizeBytes: 1024,
@@ -23,7 +23,6 @@ export function testSettings(dataDir: string): Settings {
       idleLogMs: 1,
       pausePollMs: 1,
       pollMs: 1,
-      recursionLimit: 50,
       shutdownTimeoutMs: 1000,
     },
     leases: { hostTtlMs: 30_000 },

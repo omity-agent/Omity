@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { parseClientIntent, runClient } from "../../src/client";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { createTestDirectory } from "../support/artifacts";
-import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { rmSync } from "node:fs";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";

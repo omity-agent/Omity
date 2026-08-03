@@ -3,8 +3,8 @@ import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
 import { createTestDirectory } from "../support/artifacts";
-import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
-import { loadUserEnvironment } from "../../src/infrastructure/configuration/settingsFiles";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
+import { loadUserEnvironment } from "../../src/infrastructure/configuration/settings/files";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { writeTestConfiguration } from "../support/configuration";
 
@@ -57,14 +57,11 @@ test("settings resolve global and session placeholders in their allowed scopes",
       paths: "\${session}|\${cwd}|\${appData}|\${${environmentName}}"
       output: "\${toolOutputs.fromEnd.1.output}"
 `,
-    modelYaml: `profile: test
-profiles:
-  test:
-    adapter: completions
-    model: \${${environmentName}}
-    apiKeyEnv: TEST_KEY
-    baseURL: null
-    timeoutMs: 1000
+    modelYaml: `adapter: completions
+model: \${${environmentName}}
+apiKeyEnv: TEST_KEY
+baseURL: null
+timeoutMs: 1000
 `,
     skillsPrompt: `skills: \${session}|\${cwd}|\${appData}|\${${environmentName}}`,
     systemPrompt: `system: \${session}|\${cwd}|\${appData}|\${${environmentName}}`,

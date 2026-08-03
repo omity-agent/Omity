@@ -3,6 +3,7 @@ import { expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { connectStdioClient } from "../../../src/infrastructure/mcp/client/stdio";
+import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { errorResponse } from "../../../src/app/http/errors";
 import { join } from "node:path";
@@ -33,9 +34,9 @@ test("MCP loading propagates captured stderr", async () => {
 `,
   );
   try {
-    expect(loadMcp(root, new Logger("error", true), join(root, "user"))).rejects.toThrow(
-      `子进程 stderr：\n${output}`,
-    );
+    expect(
+      loadMcp(root, new Logger("error", true), createSettingsContext(root, join(root, "user"))),
+    ).rejects.toThrow(`子进程 stderr：\n${output}`);
   } finally {
     rmSync(root, { force: true, recursive: true });
   }

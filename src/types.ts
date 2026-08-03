@@ -70,7 +70,6 @@ export interface Settings {
     pollMs: number;
     pausePollMs: number;
     idleLogMs: number;
-    recursionLimit: number;
     shutdownTimeoutMs: number;
   };
   logging: {
@@ -85,6 +84,7 @@ export interface Settings {
   };
   hooks: HookRule[];
   agent: {
+    recursionLimit: number;
     systemPrompt: string;
   };
   skills: {

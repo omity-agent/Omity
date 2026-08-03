@@ -15,7 +15,7 @@ import { buildModel } from "../../src/agent/model";
 import { captureError } from "../../src/failures/details";
 import { createAgentGraph } from "../../src/agent";
 import { fakeModel } from "@langchain/core/testing";
-import { parseModelSettings } from "../../src/infrastructure/configuration/settingsSchema";
+import { parseModelSettings } from "../../src/infrastructure/configuration/settings/schema";
 import { testSettings } from "../support/settings";
 import { waitBeforeModelNetworkRetry } from "../../src/runtime/retry";
 
@@ -61,15 +61,10 @@ test("model clients disable dependency network retries", () => {
 test("model settings reject dependency retry configuration", () => {
   expect(() =>
     parseModelSettings({
-      profile: "test",
-      profiles: {
-        test: {
-          adapter: "codex",
-          maxRetries: 1,
-          model: "test",
-          timeoutMs: 1000,
-        },
-      },
+      adapter: "codex",
+      maxRetries: 1,
+      model: "test",
+      timeoutMs: 1000,
     }),
   ).toThrow("Unrecognized key");
 });

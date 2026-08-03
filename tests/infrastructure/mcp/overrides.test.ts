@@ -10,9 +10,10 @@ import {
   readMcpConfiguration,
 } from "../../../src/infrastructure/mcp/config";
 import { DynamicStructuredTool } from "@langchain/core/tools";
+import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
-import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settingsFiles";
+import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
 import { sessionModelTools } from "../../../src/infrastructure/mcp/freeformInputs";
 
 test("user MCP settings deeply override repository defaults", () => {
@@ -20,16 +21,22 @@ test("user MCP settings deeply override repository defaults", () => {
   const userSettings = join(root, "user-settings");
   try {
     mkdirSync(join(root, "settings"), { recursive: true });
-    mkdirSync(userSettings, { recursive: true });
+    const profile = join(userSettings, "profiles", "tools");
+    mkdirSync(profile, { recursive: true });
+    writeFileSync(join(userSettings, "profile.yaml"), "- tools\n");
     writeFileSync(
       join(root, "settings", "mcp.yaml"),
       `mcpServers:\n  terminal:\n    transport: stdio\n    command: terminal\n    args: [default]\ntoolNameOverrides:\n  terminal__open: open\nfreeformToolInputs: [open]\n`,
     );
     writeFileSync(
-      join(userSettings, "mcp.yaml"),
+      join(profile, "mcp.yaml"),
       `mcpServers:\n  terminal:\n    args: [user]\ntoolNameOverrides:\n  terminal__close: close\nfreeformToolInputs: [close]\n`,
     );
-    const file = readLayeredSettingsYaml(root, "mcp.yaml", {}, userSettings);
+    const file = readLayeredSettingsYaml(
+      createSettingsContext(root, userSettings),
+      "profile",
+      "mcp.yaml",
+    );
     expect(file).toBeDefined();
     const configuration = parseMcpConfiguration(file?.value, file?.path ?? "mcp.yaml");
     expect(configuration.mcpServers["terminal"]).toMatchObject({

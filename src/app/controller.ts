@@ -3,6 +3,10 @@ import type { Control, Settings } from "../types";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { type ProcessOwner, appOwner } from "../infrastructure/process/ownership";
 import { type SessionInfo, projectSession } from "./sessionState";
+import {
+  type SettingsContext,
+  createSettingsContext,
+} from "../infrastructure/configuration/settings/context";
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { createAppFork, createAppSession } from "./runtime/sessionActions";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
@@ -18,7 +22,7 @@ import { controllerHostEvents } from "./controllerHostEvents";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadMcp } from "../infrastructure/mcp/loadTools";
-import { loadSettings } from "../infrastructure/configuration/loadSettings";
+import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { runClient } from "../client";
 
 export class AppController {
@@ -31,15 +35,19 @@ export class AppController {
     options: {
       abandonedOwner?: AppInstanceOwner;
       owner?: ProcessOwner;
+      settingsContext?: SettingsContext;
     } = {},
   ) {
-    this.settings = loadSettings(appRoot);
+    const settingsContext = options.settingsContext ?? createSettingsContext(appRoot);
+    this.settings = loadSettings(appRoot, { settingsContext });
     const discovered = new AppRegistry(this.settings);
     recoverAppSessions(this.settings, discovered.list(), options.abandonedOwner);
     this.registry = new AppRegistry(this.settings);
     this.events = new AppEvents();
     const owner = options.owner ?? appOwner();
-    const mcp = new AppMcp(() => loadMcp(appRoot, new Logger(this.settings.logging.level, true)));
+    const mcp = new AppMcp(() =>
+      loadMcp(appRoot, new Logger(this.settings.logging.level, true), settingsContext),
+    );
     this.hosts = new AppHosts(
       appRoot,
       controllerHostEvents(
@@ -52,6 +60,7 @@ export class AppController {
       owner,
       this.settings.host.shutdownTimeoutMs,
       mcp,
+      settingsContext,
     );
   }
   close = () => this.hosts.close();
@@ -74,7 +83,7 @@ export class AppController {
     return directory?.path() ?? null;
   }
   async createSession(submission: SessionSubmission) {
-    const created = await createAppSession(this.appRoot, submission);
+    const created = await createAppSession(this.appRoot, submission, this.settings);
     const session = this.registry.refresh(created.sessionId);
     await this.hosts.start(created.sessionId, created.workspace, "load");
     const info = this.sessionInfo(session);

@@ -5,8 +5,7 @@ import { safeId, sessionPaths } from "../../src/infrastructure/configuration/ses
 import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
 import { createTestDirectory } from "../support/artifacts";
 import { loadHookRules } from "../../src/infrastructure/configuration/hookRules";
-import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
-import { parseModelSettings } from "../../src/infrastructure/configuration/settingsSchema";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { writeTestConfiguration } from "../support/configuration";
 
@@ -65,42 +64,44 @@ test("user settings deeply override defaults and preserve relative path semantic
   writeTestConfiguration(root, {
     hooksYaml: `hooks:\n  - { id: default, target: agent, when: before, runLimit: 1, mode: silent, tool: default, args: {} }\n`,
   });
-  mkdirSync(join(userSettingsDir, "prompts"), { recursive: true });
+  const baseProfileDir = join(userSettingsDir, "profiles", "base");
+  const profileDir = join(userSettingsDir, "profiles", "work");
+  mkdirSync(baseProfileDir, { recursive: true });
+  mkdirSync(join(profileDir, "prompts"), { recursive: true });
+  writeFileSync(join(userSettingsDir, "profile.yaml"), "- base\n- work\n");
   writeFileSync(
     join(userSettingsDir, "main.yaml"),
     `paths: { dataDir: ./user-data }\nserver: { port: 4040 }\naccess:\n  loginRateLimit: { attempts: 3 }\n`,
   );
-  writeFileSync(join(userSettingsDir, "model.yaml"), `profiles:\n  test: { model: user-model }\n`);
+  writeFileSync(join(baseProfileDir, "model.yaml"), "model: base-model\ntimeoutMs: 2000\n");
+  writeFileSync(join(profileDir, "model.yaml"), "model: user-model\n");
+  writeFileSync(join(profileDir, "agent.yaml"), "recursionLimit: 7\n");
+  writeFileSync(join(profileDir, "main.yaml"), "server: { port: 5050 }\n");
   writeFileSync(
-    join(userSettingsDir, "hooks.yaml"),
+    join(profileDir, "hooks.yaml"),
     `hooks:\n  - { id: user, target: agent, when: after, runLimit: 2, mode: takeover, tool: user, args: {} }\n`,
   );
-  writeFileSync(join(userSettingsDir, "prompts", "system.md"), "user system\n");
+  writeFileSync(join(profileDir, "prompts", "system.md"), "user system\n");
   const settings = loadSettings(root, { userSettingsDir });
   expect(settings.paths.dataDir).toBe(resolve(root, "user-data"));
   expect(settings.server).toEqual({ host: "127.0.0.1", port: 4040 });
   expect(settings.access.loginRateLimit).toEqual({ attempts: 3, windowMs: 60_000 });
   expect([settings.model.adapter, settings.model.model]).toEqual(["completions", "user-model"]);
+  expect(settings.model.timeoutMs).toBe(2000);
+  expect(settings.agent.recursionLimit).toBe(7);
+  expect(settings.toolOutput.maxTokens).toBe(8192);
+  expect(settings.skills.enabled).toBe(false);
   expect(settings.hooks.map(({ id }) => id)).toEqual(["user"]);
   expect(settings.agent.systemPrompt).toBe("user system");
   expect(settings.skills.usagePrompt).toBe("use skills");
 });
-test("model yaml selects a named profile from multiple profiles", () => {
+test("model yaml contains one direct model configuration", () => {
   const root = createTestDirectory("configuration");
   dirs.push(root);
   writeTestConfiguration(root, {
-    modelYaml: `profile: codex
-profiles:
-  gateway:
-    adapter: completions
-    model: gateway-model
-    apiKeyEnv: TEST_KEY
-    baseURL: null
-    timeoutMs: 1000
-  codex:
-    adapter: codex
-    model: codex-model
-    timeoutMs: 2000
+    modelYaml: `adapter: codex
+model: codex-model
+timeoutMs: 2000
 `,
   });
   expect(loadSettings(root).model).toEqual({
@@ -108,11 +109,6 @@ profiles:
     model: "codex-model",
     timeoutMs: 2000,
   });
-});
-test("model yaml rejects an unknown profile", () => {
-  expect(() => parseModelSettings({ profile: "missing", profiles: {} })).toThrow(
-    "Profile 不存在：missing",
-  );
 });
 test("hook config parses targets, timing, and modes", () => {
   const root = createTestDirectory("hook-configuration");

@@ -3,14 +3,16 @@ import type { SessionSubmission } from "../attachments/contract";
 import type { Settings } from "../../types";
 import { claimShortId } from "../../infrastructure/randomId";
 import { createSessionWithAttachments } from "../attachments/session";
-import { loadSettings } from "../../infrastructure/configuration/loadSettings";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import { resolve } from "node:path";
 
-export async function createAppSession(appRoot: string, submission: SessionSubmission) {
+export async function createAppSession(
+  appRoot: string,
+  submission: SessionSubmission,
+  settings: Settings,
+) {
   const workspace = normalizeWorkspacePath(submission.workspace, appRoot);
-  const settings = loadSettings(appRoot, { cwd: workspace });
   const sessionId = reserveSessionId(settings);
   try {
     await createSessionWithAttachments({

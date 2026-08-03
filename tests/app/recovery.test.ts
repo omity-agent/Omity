@@ -5,7 +5,7 @@ import { AppController } from "../../src/app/controller";
 import { createTestDirectory } from "../support/artifacts";
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { join } from "node:path";
-import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { randomUUID } from "node:crypto";
 import { recoverHostSession } from "../../src/runtime/execution/recovery";
 import { required } from "../support/database";

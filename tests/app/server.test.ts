@@ -8,7 +8,7 @@ import { AppRegistry } from "../../src/app/registry";
 import { captureError } from "../../src/failures/details";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
-import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { required } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";

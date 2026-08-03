@@ -1,6 +1,6 @@
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import { existsSync } from "node:fs";
-import { loadSettings } from "./infrastructure/configuration/loadSettings";
+import { loadSettings } from "./infrastructure/configuration/settings/load";
 import { removeDatabaseDirectory } from "./infrastructure/database/connection";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "./errors";

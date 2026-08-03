@@ -6,10 +6,11 @@ import { appUrl } from "./launch";
 import { build } from "vite";
 import { createApi } from "./http/handler";
 import { createServer } from "node:http";
+import { createSettingsContext } from "../infrastructure/configuration/settings/context";
 import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
 import { join } from "node:path";
-import { loadSettings } from "../infrastructure/configuration/loadSettings";
+import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
 import { promisify } from "node:util";
 import { rmSync } from "node:fs";
@@ -21,7 +22,8 @@ export interface AppServerOptions {
   onReady?: (url: string) => void;
 }
 export async function startAppServer(options: AppServerOptions) {
-  const settings = loadSettings(options.root);
+  const settingsContext = createSettingsContext(options.root);
+  const settings = loadSettings(options.root, { settingsContext });
   const host = options.host ?? settings.server.host;
   const port = options.port ?? settings.server.port;
   const lock = AppInstanceLock.acquire(settings.paths.dataDir);
@@ -38,6 +40,7 @@ export async function startAppServer(options: AppServerOptions) {
         kind: "app",
         pid: lock.owner.pid,
       },
+      settingsContext,
     });
     const staticRoot = join(settings.paths.dataDir, "webui");
     rmSync(staticRoot, { force: true, recursive: true });

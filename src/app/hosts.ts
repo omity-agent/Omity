@@ -2,6 +2,7 @@ import { type ErrorDetails, captureError } from "../failures/details";
 import type { HostMode, SessionStatus } from "../types";
 import type { AppMcp } from "./runtime/mcp";
 import type { ProcessOwner } from "../infrastructure/process/ownership";
+import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import type { StreamEvent } from "../infrastructure/database/records/streamEvents";
 import { runHostSession } from "../host";
 
@@ -31,6 +32,7 @@ export class AppHosts {
     private readonly owner: ProcessOwner,
     private readonly shutdownTimeoutMs: number,
     private readonly mcp: AppMcp,
+    private readonly settingsContext: SettingsContext,
   ) {}
   has(sessionId: string) {
     return this.running.has(sessionId);
@@ -73,6 +75,7 @@ export class AppHosts {
       },
       owner: this.owner,
       quiet: true,
+      settingsContext: this.settingsContext,
       stoppingController: stopping,
       wake: (delayMs) => this.events.wait(sessionId, delayMs),
     });

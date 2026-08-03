@@ -24,10 +24,21 @@ const modelSettingsSchema = z.discriminatedUnion("adapter", [
     })
     .strict(),
 ]);
-const modelFileSchema = z
+const agentSettingsSchema = z
   .object({
-    profile: z.string().min(1),
-    profiles: z.record(z.string().min(1), modelSettingsSchema),
+    recursionLimit: z.number().int().positive(),
+    skills: z
+      .object({
+        directory: z.string().min(1),
+        enabled: z.boolean(),
+        skillEnabled: z.record(z.string(), z.boolean()),
+      })
+      .strict(),
+    toolOutput: z
+      .object({
+        maxTokens: z.number().int().positive(),
+      })
+      .strict(),
   })
   .strict();
 const suffixSchema = z
@@ -96,7 +107,6 @@ const mainSettingsSchema = z
       idleLogMs: z.number().int().positive(),
       pausePollMs: z.number().int().positive(),
       pollMs: z.number().int().positive(),
-      recursionLimit: z.number().int().positive(),
       shutdownTimeoutMs: z.number().int().positive(),
     }),
     leases: z.object({
@@ -115,24 +125,14 @@ const mainSettingsSchema = z
         port: z.number().int().min(0).max(65_535),
       })
       .strict(),
-    skills: z.object({
-      directory: z.string().min(1),
-      enabled: z.boolean(),
-      skillEnabled: z.record(z.string(), z.boolean()),
-    }),
-    toolOutput: z.object({
-      maxTokens: z.number().int().positive(),
-    }),
   })
   .strict();
 export function parseMainSettings(value: unknown) {
   return mainSettingsSchema.parse(value);
 }
 export function parseModelSettings(value: unknown) {
-  const { profile, profiles } = modelFileSchema.parse(value);
-  const model = profiles[profile];
-  if (model === undefined) {
-    throw new Error(`Profile 不存在：${profile}`);
-  }
-  return model;
+  return modelSettingsSchema.parse(value);
+}
+export function parseAgentSettings(value: unknown) {
+  return agentSettingsSchema.parse(value);
 }

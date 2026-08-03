@@ -34,6 +34,7 @@ function makeSettings(api: ModelApi): Settings {
       trustedProxies: ["127.0.0.1/32"],
     },
     agent: {
+      recursionLimit: 1,
       systemPrompt: "test",
     },
     attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
@@ -46,7 +47,6 @@ function makeSettings(api: ModelApi): Settings {
       idleLogMs: 1,
       pausePollMs: 1,
       pollMs: 1,
-      recursionLimit: 1,
       shutdownTimeoutMs: 1000,
     },
     leases: { hostTtlMs: 30_000 },

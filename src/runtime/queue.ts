@@ -77,7 +77,7 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
     context: { sessionId: ctx.sessionId },
     interruptAfter: ["request_model", "invoke_tool"],
     interruptBefore: ["model_request", "tools"] as ["model_request", "tools"],
-    recursionLimit: ctx.settings.host.recursionLimit,
+    recursionLimit: ctx.settings.agent.recursionLimit,
   };
   const checkpoint = await ctx.checkpointer.getTuple(config);
   let input: Parameters<HostContext["graph"]["stream"]>[0];

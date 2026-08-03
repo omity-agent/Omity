@@ -1,0 +1,9 @@
+recursionLimit: 25
+
+toolOutput:
+  maxTokens: 10000
+
+skills:
+  enabled: true
+  directory: ~/.agents/skills
+  skillEnabled: {}

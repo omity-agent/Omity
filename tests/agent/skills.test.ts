@@ -61,6 +61,7 @@ function makeSettings(skillsDir: string, skillEnabled: Record<string, boolean>):
       trustedProxies: ["127.0.0.1/32"],
     },
     agent: {
+      recursionLimit: 10,
       systemPrompt: "test",
     },
     attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
@@ -73,7 +74,6 @@ function makeSettings(skillsDir: string, skillEnabled: Record<string, boolean>):
       idleLogMs: 1,
       pausePollMs: 1,
       pollMs: 1,
-      recursionLimit: 10,
       shutdownTimeoutMs: 1000,
     },
     leases: { hostTtlMs: 30_000 },

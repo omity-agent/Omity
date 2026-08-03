@@ -38,7 +38,6 @@ host:
   pollMs: 300
   pausePollMs: 500
   idleLogMs: 25000
-  recursionLimit: 25
   shutdownTimeoutMs: 10000
 
 logging:
@@ -47,11 +46,3 @@ logging:
 
 leases:
   hostTtlMs: 30000
-
-toolOutput:
-  maxTokens: 10000
-
-skills:
-  enabled: true
-  directory: ~/.agents/skills
-  skillEnabled: {}

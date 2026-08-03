@@ -8,10 +8,11 @@ import type { HostRunOptions } from "./runtime/execution/hostOptions";
 import { Logger } from "./infrastructure/logging/logger";
 import { ToolExecutions } from "./agent/toolExecutions";
 import { buildGraph } from "./agent";
+import { createSettingsContext } from "./infrastructure/configuration/settings/context";
 import { existsSync } from "node:fs";
 import { hostLoop } from "./runtime/loop";
 import { loadMcp } from "./infrastructure/mcp/loadTools";
-import { loadSettings } from "./infrastructure/configuration/loadSettings";
+import { loadSettings } from "./infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "./infrastructure/configuration/workspacePath";
 import { recoverHostSession } from "./runtime/execution/recovery";
 import { removeDatabaseDirectory } from "./infrastructure/database/connection";
@@ -30,7 +31,12 @@ export async function runHostSession(
   options: HostRunOptions = {},
 ) {
   const workspace = normalizeWorkspacePath(options.cwd ?? root, root);
-  const loadedSettings = loadSettings(root, { cwd: workspace, sessionId: mode.sessionId });
+  const settingsContext = options.settingsContext ?? createSettingsContext(root);
+  const loadedSettings = loadSettings(root, {
+    cwd: workspace,
+    sessionId: mode.sessionId,
+    settingsContext,
+  });
   const settings = options.quiet
     ? {
         ...loadedSettings,
@@ -83,7 +89,9 @@ export async function runHostSession(
     timeoutMs: settings.host.shutdownTimeoutMs,
   });
   try {
-    const mcp = options.mcp ? await options.mcp() : (ownedMcp = await loadMcp(root, logger));
+    const mcp = options.mcp
+      ? await options.mcp()
+      : (ownedMcp = await loadMcp(root, logger, settingsContext));
     const hooks = new HookRuntime(
       settings.hooks,
       mcp.tools,

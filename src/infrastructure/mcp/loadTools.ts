@@ -1,6 +1,6 @@
+import { type SettingsContext, createSettingsContext } from "../configuration/settings/context";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
-import { readLayeredSettingsYaml, userSettingsDirectory } from "../configuration/settingsFiles";
 import type { Logger } from "../logging/logger";
 import { McpClientPool } from "./client/pool";
 import type { SessionPlaceholders } from "../configuration/placeholders";
@@ -10,7 +10,9 @@ import { createMcpToolFailureClient } from "./toolFailures";
 import { disableMcpRequestTimeout } from "./client/timeout";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 import { parseMcpConfiguration } from "./config";
+import { readLayeredSettingsYaml } from "../configuration/settings/files";
 import { resolve } from "node:path";
+import { resolveConfiguredPath } from "../configuration/configuredPath";
 import { suppressTerminalError } from "../../failures/output";
 
 export interface LoadedMcp {
@@ -34,9 +36,9 @@ export function createMcpLoadError(error: unknown): Error {
 export async function loadMcp(
   root: string,
   logger: Logger,
-  userSettingsDir = userSettingsDirectory(),
+  context = createSettingsContext(root),
 ): Promise<LoadedMcp> {
-  const file = readLayeredSettingsYaml(root, "mcp.yaml", {}, userSettingsDir);
+  const file = readLayeredSettingsYaml(context, "profile", "mcp.yaml", {}, resolveProfilePaths);
   if (!file) {
     logger.info("MCP 配置不存在，跳过工具加载");
     return emptyMcp();
@@ -48,13 +50,12 @@ export async function loadMcp(
     logger.info("MCP 未配置服务器，Agent 将不带工具运行");
     return emptyMcp();
   }
-  return connectMcp(configuration, names, root, userSettingsDir, logger);
+  return connectMcp(configuration, names, context, logger);
 }
 async function connectMcp(
   configuration: ReturnType<typeof parseMcpConfiguration>,
   names: string[],
-  root: string,
-  userSettingsDir: string,
+  context: SettingsContext,
   logger: Logger,
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
@@ -66,8 +67,11 @@ async function connectMcp(
     const tools = overrideMcpToolDescriptions(
       renameMcpTools(await loadServerTools(connectedPool, names), configuration.toolNameOverrides),
       configuration.toolDescriptionOverrides,
-      root,
-      [resolve(root, "settings", "prompts"), resolve(userSettingsDir, "prompts")],
+      context.root,
+      [
+        resolve(context.defaultsDirectory, "prompts"),
+        ...context.profiles.map(({ directory }) => resolve(directory, "prompts")),
+      ],
     );
     const configured = configureFreeformMcpTools(tools, configuration.freeformToolInputs);
     logger.info("已加载 MCP 工具", {
@@ -86,6 +90,30 @@ async function connectMcp(
   } finally {
     end();
   }
+}
+function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
+  if (
+    !isRecord(value) ||
+    !isRecord(value["toolDescriptionOverrides"]) ||
+    !isRecord(override) ||
+    !isRecord(override["toolDescriptionOverrides"])
+  ) {
+    return value;
+  }
+  const paths = { ...value["toolDescriptionOverrides"] };
+  for (const name of Object.keys(override["toolDescriptionOverrides"])) {
+    const path = paths[name];
+    if (typeof path === "string") {
+      paths[name] = resolveConfiguredPath(directory, path);
+    }
+  }
+  return {
+    ...value,
+    toolDescriptionOverrides: paths,
+  };
+}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 export async function loadServerTools(
   client: {
