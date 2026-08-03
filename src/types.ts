@@ -6,7 +6,7 @@ export interface HostMode {
 }
 export type QueueStatus = "draft" | "pending" | "running" | "paused" | "done" | "canceled";
 export type LogLevel = "debug" | "info" | "warn" | "error";
-export type ReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
+export type ReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export type ModelApi = "responses" | "completions";
 interface SharedModelSettings {
   model: string;

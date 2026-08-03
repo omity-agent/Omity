@@ -1,7 +1,7 @@
 import ipaddr from "ipaddr.js";
 import { z } from "zod";
 
-const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh"]);
+const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]);
 const sharedModelSettings = {
   model: z.string().min(1),
   reasoning_effort: reasoningEffortSchema.optional(),
