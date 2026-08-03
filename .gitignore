@@ -1,40 +1,5 @@
-# dependencies (bun install)
-node_modules
-
-# output
-out
-dist
-data
-*.tgz
-*.exe
-
-# code coverage
-coverage
-*.lcov
-
-# logs
-.playwright-cli/
-logs
-_.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
-
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# caches
-.cache
-*.tsbuildinfo
-
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
+node_modules/
+src/app/frontend/dist/
+styled-system/
+*.code-workspace
 .DS_Store
-
-## Panda
-styled-system
-styled-system-studio
