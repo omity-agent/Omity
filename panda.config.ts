@@ -6,6 +6,11 @@ export default defineConfig({
   conditions: {
     extend: {
       coarse: "@media (pointer: coarse)",
+      hover: {
+        "@media (hover: hover) and (pointer: fine)": {
+          "&:is(:hover, [data-hover])": "@slot",
+        },
+      },
       largeCanvas: "@media (min-width: 160rem) and (min-height: 90rem)",
       short: "@media (max-height: 40rem)",
       topNav: "@media (max-aspect-ratio: 1 / 1)",
