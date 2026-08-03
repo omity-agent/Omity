@@ -80,16 +80,14 @@ async function pendingWrites(
 ): Promise<CheckpointPendingWrite[]> {
   const writes = parseWriteRows(row.pending_writes);
   return Promise.all(
-    writes.map(
-      async (write): Promise<CheckpointPendingWrite> => [
-        write.task_id,
-        write.channel,
-        hydratePendingValue(
-          await ctx.serde.loadsTyped(write.type, write.value),
-          messageRowsToChatMessages(loadMessageRows(ctx.db, write.message_ids)),
-        ),
-      ],
-    ),
+    writes.map(async (write): Promise<CheckpointPendingWrite> => [
+      write.task_id,
+      write.channel,
+      hydratePendingValue(
+        await ctx.serde.loadsTyped(write.type, write.value),
+        messageRowsToChatMessages(loadMessageRows(ctx.db, write.message_ids)),
+      ),
+    ]),
   );
 }
 function parseWriteRows(value: string): WriteJson[] {

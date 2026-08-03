@@ -6,6 +6,7 @@ import { type SessionInfo, projectSession } from "./sessionState";
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { createAppFork, createAppSession } from "./runtime/sessionActions";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
+import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { AppEvents } from "./events";
 import { AppHosts } from "./hosts";
 import type { AppInstanceOwner } from "./runtime/instanceLock";
@@ -17,7 +18,6 @@ import { controllerHostEvents } from "./controllerHostEvents";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadMcp } from "../infrastructure/mcp/loadTools";
-import { loadSessionTranscript } from "./transcript";
 import { loadSettings } from "../infrastructure/configuration/loadSettings";
 import { runClient } from "../client";
 
@@ -147,6 +147,10 @@ export class AppController {
     this.registry.require(sessionId);
     return loadSessionTranscript(this.settings, sessionId);
   }
+  eventCursor(sessionId: string) {
+    this.registry.require(sessionId);
+    return loadSessionEventCursor(this.settings, sessionId);
+  }
   private ensureHost(session: RegisteredSession) {
     if (!this.hosts.has(session.id) && hasLiveHostLease(this.settings, session.id)) {
       return Promise.resolve();
@@ -157,7 +161,7 @@ export class AppController {
     this.events.wake(sessionId);
     const info = this.sessionInfo(this.registry.refresh(sessionId));
     this.events.notifySession(info);
-    this.events.invalidateTranscript(sessionId);
+    this.events.invalidateTranscript(sessionId, this.eventCursor(sessionId));
   }
   private sessionInfo(session: RegisteredSession): SessionInfo {
     return projectSession(session, this.hosts.activity(session.id), this.hosts.error(session.id));

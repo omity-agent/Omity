@@ -1,4 +1,4 @@
-import { type FrontendSettings, type SessionInfo, appEvents, bootstrap } from "./client";
+import { type FrontendSettings, type SessionInfo, bootstrap, stateEvents } from "./client";
 import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import { readDeletedEvent, readSessionEvent, readSessionsEvent } from "./events/data";
 import { useEffect, useRef } from "react";
@@ -27,7 +27,7 @@ export function useBootstrap() {
     queryKey: bootstrapKey,
   });
   useEffect(() => {
-    const events = appEvents();
+    const events = stateEvents();
     const replace = (event: Event) => {
       try {
         const sessions = readSessionsEvent(event);

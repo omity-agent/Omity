@@ -56,11 +56,11 @@ export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
     { signal },
   );
 }
-export function sessionEvents(sessionId: string) {
-  return eventSource(`api/sessions/${encodeURIComponent(sessionId)}/events`);
+export function contentEvents(sessionId: string) {
+  return eventSource(`api/sessions/${encodeURIComponent(sessionId)}/events/content`);
 }
-export function appEvents() {
-  return eventSource("api/events");
+export function stateEvents() {
+  return eventSource("api/events/state");
 }
 export async function loadComposerDraft(sessionId: string) {
   return request(

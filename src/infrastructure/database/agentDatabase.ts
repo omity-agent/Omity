@@ -5,6 +5,7 @@ import {
   deleteQueueStream,
   finishToolStreams,
   insertStreamEvent,
+  streamEventCursor,
 } from "./records/streamEvents";
 import {
   appendDraftQueue,
@@ -137,6 +138,9 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   queueStatus(queueId: number) {
     return queueStatusRecord(this.db, queueId);
+  }
+  eventCursor() {
+    return streamEventCursor(this.db);
   }
   syncHistory(sessionId: string, messages: BaseMessage[]) {
     this.requireSession(sessionId);

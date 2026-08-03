@@ -15,6 +15,7 @@ const sessionsEventSchema = z.object({
   sessions: z.array(sessionInfoSchema),
 });
 const deletedEventSchema = z.object({ sessionId: z.string() });
+const syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() });
 const eventBase = {
   id: z.number().int().positive(),
   messageId: z.string().min(1),
@@ -51,16 +52,32 @@ const displayEventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind",
   }),
 ]);
 export function readSessionsEvent(event: Event) {
+  readStateEventId(event, "sessions");
   return readEventData(event, sessionsEventSchema, "sessions").sessions;
 }
 export function readSessionEvent(event: Event) {
+  readStateEventId(event, "session");
   return readEventData(event, sessionInfoSchema, "session");
 }
 export function readDeletedEvent(event: Event) {
+  readStateEventId(event, "deleted");
   return readEventData(event, deletedEventSchema, "deleted").sessionId;
 }
 export function readTranscriptEvent(event: Event) {
-  return readEventData(event, displayEventSchema, "delta");
+  const data = readEventData(event, displayEventSchema, "delta");
+  const id = readNumericEventId(event, "delta");
+  if (data.id !== id) {
+    throw new Error("SSE delta 事件 ID 与 data.id 不一致");
+  }
+  return data;
+}
+export function readContentSyncEvent(event: Event) {
+  const data = readEventData(event, syncEventSchema, "sync");
+  const id = readNumericEventId(event, "sync");
+  if (data.eventCursor !== id) {
+    throw new Error("SSE sync 事件 ID 与 eventCursor 不一致");
+  }
+  return data;
 }
 function readEventData<T>(event: Event, schema: z.ZodType<T>, name: string) {
   if (!("data" in event) || typeof event.data !== "string") {
@@ -77,4 +94,25 @@ function readEventData<T>(event: Event, schema: z.ZodType<T>, name: string) {
     throw new Error(`SSE ${name} 事件结构无效`);
   }
   return parsed.data;
+}
+function readNumericEventId(event: Event, name: string) {
+  const id = Number(readEventId(event, name));
+  if (!Number.isSafeInteger(id) || id < 0) {
+    throw new Error(`SSE ${name} 事件 ID 无效`);
+  }
+  return id;
+}
+function readStateEventId(event: Event, name: string) {
+  const id = readEventId(event, name);
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}:[1-9]\d*$/iu.test(id)
+  ) {
+    throw new Error(`SSE ${name} 事件 ID 无效`);
+  }
+}
+function readEventId(event: Event, name: string) {
+  if (!("lastEventId" in event) || typeof event.lastEventId !== "string" || !event.lastEventId) {
+    throw new Error(`SSE ${name} 事件缺少 ID`);
+  }
+  return event.lastEventId;
 }

@@ -24,6 +24,7 @@ export type ApiController = Pick<
   | "createSession"
   | "deleteSession"
   | "transcript"
+  | "eventCursor"
   | "composerDraft"
   | "saveComposerDraft"
   | "sendMessage"
@@ -52,7 +53,9 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.get("/api/bootstrap", (c) => c.json(controller.bootstrap()));
   app.get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }));
-  app.get("/api/events", (c) => controller.events.streamSessions(c, () => controller.sessions()));
+  app.get("/api/events/state", (c) =>
+    controller.events.streamState(c, () => controller.sessions()),
+  );
   app.post("/api/workspace-picker", async (c) =>
     c.json({ workspace: await controller.pickWorkspace() }),
   );
@@ -68,10 +71,10 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.get("/api/sessions/:sessionId/transcript", (c) =>
     c.json(controller.transcript(sessionId(c))),
   );
-  app.get("/api/sessions/:sessionId/events", (c) => {
+  app.get("/api/sessions/:sessionId/events/content", (c) => {
     const id = sessionId(c);
     controller.assertSession(id);
-    return controller.events.streamTranscript(c, id);
+    return controller.events.streamContent(c, id, () => controller.eventCursor(id));
   });
   app.get("/api/sessions/:sessionId/composer-draft", (c) =>
     c.json(controller.composerDraft(sessionId(c))),

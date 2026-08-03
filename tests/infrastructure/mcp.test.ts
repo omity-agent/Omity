@@ -54,7 +54,7 @@ test("mcp config expands env placeholders recursively", () => {
         headers: {
           Authorization: "Bearer token",
         },
-        stderr: "ignore",
+        stderr: "pipe",
       },
     });
   } finally {
@@ -93,7 +93,7 @@ test("mcp config rejects unknown top-level fields", () => {
     rmSync(directory, { recursive: true });
   }
 });
-test("mcp stdio config fills omitted args and suppresses stderr", () => {
+test("mcp stdio config fills omitted args and captures stderr", () => {
   expect(
     normalizeMcpServers({
       noisy: {
@@ -113,13 +113,13 @@ test("mcp stdio config fills omitted args and suppresses stderr", () => {
       args: ["--serve"],
       command: "server.exe",
       extension: { enabled: true },
-      stderr: "ignore",
+      stderr: "pipe",
       transport: "stdio",
     },
     omitted: {
       args: [],
       command: "server.exe",
-      stderr: "ignore",
+      stderr: "pipe",
       transport: "stdio",
     },
   });

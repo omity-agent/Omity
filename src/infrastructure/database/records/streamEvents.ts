@@ -1,5 +1,6 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
+import { queryGet } from "../connection";
 
 export interface StreamToolCallDelta {
   index: number;
@@ -45,7 +46,18 @@ interface StartedToolCall {
   partId: string;
   queueId: number;
 }
+interface SequenceRow {
+  seq: number;
+}
 
+export function streamEventCursor(db: Database) {
+  const cursor =
+    queryGet<SequenceRow>(db, "SELECT seq FROM sqlite_sequence WHERE name = 'events'")?.seq ?? 0;
+  if (!Number.isSafeInteger(cursor)) {
+    throw new Error(`流式事件游标超出安全整数范围：${String(cursor)}`);
+  }
+  return cursor;
+}
 export function insertStreamEvent(
   db: Database,
   sessionId: string,

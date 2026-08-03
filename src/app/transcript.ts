@@ -4,7 +4,7 @@ import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persis
 import { contentToText, messageReasoning } from "../runtime/content";
 import { freeformCallIds, rawFreeformInput } from "./timeline/freeform";
 import { modelTokenUsage, toolInputTokens, toolOutputTokens } from "./timeline/tokenCounts";
-import { queryAll, queryGet, runTransaction } from "../infrastructure/database/connection";
+import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Settings } from "../types";
 import { existsSync } from "node:fs";
@@ -29,17 +29,24 @@ interface QueueRow {
   user_message_id: number | null;
   root_id: number | null;
 }
-interface SequenceRow {
-  seq: number;
-}
 export function loadSessionTranscript(settings: Settings, sessionId: string) {
+  return withSessionDatabase(settings, sessionId, (db) => loadTranscript(db, sessionId));
+}
+export function loadSessionEventCursor(settings: Settings, sessionId: string) {
+  return withSessionDatabase(settings, sessionId, (db) => db.eventCursor());
+}
+function withSessionDatabase<T>(
+  settings: Settings,
+  sessionId: string,
+  read: (db: AgentDatabase) => T,
+) {
   const paths = resolveSessionPaths(settings, sessionId);
   if (!existsSync(paths.dbPath)) {
     throw sessionNotFound(sessionId);
   }
   const db = new AgentDatabase(paths.dbPath);
   try {
-    return loadTranscript(db, sessionId);
+    return read(db);
   } finally {
     db.close();
   }
@@ -77,12 +84,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
        FROM events WHERE session_id = ? ORDER BY id`,
       sessionId,
     ).map(persistedDisplayEvent);
-    const eventCursor =
-      queryGet<SequenceRow>(db.db, "SELECT seq FROM sqlite_sequence WHERE name = 'events'")?.seq ??
-      0;
-    if (!Number.isSafeInteger(eventCursor)) {
-      throw new Error(`流式事件游标超出安全整数范围：${String(eventCursor)}`);
-    }
+    const eventCursor = db.eventCursor();
     return { control, eventCursor, events, messages, queue };
   });
 }

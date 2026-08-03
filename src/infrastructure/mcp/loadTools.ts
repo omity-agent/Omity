@@ -1,15 +1,17 @@
-import { type Connection, MultiServerMCPClient, loadMcpTools } from "@langchain/mcp-adapters";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
 import { readLayeredSettingsYaml, userSettingsDirectory } from "../configuration/settingsFiles";
 import type { Logger } from "../logging/logger";
+import { McpClientPool } from "./client/pool";
 import type { SessionPlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
-import { disableMcpRequestTimeout } from "./requestTimeout";
+import { disableMcpRequestTimeout } from "./client/timeout";
+import { loadMcpTools } from "@langchain/mcp-adapters";
 import { parseMcpConfiguration } from "./config";
 import { resolve } from "node:path";
+import { suppressTerminalError } from "../../failures/output";
 
 export interface LoadedMcp {
   tools: StructuredToolInterface[];
@@ -21,11 +23,13 @@ export function createMcpLoadError(error: unknown): Error {
   const details = collectReadableZodIssues(error);
   if (details.length === 0) {
     const message = error instanceof Error ? error.message : String(error);
-    return new Error(`MCP 工具加载失败：${message}`, { cause: error });
+    return suppressTerminalError(new Error(`MCP 工具加载失败：${message}`, { cause: error }));
   }
-  return new Error(["MCP 配置校验失败：", ...details.map((detail) => `- ${detail}`)].join("\n"), {
-    cause: error,
-  });
+  return suppressTerminalError(
+    new Error(["MCP 配置校验失败：", ...details.map((detail) => `- ${detail}`)].join("\n"), {
+      cause: error,
+    }),
+  );
 }
 export async function loadMcp(
   root: string,
@@ -54,16 +58,13 @@ async function connectMcp(
   logger: Logger,
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
-  let client: MultiServerMCPClient | undefined;
+  let pool: McpClientPool | undefined;
   try {
     disableMcpRequestTimeout();
-    client = new MultiServerMCPClient({
-      mcpServers: collectMcpConnections(configuration.mcpServers),
-      prefixToolNameWithServerName: true,
-      throwOnLoadError: false,
-    });
+    const connectedPool = new McpClientPool(configuration.mcpServers);
+    pool = connectedPool;
     const tools = overrideMcpToolDescriptions(
-      renameMcpTools(await loadServerTools(client, names), configuration.toolNameOverrides),
+      renameMcpTools(await loadServerTools(connectedPool, names), configuration.toolNameOverrides),
       configuration.toolDescriptionOverrides,
       root,
       [resolve(root, "settings", "prompts"), resolve(userSettingsDir, "prompts")],
@@ -73,17 +74,14 @@ async function connectMcp(
       servers: names,
       tools: tools.map((tool) => tool.name),
     });
-    const connectedClient = client;
     return {
-      close: () => connectedClient.close(),
+      close: () => connectedPool.close(),
       freeformToolParameters: configured.parameters,
       modelTools: (session) => sessionModelTools(tools, configured.parameters, session),
       tools,
     };
   } catch (error) {
-    if (client !== undefined) {
-      await client.close();
-    }
+    await pool?.close();
     throw createMcpLoadError(error);
   } finally {
     end();
@@ -110,32 +108,6 @@ export async function loadServerTools(
     );
   }
   return tools;
-}
-function collectMcpConnections(mcpServers: Record<string, unknown>) {
-  const connections: Record<string, Connection> = {};
-  for (const [name, server] of Object.entries(mcpServers)) {
-    if (!isMcpConnection(server)) {
-      throw new Error(`MCP 服务器配置无法识别：${name}`);
-    }
-    connections[name] = server;
-  }
-  return connections;
-}
-function isMcpConnection(value: unknown): value is Connection {
-  if (!isRecord(value)) {
-    return false;
-  }
-  if ("command" in value) {
-    return (
-      typeof value["command"] === "string" &&
-      Array.isArray(value["args"]) &&
-      value["args"].every((argument) => typeof argument === "string")
-    );
-  }
-  return typeof value["url"] === "string";
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function validateConfiguredServers(
   configuration: ReturnType<typeof parseMcpConfiguration>,

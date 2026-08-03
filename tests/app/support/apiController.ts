@@ -15,13 +15,20 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
     control: notConfigured,
     createSession: notConfigured,
     deleteSession: notConfigured,
+    eventCursor: () => 0,
     events: new AppEvents(),
     forkSession: notConfigured,
     pickWorkspace: notConfigured,
     saveComposerDraft: notConfigured,
     sendMessage: notConfigured,
     sessions: () => [],
-    transcript: notConfigured,
+    transcript: () => ({
+      control: "running",
+      eventCursor: 0,
+      events: [],
+      messages: [],
+      queue: [],
+    }),
   };
   return { ...controller, ...overrides };
 }

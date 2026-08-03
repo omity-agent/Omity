@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { upsertSessionList, withoutSession } from "../../../src/app/frontend/services/queries";
 import type { SessionInfo } from "../../../src/app/sessionState";
-import { appEvents } from "../../../src/app/frontend/services/client";
+import { stateEvents } from "../../../src/app/frontend/services/client";
 
 test("session upserts are idempotent across SSE and HTTP responses", () => {
   const idle = session("idle", 1);
@@ -28,12 +28,12 @@ test("SSE keeps the native reconnect behavior after a network error", () => {
     value: TestEventSource,
   });
   try {
-    appEvents();
+    stateEvents();
     const [events] = created;
     if (!events) {
       throw new Error("EventSource 替身未创建");
     }
-    expect(events.url).toBe("api/events");
+    expect(events.url).toBe("api/events/state");
     events.dispatchEvent(new Event("error"));
     expect(events.close).not.toHaveBeenCalled();
   } finally {

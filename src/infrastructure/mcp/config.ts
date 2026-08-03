@@ -64,7 +64,7 @@ function normalizeMcpServer(server: unknown): unknown {
     return {
       ...result.data,
       args: result.data.args ?? [],
-      stderr: "ignore",
+      stderr: "pipe",
     };
   }
   if (server["transport"] === "sse" || server["type"] === "sse") {
