@@ -17,7 +17,6 @@ test("profile selection rejects a missing profile directory", () => {
     rmSync(root, { force: true, recursive: true });
   }
 });
-
 test("profile selection rejects unsafe names", () => {
   const root = createTestDirectory("configuration");
   const userSettingsDir = join(root, "user-settings");
@@ -29,7 +28,6 @@ test("profile selection rejects unsafe names", () => {
     rmSync(root, { force: true, recursive: true });
   }
 });
-
 test("profile selection rejects duplicate layers", () => {
   const root = createTestDirectory("configuration");
   const userSettingsDir = join(root, "user-settings");
@@ -43,7 +41,6 @@ test("profile selection rejects duplicate layers", () => {
     rmSync(root, { force: true, recursive: true });
   }
 });
-
 test("empty profile selection uses only repository defaults", () => {
   const root = createTestDirectory("configuration");
   const userSettingsDir = join(root, "user-settings");

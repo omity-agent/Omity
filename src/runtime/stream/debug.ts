@@ -6,7 +6,6 @@ interface SeenState {
   seenFacts: Set<string>;
   seenStructures: Set<string>;
 }
-
 export function incrementalSummary(value: unknown, state: SeenState): unknown {
   const delta = diffSeen(value, state, "$");
   return delta === omitted ? undefined : summarize(delta.value);

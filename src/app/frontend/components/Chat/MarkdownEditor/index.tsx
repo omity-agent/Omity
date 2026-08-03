@@ -50,7 +50,7 @@ function historyBinding(
       }
       const nextValue = navigate(direction);
       if (nextValue === undefined) {
-        return false;
+        return view.state.doc.length === 0;
       }
       view.dispatch({
         changes: {
@@ -65,6 +65,10 @@ function historyBinding(
     },
   };
 }
+const emptyEditorArrowBindings: KeyBinding[] = ["ArrowLeft", "ArrowRight"].map((key) => ({
+  key,
+  run: (view) => view.state.doc.length === 0,
+}));
 export function MarkdownEditor({
   bare = false,
   disabled,
@@ -141,6 +145,7 @@ export function MarkdownEditor({
         keymap.of([
           historyBinding("ArrowUp", "previous", disabled, onHistoryNavigate),
           historyBinding("ArrowDown", "next", disabled, onHistoryNavigate),
+          ...emptyEditorArrowBindings,
           {
             key: "Ctrl-Enter",
             run: (view) => {

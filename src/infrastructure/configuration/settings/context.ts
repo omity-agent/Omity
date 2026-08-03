@@ -17,19 +17,16 @@ const profileSelectionSchema = z.array(profileNameSchema).superRefine((names, co
     });
   }
 });
-
 export interface SettingsProfile {
   directory: string;
   name: string;
 }
-
 export interface SettingsContext {
   defaultsDirectory: string;
   profiles: SettingsProfile[];
   root: string;
   userDirectory: string;
 }
-
 export function createSettingsContext(
   root = process.cwd(),
   userDirectory = userSettingsDirectory(),
@@ -47,7 +44,6 @@ export function createSettingsContext(
     userDirectory: resolvedUserDirectory,
   };
 }
-
 function resolveProfiles(userDirectory: string, selectionPath: string): SettingsProfile[] {
   return profileSelectionSchema.parse(readSettingsYamlValue(selectionPath)).map((name) => {
     const directory = resolve(userDirectory, "profiles", name);

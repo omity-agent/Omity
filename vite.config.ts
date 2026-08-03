@@ -17,6 +17,7 @@ export default defineConfig({
     alias: {
       "styled-system": resolve(root, "styled-system"),
     },
+    dedupe: ["@codemirror/state", "@codemirror/view"],
   },
   root: "src/app/frontend",
   server: {

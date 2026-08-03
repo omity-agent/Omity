@@ -49,7 +49,6 @@ interface StartedToolCall {
 interface SequenceRow {
   seq: number;
 }
-
 export function streamEventCursor(db: Database) {
   const cursor =
     queryGet<SequenceRow>(db, "SELECT seq FROM sqlite_sequence WHERE name = 'events'")?.seq ?? 0;
