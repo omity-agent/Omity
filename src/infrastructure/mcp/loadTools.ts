@@ -1,14 +1,14 @@
 import { type Connection, MultiServerMCPClient, loadMcpTools } from "@langchain/mcp-adapters";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
+import { readLayeredSettingsYaml, userSettingsDirectory } from "../configuration/settingsFiles";
 import type { Logger } from "../logging/logger";
 import type { SessionPlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
 import { disableMcpRequestTimeout } from "./requestTimeout";
-import { existsSync } from "node:fs";
-import { readMcpConfiguration } from "./config";
+import { parseMcpConfiguration } from "./config";
 import { resolve } from "node:path";
 
 export interface LoadedMcp {
@@ -27,25 +27,30 @@ export function createMcpLoadError(error: unknown): Error {
     cause: error,
   });
 }
-export async function loadMcp(root: string, logger: Logger): Promise<LoadedMcp> {
-  const path = resolve(root, "settings", "mcp.yaml");
-  if (!existsSync(path)) {
-    logger.info("MCP 配置不存在，跳过工具加载", { path });
+export async function loadMcp(
+  root: string,
+  logger: Logger,
+  userSettingsDir = userSettingsDirectory(),
+): Promise<LoadedMcp> {
+  const file = readLayeredSettingsYaml(root, "mcp.yaml", {}, userSettingsDir);
+  if (!file) {
+    logger.info("MCP 配置不存在，跳过工具加载");
     return emptyMcp();
   }
-  const configuration = readMcpConfiguration(path);
+  const configuration = parseMcpConfiguration(file.value, file.path);
   const names = Object.keys(configuration.mcpServers);
   validateConfiguredServers(configuration, names);
   if (names.length === 0) {
     logger.info("MCP 未配置服务器，Agent 将不带工具运行");
     return emptyMcp();
   }
-  return connectMcp(configuration, names, root, logger);
+  return connectMcp(configuration, names, root, userSettingsDir, logger);
 }
 async function connectMcp(
-  configuration: ReturnType<typeof readMcpConfiguration>,
+  configuration: ReturnType<typeof parseMcpConfiguration>,
   names: string[],
   root: string,
+  userSettingsDir: string,
   logger: Logger,
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
@@ -61,6 +66,7 @@ async function connectMcp(
       renameMcpTools(await loadServerTools(client, names), configuration.toolNameOverrides),
       configuration.toolDescriptionOverrides,
       root,
+      [resolve(root, "settings", "prompts"), resolve(userSettingsDir, "prompts")],
     );
     const configured = configureFreeformMcpTools(tools, configuration.freeformToolInputs);
     logger.info("已加载 MCP 工具", {
@@ -85,7 +91,7 @@ async function connectMcp(
 }
 export async function loadServerTools(
   client: {
-    getClient: (name: string) => Promise<Parameters<typeof loadMcpTools>[1] | undefined>;
+    getClient: (name: string) => Promise<object | undefined>;
   },
   names: string[],
 ) {
@@ -132,7 +138,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function validateConfiguredServers(
-  configuration: ReturnType<typeof readMcpConfiguration>,
+  configuration: ReturnType<typeof parseMcpConfiguration>,
   names: string[],
 ) {
   if (names.length > 0) {

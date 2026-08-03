@@ -1,6 +1,6 @@
-import YAML from "yaml";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { parse } from "yaml";
 import { readFileSync } from "node:fs";
 
 const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/;
@@ -29,8 +29,11 @@ export function readSettingsText(path: string, options: Omit<PlaceholderOptions,
   return value;
 }
 export function readSettingsYaml(path: string, options: Omit<PlaceholderOptions, "source"> = {}) {
-  const value: unknown = YAML.parse(readFileSync(path, "utf8"));
+  const value = readSettingsYamlValue(path);
   return resolvePlaceholders(value, { ...options, source: path });
+}
+export function readSettingsYamlValue(path: string): unknown {
+  return parse(readFileSync(path, "utf8"));
 }
 export function resolvePlaceholders(value: unknown, options: PlaceholderOptions): unknown {
   if (typeof value === "string") {

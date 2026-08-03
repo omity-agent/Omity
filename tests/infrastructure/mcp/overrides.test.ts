@@ -5,12 +5,46 @@ import {
   overrideMcpToolDescriptions,
   renameMcpTools,
 } from "../../../src/infrastructure/mcp/toolOverrides";
+import {
+  parseMcpConfiguration,
+  readMcpConfiguration,
+} from "../../../src/infrastructure/mcp/config";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
-import { readMcpConfiguration } from "../../../src/infrastructure/mcp/config";
+import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settingsFiles";
 import { sessionModelTools } from "../../../src/infrastructure/mcp/freeformInputs";
 
+test("user MCP settings deeply override repository defaults", () => {
+  const root = createTestDirectory("mcp-layered-config");
+  const userSettings = join(root, "user-settings");
+  try {
+    mkdirSync(join(root, "settings"), { recursive: true });
+    mkdirSync(userSettings, { recursive: true });
+    writeFileSync(
+      join(root, "settings", "mcp.yaml"),
+      `mcpServers:\n  terminal:\n    transport: stdio\n    command: terminal\n    args: [default]\ntoolNameOverrides:\n  terminal__open: open\nfreeformToolInputs: [open]\n`,
+    );
+    writeFileSync(
+      join(userSettings, "mcp.yaml"),
+      `mcpServers:\n  terminal:\n    args: [user]\ntoolNameOverrides:\n  terminal__close: close\nfreeformToolInputs: [close]\n`,
+    );
+    const file = readLayeredSettingsYaml(root, "mcp.yaml", {}, userSettings);
+    expect(file).toBeDefined();
+    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "mcp.yaml");
+    expect(configuration.mcpServers["terminal"]).toMatchObject({
+      args: ["user"],
+      command: "terminal",
+    });
+    expect(configuration.toolNameOverrides).toEqual({
+      terminal__close: "close",
+      terminal__open: "open",
+    });
+    expect(configuration.freeformToolInputs).toEqual(["close"]);
+  } finally {
+    rmSync(root, { recursive: true });
+  }
+});
 test("MCP config reads tool description override paths", () => {
   const root = createTestDirectory("mcp-description-config");
   const path = join(root, "mcp.yaml");

@@ -1,24 +1,34 @@
-import { join, resolve } from "node:path";
 import { parseMainSettings, parseModelSettings } from "./settingsSchema";
-import { readSettingsText, readSettingsYaml } from "./placeholders";
+import {
+  readLayeredSettingsYaml,
+  resolveLayeredSettingsText,
+  userSettingsDirectory,
+} from "./settingsFiles";
 import type { Settings } from "../../types";
-import { loadHookRules } from "./hookRules";
+import { isHookOutputVariable } from "../../hooks/variables";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "./workspacePath";
+import { parseHookRules } from "./hookRules";
+import { readSettingsText } from "./placeholders";
+import { resolve } from "node:path";
 import { resolveConfiguredPath } from "./configuredPath";
 import { safeId } from "./sessionPaths";
 
 export interface LoadSettingsOptions {
   cwd?: string;
   sessionId?: string;
+  userSettingsDir?: string;
 }
 export function loadSettings(root = process.cwd(), options: LoadSettingsOptions = {}): Settings {
   const configRoot = resolve(root);
   const cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot);
-  const settingsDir = resolve(configRoot, "settings");
-  const main = parseMainSettings(readSettingsYaml(resolve(settingsDir, "main.yaml")));
-  const model = parseModelSettings(readSettingsYaml(resolve(settingsDir, "model.yaml")));
-  const promptsDir = resolve(settingsDir, "prompts");
+  const userSettingsDir = options.userSettingsDir ?? userSettingsDirectory();
+  const main = parseMainSettings(
+    requireLayeredYaml(configRoot, "main.yaml", undefined, userSettingsDir).value,
+  );
+  const model = parseModelSettings(
+    requireLayeredYaml(configRoot, "model.yaml", undefined, userSettingsDir).value,
+  );
   const dataDir = resolveConfiguredPath(configRoot, main.paths.dataDir);
   const session = options.sessionId
     ? resolve(dataDir, "sessions", safeId(options.sessionId))
@@ -27,21 +37,46 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     deferSession: true,
     session: { cwd, session },
   };
+  const hooks = requireLayeredYaml(
+    configRoot,
+    "hooks.yaml",
+    { ...placeholders, deferred: isHookOutputVariable },
+    userSettingsDir,
+  );
   mkdirSync(dataDir, { recursive: true });
   return {
     ...main,
     agent: {
-      systemPrompt: readPrompt(join(promptsDir, "system.md"), placeholders),
+      systemPrompt: readPrompt(
+        resolveLayeredSettingsText(configRoot, "prompts/system.md", userSettingsDir),
+        placeholders,
+      ),
     },
-    hooks: loadHookRules(resolve(settingsDir, "hooks.yaml"), placeholders),
+    hooks: parseHookRules(hooks.value),
     model,
     paths: { dataDir },
     skills: {
       ...main.skills,
       directory: resolveConfiguredPath(configRoot, main.skills.directory),
-      usagePrompt: readPrompt(join(promptsDir, "skills.md"), placeholders, true),
+      usagePrompt: readPrompt(
+        resolveLayeredSettingsText(configRoot, "prompts/skills.md", userSettingsDir),
+        placeholders,
+        true,
+      ),
     },
   };
+}
+function requireLayeredYaml(
+  root: string,
+  relativePath: string,
+  placeholders: Parameters<typeof readLayeredSettingsYaml>[2],
+  userSettingsDir: string,
+) {
+  const file = readLayeredSettingsYaml(root, relativePath, placeholders, userSettingsDir);
+  if (!file) {
+    throw new Error(`配置文件不存在：${resolve(root, "settings", relativePath)}`);
+  }
+  return file;
 }
 function readPrompt(
   path: string,

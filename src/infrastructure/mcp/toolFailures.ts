@@ -3,7 +3,10 @@ import type { loadMcpTools } from "@langchain/mcp-adapters";
 
 type McpClient = Parameters<typeof loadMcpTools>[1];
 const mcpToolFailures = new WeakSet<object>();
-export function createMcpToolFailureClient(client: McpClient): McpClient {
+export function createMcpToolFailureClient(client: object): McpClient {
+  if (!isMcpClient(client)) {
+    throw new TypeError("MCP 客户端缺少 callTool、listTools 或 readResource 方法");
+  }
   return new Proxy(client, {
     get(target, property, receiver): unknown {
       const value: unknown = Reflect.get(target, property, receiver);
@@ -50,6 +53,16 @@ function isMcpToolFailure(error: unknown): error is Error {
 }
 function isCallable(value: unknown): value is (this: unknown, ...args: unknown[]) => unknown {
   return typeof value === "function";
+}
+function isMcpClient(client: object): client is McpClient {
+  return (
+    "callTool" in client &&
+    isCallable(client.callTool) &&
+    "listTools" in client &&
+    isCallable(client.listTools) &&
+    "readResource" in client &&
+    isCallable(client.readResource)
+  );
 }
 function errorMessage(error: unknown) {
   if (error instanceof Error) {

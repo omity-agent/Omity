@@ -58,6 +58,33 @@ test("prompt files expand current working directory placeholder", () => {
   expect(settings.agent.systemPrompt).toBe(`workspace: ${workspace}`);
   expect(settings.skills.usagePrompt).toBe(`skills from ${workspace}`);
 });
+test("user settings deeply override defaults and preserve relative path semantics", () => {
+  const root = createTestDirectory("layered-configuration");
+  const userSettingsDir = join(root, "user-settings");
+  dirs.push(root);
+  writeTestConfiguration(root, {
+    hooksYaml: `hooks:\n  - { id: default, target: agent, when: before, runLimit: 1, mode: silent, tool: default, args: {} }\n`,
+  });
+  mkdirSync(join(userSettingsDir, "prompts"), { recursive: true });
+  writeFileSync(
+    join(userSettingsDir, "main.yaml"),
+    `paths: { dataDir: ./user-data }\nserver: { port: 4040 }\naccess:\n  loginRateLimit: { attempts: 3 }\n`,
+  );
+  writeFileSync(join(userSettingsDir, "model.yaml"), `profiles:\n  test: { model: user-model }\n`);
+  writeFileSync(
+    join(userSettingsDir, "hooks.yaml"),
+    `hooks:\n  - { id: user, target: agent, when: after, runLimit: 2, mode: takeover, tool: user, args: {} }\n`,
+  );
+  writeFileSync(join(userSettingsDir, "prompts", "system.md"), "user system\n");
+  const settings = loadSettings(root, { userSettingsDir });
+  expect(settings.paths.dataDir).toBe(resolve(root, "user-data"));
+  expect(settings.server).toEqual({ host: "127.0.0.1", port: 4040 });
+  expect(settings.access.loginRateLimit).toEqual({ attempts: 3, windowMs: 60_000 });
+  expect([settings.model.adapter, settings.model.model]).toEqual(["completions", "user-model"]);
+  expect(settings.hooks.map(({ id }) => id)).toEqual(["user"]);
+  expect(settings.agent.systemPrompt).toBe("user system");
+  expect(settings.skills.usagePrompt).toBe("use skills");
+});
 test("model yaml selects a named profile from multiple profiles", () => {
   const root = createTestDirectory("configuration");
   dirs.push(root);
@@ -153,24 +180,18 @@ test("hook variables preserve exact values and reject ambiguous output", () => {
   ).toThrow("超出工具输出范围");
 });
 function setAppDataRoot(path: string) {
-  const previous = {
-    APPDATA: process.env["APPDATA"],
-    HOME: process.env["HOME"],
-    XDG_DATA_HOME: process.env["XDG_DATA_HOME"],
-  };
-  process.env["APPDATA"] = path;
-  process.env["HOME"] = path;
-  process.env["XDG_DATA_HOME"] = path;
-  return () => {
-    restoreEnv("APPDATA", previous.APPDATA);
-    restoreEnv("HOME", previous.HOME);
-    restoreEnv("XDG_DATA_HOME", previous.XDG_DATA_HOME);
-  };
-}
-function restoreEnv(name: string, value: string | undefined) {
-  if (value === undefined) {
-    Reflect.deleteProperty(process.env, name);
-    return;
+  const names = ["APPDATA", "HOME", "XDG_DATA_HOME"] as const;
+  const previous = new Map(names.map((name) => [name, process.env[name]]));
+  for (const name of names) {
+    process.env[name] = path;
   }
-  process.env[name] = value;
+  return () => {
+    for (const [name, value] of previous) {
+      if (value === undefined) {
+        Reflect.deleteProperty(process.env, name);
+      } else {
+        process.env[name] = value;
+      }
+    }
+  };
 }

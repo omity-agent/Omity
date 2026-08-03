@@ -23,6 +23,10 @@ const stdioServerSchema = z.looseObject({
 });
 export function readMcpConfiguration(path: string) {
   const parsed = readSettingsYaml(path) ?? {};
+  return parseMcpConfiguration(parsed, path);
+}
+export function parseMcpConfiguration(parsed: unknown, path: string) {
+  parsed ??= {};
   const result = mcpConfigurationSchema.safeParse(parsed);
   if (!result.success) {
     const rootIssue = result.error.issues.find(

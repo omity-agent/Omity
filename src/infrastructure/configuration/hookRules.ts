@@ -41,3 +41,6 @@ export function loadHookRules(
   });
   return hooksFileSchema.parse(parsed).hooks;
 }
+export function parseHookRules(value: unknown): HookRule[] {
+  return hooksFileSchema.parse(value).hooks;
+}

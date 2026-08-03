@@ -1,24 +1,41 @@
 import { afterEach, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
 import { createTestDirectory } from "../support/artifacts";
 import { loadSettings } from "../../src/infrastructure/configuration/loadSettings";
+import { loadUserEnvironment } from "../../src/infrastructure/configuration/settingsFiles";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { writeTestConfiguration } from "../support/configuration";
 
 const directories: string[] = [];
 const environmentName = "OMITY_TEST_PLACEHOLDER";
-const previousEnvironment = process.env[environmentName];
+const loadedEnvironmentName = "OMITY_TEST_ENV_LOADED";
+const presetEnvironmentName = "OMITY_TEST_ENV_PRESET";
+const environmentNames = [environmentName, loadedEnvironmentName, presetEnvironmentName] as const;
+const previousEnvironment = new Map(environmentNames.map((name) => [name, process.env[name]]));
 afterEach(() => {
   for (const directory of directories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
   }
-  if (previousEnvironment === undefined) {
-    Reflect.deleteProperty(process.env, environmentName);
-  } else {
-    process.env[environmentName] = previousEnvironment;
+  for (const [name, value] of previousEnvironment) {
+    if (value === undefined) {
+      Reflect.deleteProperty(process.env, name);
+    } else {
+      process.env[name] = value;
+    }
   }
+});
+test("user environment file fills missing variables without overriding the process", () => {
+  const root = createTestDirectory("user-environment");
+  const path = join(root, ".env");
+  directories.push(root);
+  Reflect.deleteProperty(process.env, loadedEnvironmentName);
+  process.env[presetEnvironmentName] = "process";
+  writeFileSync(path, `${loadedEnvironmentName}="from file"\n${presetEnvironmentName}=file\n`);
+  loadUserEnvironment(path);
+  expect(process.env[loadedEnvironmentName]).toBe("from file");
+  expect(process.env[presetEnvironmentName]).toBe("process");
 });
 test("settings resolve global and session placeholders in their allowed scopes", () => {
   const root = createTestDirectory("placeholders");
