@@ -71,6 +71,41 @@ test("tool stream reconciles by message identity and index", () => {
   ];
   expect(toolCalls(buildTimeline(messages, queue, events)[0])).toHaveLength(1);
 });
+test("temporary tool identity upgrades to the formal call ID when execution starts", () => {
+  const events: DisplayEvent[] = [
+    event("tool_call_delta", { argumentsDelta: '{"cmd":', index: 0 }),
+    {
+      id: 2,
+      kind: "tool_started",
+      messageId: "message-live",
+      partId: "tool-0",
+      queueId: 1,
+      value: "call-1",
+    },
+    event("tool_call_delta", { argumentsDelta: '"pwd"}', idDelta: "call-1", index: 0 }, { id: 3 }),
+  ];
+  const [part] = buildTimeline([], queue, events)[0]?.parts ?? [];
+  expect(part).toMatchObject({
+    call: { id: "call-1", inputText: '{"cmd":"pwd"}' },
+    key: "stream:message-live:tool-0",
+    started: true,
+    type: "tool",
+  });
+});
+test("formal tool identity rejects a conflicting streamed call ID", () => {
+  const events: DisplayEvent[] = [
+    event("tool_call_delta", { idDelta: "call-other", index: 0 }),
+    {
+      id: 2,
+      kind: "tool_started",
+      messageId: "message-live",
+      partId: "tool-0",
+      queueId: 1,
+      value: "call-1",
+    },
+  ];
+  expect(() => buildTimeline([], queue, events)).toThrow("工具流身份绑定了不同的正式调用 ID");
+});
 test("equal tool inputs do not hide unidentified calls", () => {
   const messages: DisplayMessage[] = [
     assistant({

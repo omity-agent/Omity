@@ -129,7 +129,8 @@ function extractToolCalls(message: BaseMessage): DisplayToolCall[] {
   const freeformIds = freeformCallIds(message);
   return calls.map((call, index) => {
     const input = call["args"] ?? call["input"] ?? call;
-    const id = stringField(call, "id") ?? `tool-${index.toString()}`;
+    const callId = stringField(call, "id");
+    const id = callId ?? `tool-${index.toString()}`;
     const freeform = call["isCustomTool"] === true || freeformIds.has(id);
     const toolCall: DisplayToolCall = {
       id,
@@ -138,6 +139,9 @@ function extractToolCalls(message: BaseMessage): DisplayToolCall[] {
       inputTokens: toolInputTokens(call, input),
       name: stringField(call, "name") ?? "tool",
     };
+    if (!callId) {
+      toolCall.temporary = true;
+    }
     if (message.id) {
       toolCall.messageId = message.id;
     }

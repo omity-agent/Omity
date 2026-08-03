@@ -7,7 +7,7 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: z.number().int(),
   error: z.custom<ErrorDetails>().nullable(),
   id: z.string(),
-  status: z.enum(["tool", "model", "idle", "paused", "error"]),
+  status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
   updatedAt: z.number().int(),
   workspace: z.string(),
 });

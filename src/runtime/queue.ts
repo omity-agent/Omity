@@ -185,7 +185,7 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
           ctx.observer?.activity?.(ctx.sessionId, nextActivity);
         }
         if (nextActivity === "tool") {
-          recordToolExecutionStarted(ctx, messages, item.id);
+          recordToolExecutionStarted(ctx, messages, item.id, streamLogState);
         }
         input = null;
       }

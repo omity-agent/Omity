@@ -19,7 +19,7 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: integer,
   error: errorDetailsSchema.nullable(),
   id: z.string(),
-  status: z.enum(["tool", "model", "idle", "paused", "error"]),
+  status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
   updatedAt: integer,
   workspace: z.string(),
 });
@@ -33,6 +33,7 @@ const toolCallSchema = z.object({
   name: z.string(),
   rawInput: z.string().optional(),
   streaming: z.boolean().optional(),
+  temporary: z.literal(true).optional(),
 });
 const tokenUsageSchema = z.object({
   cacheReadTokens: integer.nonnegative(),

@@ -42,8 +42,11 @@ export function resolveSessionStatus(
     return "error";
   }
   const pauseRequested = session.control === "pause" || session.control === "pause_cancel";
-  if (session.paused || (pauseRequested && !session.queueInProgress)) {
+  if (session.paused) {
     return "paused";
+  }
+  if (pauseRequested) {
+    return session.queueInProgress ? "pausing" : "paused";
   }
   return activity;
 }

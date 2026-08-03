@@ -49,6 +49,10 @@ export async function pickWorkspace() {
     method: "POST",
   });
 }
+export async function pickWorkspacePath() {
+  const result = await pickWorkspace();
+  return result.workspace;
+}
 export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
   return request(
     `api/sessions/${encodeURIComponent(sessionId)}/transcript`,

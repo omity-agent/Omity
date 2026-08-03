@@ -51,10 +51,18 @@ interface SidebarProps {
   sessions: SessionInfo[];
   activeId?: string;
   showCreate: boolean;
+  unreadIds: ReadonlySet<string>;
   onCreate: () => void;
   onSelect: (id: string) => void;
 }
-export function Sidebar({ sessions, activeId, showCreate, onCreate, onSelect }: SidebarProps) {
+export function Sidebar({
+  sessions,
+  activeId,
+  showCreate,
+  unreadIds,
+  onCreate,
+  onSelect,
+}: SidebarProps) {
   const { t } = useTranslation();
   return (
     <>
@@ -81,6 +89,7 @@ export function Sidebar({ sessions, activeId, showCreate, onCreate, onSelect }: 
             activeId={activeId}
             group={group}
             key={group.workspace}
+            unreadIds={unreadIds}
             onSelect={onSelect}
           />
         ))}

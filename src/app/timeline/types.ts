@@ -16,6 +16,7 @@ export interface DisplayToolCall {
   inputText?: string;
   rawInput?: string;
   streaming?: boolean;
+  temporary?: true;
 }
 export interface TokenUsage {
   inputTokens: number;
@@ -63,6 +64,7 @@ export type TimelinePart =
   | {
       type: "tool";
       call: DisplayToolCall;
+      key: string;
       output?: DisplayMessage;
       started?: boolean;
     };

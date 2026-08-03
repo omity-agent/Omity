@@ -100,6 +100,14 @@ export const selectedFingerprint = css({
   fontWeight: "bold",
   letterSpacing: "0.08em",
 });
+export const unreadFingerprint = css({
+  _after: {
+    color: "statusModel",
+    content: '"●"',
+    fontSize: "2xs",
+    ml: "1.5",
+  },
+});
 export const time = css({
   color: "muted",
   fontSize: "2xs",

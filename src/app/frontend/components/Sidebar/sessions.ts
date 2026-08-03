@@ -1,4 +1,6 @@
 import type { SessionInfo } from "../../services/client";
+import type { SessionStatus } from "../../../../types";
+import { isRunningStatus } from "../../services/events/attention";
 
 export interface SessionGroup {
   workspace: string;
@@ -7,7 +9,17 @@ export interface SessionGroup {
   updatedAt: number;
 }
 export function isRunning(session: SessionInfo) {
-  return session.status === "model" || session.status === "tool";
+  return isRunningStatus(session.status);
+}
+export function statusLabelKey(status: SessionStatus) {
+  return {
+    error: "statusError",
+    idle: "statusIdle",
+    model: "statusModel",
+    paused: "statusPaused",
+    pausing: "statusPausing",
+    tool: "statusTool",
+  }[status];
 }
 export function groupSessions(sessions: SessionInfo[]): SessionGroup[] {
   const byWorkspace = new Map<string, SessionInfo[]>();

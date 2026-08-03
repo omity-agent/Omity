@@ -11,6 +11,7 @@ import {
   streamTimelineMessages,
   toolCallLifecycle,
 } from "./streamEvents";
+import { displayToolCallKey } from "./tool/correlation";
 import { groupAssistantMessages } from "./grouping";
 
 export type {
@@ -170,6 +171,7 @@ function withParts(
       ...(message.content.trim() ? [{ content: message.content, type: "content" } as const] : []),
       ...message.toolCalls.map((call) => ({
         call,
+        key: displayToolCallKey(call),
         output: outputs.get(call.id),
         type: "tool" as const,
         ...(startedCallIds.has(call.id) ? { started: true } : {}),

@@ -1,4 +1,12 @@
-import { Bot, Circle, CircleAlert, type LucideIcon, Pause, Wrench } from "lucide-react";
+import {
+  Bot,
+  Circle,
+  CircleAlert,
+  LoaderCircle,
+  type LucideIcon,
+  Pause,
+  Wrench,
+} from "lucide-react";
 import { css, cva, cx } from "styled-system/css";
 import type { ErrorDetails } from "../../../../failures/details";
 import type { SessionStatus } from "../../../../types";
@@ -18,6 +26,7 @@ const indicator = cva({
       idle: { color: "statusIdle" },
       model: { color: "statusModel" },
       paused: { color: "statusPaused" },
+      pausing: { color: "statusPaused" },
       tool: { color: "statusTool" },
     },
   },
@@ -28,6 +37,7 @@ const statusMeta: Record<SessionStatus, { icon: LucideIcon; label: string; activ
   idle: { icon: Circle, label: "statusIdle" },
   model: { active: true, icon: Bot, label: "statusModel" },
   paused: { icon: Pause, label: "statusPaused" },
+  pausing: { active: true, icon: LoaderCircle, label: "statusPausing" },
   tool: { active: true, icon: Wrench, label: "statusTool" },
 };
 export function Status({

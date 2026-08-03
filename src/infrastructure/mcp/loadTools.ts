@@ -1,5 +1,6 @@
 import { type SettingsContext, createSettingsContext } from "../configuration/settings/context";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
+import { omitDisabledMcpConfiguration, parseMcpConfiguration } from "./config";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
 import type { Logger } from "../logging/logger";
 import { McpClientPool } from "./client/pool";
@@ -9,7 +10,6 @@ import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
 import { disableMcpRequestTimeout } from "./client/timeout";
 import { loadMcpTools } from "@langchain/mcp-adapters";
-import { parseMcpConfiguration } from "./config";
 import { readLayeredSettingsYaml } from "../configuration/settings/files";
 import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../configuration/configuredPath";
@@ -38,7 +38,16 @@ export async function loadMcp(
   logger: Logger,
   context = createSettingsContext(root),
 ): Promise<LoadedMcp> {
-  const file = readLayeredSettingsYaml(context, "profile", "mcp.yaml", {}, resolveProfilePaths);
+  const file = readLayeredSettingsYaml(
+    context,
+    "profile",
+    "mcp.yaml",
+    {},
+    {
+      beforePlaceholders: omitDisabledMcpConfiguration,
+      override: resolveProfilePaths,
+    },
+  );
   if (!file) {
     logger.info("MCP 配置不存在，跳过工具加载");
     return emptyMcp();
@@ -47,7 +56,7 @@ export async function loadMcp(
   const names = Object.keys(configuration.mcpServers);
   validateConfiguredServers(configuration, names);
   if (names.length === 0) {
-    logger.info("MCP 未配置服务器，Agent 将不带工具运行");
+    logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
     return emptyMcp();
   }
   return connectMcp(configuration, names, context, logger);

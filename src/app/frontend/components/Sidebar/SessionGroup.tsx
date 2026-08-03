@@ -22,6 +22,7 @@ import {
   selectedFingerprint,
   sessions,
   time,
+  unreadFingerprint,
   workspaceName,
 } from "./groupStyles";
 import { ChevronDown } from "lucide-react";
@@ -33,6 +34,7 @@ import { useTranslation } from "react-i18next";
 interface Props {
   group: Group;
   activeId?: string;
+  unreadIds: ReadonlySet<string>;
   onSelect: (id: string) => void;
 }
 interface SessionItemProps {
@@ -40,8 +42,10 @@ interface SessionItemProps {
   language: string;
   onSelect: Props["onSelect"];
   session: Group["sessions"][number];
+  unread: boolean;
 }
-function SessionItem({ active, language, onSelect, session }: SessionItemProps) {
+function SessionItem({ active, language, onSelect, session, unread }: SessionItemProps) {
+  const { t } = useTranslation();
   const handleSelect = useCallback(
     (event: MouseEvent<HTMLAnchorElement>) => {
       if (
@@ -63,15 +67,17 @@ function SessionItem({ active, language, onSelect, session }: SessionItemProps) 
     <div className={cx("group", item, active && selected)}>
       <LinkButton
         aria-current={active ? "page" : undefined}
-        aria-label={session.id}
+        aria-label={unread ? `${session.id}, ${t("sessionStoppedUnread")}` : session.id}
         className={row}
         href={pagePath({ id: session.id, kind: "session" })}
         onClick={handleSelect}
-        title={session.id}
+        title={unread ? `${session.id} · ${t("sessionStoppedUnread")}` : session.id}
         variant="ghost"
       >
         <span aria-hidden="true">#</span>
-        <span className={cx(fingerprint, active && selectedFingerprint)}>
+        <span
+          className={cx(fingerprint, active && selectedFingerprint, unread && unreadFingerprint)}
+        >
           {sessionLabel(session.id)}
         </span>
         <Status compact error={session.error} status={session.status} />
@@ -82,7 +88,7 @@ function SessionItem({ active, language, onSelect, session }: SessionItemProps) 
     </div>
   );
 }
-export function SessionGroup({ group, activeId, onSelect }: Props) {
+export function SessionGroup({ group, activeId, unreadIds, onSelect }: Props) {
   const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [historyExpanded, setHistoryExpanded] = useState(false);
@@ -95,7 +101,9 @@ export function SessionGroup({ group, activeId, onSelect }: Props) {
   const runningSessions = group.sessions.filter(isRunning);
   const historySessions = group.sessions.filter((session) => !isRunning(session));
   const selectedHistory = historySessions.find(({ id }) => id === activeId);
-  const compactHistory = selectedHistory ? [selectedHistory] : [];
+  const compactHistory = historySessions.filter(
+    ({ id }) => id === selectedHistory?.id || unreadIds.has(id),
+  );
   const visibleSessions =
     runningSessions.length > 0
       ? [...runningSessions, ...(historyExpanded ? historySessions : compactHistory)]
@@ -120,6 +128,7 @@ export function SessionGroup({ group, activeId, onSelect }: Props) {
               language={i18n.language}
               onSelect={onSelect}
               session={session}
+              unread={unreadIds.has(session.id)}
             />
           ))}
           {runningSessions.length > 0 && hiddenHistoryCount > 0 && (

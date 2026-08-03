@@ -1,6 +1,11 @@
 import { AIMessage, AIMessageChunk, type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { acceptMessageId, createStreamPartState, sequentialPart, toolPart } from "./stream/parts";
 import { contentToText, streamedMessageReasoning } from "./content";
+import {
+  createToolStreamIdentityState,
+  recordToolCallDelta,
+  resolveToolCallPart,
+} from "./stream/toolIdentity";
 import type { HostContext } from "./context";
 import { incrementalSummary } from "./stream/debug";
 
@@ -9,12 +14,14 @@ export interface StreamLogState {
   parts: ReturnType<typeof createStreamPartState>;
   seenFacts: Set<string>;
   seenStructures: Set<string>;
+  toolIdentity: ReturnType<typeof createToolStreamIdentityState>;
 }
 export function createStreamLogState(): StreamLogState {
   return {
     parts: createStreamPartState(),
     seenFacts: new Set(),
     seenStructures: new Set(),
+    toolIdentity: createToolStreamIdentityState(),
   };
 }
 export function handleStreamEvent(
@@ -72,10 +79,12 @@ export function handleStreamEvent(
     ctx.observer?.token(ctx.sessionId, queueId, text);
   }
   for (const call of calls) {
+    const partId = toolPart(state.parts, call.index);
+    recordToolCallDelta(state.toolIdentity, messageId, call.index, partId, call.idDelta);
     ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
-      partId: toolPart(state.parts, call.index),
+      partId,
       queueId,
       value: call,
     });
@@ -85,6 +94,7 @@ export function discardActiveStream(ctx: HostContext, state: StreamLogState, que
   ctx.db.discardQueueStream(queueId);
   ctx.observer?.changed?.(ctx.sessionId);
   state.parts = createStreamPartState();
+  state.toolIdentity = createToolStreamIdentityState();
 }
 export function completeActiveStream(state: StreamLogState) {
   state.parts = createStreamPartState();
@@ -93,6 +103,7 @@ export function recordToolExecutionStarted(
   ctx: HostContext,
   messages: BaseMessage[],
   queueId: number,
+  state: StreamLogState,
 ) {
   const completed = new Set(
     messages
@@ -117,7 +128,7 @@ export function recordToolExecutionStarted(
   ctx.db.appendStream(ctx.sessionId, {
     kind: "tool_started",
     messageId: request.id,
-    partId: `tool-${index.toString()}`,
+    partId: resolveToolCallPart(state.toolIdentity, request.id, call.id, index),
     queueId,
     value: call.id,
   });

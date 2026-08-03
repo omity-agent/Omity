@@ -1,5 +1,5 @@
 export type Control = "running" | "pause" | "cancel" | "pause_cancel";
-export type SessionStatus = "tool" | "model" | "idle" | "paused" | "error";
+export type SessionStatus = "tool" | "model" | "idle" | "pausing" | "paused" | "error";
 export interface HostMode {
   kind: "new" | "load" | "overwrite";
   sessionId: string;

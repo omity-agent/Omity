@@ -16,6 +16,10 @@ export interface LayeredSettingsFile {
 }
 export type SettingsScope = "global" | "profile";
 type OverrideTransform = (value: unknown, override: unknown, directory: string) => unknown;
+interface LayeredSettingsTransforms {
+  beforePlaceholders?: (value: unknown) => unknown;
+  override?: OverrideTransform;
+}
 export function userDataDirectory() {
   return join(homedir(), ".omity");
 }
@@ -40,7 +44,7 @@ export function readLayeredSettingsYaml(
   scope: SettingsScope,
   relativePath: string,
   placeholders: Omit<PlaceholderOptions, "source"> = {},
-  transformOverride?: OverrideTransform,
+  transforms: LayeredSettingsTransforms = {},
 ): LayeredSettingsFile | undefined {
   const defaultPath = resolve(context.defaultsDirectory, relativePath);
   const overrideDirectories =
@@ -66,14 +70,15 @@ export function readLayeredSettingsYaml(
   if (!source) {
     throw new Error(`配置层解析失败：${relativePath}`);
   }
-  let resolved = resolvePlaceholders(value, {
+  const prepared = transforms.beforePlaceholders ? transforms.beforePlaceholders(value) : value;
+  let resolved = resolvePlaceholders(prepared, {
     ...placeholders,
     source,
   });
-  if (transformOverride) {
+  if (transforms.override) {
     for (const layer of layers.toReversed()) {
       if (layer.override) {
-        resolved = transformOverride(
+        resolved = transforms.override(
           resolved,
           readSettingsYamlValue(layer.path),
           dirname(layer.path),

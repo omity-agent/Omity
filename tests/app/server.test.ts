@@ -90,7 +90,7 @@ test("session status prioritizes errors and pauses over host activity", () => {
   expect(resolveSessionStatus(running, "tool", failure)).toBe("error");
   expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("paused");
   expect(resolveSessionStatus({ ...running, error: failure }, "model", null)).toBe("error");
-  expect(resolveSessionStatus({ ...running, control: "pause" }, "model", null)).toBe("model");
+  expect(resolveSessionStatus({ ...running, control: "pause" }, "model", null)).toBe("pausing");
   expect(
     resolveSessionStatus({ ...running, control: "pause", queueInProgress: false }, "idle", null),
   ).toBe("paused");

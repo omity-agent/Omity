@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import type { AttachmentSettings } from "../../attachments/contract";
 import { reportError } from "./errors";
 import { reportSessionErrors } from "./events/reporting";
+import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
 export interface BootstrapData {
@@ -17,6 +18,7 @@ export { transcriptKey, useSessionTranscript, type TranscriptData } from "./tran
 export const bootstrapKey = ["bootstrap"] as const;
 export function useBootstrap() {
   const queryClient = useQueryClient();
+  const attention = sessionAttentionStore(queryClient);
   const reportedErrors = useRef(new Set<string>());
   const streamedSessions = useRef<SessionInfo[] | undefined>(undefined);
   const query = useQuery({
@@ -31,6 +33,7 @@ export function useBootstrap() {
     const replace = (event: Event) => {
       try {
         const sessions = readSessionsEvent(event);
+        attention.replace(sessions);
         streamedSessions.current = sessions;
         if (!replaceCachedSessions(queryClient, sessions)) {
           streamedSessions.current = sessions;
@@ -42,6 +45,7 @@ export function useBootstrap() {
     const upsert = (event: Event) => {
       try {
         const session = readSessionEvent(event);
+        attention.upsert(session);
         if (streamedSessions.current) {
           streamedSessions.current = upsertSessionList(streamedSessions.current, session);
         }
@@ -53,6 +57,7 @@ export function useBootstrap() {
     const remove = (event: Event) => {
       try {
         const sessionId = readDeletedEvent(event);
+        attention.remove(sessionId);
         if (streamedSessions.current) {
           streamedSessions.current = withoutSession(streamedSessions.current, sessionId);
         }
@@ -68,7 +73,7 @@ export function useBootstrap() {
     return () => {
       events.close();
     };
-  }, [queryClient]);
+  }, [attention, queryClient]);
   useEffect(() => {
     if (!query.data) {
       return;
@@ -78,11 +83,13 @@ export function useBootstrap() {
   return query;
 }
 export function addSession(queryClient: QueryClient, session: SessionInfo) {
+  sessionAttentionStore(queryClient).upsert(session);
   queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) =>
     current ? { ...current, sessions: upsertSessionList(current.sessions, session) } : current,
   );
 }
 export function removeSession(queryClient: QueryClient, sessionId: string) {
+  sessionAttentionStore(queryClient).remove(sessionId);
   queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) =>
     current
       ? {

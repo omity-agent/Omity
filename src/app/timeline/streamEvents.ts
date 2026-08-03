@@ -5,6 +5,7 @@ import type {
   TimelineMessage,
   TimelinePart,
 } from "./types";
+import { reconcileToolStreams, streamCallKey } from "./tool/correlation";
 import { countTokens } from "../../runtime/tokenizer";
 
 type TextPart = {
@@ -15,6 +16,7 @@ type TextPart = {
 }["assistant_reasoning_delta" | "assistant_text_delta"];
 interface ToolPart {
   args: string;
+  formal?: true;
   freeform?: boolean;
   id?: string;
   index: number;
@@ -83,6 +85,7 @@ export function streamTimelineMessages(
       }
     }
   }
+  reconcileToolStreams(messages.values(), events);
   return [...messages.values()].map((message) =>
     timelineMessage(message, outputs, startedCallIds, finishedCallIds),
   );
@@ -138,7 +141,7 @@ function timelineMessage(
     if (part.kind === "assistant_text_delta") {
       return part.content.trim() ? [{ content: part.content, type: "content" }] : [];
     }
-    const callId = part.id ?? `stream:${message.messageId}:${partId}`;
+    const callId = part.id ?? streamCallKey(message.messageId, partId);
     const output = outputs.get(callId);
     const call = displayCall(
       part,
@@ -149,6 +152,7 @@ function timelineMessage(
     return [
       {
         call,
+        key: streamCallKey(message.messageId, partId),
         output,
         type: "tool",
         ...(startedCallIds.has(call.id) ? { started: true } : {}),
@@ -172,7 +176,7 @@ function displayCall(
 ): DisplayToolCall {
   const inputText = part.args;
   return {
-    id: part.id ?? `stream:${messageId}:${partId}`,
+    id: part.id ?? streamCallKey(messageId, partId),
     index: part.index,
     input: {},
     inputText,
@@ -180,6 +184,7 @@ function displayCall(
     messageId,
     name: part.name || "tool",
     ...(streaming ? { streaming: true } : {}),
+    ...(part.formal ? {} : { temporary: true }),
     ...(part.freeform ? { rawInput: inputText } : {}),
   };
 }

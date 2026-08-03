@@ -13,7 +13,7 @@ import {
   createSession,
   deleteSession,
   forkSession,
-  pickWorkspace,
+  pickWorkspacePath,
   sendMessage,
   setControl,
 } from "./services/client";
@@ -31,13 +31,11 @@ import { cx } from "styled-system/css";
 import { pauseRequestPending } from "./components/Chat/actionState";
 import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSessionAttention } from "./services/events/attention";
+import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 
 const emptySessions: SessionInfo[] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
-async function selectWorkspace() {
-  const result = await pickWorkspace();
-  return result.workspace;
-}
 export function App() {
   return (
     <AccessGate>
@@ -68,6 +66,9 @@ function AuthenticatedApp() {
   }, []);
   usePageNavigation(page, currentPage, setPage);
   const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue);
+  const { activeSession: displayedActiveSession, sessions: displayedSessions } =
+    useSessionPresentation(sessions, activeSession?.id, pausing);
+  const unreadSessionIds = useSessionAttention(queryClient, activeSession?.id);
   const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]);
   const openNewSession = useCallback(() => {
     setNewWorkspace(undefined);
@@ -164,7 +165,8 @@ function AuthenticatedApp() {
         <Sidebar
           activeId={activeSession?.id}
           showCreate={currentPage.kind !== "new"}
-          sessions={sessions}
+          sessions={displayedSessions}
+          unreadIds={unreadSessionIds}
           onCreate={openNewSession}
           onSelect={selectSession}
         />
@@ -179,7 +181,7 @@ function AuthenticatedApp() {
           control={transcript.control}
           queue={transcript.queue}
           recentWorkspaces={workspaces}
-          sessionStatus={activeSession?.status}
+          sessionStatus={displayedActiveSession?.status}
           view={transcript.view}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}
@@ -187,7 +189,7 @@ function AuthenticatedApp() {
           onControl={changeControl}
           onDelete={deleteActiveSession}
           onFork={forkActiveSession}
-          onPickWorkspace={selectWorkspace}
+          onPickWorkspace={pickWorkspacePath}
           onSend={sendSessionMessage}
           onWorkspaceChange={setNewWorkspace}
         />
