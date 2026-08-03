@@ -52,10 +52,33 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "pause_cancel",
-    expected: state("resume", false, "running", true, true),
-    name: "pause-cancel control while a queue is still running",
+    expected: state("pausing", true, "pause", true, true),
+    name: "pause-cancel request while a queue is still running",
     queue: ["running"],
     sessionStatus: "idle",
+  },
+  {
+    control: "pause",
+    expected: state("pausing", true, "pause", true, true),
+    name: "persisted pause request before the running queue reaches a boundary",
+    pausing: true,
+    queue: ["running"],
+    sessionStatus: "model",
+  },
+  {
+    control: "pause",
+    expected: state("pausing", true, "pause", true, false),
+    name: "pause request before a pending queue starts",
+    pausing: true,
+    queue: ["pending"],
+    sessionStatus: "model",
+  },
+  {
+    control: "pause",
+    expected: state("pausing", true, "pause", true, true),
+    name: "pause request received from another client while the queue is running",
+    queue: ["running"],
+    sessionStatus: "model",
   },
   {
     control: "running",
@@ -92,6 +115,7 @@ test.each(matrix)("derives chat actions for $name", (entry) => {
   ).toEqual(entry.expected);
 });
 test("pause request remains pending until the running queue reaches a boundary", () => {
+  expect(pauseRequestPending("session", "session", [{ status: "pending" }])).toBe(true);
   expect(pauseRequestPending("session", "session", [{ status: "running" }])).toBe(true);
   expect(pauseRequestPending("session", "session", [{ status: "paused" }])).toBe(false);
   expect(pauseRequestPending("session", "session", [{ status: "done" }])).toBe(false);

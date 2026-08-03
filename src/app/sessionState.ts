@@ -24,7 +24,7 @@ export function projectSession(
   };
 }
 export function resolveSessionState(
-  session: Pick<RegisteredSession, "control" | "paused" | "error">,
+  session: Pick<RegisteredSession, "control" | "paused" | "queueInProgress" | "error">,
   activity: Extract<SessionStatus, "tool" | "model" | "idle">,
   hostError: ErrorDetails | null,
 ) {
@@ -34,14 +34,15 @@ export function resolveSessionState(
   };
 }
 export function resolveSessionStatus(
-  session: Pick<RegisteredSession, "control" | "paused" | "error">,
+  session: Pick<RegisteredSession, "control" | "paused" | "queueInProgress" | "error">,
   activity: Extract<SessionStatus, "tool" | "model" | "idle">,
   hostError: ErrorDetails | null,
 ): SessionStatus {
   if (hostError || session.error) {
     return "error";
   }
-  if (session.paused || session.control === "pause" || session.control === "pause_cancel") {
+  const pauseRequested = session.control === "pause" || session.control === "pause_cancel";
+  if (session.paused || (pauseRequested && !session.queueInProgress)) {
     return "paused";
   }
   return activity;

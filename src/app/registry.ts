@@ -19,6 +19,7 @@ export interface RegisteredSession {
   updatedAt: number;
   control: Control;
   paused: boolean;
+  queueInProgress: boolean;
   error: ErrorDetails | null;
 }
 interface SessionRow {
@@ -28,10 +29,15 @@ interface SessionRow {
   updated_at: number;
   control: Control;
   paused: number;
+  queue_in_progress: number;
   error: string | null;
 }
 const sessionSelect = `
   SELECT s.id, s.workspace, s.created_at, s.updated_at, s.control,
+    EXISTS(
+      SELECT 1 FROM queue q
+      WHERE q.session_id = s.id AND q.status IN ('pending', 'running')
+    ) AS queue_in_progress,
     EXISTS(
       SELECT 1 FROM queue q
       WHERE q.session_id = s.id AND q.status = 'paused'
@@ -123,6 +129,7 @@ function toSession(row: SessionRow): RegisteredSession {
     error: row.error ? parseError(row.error) : null,
     id: row.id,
     paused: row.paused === 1,
+    queueInProgress: row.queue_in_progress === 1,
     updatedAt: row.updated_at,
     workspace: row.workspace,
   };

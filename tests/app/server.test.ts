@@ -79,12 +79,21 @@ test("app instance lock rejects a second server for the same data directory", ()
   expect(existsSync(join(dataDir, "app.lock"))).toBe(false);
 });
 test("session status prioritizes errors and pauses over host activity", () => {
-  const running = { control: "running" as const, error: null, paused: false };
+  const running = {
+    control: "running" as const,
+    error: null,
+    paused: false,
+    queueInProgress: true,
+  };
   const failure = captureError(new Error("Run failed"));
   expect(resolveSessionStatus(running, "model", null)).toBe("model");
   expect(resolveSessionStatus(running, "tool", failure)).toBe("error");
   expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("paused");
   expect(resolveSessionStatus({ ...running, error: failure }, "model", null)).toBe("error");
+  expect(resolveSessionStatus({ ...running, control: "pause" }, "model", null)).toBe("model");
+  expect(
+    resolveSessionStatus({ ...running, control: "pause", queueInProgress: false }, "idle", null),
+  ).toBe("paused");
 });
 test("session state exposes host errors before queue errors", () => {
   const runError = captureError(new Error("Run failed"));
@@ -93,6 +102,7 @@ test("session state exposes host errors before queue errors", () => {
     control: "running" as const,
     error: runError,
     paused: true,
+    queueInProgress: false,
   };
   expect(resolveSessionState(session, "model", hostError)).toEqual({
     error: hostError,

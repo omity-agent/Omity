@@ -67,7 +67,6 @@ function AuthenticatedApp() {
     setPage(nextPage);
   }, []);
   usePageNavigation(page, currentPage, setPage);
-  const queueRunning = transcript.queue.some((item) => item.status === "running");
   const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue);
   const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]);
   const openNewSession = useCallback(() => {
@@ -101,7 +100,7 @@ function AuthenticatedApp() {
       if (!activeSession) {
         return;
       }
-      if (control === "pause" && queueRunning) {
+      if (control === "pause") {
         setPausingSessionId(activeSession.id);
       }
       try {
@@ -116,7 +115,7 @@ function AuthenticatedApp() {
         setPausingSessionId(undefined);
       }
     },
-    [activeSession, queueRunning],
+    [activeSession],
   );
   const deleteActiveSession = useCallback(async () => {
     if (!activeSession) {

@@ -18,12 +18,16 @@ export interface ChatActionState {
   nextControl: RequestedControl;
   queueRunning: boolean;
 }
+type PausePhase = "available" | "requested" | "reached";
 export function pauseRequestPending(
   requestedSessionId: string | undefined,
   activeSessionId: string | undefined,
   queue: QueueState[],
 ) {
-  return requestedSessionId === activeSessionId && queue.some(({ status }) => status === "running");
+  return (
+    requestedSessionId === activeSessionId &&
+    queue.some(({ status }) => status === "pending" || status === "running")
+  );
 }
 export function deriveChatActionState({
   control,
@@ -32,10 +36,11 @@ export function deriveChatActionState({
   sessionStatus,
 }: ChatActionInput): ChatActionState {
   const queueRunning = queue.some(({ status }) => status === "running");
+  const queueInProgress = queue.some(({ status }) => status === "pending" || status === "running");
   const queuePaused = queue.some(({ status }) => status === "paused");
-  const resumable =
-    control === "pause" || control === "pause_cancel" || (queuePaused && !queueRunning);
-  const waitingForPause = pausing && !resumable;
+  const pausePhase = resolvePausePhase(control, pausing, queueInProgress, queuePaused);
+  const resumable = pausePhase === "reached";
+  const waitingForPause = pausePhase === "requested";
   return {
     controlDisabled: waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
     controlState: waitingForPause ? "pausing" : resumable ? "resume" : "pause",
@@ -43,4 +48,16 @@ export function deriveChatActionState({
     nextControl: resumable ? "running" : "pause",
     queueRunning,
   };
+}
+function resolvePausePhase(
+  control: Control,
+  locallyRequested: boolean,
+  queueInProgress: boolean,
+  queuePaused: boolean,
+): PausePhase {
+  const requested = locallyRequested || control === "pause" || control === "pause_cancel";
+  if (queueInProgress) {
+    return requested ? "requested" : "available";
+  }
+  return requested || queuePaused ? "reached" : "available";
 }
