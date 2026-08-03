@@ -3,17 +3,15 @@ import type { AddressInfo } from "node:net";
 import { AppController } from "./controller";
 import { AppInstanceLock } from "./runtime/instanceLock";
 import { appUrl } from "./launch";
-import { build } from "vite";
+import { applicationAssetPath } from "../infrastructure/applicationAssets";
 import { createApi } from "./http/handler";
 import { createServer } from "node:http";
 import { createSettingsContext } from "../infrastructure/configuration/settings/context";
 import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
-import { join } from "node:path";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
 import { promisify } from "node:util";
-import { rmSync } from "node:fs";
 
 export interface AppServerOptions {
   root: string;
@@ -42,9 +40,7 @@ export async function startAppServer(options: AppServerOptions) {
       },
       settingsContext,
     });
-    const staticRoot = join(settings.paths.dataDir, "webui");
-    rmSync(staticRoot, { force: true, recursive: true });
-    await build({ build: { emptyOutDir: true, outDir: staticRoot }, logLevel: "silent" });
+    const staticRoot = applicationAssetPath(options.root, "src/app/frontend/dist", "dist");
     server = createServer();
     const handleApi = getRequestListener(createApi(controller, access).fetch);
     const handleStatic = getRequestListener(createStaticApp(staticRoot).fetch);

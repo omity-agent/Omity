@@ -1,4 +1,5 @@
 import { existsSync, statSync } from "node:fs";
+import { applicationAssetPath } from "../../applicationAssets";
 import { readSettingsYamlValue } from "../placeholders";
 import { resolve } from "node:path";
 import { userSettingsDirectory } from "./files";
@@ -38,7 +39,7 @@ export function createSettingsContext(
     ? resolveProfiles(resolvedUserDirectory, selectionPath)
     : [];
   return {
-    defaultsDirectory: resolve(resolvedRoot, "settings"),
+    defaultsDirectory: applicationAssetPath(resolvedRoot, "settings"),
     profiles,
     root: resolvedRoot,
     userDirectory: resolvedUserDirectory,

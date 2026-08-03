@@ -5,6 +5,7 @@
   "type": "module",
   "module": "src/cli.ts",
   "scripts": {
+    "build": "bun scripts/build.ts",
     "omity": "bun src/cli.ts",
     "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun --config=settings/bunfig.toml test"
   },
