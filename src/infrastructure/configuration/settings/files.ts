@@ -1,6 +1,6 @@
 import {
   type PlaceholderOptions,
-  readSettingsYamlValue,
+  readSettingsYamlFile,
   resolvePlaceholders,
 } from "../placeholders";
 import { dirname, join, resolve } from "node:path";
@@ -63,7 +63,7 @@ export function readLayeredSettingsYaml(
   }
   let value: unknown;
   for (const [index, layer] of layers.entries()) {
-    const raw = readSettingsYamlValue(layer.path);
+    const raw = readSettingsLayer(layer.path);
     value = index === 0 ? raw : mergeSettings(value, raw);
   }
   const source = layers.at(-1)?.path;
@@ -80,7 +80,7 @@ export function readLayeredSettingsYaml(
       if (layer.override) {
         resolved = transforms.override(
           resolved,
-          readSettingsYamlValue(layer.path),
+          readSettingsLayer(layer.path),
           dirname(layer.path),
         );
       }
@@ -105,6 +105,10 @@ export function resolveLayeredSettingsText(
       .map((directory) => resolve(directory, relativePath))
       .findLast((path) => existsSync(path)) ?? resolve(context.defaultsDirectory, relativePath)
   );
+}
+function readSettingsLayer(path: string) {
+  const file = readSettingsYamlFile(path);
+  return file.empty ? {} : file.value;
 }
 function mergeSettings(defaults: unknown, overrides: unknown): unknown {
   if (!isRecord(defaults) || !isRecord(overrides)) {

@@ -32,7 +32,7 @@ attachments:
 
 frontend:
   draftSaveDelayMs: 500
-  transcriptRefreshIntervalMs: 75
+  transcriptRefreshIntervalMs: 25
 
 host:
   pollMs: 300
