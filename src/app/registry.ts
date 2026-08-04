@@ -33,7 +33,18 @@ interface SessionRow {
   error: string | null;
 }
 const sessionSelect = `
-  SELECT s.id, s.workspace, s.created_at, s.updated_at, s.control,
+  SELECT s.id, s.workspace, s.created_at,
+    MAX(
+      s.updated_at,
+      COALESCE(
+        (
+          SELECT MAX(m.created_at) FROM messages m
+          WHERE m.session_id = s.id AND m.position IS NOT NULL
+        ),
+        s.updated_at
+      )
+    ) AS updated_at,
+    s.control,
     EXISTS(
       SELECT 1 FROM queue q
       WHERE q.session_id = s.id AND q.status IN ('pending', 'running')

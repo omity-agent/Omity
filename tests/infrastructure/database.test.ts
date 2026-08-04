@@ -1,3 +1,4 @@
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDatabaseDirs,
@@ -120,3 +121,33 @@ test("queue start atomically rejects a stale claim", () => {
   expect(db.history("123").map((message) => message.text)).toEqual(["只应写入一次"]);
   db.close();
 });
+test("conversation and queue changes advance the session activity time", () => {
+  const db = makeDb();
+  db.resetSession("123", workspace);
+  setUpdatedAt(db, 1);
+  db.syncHistory("123", [
+    new HumanMessage({ content: "你好", id: "user" }),
+    new AIMessage({ content: "你好，有什么可以帮你？", id: "assistant" }),
+  ]);
+  expect(updatedAt(db)).toBeGreaterThan(1);
+  setUpdatedAt(db, 1);
+  db.syncHistory("123", [
+    new HumanMessage({ content: "你好", id: "user" }),
+    new AIMessage({ content: "你好，有什么可以帮你？", id: "assistant" }),
+  ]);
+  expect(updatedAt(db)).toBe(1);
+  setUpdatedAt(db, 1);
+  const queueId = db.appendUser("123", "继续");
+  setUpdatedAt(db, 1);
+  db.setQueueStatus(queueId, "canceled");
+  expect(updatedAt(db)).toBeGreaterThan(1);
+  db.close();
+});
+function setUpdatedAt(database: ReturnType<typeof makeDb>, value: number) {
+  database.db.run("UPDATE sessions SET updated_at = ? WHERE id = '123'", [value]);
+}
+function updatedAt(database: ReturnType<typeof makeDb>) {
+  return required(
+    database.db.query<{ updated_at: number }, []>("SELECT updated_at FROM sessions").get(),
+  ).updated_at;
+}

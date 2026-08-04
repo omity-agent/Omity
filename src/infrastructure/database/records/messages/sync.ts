@@ -4,6 +4,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
 import { queryAll } from "../../connection";
 import { randomUUID } from "node:crypto";
+import { touchSessionRecord } from "../sessions";
 
 interface StoredRow {
   message_json: string;
@@ -46,6 +47,7 @@ export function syncMessages(db: Database, sessionId: string, messages: BaseMess
     );
   }
   pruneUnreferencedMessages(db, sessionId);
+  touchSessionRecord(db, sessionId);
 }
 function firstChangedIndex(existing: StoredRow[], incoming: MessageInsert[]) {
   const length = Math.min(existing.length, incoming.length);

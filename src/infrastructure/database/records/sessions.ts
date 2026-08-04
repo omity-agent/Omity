@@ -46,7 +46,17 @@ export function readWorkspaceRecord(db: Database, sessionId: string) {
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  db.run("UPDATE sessions SET updated_at = unixepoch() WHERE id = ?", [sessionId]);
+  db.run("UPDATE sessions SET updated_at = MAX(updated_at, unixepoch()) WHERE id = ?", [sessionId]);
+}
+export function touchQueueSessionRecord(db: Database, queueId: number) {
+  const result = db.run(
+    `UPDATE sessions SET updated_at = MAX(updated_at, unixepoch())
+     WHERE id = (SELECT session_id FROM queue WHERE id = ?)`,
+    [queueId],
+  );
+  if (result.changes !== 1) {
+    throw new Error(`队列不存在：${queueId.toString()}`);
+  }
 }
 export function readControlRecord(db: Database, sessionId: string): Control {
   requireSessionRecord(db, sessionId);
@@ -66,8 +76,8 @@ export function readControlRecord(db: Database, sessionId: string): Control {
 }
 export function writeControlRecord(db: Database, sessionId: string, control: Control) {
   requireSessionRecord(db, sessionId);
-  db.run("UPDATE sessions SET control = ?, updated_at = unixepoch() WHERE id = ?", [
-    control,
-    sessionId,
-  ]);
+  db.run(
+    "UPDATE sessions SET control = ?, updated_at = MAX(updated_at, unixepoch()) WHERE id = ?",
+    [control, sessionId],
+  );
 }

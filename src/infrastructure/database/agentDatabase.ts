@@ -34,6 +34,7 @@ import {
   readControlRecord,
   readWorkspaceRecord,
   requireSessionRecord,
+  touchQueueSessionRecord,
   touchSessionRecord,
   writeControlRecord,
 } from "./records/sessions";
@@ -131,6 +132,7 @@ export class AgentDatabase extends RecoverableDatabase {
   setQueueStatus(queueId: number, status: QueueStatus, error?: ErrorDetails) {
     runTransaction(this.db, () => {
       setQueueStatusRecord(this.db, queueId, status, error);
+      touchQueueSessionRecord(this.db, queueId);
       if (status === "done" || status === "canceled") {
         deleteQueueStream(this.db, queueId);
       }
@@ -172,6 +174,7 @@ export class AgentDatabase extends RecoverableDatabase {
     return takeToolCancellation(this.db, sessionId, callId);
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
+    this.requireSession(sessionId);
     return this.notifyStream(insertStreamEvent(this.db, sessionId, event));
   }
   discardQueueStream(queueId: number) {

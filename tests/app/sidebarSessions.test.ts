@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { groupSessions, isRunning } from "../../src/app/frontend/components/Sidebar/sessions";
+import {
+  groupSessions,
+  isRunning,
+  updatedAtRefreshDelay,
+} from "../../src/app/frontend/components/Sidebar/sessions";
 import type { SessionInfo } from "../../src/app/frontend/services/client";
 
 describe("侧栏会话排序", () => {
@@ -46,6 +50,16 @@ describe("侧栏会话排序", () => {
       session("a", "F:/same", "idle", 100, 20),
     ]);
     expect(groups[0]?.sessions.map(({ id }) => id)).toEqual(["a", "b", "z"]);
+  });
+  test("相对时间在显示值变化的边界刷新", () => {
+    const updatedAt = 1000;
+    const timestamp = updatedAt * 1000;
+    expect(updatedAtRefreshDelay(updatedAt, timestamp)).toBe(60_000);
+    expect(updatedAtRefreshDelay(updatedAt, timestamp + 59_999)).toBe(1);
+    expect(updatedAtRefreshDelay(updatedAt, timestamp + 60_000)).toBe(60_000);
+    expect(updatedAtRefreshDelay(updatedAt, timestamp + 3_599_999)).toBe(1);
+    expect(updatedAtRefreshDelay(updatedAt, timestamp + 3_600_000)).toBe(3_600_000);
+    expect(updatedAtRefreshDelay(updatedAt, timestamp + 604_800_000)).toBeUndefined();
   });
 });
 function session(

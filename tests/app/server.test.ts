@@ -5,6 +5,7 @@ import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AppController } from "../../src/app/controller";
 import { AppInstanceLock } from "../../src/app/runtime/instanceLock";
 import { AppRegistry } from "../../src/app/registry";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
 import { captureError } from "../../src/failures/details";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
@@ -69,6 +70,21 @@ test("app registry serves a memory projection refreshed one session at a time", 
   registry.remove("second-session");
   expect(() => registry.require("second-session")).toThrow("会话不存在");
   expect(existsSync(join(settings.paths.dataDir, "app.sqlite"))).toBe(false);
+});
+test("app registry includes the latest persisted message in the session activity time", () => {
+  const root = makeRoot();
+  const workspace = join(root, "workspace");
+  mkdirSync(workspace);
+  const settings = loadSettings(root);
+  const paths = sessionPaths(settings, "conversation");
+  const db = new AgentDatabase(paths.dbPath);
+  db.createSession("conversation", workspace);
+  appendAssistantMessage(db.db, "conversation", "已完成");
+  db.db.run("UPDATE sessions SET updated_at = 1");
+  db.db.run("UPDATE messages SET created_at = 50");
+  db.close();
+  const session = required(new AppRegistry(settings).list()[0]);
+  expect(session.updatedAt).toBe(50);
 });
 test("app instance lock rejects a second server for the same data directory", () => {
   const root = makeRoot();

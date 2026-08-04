@@ -2,6 +2,10 @@ import type { SessionInfo } from "../../services/client";
 import type { SessionStatus } from "../../../../types";
 import { isRunningStatus } from "../../services/events/attention";
 
+const minuteMs = 60_000;
+const hourMs = 3_600_000;
+const dayMs = 86_400_000;
+const weekMs = 604_800_000;
 export interface SessionGroup {
   workspace: string;
   sessions: SessionInfo[];
@@ -59,6 +63,22 @@ export function formatUpdatedAt(updatedAt: number, locale: string, now = Date.no
     day: "numeric",
     month: "numeric",
   }).format(updatedAt * 1000);
+}
+export function updatedAtRefreshDelay(updatedAt: number, now = Date.now()) {
+  const elapsedMs = Math.max(0, now - updatedAt * 1000);
+  if (elapsedMs < minuteMs) {
+    return minuteMs - elapsedMs;
+  }
+  if (elapsedMs < hourMs) {
+    return minuteMs - (elapsedMs % minuteMs);
+  }
+  if (elapsedMs < dayMs) {
+    return hourMs - (elapsedMs % hourMs);
+  }
+  if (elapsedMs < weekMs) {
+    return dayMs - (elapsedMs % dayMs);
+  }
+  return undefined;
 }
 function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
   const sessions = [...source].toSorted(compareSessions);

@@ -1,11 +1,5 @@
 import { Button, LinkButton } from "../ParkUI";
-import {
-  type SessionGroup as Group,
-  formatUpdatedAt,
-  isRunning,
-  sessionLabel,
-  workspaceLabel,
-} from "./sessions";
+import { type SessionGroup as Group, isRunning, sessionLabel, workspaceLabel } from "./sessions";
 import { type MouseEvent, useCallback, useState } from "react";
 import {
   chevron,
@@ -26,6 +20,7 @@ import {
   workspaceName,
 } from "./groupStyles";
 import { ChevronDown } from "lucide-react";
+import { RelativeTime } from "./RelativeTime";
 import { Status } from "./Status";
 import { cx } from "styled-system/css";
 import { pagePath } from "../../route";
@@ -81,9 +76,7 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
           {sessionLabel(session.id)}
         </span>
         <Status compact error={session.error} status={session.status} />
-        <time className={time} dateTime={new Date(session.updatedAt * 1000).toISOString()}>
-          {formatUpdatedAt(session.updatedAt, language)}
-        </time>
+        <RelativeTime className={time} locale={language} updatedAt={session.updatedAt} />
       </LinkButton>
     </div>
   );
