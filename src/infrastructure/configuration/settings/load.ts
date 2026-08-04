@@ -1,13 +1,14 @@
 import { type SettingsContext, createSettingsContext } from "./context";
+import { join, resolve } from "node:path";
 import { parseAgentSettings, parseMainSettings, parseModelSettings } from "./schema";
 import { readLayeredSettingsYaml, resolveLayeredSettingsText } from "./files";
 import type { Settings } from "../../../types";
+import { buildSkillsList } from "../../../skills";
 import { isHookOutputVariable } from "../../../hooks/variables";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../workspacePath";
 import { parseHookRules } from "../hookRules";
 import { readSettingsText } from "../placeholders";
-import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../configuredPath";
 import { safeId } from "../sessionPaths";
 
@@ -37,28 +38,39 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     ...placeholders,
     deferred: isHookOutputVariable,
   });
+  const skills = {
+    ...agent.skills,
+    directory: resolveConfiguredPath(configRoot, agent.skills.directory),
+  };
+  let skillsList: string | undefined;
+  const promptPlaceholders = {
+    ...placeholders,
+    dynamic: (name: string) =>
+      name === "skills"
+        ? {
+            matched: true,
+            value: (skillsList ??= buildSkillsList({ skills })),
+          }
+        : { matched: false },
+  };
   mkdirSync(dataDir, { recursive: true });
   return {
     ...main,
     agent: {
       recursionLimit: agent.recursionLimit,
-      systemPrompt: readPrompt(
-        resolveLayeredSettingsText(context, "profile", "prompts/system.md"),
-        placeholders,
-      ),
+      systemPrompt: agent.prompts
+        .map((file) =>
+          readPrompt(
+            resolveLayeredSettingsText(context, "profile", join("prompts", file)),
+            promptPlaceholders,
+          ),
+        )
+        .join("\n\n"),
     },
     hooks: parseHookRules(hooks.value),
     model,
     paths: { dataDir },
-    skills: {
-      ...agent.skills,
-      directory: resolveConfiguredPath(configRoot, agent.skills.directory),
-      usagePrompt: readPrompt(
-        resolveLayeredSettingsText(context, "profile", "prompts/skills.md"),
-        placeholders,
-        true,
-      ),
-    },
+    skills,
     toolOutput: agent.toolOutput,
   };
 }
@@ -74,14 +86,7 @@ function requireLayeredYaml(
   }
   return file;
 }
-function readPrompt(
-  path: string,
-  placeholders: Parameters<typeof readSettingsText>[1],
-  nonEmpty = false,
-) {
+function readPrompt(path: string, placeholders: Parameters<typeof readSettingsText>[1]) {
   const content = readSettingsText(path, placeholders).trimEnd();
-  if (nonEmpty && content.length === 0) {
-    throw new Error(`提示词文件不能为空：${path}`);
-  }
   return content;
 }

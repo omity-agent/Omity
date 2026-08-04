@@ -11,13 +11,7 @@ import {
 } from "@langchain/langgraph";
 import type { BaseChatModel, BindToolsInput } from "@langchain/core/language_models/chat_models";
 import { type HookPlan, agentPlan, toolPlan } from "../hooks/plan";
-import {
-  bindModelTools,
-  buildModel,
-  buildResponsesInstructions,
-  modelMessages,
-  resolveModelApi,
-} from "./model";
+import { bindModelTools, buildModel, modelMessages, resolveModelApi } from "./model";
 import { hookNode, modelNode, toolsNode } from "../hooks/graph/commands";
 import { BunSqliteSaver } from "../checkpointer";
 import type { Database } from "bun:sqlite";
@@ -27,7 +21,6 @@ import { ModelEmptyResponseError } from "../runtime/network";
 import type { Settings } from "../types";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "./toolExecutions";
-import { buildSkillsMessage } from "../skills";
 import { contentToText } from "../runtime/content";
 import { createHookNode } from "../hooks/graph/node";
 import { createToolInvoker } from "./toolExecution";
@@ -59,7 +52,6 @@ interface AgentGraphOptions {
   toolExecutions?: ToolExecutions;
   hooks: HookRuntime;
   checkpointer?: BaseCheckpointSaver;
-  skillsMessage?: string | null;
 }
 export function buildGraph(
   settings: Settings,
@@ -72,12 +64,10 @@ export function buildGraph(
   > = {},
 ) {
   const checkpointer = new BunSqliteSaver(database, hooks.sessionId);
-  const skillsMessage = buildSkillsMessage(settings);
-  const instructions = buildResponsesInstructions(settings.agent.systemPrompt, skillsMessage);
   const model = buildModel(
     settings,
     hooks.sessionId,
-    resolveModelApi(settings.model) === "responses" ? instructions : undefined,
+    resolveModelApi(settings.model) === "responses" ? settings.agent.systemPrompt : undefined,
   );
   const graph = createAgentGraph({
     model,
@@ -86,7 +76,6 @@ export function buildGraph(
     ...toolOptions,
     checkpointer,
     hooks,
-    skillsMessage,
   });
   return { checkpointer, graph };
 }
@@ -124,7 +113,7 @@ export function createAgentGraph(options: AgentGraphOptions) {
   const runHooks = createHookNode(options.hooks, consumeHook, runTool);
   const callModel = async (state: GraphState) => {
     const { id, message: response } = await requestModel(
-      modelMessages(options.settings, options.skillsMessage, state.messages),
+      modelMessages(options.settings, state.messages),
     );
     return {
       hookPlan: response.tool_calls?.length ? toolPlan(response) : agentPlan("after", [id]),

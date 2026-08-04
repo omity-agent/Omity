@@ -68,7 +68,6 @@ function makeSettings(api: ModelApi): Settings {
       directory: "~/.agents/skills",
       enabled: false,
       skillEnabled: {},
-      usagePrompt: "use skills",
     },
     toolOutput: {
       maxTokens: 8192,

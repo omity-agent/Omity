@@ -90,7 +90,6 @@ export interface Settings {
   skills: {
     enabled: boolean;
     directory: string;
-    usagePrompt: string;
     skillEnabled: Record<string, boolean>;
   };
 }

@@ -10,7 +10,7 @@ const skillMetaSchema = z.object({
   name: z.string().min(1),
 });
 type SkillMeta = z.infer<typeof skillMetaSchema>;
-export function loadSkills(settings: Settings): SkillInfo[] {
+export function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
   if (!settings.skills.enabled) {
     return [];
   }
@@ -36,19 +36,21 @@ export function loadSkills(settings: Settings): SkillInfo[] {
   }
   return skills.filter((skill) => settings.skills.skillEnabled[skill.name] ?? true);
 }
-export function buildSkillsMessage(settings: Settings) {
+export function buildSkillsList(settings: Pick<Settings, "skills">) {
   const skills = loadSkills(settings);
   if (!settings.skills.enabled) {
-    return null;
+    return "";
   }
+  const skillsDir = resolveUserPath(settings.skills.directory);
   const lines = [
-    settings.skills.usagePrompt.trim(),
-    "",
-    "## Skills 列表",
-    ...skills.map((skill) => `- ${skill.name}: ${skill.description} (file: ${skill.source})`),
+    skillsDir,
+    ...skills.map(
+      (skill, index) =>
+        `${index === skills.length - 1 ? "└──" : "├──"} ${skill.name}/SKILL.md # ${skill.description}`,
+    ),
   ];
   if (skills.length === 0) {
-    lines.push("- 当前没有启用的 Skill。");
+    lines.push("└── 当前没有启用的 Skill。");
   }
   return lines.join("\n");
 }

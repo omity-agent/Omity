@@ -71,8 +71,7 @@ timeoutMs: 1000
   expect(settings.model.model).toBe(environment);
   const session = resolve(settings.paths.dataDir, "sessions", "session-id");
   const expanded = `${session}|${workspace}|${appDataRoot()}|${environment}`;
-  expect(settings.agent.systemPrompt).toBe(`system: ${expanded}`);
-  expect(settings.skills.usagePrompt).toBe(`skills: ${expanded}`);
+  expect(settings.agent.systemPrompt).toBe(`system: ${expanded}\n\nskills: ${expanded}`);
   expect(settings.hooks[0]?.id).toBe(session);
   expect(settings.hooks[0]?.args).toEqual({
     output: `\${toolOutputs.fromEnd.1.output}`,

@@ -10,6 +10,9 @@ interface TestConfigurationOptions {
   skillsPrompt?: string;
 }
 const defaultAgentYaml = `recursionLimit: 1
+prompts:
+  - system.md
+  - skills.md
 toolOutput:
   maxTokens: 8192
 skills:
@@ -69,6 +72,6 @@ leases:
   writeFileSync(join(settingsDir, "model.yaml"), options.modelYaml ?? defaultModelYaml);
   writeFileSync(join(settingsDir, "hooks.yaml"), options.hooksYaml ?? "hooks: []\n");
   writeFileSync(join(promptsDir, "system.md"), options.systemPrompt ?? "test");
-  writeFileSync(join(promptsDir, "skills.md"), options.skillsPrompt ?? "use skills");
+  writeFileSync(join(promptsDir, "skills.md"), options.skillsPrompt ?? `use skills\n\n\${skills}`);
   return settingsDir;
 }

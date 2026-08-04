@@ -108,9 +108,7 @@ async function runCustomToolRoundTrip(providerItemId?: string) {
   const output = await invokeTool(call, {
     configurable: { thread_id: "test-thread" },
   });
-  const final = await model.invoke(
-    modelMessages(responsesSettings(), null, [human, hydrated, output]),
-  );
+  const final = await model.invoke(modelMessages(responsesSettings(), [human, hydrated, output]));
   expect(final.text).toBe("Patch applied");
   expect(requests).toHaveLength(2);
   expect(requests[1]?.["previous_response_id"]).toBeUndefined();

@@ -20,7 +20,7 @@ test("Completions 请求在追加历史和 SQLite 恢复后保持缓存前缀", 
   const requests: Record<string, unknown>[] = [];
   const server = mockCompletions(requests);
   const settings = testSettings("data");
-  settings.agent.systemPrompt = "stable system";
+  settings.agent.systemPrompt = "stable system\n\nstable skills";
   settings.model.baseURL = `${server.url}v1`;
   const tool = lookupTool();
   const model = new ChatOpenAICompletions({
@@ -41,9 +41,9 @@ test("Completions 请求在追加历史和 SQLite 恢复后保持缓存前缀", 
     new AIMessage({ content: "first answer", id: "assistant-2" }),
     new HumanMessage({ content: "continue", id: "user-2" }),
   ];
-  await model.invoke(modelMessages(settings, "stable skills", initial));
-  await model.invoke(modelMessages(settings, "stable skills", history));
-  await model.invoke(modelMessages(settings, "stable skills", persist(history)));
+  await model.invoke(modelMessages(settings, initial));
+  await model.invoke(modelMessages(settings, history));
+  await model.invoke(modelMessages(settings, persist(history)));
   const first = requiredArray(requests[0]?.["messages"]);
   const second = requiredArray(requests[1]?.["messages"]);
   const restored = requiredArray(requests[2]?.["messages"]);
@@ -68,19 +68,19 @@ test("Responses HTTP 请求保留完整历史和稳定缓存键", async () => {
     zdrEnabled: true,
   }).bindTools(configured.modelTools);
   const initial = [new HumanMessage({ content: "inspect", id: "user-1" })];
-  const firstResponse = await model.invoke(modelMessages(settings, null, initial));
+  const firstResponse = await model.invoke(modelMessages(settings, initial));
   const secondHistory = [
     ...initial,
     firstResponse,
     new HumanMessage({ content: "continue", id: "user-2" }),
   ];
-  const secondResponse = await model.invoke(modelMessages(settings, null, secondHistory));
+  const secondResponse = await model.invoke(modelMessages(settings, secondHistory));
   const thirdHistory = persist([
     ...secondHistory,
     secondResponse,
     new HumanMessage({ content: "persisted", id: "user-3" }),
   ]);
-  const thirdResponse = await model.invoke(modelMessages(settings, null, thirdHistory));
+  const thirdResponse = await model.invoke(modelMessages(settings, thirdHistory));
   expect(thirdResponse.text).toBe("ok");
   const [first, second, third] = requests;
   const firstInput = requiredArray(first?.["input"]);

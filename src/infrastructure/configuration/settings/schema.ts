@@ -2,6 +2,28 @@ import ipaddr from "ipaddr.js";
 import { z } from "zod";
 
 const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]);
+const promptFileSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(255)
+  .refine(
+    (value) =>
+      value !== "." &&
+      value !== ".." &&
+      !value.includes("/") &&
+      !value.includes("\\") &&
+      !/[:*?"<>|\p{Cc}]/u.test(value),
+    "提示词必须是 prompts 目录中的文件名",
+  );
+const promptsSchema = z.array(promptFileSchema).superRefine((files, context) => {
+  if (new Set(files).size !== files.length) {
+    context.addIssue({
+      code: "custom",
+      message: "提示词文件列表不能包含重复项",
+    });
+  }
+});
 const sharedModelSettings = {
   model: z.string().min(1),
   reasoning_effort: reasoningEffortSchema.optional(),
@@ -26,6 +48,7 @@ const modelSettingsSchema = z.discriminatedUnion("adapter", [
 ]);
 const agentSettingsSchema = z
   .object({
+    prompts: promptsSchema,
     recursionLimit: z.number().int().positive(),
     skills: z
       .object({

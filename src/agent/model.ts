@@ -52,21 +52,13 @@ export function bindModelTools(model: BaseChatModel, tools: BindToolsInput[]) {
   }
   return model.bindTools(tools);
 }
-export function modelMessages(
-  settings: Settings,
-  skillsMessage: string | null | undefined,
-  messages: BaseMessage[],
-) {
+export function modelMessages(settings: Settings, messages: BaseMessage[]) {
   const api = resolveModelApi(settings.model);
   const prepared = prepareModelImageMessages(messages, api);
   if (api === "responses") {
     return restoreResponsesCustomToolCalls(prepared);
   }
-  return [
-    new SystemMessage(settings.agent.systemPrompt),
-    ...(skillsMessage ? [new SystemMessage(skillsMessage)] : []),
-    ...prepared,
-  ];
+  return [new SystemMessage(settings.agent.systemPrompt), ...prepared];
 }
 export function restoreResponsesCustomToolCalls(messages: BaseMessage[]) {
   return messages.map((message) => {
@@ -106,12 +98,6 @@ export function restoreResponsesCustomToolCalls(messages: BaseMessage[]) {
       usage_metadata: message.usage_metadata,
     });
   });
-}
-export function buildResponsesInstructions(
-  systemPrompt: string,
-  skillsMessage: string | null | undefined,
-) {
-  return [systemPrompt, skillsMessage].filter(Boolean).join("\n\n");
 }
 export function resolveModelApi(model: ModelSettings): ModelApi {
   return model.adapter === "codex" ? "responses" : model.adapter;

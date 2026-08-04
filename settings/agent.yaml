@@ -1,5 +1,11 @@
 recursionLimit: 25
 
+prompts:
+  - priority.md
+  - system.md
+  - skills.md
+  - agents_md.md
+
 toolOutput:
   maxTokens: 10000
 

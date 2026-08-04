@@ -1,11 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
-import { buildSkillsMessage, loadSkills } from "../../src/skills";
+import { buildSkillsList, loadSkills } from "../../src/skills";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { HumanMessage } from "@langchain/core/messages";
 import type { Settings } from "../../src/types";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
+import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { modelMessages } from "../../src/agent";
+import { writeTestConfiguration } from "../support/configuration";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -25,18 +27,37 @@ test("loads enabled skills from SKILL.md front matter", () => {
       source: join(skillsDir, "code", "SKILL.md"),
     },
   ]);
-  expect(buildSkillsMessage(settings)).toContain("- code: 代码任务");
-  expect(buildSkillsMessage(settings)).not.toContain("- web: 联网查询");
+  expect(buildSkillsList(settings)).toBe([skillsDir, "└── code/SKILL.md # 代码任务"].join("\n"));
 });
-test("puts skills message after the configured system prompt", () => {
-  const skillsMessage = "Skills usage\n\n## Skills 列表\n- code: 代码任务";
+test("does not append an implicit skills message", () => {
   const settings = makeSettings("unused", {});
   settings.agent.systemPrompt = "system prompt";
   expect(
-    modelMessages(settings, skillsMessage, [new HumanMessage("hello")]).map(
-      (message) => message.text,
-    ),
-  ).toEqual(["system prompt", skillsMessage, "hello"]);
+    modelMessages(settings, [new HumanMessage("hello")]).map((message) => message.text),
+  ).toEqual(["system prompt", "hello"]);
+});
+test("expands the skills placeholder at its configured position", () => {
+  const root = makeSkillsDir();
+  const skillsDir = join(root, "available");
+  mkdirSync(skillsDir);
+  writeSkill(skillsDir, "code", "code", "代码任务");
+  writeTestConfiguration(root, {
+    agentYaml: `recursionLimit: 1
+prompts:
+  - skills.md
+  - system.md
+toolOutput:
+  maxTokens: 8192
+skills:
+  enabled: true
+  directory: ${skillsDir.replaceAll("\\", "/")}
+  skillEnabled: {}
+`,
+    skillsPrompt: `before\n\${skills}\nafter`,
+  });
+  expect(loadSettings(root).agent.systemPrompt).toBe(
+    ["before", skillsDir, "└── code/SKILL.md # 代码任务", "after", "", "test"].join("\n"),
+  );
 });
 function makeSkillsDir() {
   const dir = createTestDirectory("skills");
@@ -95,7 +116,6 @@ function makeSettings(skillsDir: string, skillEnabled: Record<string, boolean>):
       directory: skillsDir,
       enabled: true,
       skillEnabled,
-      usagePrompt: "use skills",
     },
     toolOutput: {
       maxTokens: 8192,

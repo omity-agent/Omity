@@ -30,8 +30,7 @@ test("settings yaml resolves AppData data directory", () => {
     expect(settings.model.reasoning_effort).toBe("medium");
     expect(settings.server).toEqual({ host: "127.0.0.1", port: 3030 });
     expect(settings.toolOutput.maxTokens).toBe(8192);
-    expect(settings.agent.systemPrompt).toBe("test");
-    expect(settings.skills.usagePrompt).toBe("use skills");
+    expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
     const paths = sessionPaths(settings, "abc-def");
     expect(paths).toEqual({
       dbPath: resolve(settings.paths.dataDir, "sessions", safeId("abc-def"), "agent.sqlite"),
@@ -54,8 +53,7 @@ test("prompt files expand current working directory placeholder", () => {
   });
   const settings = loadSettings(root, { cwd: workspace });
   expect(settings.paths.dataDir).toBe(resolve(root, "data"));
-  expect(settings.agent.systemPrompt).toBe(`workspace: ${workspace}`);
-  expect(settings.skills.usagePrompt).toBe(`skills from ${workspace}`);
+  expect(settings.agent.systemPrompt).toBe(`workspace: ${workspace}\n\nskills from ${workspace}`);
 });
 test("user settings deeply override defaults and preserve relative path semantics", () => {
   const root = createTestDirectory("layered-configuration");
@@ -75,13 +73,17 @@ test("user settings deeply override defaults and preserve relative path semantic
   );
   writeFileSync(join(baseProfileDir, "model.yaml"), "model: base-model\ntimeoutMs: 2000\n");
   writeFileSync(join(profileDir, "model.yaml"), "model: user-model\n");
-  writeFileSync(join(profileDir, "agent.yaml"), "recursionLimit: 7\n");
+  writeFileSync(
+    join(profileDir, "agent.yaml"),
+    "recursionLimit: 7\nprompts:\n  - profile.md\n  - skills.md\n  - system.md\n",
+  );
   writeFileSync(join(profileDir, "main.yaml"), "server: { port: 5050 }\n");
   writeFileSync(
     join(profileDir, "hooks.yaml"),
     `hooks:\n  - { id: user, target: agent, when: after, runLimit: 2, mode: takeover, tool: user, args: {} }\n`,
   );
   writeFileSync(join(profileDir, "prompts", "system.md"), "user system\n");
+  writeFileSync(join(profileDir, "prompts", "profile.md"), "profile only\n");
   const settings = loadSettings(root, { userSettingsDir });
   expect(settings.paths.dataDir).toBe(resolve(root, "user-data"));
   expect(settings.server).toEqual({ host: "127.0.0.1", port: 4040 });
@@ -92,8 +94,7 @@ test("user settings deeply override defaults and preserve relative path semantic
   expect(settings.toolOutput.maxTokens).toBe(8192);
   expect(settings.skills.enabled).toBe(false);
   expect(settings.hooks.map(({ id }) => id)).toEqual(["user"]);
-  expect(settings.agent.systemPrompt).toBe("user system");
-  expect(settings.skills.usagePrompt).toBe("use skills");
+  expect(settings.agent.systemPrompt).toBe("profile only\n\nuse skills\n\nuser system");
 });
 test("model yaml contains one direct model configuration", () => {
   const root = createTestDirectory("configuration");

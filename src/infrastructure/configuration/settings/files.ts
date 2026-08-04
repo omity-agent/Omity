@@ -4,8 +4,8 @@ import {
   resolvePlaceholders,
 } from "../placeholders";
 import { dirname, join, resolve } from "node:path";
+import { existsSync, statSync } from "node:fs";
 import type { SettingsContext } from "./context";
-import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { config as loadDotenv } from "dotenv";
 import untildify from "untildify";
@@ -100,11 +100,13 @@ export function resolveLayeredSettingsText(
     scope === "global"
       ? [context.defaultsDirectory, context.userDirectory]
       : [context.defaultsDirectory, ...context.profiles.map(({ directory }) => directory)];
-  return (
-    directories
-      .map((directory) => resolve(directory, relativePath))
-      .findLast((path) => existsSync(path)) ?? resolve(context.defaultsDirectory, relativePath)
-  );
+  const path = directories
+    .map((directory) => resolve(directory, relativePath))
+    .findLast((candidate) => existsSync(candidate) && statSync(candidate).isFile());
+  if (!path) {
+    throw new Error(`文本配置文件不存在：${relativePath}`);
+  }
+  return path;
 }
 function readSettingsLayer(path: string) {
   const file = readSettingsYamlFile(path);
