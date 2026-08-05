@@ -1,9 +1,22 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import type { StdioConnection } from "@langchain/mcp-adapters";
+import { Writable } from "node:stream";
 
 const maximumStderrBytes = 64 * 1024;
-export async function connectStdioClient(serverName: string, connection: StdioConnection) {
+export interface ConnectedStdioClient {
+  client: Client;
+  close: () => Promise<void>;
+  closed: Promise<void>;
+  diagnostics: () => string;
+  isClosed: () => boolean;
+}
+export type StdioConnector = (
+  serverName: string,
+  connection: StdioConnection,
+  signal?: AbortSignal,
+) => Promise<ConnectedStdioClient>;
+export const connectStdioClient: StdioConnector = async (serverName, connection, signal) => {
   const transport = new StdioClientTransport({
     args: connection.args,
     command: connection.command,
@@ -16,20 +29,37 @@ export async function connectStdioClient(serverName: string, connection: StdioCo
     throw new Error(`MCP 服务器 ${serverName} 无法捕获 stderr`);
   }
   const diagnostics = new BoundedBytes(maximumStderrBytes);
-  let capture = true;
-  stderr.on("data", (chunk: unknown) => {
-    if (capture) {
-      diagnostics.append(chunk);
-    }
-  });
+  stderr.pipe(
+    new Writable({
+      write(chunk: unknown, _encoding, done) {
+        diagnostics.append(chunk);
+        done();
+      },
+    }),
+  );
+  const closed = Promise.withResolvers<void>();
+  let isClosed = false;
+  const closeTransport = () => {
+    isClosed = true;
+    closed.resolve();
+  };
   const client = new Client({ name: "omity-agent", version: "1.0.0" });
+  Reflect.set(client, "onclose", closeTransport);
   try {
-    await client.connect(transport);
-    capture = false;
-    diagnostics.clear();
-    return client;
+    await client.connect(transport, signal ? { signal } : undefined);
+    return {
+      client,
+      close: async () => {
+        await client.close();
+        isClosed = true;
+        closed.resolve();
+      },
+      closed: closed.promise,
+      diagnostics: () => diagnostics.text(),
+      isClosed: () => isClosed,
+    };
   } catch (error) {
-    capture = false;
+    await client.close();
     const output = diagnostics.text();
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
@@ -39,7 +69,7 @@ export async function connectStdioClient(serverName: string, connection: StdioCo
       { cause: error },
     );
   }
-}
+};
 export function isStdioConnection(value: unknown): value is StdioConnection {
   return (
     isRecord(value) &&
@@ -61,9 +91,6 @@ class BoundedBytes {
       return;
     }
     this.bytes = combined;
-  }
-  clear() {
-    this.bytes = Buffer.alloc(0);
   }
   text() {
     const value = this.bytes.toString("utf8").trim();

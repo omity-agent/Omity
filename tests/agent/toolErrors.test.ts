@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { McpError } from "@modelcontextprotocol/sdk/types.js";
+import { McpStdioUnavailableError } from "../../src/infrastructure/mcp/client/availability";
 import { ToolExecutions } from "../../src/agent/toolExecutions";
 import { createMcpToolFailureClient } from "../../src/infrastructure/mcp/toolFailures";
 import { createToolInvoker } from "../../src/agent/toolExecution";
@@ -48,6 +49,10 @@ test("manual cancellation stops the MCP request and returns elapsed time", async
   expect(requestSignal?.aborted).toBe(true);
   const cancelled = await output;
   expect(cancelled.content).toBe("工具运行 5.6 秒 后被用户手动终止。");
+});
+test("stdio exhaustion escapes the tool message boundary", async () => {
+  const failure = new McpStdioUnavailableError("terminal", 3);
+  expect(invokeMcpTool(() => Promise.reject(failure))).rejects.toBe(failure);
 });
 async function invokeMcpTool(callTool: McpCallTool, toolExecutions?: ToolExecutions) {
   const client = new Client({ name: "test", version: "1.0.0" });

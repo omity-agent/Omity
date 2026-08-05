@@ -87,6 +87,12 @@ freeformToolInputs: [open, search]
           stderr: "pipe",
         },
       },
+      stdio: {
+        restart: {
+          delayMs: 1000,
+          maxAttempts: 3,
+        },
+      },
       toolDescriptionOverrides: {
         search: "search.md",
       },

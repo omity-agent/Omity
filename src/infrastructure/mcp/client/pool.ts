@@ -1,10 +1,17 @@
 import { type Connection, MultiServerMCPClient } from "@langchain/mcp-adapters";
-import { connectStdioClient, isStdioConnection } from "./stdio";
+import type { Logger } from "../../logging/logger";
+import { RestartingStdioClient } from "./restarting";
+import type { StdioRestartPolicy } from "./availability";
+import { isStdioConnection } from "./stdio";
 
 export class McpClientPool {
   private readonly http?: MultiServerMCPClient;
-  private readonly stdio = new Map<string, Awaited<ReturnType<typeof connectStdioClient>>>();
-  constructor(private readonly connections: Record<string, unknown>) {
+  private readonly stdio = new Map<string, Promise<RestartingStdioClient>>();
+  constructor(
+    private readonly connections: Record<string, unknown>,
+    private readonly restartPolicy: StdioRestartPolicy,
+    private readonly logger: Logger,
+  ) {
     const httpConnections = Object.fromEntries(
       Object.entries(connections).filter(([, connection]) => !isStdioConnection(connection)),
     );
@@ -21,18 +28,28 @@ export class McpClientPool {
     if (!isStdioConnection(connection)) {
       return this.http?.getClient(name);
     }
-    const existing = this.stdio.get(name);
-    if (existing) {
-      return existing;
+    const loading = this.stdio.get(name);
+    if (loading) {
+      return loading;
     }
-    const client = await connectStdioClient(name, connection);
+    const client = RestartingStdioClient.create(name, connection, this.restartPolicy, this.logger);
     this.stdio.set(name, client);
-    return client;
+    try {
+      return await client;
+    } catch (error) {
+      if (this.stdio.get(name) === client) {
+        this.stdio.delete(name);
+      }
+      throw error;
+    }
   }
   async close() {
     await Promise.all([
       this.http?.close(),
-      ...[...this.stdio.values()].map((client) => client.close()),
+      ...[...this.stdio.values()].map(async (loading) => {
+        const client = await loading;
+        await client.close();
+      }),
     ]);
     this.stdio.clear();
   }

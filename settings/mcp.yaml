@@ -1,3 +1,7 @@
+stdio:
+  restart:
+    delayMs: 1000
+    maxAttempts: 3
 mcpServers: {}
 toolNameOverrides: {}
 toolDescriptionOverrides: {}

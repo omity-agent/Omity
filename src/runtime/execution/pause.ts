@@ -1,11 +1,26 @@
 import { CanceledRunError, type QueueRun, cancelRun, setRunStatus } from "../run";
 import { type HostContext, waitForWake } from "../context";
+import { captureError } from "../../failures/details";
+import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
 
 export function pauseForStop(ctx: HostContext, run: QueueRun) {
   if (!ctx.stopping?.aborted && !ctx.controller.signal.aborted) {
     return false;
   }
   setRunStatus(ctx, run, "paused");
+  return true;
+}
+export function pauseForMcpUnavailable(ctx: HostContext, run: QueueRun, error: unknown) {
+  const unavailable = findMcpStdioUnavailable(error);
+  if (!unavailable) {
+    return false;
+  }
+  const details = captureError(unavailable);
+  setRunStatus(ctx, run, "paused", details);
+  ctx.logger.error("MCP stdio 不可用，队列已暂停", {
+    error: details,
+    queueId: run.items[0].id,
+  });
   return true;
 }
 export async function waitIfPaused(ctx: HostContext, run: QueueRun) {

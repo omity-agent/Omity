@@ -71,7 +71,11 @@ async function connectMcp(
   let pool: McpClientPool | undefined;
   try {
     disableMcpRequestTimeout();
-    const connectedPool = new McpClientPool(configuration.mcpServers);
+    const connectedPool = new McpClientPool(
+      configuration.mcpServers,
+      configuration.stdio.restart,
+      logger,
+    );
     pool = connectedPool;
     const tools = overrideMcpToolDescriptions(
       renameMcpTools(await loadServerTools(connectedPool, names), configuration.toolNameOverrides),

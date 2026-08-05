@@ -8,7 +8,7 @@ import {
   recordToolExecutionStarted,
 } from "./stream";
 import { consumeBoundaryAppends, recoverConsumedAppends } from "./appends";
-import { pauseForStop, waitIfPaused } from "./execution/pause";
+import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
 import { HostLeaseLostError } from "./execution/lease";
 import type { QueueItem } from "../types";
 import { captureError } from "../failures/details";
@@ -58,6 +58,9 @@ export async function processQueue(ctx: HostContext, item: QueueItem) {
     }
     if (ctx.controller.signal.aborted || ctx.stopping?.aborted) {
       setRunStatus(ctx, run, "paused");
+      return;
+    }
+    if (pauseForMcpUnavailable(ctx, run, error)) {
       return;
     }
     const details = captureError(error);

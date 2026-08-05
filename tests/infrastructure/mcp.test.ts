@@ -1,5 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
-import { normalizeMcpServers, readMcpConfiguration } from "../../src/infrastructure/mcp/config";
+import {
+  normalizeMcpServers,
+  parseMcpConfiguration,
+  readMcpConfiguration,
+} from "../../src/infrastructure/mcp/config";
 import {
   normalizeMcpToolNameOverrides,
   renameMcpTools,
@@ -129,6 +133,11 @@ test("mcp stdio config rejects non-array args", () => {
     normalizeMcpServers({
       invalid: { args: null, command: "server.exe" },
     }),
+  ).toThrow();
+});
+test("mcp stdio config validates its restart policy", () => {
+  expect(() =>
+    parseMcpConfiguration({ stdio: { restart: { delayMs: 1000, maxAttempts: 0 } } }, "mcp.yaml"),
   ).toThrow();
 });
 test("mcp config rejects renaming a tool to agent", () => {

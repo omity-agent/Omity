@@ -6,6 +6,7 @@ import { BunSqliteSaver } from "../../src/checkpointer";
 import { HookRuntime } from "../../src/hooks/runtime";
 import type { HostContext } from "../../src/runtime/context";
 import { Logger } from "../../src/infrastructure/logging/logger";
+import { McpStdioUnavailableError } from "../../src/infrastructure/mcp/client/availability";
 import { createAgentGraph } from "../../src/agent";
 import { fakeModel } from "@langchain/core/testing";
 import { parseError } from "../../src/failures/details";
@@ -31,6 +32,25 @@ test("unexpected errors pause the queue", async () => {
   expect(parseError(required(stored).error)).toMatchObject({
     message: "boom",
     name: "Error",
+  });
+  db.close();
+});
+test("stdio restart exhaustion pauses without committing a tool error", async () => {
+  const db = makeDb();
+  db.resetSession("123", workspace);
+  db.appendUser("123", "使用 MCP");
+  const item = required(db.nextQueue("123"));
+  const graph = {
+    stream: () => Promise.reject(new McpStdioUnavailableError("terminal", 3)),
+  };
+  await processQueue(makeContext(db, graph), item);
+  expect(db.nextQueue("123")?.status).toBe("paused");
+  expect(db.control("123")).toBe("pause");
+  expect(db.history("123")).toHaveLength(1);
+  const stored = db.db.query<{ error: string }, []>("SELECT error FROM queue LIMIT 1").get();
+  expect(parseError(required(stored).error)).toMatchObject({
+    message: 'MCP stdio 服务器 "terminal" 在 3 次重启后仍不可用',
+    name: "McpStdioUnavailableError",
   });
   db.close();
 });

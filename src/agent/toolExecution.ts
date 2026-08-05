@@ -4,6 +4,7 @@ import type { Settings } from "../types";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "./toolExecutions";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { requireCallId } from "../hooks/plan";
 
@@ -42,6 +43,10 @@ export function createToolInvoker(
       } else {
         if (isGraphInterrupt(error) || config.signal?.aborted) {
           throw error;
+        }
+        const unavailable = findMcpStdioUnavailable(error);
+        if (unavailable) {
+          throw unavailable;
         }
         output = toolErrorOutput(call, callId, error);
       }

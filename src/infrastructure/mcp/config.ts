@@ -15,6 +15,17 @@ const mcpConfigurationSchema = z
   .object({
     freeformToolInputs: z.unknown().optional(),
     mcpServers: mcpServersSchema.optional(),
+    stdio: z
+      .object({
+        restart: z
+          .object({
+            delayMs: z.number().int().nonnegative().max(60_000),
+            maxAttempts: z.number().int().positive().max(100),
+          })
+          .strict(),
+      })
+      .strict()
+      .default({ restart: { delayMs: 1000, maxAttempts: 3 } }),
     toolDescriptionOverrides: z.unknown().optional(),
     toolNameOverrides: z.unknown().optional(),
   })
@@ -45,6 +56,7 @@ export function parseMcpConfiguration(parsed: unknown, path: string) {
   return {
     freeformToolInputs: normalizeFreeformToolInputs(configuration.freeformToolInputs),
     mcpServers: normalizeMcpServers(configuration.mcpServers ?? {}),
+    stdio: configuration.stdio,
     toolDescriptionOverrides: normalizeMcpToolDescriptionOverrides(
       configuration.toolDescriptionOverrides,
     ),
