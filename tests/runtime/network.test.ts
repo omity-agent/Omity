@@ -29,6 +29,11 @@ test("detects retryable model errors", () => {
   expect(isRetryableModelError({ error: { details: { status: 520 } } })).toBe(true);
   expect(
     isRetryableModelError({
+      error: new Error("Received empty response from chat model call."),
+    }),
+  ).toBe(true);
+  expect(
+    isRetryableModelError({
       error: {
         details: { code: "server_is_overloaded" },
         error: { code: "server_is_overloaded" },
@@ -42,9 +47,9 @@ test("does not guess network failures from broad error messages", () => {
   expect(isRetryableModelError(new Error("fetch failed"))).toBe(false);
   expect(isRetryableModelError(new Error("network policy rejected request"))).toBe(false);
   expect(isRetryableModelError(new Error("Unexpected EOF"))).toBe(false);
-  expect(isRetryableModelError(new Error("Received empty response from chat model call."))).toBe(
-    false,
-  );
+  expect(
+    isRetryableModelError(new Error("Received empty response from embedding model call.")),
+  ).toBe(false);
 });
 test("model clients disable dependency network retries", () => {
   const previousKey = process.env["TEST_KEY"];
