@@ -6,7 +6,7 @@ const retryableNames = new Set([
   "ModelEmptyResponseError",
   "TimeoutError",
 ]);
-const retryableApiCodes = new Set(["server_is_overloaded"]);
+const retryableApiCodes = new Set(["server_error", "server_is_overloaded"]);
 const retryableHttpStatuses = new Set([520]);
 const retryableMessages = new Set(["Received empty response from chat model call."]);
 export class ModelEmptyResponseError extends Error {

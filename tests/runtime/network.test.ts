@@ -35,9 +35,9 @@ test("detects retryable model errors", () => {
   expect(
     isRetryableModelError({
       error: {
-        details: { code: "server_is_overloaded" },
-        error: { code: "server_is_overloaded" },
-        type: "service_unavailable_error",
+        details: { code: "server_error" },
+        error: { code: "server_error" },
+        type: "server_error",
       },
     }),
   ).toBe(true);
