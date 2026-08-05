@@ -11,6 +11,7 @@ export type ReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "
 export type ModelApi = "responses" | "completions";
 interface SharedModelSettings {
   model: string;
+  retryDelayMs: number;
   temperature?: number;
   reasoning_effort?: ReasoningEffort;
   timeoutMs: number;

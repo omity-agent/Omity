@@ -27,6 +27,7 @@ const promptsSchema = z.array(promptFileSchema).superRefine((files, context) => 
 const sharedModelSettings = {
   model: z.string().min(1),
   reasoning_effort: reasoningEffortSchema.optional(),
+  retryDelayMs: z.number().int().positive(),
   temperature: z.number().optional(),
   timeoutMs: z.number().int().positive(),
 };

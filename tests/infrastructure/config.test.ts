@@ -105,12 +105,14 @@ test("model yaml contains one direct model configuration", () => {
   writeTestConfiguration(root, {
     modelYaml: `adapter: codex
 model: codex-model
+retryDelayMs: 1000
 timeoutMs: 2000
 `,
   });
   expect(loadSettings(root).model).toEqual({
     adapter: "codex",
     model: "codex-model",
+    retryDelayMs: 1000,
     timeoutMs: 2000,
   });
 });

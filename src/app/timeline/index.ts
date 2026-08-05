@@ -65,7 +65,8 @@ export function buildTimeline(
   const liveEvents = events.filter(
     (event) =>
       (event.kind === "user_appended" && pending.has(event.queueId)) ||
-      (activeQueueIds.has(eventQueueId(event)) && !persistedSourceIds.has(eventMessageId(event))),
+      (activeQueueIds.has(eventQueueId(event)) &&
+        (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
   );
   const live = timelineTail(
     liveEvents,

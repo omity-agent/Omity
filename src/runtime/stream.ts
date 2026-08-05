@@ -125,10 +125,11 @@ export function recordToolExecutionStarted(
     throw new Error("工具执行缺少稳定的调用 ID");
   }
   ctx.toolExecutions?.announce(call.id);
+  const streamIdentity = resolveToolCallPart(state.toolIdentity, request.id, call.id, index);
   ctx.db.appendStream(ctx.sessionId, {
     kind: "tool_started",
-    messageId: request.id,
-    partId: resolveToolCallPart(state.toolIdentity, request.id, call.id, index),
+    messageId: streamIdentity.messageId,
+    partId: streamIdentity.partId,
     queueId,
     value: call.id,
   });

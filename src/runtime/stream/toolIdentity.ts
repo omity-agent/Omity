@@ -37,10 +37,7 @@ export function resolveToolCallPart(
   recoveredIndex: number,
 ) {
   if (state.messageId === undefined && state.calls.size === 0) {
-    return `tool-${recoveredIndex.toString()}`;
-  }
-  if (state.messageId !== messageId) {
-    throw new Error(`工具执行消息与活动流不一致：${messageId}`);
+    return { messageId, partId: `tool-${recoveredIndex.toString()}` };
   }
   const confirmed = [...state.calls.values()].filter((call) => call.formalId === callId);
   if (confirmed.length > 1) {
@@ -48,7 +45,7 @@ export function resolveToolCallPart(
   }
   const [confirmedCall] = confirmed;
   if (confirmedCall) {
-    return confirmedCall.partId;
+    return streamIdentity(state, confirmedCall.partId);
   }
   const exact = [...state.calls.values()].filter((call) => call.candidateId === callId);
   const unbound = [...state.calls.values()].filter((call) => call.formalId === undefined);
@@ -68,7 +65,13 @@ export function resolveToolCallPart(
     throw new Error(`工具流身份绑定了不同的正式调用 ID：${call.candidateId}、${callId}`);
   }
   call.formalId = callId;
-  return call.partId;
+  return streamIdentity(state, call.partId);
+}
+function streamIdentity(state: ToolStreamIdentityState, partId: string) {
+  if (!state.messageId) {
+    throw new Error("工具流身份缺少消息 ID");
+  }
+  return { messageId: state.messageId, partId };
 }
 function appendDelta(current: string | undefined, incoming?: string) {
   const value = (current ?? "") + (incoming ?? "");

@@ -33,14 +33,23 @@ export function reconcileToolStreams(
 export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
   const samePosition =
     a.messageId !== undefined && a.messageId === b.messageId && a.index === b.index;
-  if (!a.temporary && !b.temporary) {
+  const bothFormal = !a.temporary && !b.temporary;
+  if (bothFormal) {
     if (samePosition && a.id !== b.id) {
       throw new Error(`工具流身份绑定了不同的正式调用 ID：${a.id}、${b.id}`);
     }
-    if (a.id === b.id && !samePosition && a.messageId && b.messageId) {
+    if (
+      a.id === b.id &&
+      !samePosition &&
+      a.messageId &&
+      b.messageId &&
+      (a.inputText === undefined) === (b.inputText === undefined)
+    ) {
       throw new Error(`正式工具调用 ID ${a.id} 绑定了多个流身份`);
     }
-    return a.id === b.id;
+  }
+  if (a.id === b.id && (!a.temporary || !b.temporary)) {
+    return true;
   }
   return samePosition;
 }

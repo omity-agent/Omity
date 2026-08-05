@@ -32,6 +32,7 @@ export function testSettings(dataDir: string): Settings {
       apiKeyEnv: "TEST_KEY",
       baseURL: null,
       model: "test",
+      retryDelayMs: 1000,
       temperature: 0,
       timeoutMs: 1000,
     },

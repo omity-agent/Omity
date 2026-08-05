@@ -7,6 +7,7 @@ const retryableNames = new Set([
   "TimeoutError",
 ]);
 const retryableApiCodes = new Set(["server_is_overloaded"]);
+const retryableHttpStatuses = new Set([520]);
 export class ModelEmptyResponseError extends Error {
   override readonly name = "ModelEmptyResponseError";
   constructor() {
@@ -46,14 +47,14 @@ export function isRetryableModelError(error: unknown): boolean {
       if (typeof code === "string" && (retryableCodes.has(code) || retryableApiCodes.has(code))) {
         return true;
       }
+      const { status } = current;
+      if (typeof status === "number" && retryableHttpStatuses.has(status)) {
+        return true;
+      }
       pending.push(current["cause"], current["error"], current["details"]);
     }
   }
   return false;
-}
-export function modelRetryDelayMs(attempt: number): number {
-  const exponent = Math.min(Math.max(0, attempt - 1), 5);
-  return Math.min(30_000, 1000 * 2 ** exponent);
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

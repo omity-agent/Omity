@@ -26,6 +26,7 @@ apiKeyEnv: TEST_KEY
 baseURL: null
 temperature: 0
 reasoning_effort: medium
+retryDelayMs: 1000
 timeoutMs: 1000
 `;
 export function writeTestConfiguration(root: string, options: TestConfigurationOptions = {}) {

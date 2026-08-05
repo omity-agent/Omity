@@ -22,11 +22,13 @@ test("only the next pending tool call is marked as started", () => {
   const db = makeDb();
   const started: string[] = [];
   let startedPartId: string | undefined;
+  let startedMessageId: string | undefined;
   const executions = new ToolExecutions();
   spyOn(db, "appendStream").mockImplementation((_sessionId, event) => {
     if (event.kind === "tool_started") {
       started.push(event.value);
       startedPartId = event.partId;
+      startedMessageId = event.messageId;
     }
     return { ...event, id: started.length };
   });
@@ -57,7 +59,7 @@ test("only the next pending tool call is marked as started", () => {
       [
         new AIMessage({
           content: "",
-          id: "message-1",
+          id: "split-message-2",
           tool_calls: [
             { args: {}, id: "call-1", name: "first" },
             { args: {}, id: "call-2", name: "second" },
@@ -72,6 +74,7 @@ test("only the next pending tool call is marked as started", () => {
     expect(executions.cancel("call-1")).toBe(false);
     expect(executions.cancel("call-2")).toBe(true);
     expect(startedPartId).toBe("part-1");
+    expect(startedMessageId).toBe("message-1");
   } finally {
     db.close();
   }

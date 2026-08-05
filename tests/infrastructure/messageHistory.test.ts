@@ -83,7 +83,7 @@ test("persists only replay and display message fields", () => {
   expect(stored).not.toContain("do not persist");
   db.close();
 });
-test("persists user boundaries while clearing transient stream deltas", () => {
+test("persists user and tool boundaries while clearing persisted text deltas", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const queueId = db.appendUser("123", "问题");
@@ -138,8 +138,12 @@ test("persists user boundaries while clearing transient stream deltas", () => {
       queue_id: 1,
     },
   ]);
-  db.syncHistory("123", [new HumanMessage("问题"), new AIMessage("答案")]);
-  expect(db.db.query("SELECT kind FROM events").all()).toEqual([{ kind: "user_appended" }]);
+  const answer = new AIMessage({ content: "答案", id: "message-1" });
+  db.syncHistory("123", [new HumanMessage("问题"), answer]);
+  expect(db.db.query("SELECT kind FROM events").all()).toEqual([
+    { kind: "user_appended" },
+    { kind: "tool_call_delta" },
+  ]);
   db.close();
 });
 test("clears stream deltas when their queue becomes terminal", () => {
@@ -147,11 +151,11 @@ test("clears stream deltas when their queue becomes terminal", () => {
   db.resetSession("123", workspace);
   const queueId = db.appendUser("123", "问题");
   db.appendStream("123", {
-    kind: "assistant_text_delta",
+    kind: "tool_call_delta",
     messageId: "message-1",
-    partId: "text-1",
+    partId: "tool-0",
     queueId,
-    value: "未完成",
+    value: { idDelta: "call-1", index: 0, nameDelta: "tool" },
   });
   db.setQueueStatus(queueId, "canceled");
   expect(db.db.query("SELECT id FROM events").all()).toEqual([]);

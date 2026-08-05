@@ -59,6 +59,7 @@ function makeSettings(api: ModelApi): Settings {
       apiKeyEnv: "TEST_OPENAI_KEY",
       baseURL: null,
       model: "test-model",
+      retryDelayMs: 1000,
       temperature: 0,
       timeoutMs: 1000,
     },

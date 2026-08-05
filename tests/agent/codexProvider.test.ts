@@ -24,6 +24,7 @@ test("codex adapter does not require OpenAI-compatible connection settings", () 
     adapter: "codex",
     model: "gpt-5.3-codex",
     reasoning_effort: "high",
+    retryDelayMs: 1000,
     timeoutMs: 120_000,
   });
   expect(Object.hasOwn(settings.model, "api")).toBe(false);
@@ -149,6 +150,7 @@ function codexSettings(): Settings {
     adapter: "codex",
     model: "gpt-5.3-codex",
     reasoning_effort: "high",
+    retryDelayMs: 1000,
     timeoutMs: 120_000,
   });
   return {

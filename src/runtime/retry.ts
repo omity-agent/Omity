@@ -1,7 +1,6 @@
 import { type HostContext, waitForWake } from "./context";
 import type { QueueItem } from "../types";
 import { captureError } from "../failures/details";
-import { modelRetryDelayMs } from "./network";
 
 interface RetriedRun {
   items: [QueueItem, ...QueueItem[]];
@@ -18,7 +17,7 @@ export async function waitBeforeModelRetry(
   attempt: number,
   controls: RetryControls,
 ) {
-  const delayMs = modelRetryDelayMs(attempt);
+  const delayMs = ctx.settings.model.retryDelayMs;
   console.warn("模型 API 暂时不可用，将继续重试", {
     attempt,
     delayMs,

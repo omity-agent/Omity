@@ -119,7 +119,7 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "running",
-    expected: state("pause", false, "pause", true),
+    expected: state("pausing", true, "pause", true),
     name: "server-reported pause transition without a running queue snapshot",
     queue: [],
     sessionStatus: "pausing",

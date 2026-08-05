@@ -97,6 +97,29 @@ test("completed streamed tool call exposes its output and settled state", () => 
   expect(part?.started).toBeUndefined();
   expect(part?.call.streaming).toBeUndefined();
 });
+test("persisted single-call execution reconciles with its original multi-call stream", () => {
+  const persisted: DisplayMessage = {
+    content: "",
+    createdAt: 1,
+    id: 1,
+    images: [],
+    queueId: 1,
+    reasoning: "",
+    role: "assistant",
+    sourceId: "message-1",
+    toolCalls: [
+      { id: "call-1", index: 0, input: {}, inputTokens: 1, messageId: "message-1", name: "first" },
+    ],
+  };
+  const events = [
+    toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "first" }),
+    toolEvent(2, "tool-1", { idDelta: "call-2", index: 1, nameDelta: "second" }),
+  ];
+  const calls = buildTimeline([persisted], queue, events)[0]?.parts.flatMap((part) =>
+    part.type === "tool" ? [part.call.id] : [],
+  );
+  expect(calls).toEqual(["call-1", "call-2"]);
+});
 function streamedCalls(events: DisplayEvent[]) {
   return (
     buildTimeline([], queue, events)[0]?.parts.flatMap((part) =>

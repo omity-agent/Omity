@@ -1,8 +1,4 @@
-import {
-  ModelEmptyResponseError,
-  isRetryableModelError,
-  modelRetryDelayMs,
-} from "../../src/runtime/network";
+import { ModelEmptyResponseError, isRetryableModelError } from "../../src/runtime/network";
 import { afterEach, expect, mock, spyOn, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
 import { AIMessage } from "@langchain/core/messages";
@@ -30,6 +26,7 @@ test("detects retryable model errors", () => {
   expect(isRetryableModelError({ code: "stream_read_error" })).toBe(true);
   expect(isRetryableModelError(new ModelEmptyResponseError())).toBe(true);
   expect(isRetryableModelError({ code: "server_is_overloaded" })).toBe(true);
+  expect(isRetryableModelError({ error: { details: { status: 520 } } })).toBe(true);
   expect(
     isRetryableModelError({
       error: {
@@ -48,11 +45,6 @@ test("does not guess network failures from broad error messages", () => {
   expect(isRetryableModelError(new Error("Received empty response from chat model call."))).toBe(
     false,
   );
-});
-test("model retry delay grows with a cap", () => {
-  expect(modelRetryDelayMs(1)).toBe(1000);
-  expect(modelRetryDelayMs(2)).toBe(2000);
-  expect(modelRetryDelayMs(99)).toBe(30_000);
 });
 test("model clients disable dependency network retries", () => {
   const previousKey = process.env["TEST_KEY"];
@@ -76,11 +68,12 @@ test("model settings reject dependency retry configuration", () => {
       adapter: "codex",
       maxRetries: 1,
       model: "test",
+      retryDelayMs: 1000,
       timeoutMs: 1000,
     }),
   ).toThrow("Unrecognized key");
 });
-test("overloaded model stream retries and completes the queue", async () => {
+test("HTTP 520 model stream retries and completes the queue", async () => {
   const warn = spyOn(console, "warn").mockReturnValue(undefined);
   const db = makeDb();
   db.resetSession("session-1", workspace);
@@ -104,10 +97,14 @@ test("overloaded model stream retries and completes the queue", async () => {
       if (attempts === 1) {
         const error = {
           error: {
-            details: { code: "server_is_overloaded" },
-            error: { code: "server_is_overloaded" },
-            type: "service_unavailable_error",
+            details: {
+              headers: { "retry-after": "60", server: "cloudflare" },
+              status: 520,
+            },
+            message: "520 status code (no body)",
+            name: "Error",
           },
+          sessionId: "session-1",
         };
         return {
           [Symbol.asyncIterator]() {
@@ -133,7 +130,7 @@ test("overloaded model stream retries and completes the queue", async () => {
     db.close();
   }
 });
-test("warns on every retryable model error even when the host is stopping", async () => {
+test("uses the configured fixed delay for every retry attempt", async () => {
   const warn = spyOn(console, "warn").mockReturnValue(undefined);
   const stop = mock(() => undefined);
   const controller = new AbortController();
@@ -153,7 +150,7 @@ test("warns on every retryable model error even when the host is stopping", asyn
       retryContext(db, controller),
       { items: [item] },
       error,
-      1,
+      99,
       {
         cancel: () => Promise.resolve(),
         pause: () => Promise.resolve(false),
@@ -164,7 +161,7 @@ test("warns on every retryable model error even when the host is stopping", asyn
     expect(stop).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith("模型 API 暂时不可用，将继续重试", {
-      attempt: 1,
+      attempt: 99,
       delayMs: 1000,
       error: captureError(error),
       queueId: 42,
