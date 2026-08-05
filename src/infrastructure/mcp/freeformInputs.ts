@@ -1,11 +1,9 @@
 import { type SessionPlaceholders, resolvePlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { customTool } from "@langchain/openai";
 import { hasSessionDescription } from "./toolOverrides";
 import { z } from "zod";
 
 export interface FreeformMcpTools {
-  modelTools: StructuredToolInterface[];
   parameters: ReadonlyMap<string, string>;
 }
 const toolJsonSchema = z.looseObject({
@@ -48,46 +46,22 @@ export function configureFreeformMcpTools(
     parameters.set(name, singleStringParameter(tool));
   }
   return {
-    modelTools: tools.map((tool) => {
-      if (!parameters.has(tool.name)) {
-        return tool;
-      }
-      return customTool(() => Promise.reject(new Error(`工具定义 ${tool.name} 不能直接用于执行`)), {
-        description: tool.description,
-        format: { type: "text" },
-        name: tool.name,
-      });
-    }),
     parameters,
   };
 }
 export function sessionModelTools(
   tools: StructuredToolInterface[],
-  parameters: ReadonlyMap<string, string>,
+  _parameters: ReadonlyMap<string, string>,
   session: Required<SessionPlaceholders>,
 ) {
   return tools.map((tool) => {
-    const custom = parameters.has(tool.name);
     const dynamicDescription = hasSessionDescription(tool);
-    if (!custom && !dynamicDescription) {
+    if (!dynamicDescription) {
       return tool;
     }
-    const description = dynamicDescription
-      ? resolveDescription(tool.description, tool.name, session)
-      : tool.description;
-    if (custom) {
-      return customTool(() => Promise.reject(new Error(`工具定义 ${tool.name} 不能直接用于执行`)), {
-        description,
-        format: { type: "text" },
-        name: tool.name,
-      });
-    }
-    return {
-      description,
-      extras: tool.extras,
-      name: tool.name,
-      schema: tool.schema,
-    };
+    const description = resolveDescription(tool.description, tool.name, session);
+    tool.description = description;
+    return tool;
   });
 }
 function singleStringParameter(tool: StructuredToolInterface) {

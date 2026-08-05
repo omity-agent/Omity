@@ -97,8 +97,6 @@ test("recovery completes a persisted cancel and removes only its run data", () =
     queueId: appended,
     value: "partial append",
   });
-  insertThreadData(db, `123:${root.toString()}`);
-  insertThreadData(db, "unrelated:1");
   db.setControl("123", "cancel");
   expect(db.recoverInterruptedSession({ now: 1000, sessionId: "123" })).toEqual({
     action: "canceled",
@@ -108,10 +106,6 @@ test("recovery completes a persisted cancel and removes only its run data", () =
   expect([db.queueStatus(root), db.queueStatus(appended)]).toEqual(["canceled", "canceled"]);
   expect(db.control("123")).toBe("running");
   expect(count(db, "events", "session_id = '123'")).toBe(0);
-  expect(count(db, "checkpoints", "thread_id LIKE '123:%'")).toBe(0);
-  expect(count(db, "writes", "thread_id LIKE '123:%'")).toBe(0);
-  expect(count(db, "checkpoints", "thread_id = 'unrelated:1'")).toBe(1);
-  expect(count(db, "writes", "thread_id = 'unrelated:1'")).toBe(1);
   db.close();
 });
 test("pauseRun is atomic, preserves pending work and omitted errors", () => {
@@ -163,25 +157,7 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
   expect(errors[2]?.error).toBeNull();
   db.close();
 });
-function insertThreadData(db: ReturnType<typeof makeDb>, threadId: string) {
-  db.db.run(
-    `INSERT INTO checkpoints
-     (thread_id, checkpoint_id, type, checkpoint, metadata)
-     VALUES (?, 'checkpoint', 'json', '{}', '{}')`,
-    [threadId],
-  );
-  db.db.run(
-    `INSERT INTO writes
-     (thread_id, checkpoint_id, task_id, idx, channel, type, value)
-     VALUES (?, 'checkpoint', 'task', 0, 'messages', 'json', 'null')`,
-    [threadId],
-  );
-}
-function count(
-  db: ReturnType<typeof makeDb>,
-  table: "events" | "checkpoints" | "writes",
-  predicate: string,
-) {
+function count(db: ReturnType<typeof makeDb>, table: "events", predicate: string) {
   return required(
     db.db
       .query<{ count: number }, []>(`SELECT COUNT(*) AS count FROM ${table} WHERE ${predicate}`)

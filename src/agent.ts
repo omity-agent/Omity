@@ -1,5 +1,6 @@
 export { buildGraph, createAgentGraph } from "./agent/graph";
-export { buildModel, modelMessages, resolveModelApi } from "./agent/model";
+export { streamAiModel } from "./agent/aiAgent";
+export { buildAiModel } from "./agent/aiModel";
 export {
   normalizeResponsesPayload,
   normalizeResponsesStreamEvent,

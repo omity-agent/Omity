@@ -27,6 +27,7 @@ import {
   configureDatabase,
   reclaimDatabasePages,
   runTransaction,
+  sessionDatabase,
 } from "./connection";
 import {
   createSessionRecord,
@@ -44,18 +45,18 @@ import type { BaseMessage } from "@langchain/core/messages";
 import { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../failures/details";
 import { RecoverableDatabase } from "./records/recovery";
-import { applySchema } from "./schema";
+import { migrateSessionDatabase } from "./migrations";
 import { resetSessionStorage } from "./maintenance";
 import { syncMessages } from "./records/messages/sync";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
   private storageReclaimPending = false;
-  constructor(path: string) {
+  constructor(path: string, root = process.cwd()) {
     const db = new Database(path, { create: true, strict: true });
     try {
       configureDatabase(db);
-      applySchema(db);
+      migrateSessionDatabase(sessionDatabase(db), root);
     } catch (error) {
       closeDatabase(db);
       throw error;

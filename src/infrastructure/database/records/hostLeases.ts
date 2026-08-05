@@ -1,6 +1,8 @@
+import { and, eq, lte, or } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
-import { queryGet } from "../connection";
+import { hostLeases } from "../schema";
 import { requireSessionRecord } from "./sessions";
+import { sessionDatabase } from "../connection";
 
 export interface HostLeaseClaim {
   sessionId: string;
@@ -13,51 +15,51 @@ export interface HostLeaseRecord {
   ownerId: string;
   expiresAt: number;
 }
-interface HostLeaseRow {
-  session_id: string;
-  owner_id: string;
-  expires_at: number;
-}
 export function readHostLeaseRecord(db: Database, sessionId: string): HostLeaseRecord | null {
   requireSessionRecord(db, sessionId);
-  const row = queryGet<HostLeaseRow>(
-    db,
-    "SELECT session_id, owner_id, expires_at FROM host_leases WHERE session_id = ?",
-    sessionId,
+  return (
+    sessionDatabase(db)
+      .select()
+      .from(hostLeases)
+      .where(eq(hostLeases.sessionId, sessionId))
+      .get() ?? null
   );
-  return row
-    ? {
-        expiresAt: row.expires_at,
-        ownerId: row.owner_id,
-        sessionId: row.session_id,
-      }
-    : null;
 }
 export function acquireHostLeaseRecord(db: Database, claim: HostLeaseClaim) {
   requireSessionRecord(db, claim.sessionId);
-  const result = db.run(
-    `INSERT INTO host_leases (session_id, owner_id, expires_at)
-     VALUES (?, ?, ?)
-     ON CONFLICT(session_id) DO UPDATE SET
-       owner_id = excluded.owner_id,
-       expires_at = excluded.expires_at
-     WHERE host_leases.owner_id = excluded.owner_id
-        OR host_leases.expires_at <= ?`,
-    [claim.sessionId, claim.ownerId, claim.now + claim.ttlMs, claim.now],
+  return Boolean(
+    sessionDatabase(db)
+      .insert(hostLeases)
+      .values({
+        expiresAt: claim.now + claim.ttlMs,
+        ownerId: claim.ownerId,
+        sessionId: claim.sessionId,
+      })
+      .onConflictDoUpdate({
+        set: { expiresAt: claim.now + claim.ttlMs, ownerId: claim.ownerId },
+        setWhere: or(eq(hostLeases.ownerId, claim.ownerId), lte(hostLeases.expiresAt, claim.now)),
+        target: hostLeases.sessionId,
+      })
+      .returning({ sessionId: hostLeases.sessionId })
+      .get(),
   );
-  return result.changes === 1;
 }
 export function renewHostLeaseRecord(db: Database, claim: HostLeaseClaim) {
-  const result = db.run(
-    "UPDATE host_leases SET expires_at = ? WHERE session_id = ? AND owner_id = ?",
-    [claim.now + claim.ttlMs, claim.sessionId, claim.ownerId],
+  return Boolean(
+    sessionDatabase(db)
+      .update(hostLeases)
+      .set({ expiresAt: claim.now + claim.ttlMs })
+      .where(and(eq(hostLeases.sessionId, claim.sessionId), eq(hostLeases.ownerId, claim.ownerId)))
+      .returning({ sessionId: hostLeases.sessionId })
+      .get(),
   );
-  return result.changes === 1;
 }
 export function releaseHostLeaseRecord(db: Database, sessionId: string, ownerId: string) {
-  const result = db.run("DELETE FROM host_leases WHERE session_id = ? AND owner_id = ?", [
-    sessionId,
-    ownerId,
-  ]);
-  return result.changes === 1;
+  return Boolean(
+    sessionDatabase(db)
+      .delete(hostLeases)
+      .where(and(eq(hostLeases.sessionId, sessionId), eq(hostLeases.ownerId, ownerId)))
+      .returning({ sessionId: hostLeases.sessionId })
+      .get(),
+  );
 }

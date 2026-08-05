@@ -16,7 +16,7 @@ await build({
 });
 await mkdir(resolve(root, "dist"), { recursive: true });
 const compile = {
-  assets: ["./settings", "./src/app/frontend/dist"],
+  assets: ["./settings", "./src/app/frontend/dist", "./src/infrastructure/database/migrations"],
   outfile: executableOutput,
 } satisfies Bun.CompileBuildOptions & { assets: string[] };
 const executable = await Bun.build({

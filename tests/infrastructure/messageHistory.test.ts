@@ -108,7 +108,7 @@ test("persists user and tool boundaries while clearing persisted text deltas", (
         kind: string;
         message_id: string;
         part_id: string;
-        payload_json: string;
+        payload_json: string | null;
         queue_id: number;
       },
       []
@@ -120,7 +120,7 @@ test("persists user and tool boundaries while clearing persisted text deltas", (
       kind: "user_appended",
       message_id: "queue:123:1",
       part_id: "user",
-      payload_json: "null",
+      payload_json: null,
       queue_id: 1,
     },
     {

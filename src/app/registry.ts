@@ -7,7 +7,6 @@ import {
 } from "../infrastructure/database/connection";
 import { existsSync, readdirSync } from "node:fs";
 import { Database } from "bun:sqlite";
-import { assertCoreSchema } from "../infrastructure/database/validateSchema";
 import { resolve } from "node:path";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
@@ -104,7 +103,7 @@ function scanSessions(settings: Settings, sessionsDir: string) {
 function compareSessions(left: RegisteredSession, right: RegisteredSession) {
   return right.updatedAt - left.updatedAt || right.createdAt - left.createdAt;
 }
-function readSession(dbPath: string, id?: string, validate = false) {
+function readSession(dbPath: string, id?: string, _validate = false) {
   if (!existsSync(dbPath)) {
     throw sessionNotFound(id ?? dbPath);
   }
@@ -115,16 +114,6 @@ function readSession(dbPath: string, id?: string, validate = false) {
   });
   try {
     configureReadonlyDatabase(db);
-    if (validate) {
-      try {
-        assertCoreSchema(db);
-      } catch (error) {
-        console.error(
-          `无法读取会话数据库 ${dbPath}：${error instanceof Error ? error.message : String(error)}`,
-        );
-        throw error;
-      }
-    }
     const row = id
       ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
       : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);

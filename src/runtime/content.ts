@@ -49,6 +49,10 @@ export function messageReasoning(message: BaseMessage) {
   if (summary && summary.parts.length > 0) {
     return joinReasoningParts(summary.parts);
   }
+  const aiSdkParts = aiSdkContentReasoning(message.additional_kwargs["aiSdkContent"]);
+  if (aiSdkParts.length > 0) {
+    return joinReasoningParts(aiSdkParts);
+  }
   return contentBlocksToReasoning(message.contentBlocks);
 }
 export function createReasoningStreamState(): ReasoningStreamState {
@@ -83,6 +87,16 @@ export function contentBlocksToReasoning(content: unknown): string {
         ? [{ text: part["reasoning"] }]
         : [],
     ),
+  );
+}
+function aiSdkContentReasoning(content: unknown): ReasoningPart[] {
+  if (!Array.isArray(content)) {
+    return [];
+  }
+  return content.flatMap((part) =>
+    isRecord(part) && part["type"] === "reasoning" && typeof part["text"] === "string"
+      ? [{ text: part["text"] }]
+      : [],
   );
 }
 function appendReasoningPart(part: ReasoningPart, state: ReasoningStreamState) {

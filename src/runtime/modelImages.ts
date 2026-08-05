@@ -1,20 +1,9 @@
 import { type BaseMessage, type ContentBlock, ToolMessage } from "@langchain/core/messages";
 import type { ModelApi } from "../types";
-import { createMiddleware } from "langchain";
 
 export interface ToolImage {
   src: string;
   mimeType: string;
-}
-export function createModelImageMiddleware(api: ModelApi) {
-  return createMiddleware({
-    name: "model-images",
-    wrapModelCall: (request, handler) =>
-      handler({
-        ...request,
-        messages: prepareModelImageMessages(request.messages, api),
-      }),
-  });
 }
 export function prepareModelImageMessages(messages: BaseMessage[], api: ModelApi): BaseMessage[] {
   return api === "responses"

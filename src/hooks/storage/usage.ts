@@ -1,10 +1,8 @@
-import { queryAll, queryGet } from "../../infrastructure/database/connection";
+import { eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+import { hookUsage } from "../../infrastructure/database/schema";
+import { sessionDatabase } from "../../infrastructure/database/connection";
 
-interface HookUsageRow {
-  hook_id: string;
-  used_count: number;
-}
 export function consumeHookUsage(
   db: Database,
   sessionId: string,
@@ -14,20 +12,20 @@ export function consumeHookUsage(
   if (limit === -1) {
     return true;
   }
-  return (
-    queryGet<{ used_count: number }>(
-      db,
-      `INSERT INTO hook_usage (session_id, hook_id, used_count)
-     SELECT ?, ?, 1 WHERE ? > 0
-     ON CONFLICT (session_id, hook_id) DO UPDATE
-     SET used_count = used_count + 1
-     WHERE used_count < ?
-     RETURNING used_count`,
-      sessionId,
-      hookId,
-      limit,
-      limit,
-    ) !== null
+  if (limit === 0) {
+    return false;
+  }
+  return Boolean(
+    sessionDatabase(db)
+      .insert(hookUsage)
+      .values({ hookId, sessionId, usedCount: 1 })
+      .onConflictDoUpdate({
+        set: { usedCount: sql`${hookUsage.usedCount} + 1` },
+        setWhere: sql`${hookUsage.usedCount} < ${limit}`,
+        target: [hookUsage.sessionId, hookUsage.hookId],
+      })
+      .returning({ hookId: hookUsage.hookId })
+      .get(),
   );
 }
 export function copyHookUsage(
@@ -36,19 +34,15 @@ export function copyHookUsage(
   target: Database,
   targetSessionId: string,
 ) {
-  const rows = queryAll<HookUsageRow>(
-    source,
-    "SELECT hook_id, used_count FROM hook_usage WHERE session_id = ?",
-    sourceSessionId,
-  );
-  const insert = target.prepare(
-    "INSERT INTO hook_usage (session_id, hook_id, used_count) VALUES (?, ?, ?)",
-  );
-  try {
-    for (const row of rows) {
-      insert.run(targetSessionId, row.hook_id, row.used_count);
-    }
-  } finally {
-    insert.finalize();
+  const rows = sessionDatabase(source)
+    .select({ hookId: hookUsage.hookId, usedCount: hookUsage.usedCount })
+    .from(hookUsage)
+    .where(eq(hookUsage.sessionId, sourceSessionId))
+    .all();
+  if (rows.length > 0) {
+    sessionDatabase(target)
+      .insert(hookUsage)
+      .values(rows.map((row) => Object.assign(row, { sessionId: targetSessionId })))
+      .run();
   }
 }

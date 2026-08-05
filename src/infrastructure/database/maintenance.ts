@@ -1,6 +1,17 @@
+import {
+  checkpointWrites,
+  checkpoints,
+  hookUsage,
+  hostLeases,
+  messages,
+  queue,
+  sessions,
+} from "./schema";
 import type { Database } from "bun:sqlite";
 import { createSessionRecord } from "./records/sessions";
 import { deleteSessionStream } from "./records/streamEvents";
+import { eq } from "drizzle-orm";
+import { sessionDatabase } from "./connection";
 
 export function resetSessionStorage(
   db: Database,
@@ -8,13 +19,14 @@ export function resetSessionStorage(
   workspace: string,
   profiles: readonly string[],
 ) {
-  db.run("DELETE FROM writes");
-  db.run("DELETE FROM checkpoints");
-  db.run("DELETE FROM hook_usage");
-  db.run("DELETE FROM host_leases");
+  const orm = sessionDatabase(db);
+  orm.delete(checkpointWrites).run();
+  orm.delete(checkpoints).run();
+  orm.delete(hookUsage).run();
+  orm.delete(hostLeases).run();
   deleteSessionStream(db, sessionId);
-  db.run("DELETE FROM messages WHERE session_id = ?", [sessionId]);
-  db.run("DELETE FROM queue WHERE session_id = ?", [sessionId]);
-  db.run("DELETE FROM sessions WHERE id = ?", [sessionId]);
+  orm.delete(messages).where(eq(messages.sessionId, sessionId)).run();
+  orm.delete(queue).where(eq(queue.sessionId, sessionId)).run();
+  orm.delete(sessions).where(eq(sessions.id, sessionId)).run();
   createSessionRecord(db, sessionId, workspace, profiles);
 }

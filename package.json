@@ -8,6 +8,7 @@
   "module": "src/cli.ts",
   "scripts": {
     "build": "bun scripts/build.ts",
+    "db:generate": "drizzle-kit generate --config=settings/session-db.ts && drizzle-kit generate --config=settings/access-db.ts",
     "omity": "bun src/cli.ts",
     "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun --config=settings/bunfig.toml test"
   },
@@ -22,9 +23,8 @@
     "@hono/node-server": "latest",
     "@langchain/core": "latest",
     "@langchain/langgraph": "latest",
-    "@langchain/langgraph-checkpoint": "latest",
+    "@langchain/langgraph-checkpoint": "^1.1.3",
     "@langchain/mcp-adapters": "latest",
-    "@langchain/openai": "latest",
     "@lezer/highlight": "latest",
     "@modelcontextprotocol/sdk": "latest",
     "@optique/core": "latest",
@@ -41,6 +41,7 @@
     "ajv": "latest",
     "dompurify": "latest",
     "dotenv": "latest",
+    "drizzle-orm": "beta",
     "fast-json-stable-stringify": "latest",
     "gpt-tokenizer": "latest",
     "gray-matter": "latest",
@@ -50,7 +51,6 @@
     "i18next-browser-languagedetector": "latest",
     "ipaddr.js": "latest",
     "is-network-error": "latest",
-    "langchain": "latest",
     "lucide-react": "latest",
     "mitt": "latest",
     "nanoid": "latest",
@@ -74,27 +74,11 @@
     "@types/bun": "latest",
     "@vitejs/plugin-react": "latest",
     "babel-plugin-react-compiler": "latest",
+    "drizzle-kit": "beta",
     "oxfmt": "latest",
     "oxlint": "latest",
     "oxlint-tsgolint": "latest",
     "postcss": "latest",
     "vite": "latest"
-  },
-  "oclif": {
-    "bin": "omity",
-    "commands": "./src/commands",
-    "dirname": "omity-agent",
-    "topicSeparator": " ",
-    "topics": {
-      "app": {
-        "description": "启动 WebUI"
-      },
-      "client": {
-        "description": "向 Host 发送消息或控制指令"
-      },
-      "host": {
-        "description": "管理 Host 会话"
-      }
-    }
   }
 }

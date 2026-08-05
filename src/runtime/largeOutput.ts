@@ -1,37 +1,16 @@
 import { type MessageContent, ToolMessage } from "@langchain/core/messages";
 import { join, resolve } from "node:path";
-import type { Settings } from "../types";
 import { claimShortIdAsync } from "../infrastructure/randomId";
 import { countTokens } from "./tokenizer";
-import { createMiddleware } from "langchain";
 import { inspectToolTextContent } from "./outputText";
 import { mkdirSync } from "node:fs";
 import { safeId } from "../infrastructure/configuration/sessionPaths";
 import { writeFile } from "node:fs/promises";
 
-interface LargeOutputRuntimeContext {
-  sessionId: string;
-}
 interface LargeToolOutputOptions {
   dataDir: string;
   maxTokens: number;
   sessionId: string;
-}
-export function createLargeToolOutputMiddleware(settings: Settings) {
-  return createMiddleware({
-    name: "large-tool-output",
-    wrapToolCall: async (request, handler) => {
-      const result = await handler(request);
-      if (!ToolMessage.isInstance(result)) {
-        return result;
-      }
-      return redirectLargeToolOutput(result, {
-        dataDir: settings.paths.dataDir,
-        maxTokens: settings.toolOutput.maxTokens,
-        sessionId: getSessionId(request.runtime.context),
-      });
-    },
-  });
 }
 export async function redirectLargeToolOutput(
   message: ToolMessage,
@@ -78,12 +57,6 @@ function copyToolMessage(
     tool_call_id: message.tool_call_id,
   });
 }
-function getSessionId(context: unknown) {
-  if (!isLargeOutputRuntimeContext(context)) {
-    throw new Error("工具输出重定向缺少运行时 sessionId");
-  }
-  return context.sessionId;
-}
 function mergeMetadata(
   metadata: unknown,
   largeOutput: { path: string; tokens: number } | undefined,
@@ -95,15 +68,6 @@ function mergeMetadata(
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-function isLargeOutputRuntimeContext(value: unknown): value is LargeOutputRuntimeContext {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "sessionId" in value &&
-    typeof value.sessionId === "string" &&
-    value.sessionId.length > 0
-  );
 }
 async function writeLargeToolOutput(content: string, dataDir: string, sessionId: string) {
   const dir = resolve(dataDir, "sessions", safeId(sessionId), "large_output");

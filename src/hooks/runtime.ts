@@ -8,7 +8,7 @@ import type { ToolMessage } from "@langchain/core/messages";
 import { consumeHookUsage } from "./storage/usage";
 import { resolveHookArgs } from "./variables";
 
-interface RunOptions {
+export interface HookExecutionOptions {
   consume: (hookId: string, limit: number) => Promise<boolean>;
   invoke: (call: ReturnType<HookRuntime["resolvedCall"]>) => Promise<ToolMessage>;
   toolOutputs: readonly HookToolOutput[];
@@ -23,6 +23,7 @@ export class HookRuntime {
     readonly sessionId: string,
     readonly workspace: string,
     readonly sessionDirectory?: string,
+    readonly freeformToolParameters: ReadonlyMap<string, string> = new Map(),
   ) {
     this.toolNames = new Set(tools.map((tool) => tool.name));
     if (this.toolNames.size !== tools.length) {
@@ -44,7 +45,7 @@ export class HookRuntime {
   consume(hookId: string, limit: number) {
     return consumeHookUsage(this.db, this.sessionId, hookId, limit);
   }
-  async run(rule: HookRule, sourceId: string, threadId: string, options: RunOptions) {
+  async execute(rule: HookRule, sourceId: string, threadId: string, options: HookExecutionOptions) {
     if (!(await options.consume(rule.id, rule.runLimit))) {
       return null;
     }
@@ -52,7 +53,6 @@ export class HookRuntime {
     const call = this.resolvedCall(rule, sourceId, threadId, options.toolOutputs);
     this.logger.debug("执行 Hook 节点", {
       hookId: rule.id,
-      mode: rule.mode,
       sourceId,
       trigger: details.trigger,
     });
@@ -73,6 +73,7 @@ export class HookRuntime {
         toolOutputs,
       }),
       id: createHookCallId(this.sessionId, threadId, details),
+      ...(this.freeformToolParameters.has(rule.tool) ? { isCustomTool: true } : {}),
       name: rule.tool,
       type: "tool_call" as const,
     };

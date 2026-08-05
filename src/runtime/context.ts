@@ -11,14 +11,12 @@ import { z } from "zod";
 
 type AgentGraph = ReturnType<typeof buildGraph>["graph"];
 type AgentGraphStream = AgentGraph["stream"];
-type GraphTaskStreamOptions = Omit<
+type GraphStreamOptions = Omit<
   NonNullable<Parameters<AgentGraphStream>[1]>,
-  "interruptAfter"
+  "interruptAfter" | "interruptBefore"
 > & {
   interruptAfter: string[];
-};
-type HostGraph = Omit<AgentGraph, "getState"> & {
-  getState: (...args: Parameters<AgentGraph["getState"]>) => Promise<unknown>;
+  interruptBefore: string[];
 };
 export interface HostObserver {
   activity?: (sessionId: string, status: Extract<SessionStatus, "tool" | "model" | "idle">) => void;
@@ -27,47 +25,36 @@ export interface HostObserver {
   token: (sessionId: string, queueId: number, text: string) => void;
 }
 export interface HostContext {
-  settings: Settings;
-  logger: Logger;
-  db: AgentDatabase;
-  graph: HostGraph;
-  checkpointer: BunSqliteSaver;
-  toolExecutions?: ToolExecutions;
-  sessionId: string;
-  controller: AbortController;
-  stopping?: AbortSignal;
   assertLease?: () => void;
-  wake?: (delayMs: number) => Promise<void>;
+  checkpointer: BunSqliteSaver;
+  controller: AbortController;
+  db: AgentDatabase;
+  graph: AgentGraph;
+  logger: Logger;
   observer?: HostObserver;
+  sessionId: string;
+  settings: Settings;
+  stopping?: AbortSignal;
+  toolExecutions?: ToolExecutions;
+  wake?: (delayMs: number) => Promise<void>;
 }
-export async function streamGraphWithTaskInterrupts(
+export async function streamGraph(
   graph: Pick<AgentGraph, "stream">,
   input: Parameters<AgentGraphStream>[0],
-  options: GraphTaskStreamOptions,
-): Promise<AsyncIterable<unknown> | Iterable<unknown>> {
+  options: GraphStreamOptions,
+) {
   const stream: unknown = Reflect.get(graph, "stream");
   if (typeof stream !== "function") {
     throw new Error("LangGraph 缺少 stream 方法");
   }
   const result: unknown = await Reflect.apply(stream, graph, [input, options]);
-  if (!isStreamIterable(result)) {
+  if (!isIterable(result)) {
     throw new Error("LangGraph stream 没有返回可迭代结果");
   }
   return result;
 }
-function isStreamIterable(value: unknown): value is AsyncIterable<unknown> | Iterable<unknown> {
-  return (
-    (typeof value === "object" || typeof value === "function") &&
-    value !== null &&
-    (typeof Reflect.get(value, Symbol.asyncIterator) === "function" ||
-      typeof Reflect.get(value, Symbol.iterator) === "function")
-  );
-}
 export function waitForWake(ctx: HostContext, delayMs: number) {
-  if (!ctx.wake) {
-    return abortableSleep(delayMs, ctx.controller.signal);
-  }
-  return ctx.wake(delayMs);
+  return ctx.wake ? ctx.wake(delayMs) : abortableSleep(delayMs, ctx.controller.signal);
 }
 async function abortableSleep(delayMs: number, signal: AbortSignal) {
   try {
@@ -79,55 +66,36 @@ async function abortableSleep(delayMs: number, signal: AbortSignal) {
   }
 }
 interface RuntimeGraphState extends Record<string, unknown> {
-  values: Record<string, unknown> & {
-    messages: BaseMessage[];
-    hookPlan?: unknown;
-    hookPendingUserIds?: string[];
-  };
   next: string[];
   tasks: (Record<string, unknown> & { name: string })[];
+  values: Record<string, unknown> & {
+    hookPendingUserIds?: string[];
+    hookPlan?: unknown;
+    messages: BaseMessage[];
+  };
 }
-const graphMessageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value));
-const graphValuesSchema = z.looseObject({
-  hookPendingUserIds: z.array(z.string()).optional(),
-  hookPlan: z.unknown().optional(),
-  messages: z.preprocess(
-    (value) => (Array.isArray(value) ? (value as unknown[]) : []),
-    z.array(graphMessageSchema),
-  ),
-});
+const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value));
 const graphStateSchema = z.looseObject({
   next: z.array(z.string()),
-  tasks: z.array(
-    z.looseObject({
-      name: z.string(),
-    }),
-  ),
-  values: z.preprocess(
-    (value) => (typeof value === "object" && value !== null && !Array.isArray(value) ? value : {}),
-    graphValuesSchema,
-  ),
+  tasks: z.array(z.looseObject({ name: z.string() })),
+  values: z.looseObject({
+    hookPendingUserIds: z.array(z.string()).optional(),
+    hookPlan: z.unknown().optional(),
+    messages: z.array(messageSchema),
+  }),
 });
 export function readGraphState(value: unknown): RuntimeGraphState {
-  if (typeof value !== "object" || value === null) {
-    throw new Error("LangGraph 状态无效");
-  }
   const parsed = graphStateSchema.safeParse(value);
   if (!parsed.success) {
-    const path = parsed.error.issues[0]?.path;
-    if (path?.[0] === "values" && path[1] === "messages") {
-      throw new Error("LangGraph 消息状态无效");
-    }
-    if (path?.[0] === "next") {
-      throw new Error("LangGraph next 状态无效");
-    }
-    if (path?.[0] === "tasks") {
-      throw new Error("LangGraph task 状态无效");
-    }
-    if (path?.[0] === "values" && path[1] === "hookPendingUserIds") {
-      throw new Error("LangGraph Hook pending 状态无效");
-    }
-    throw new Error("LangGraph 消息状态无效");
+    throw new Error("LangGraph 状态无效", { cause: parsed.error });
   }
   return parsed.data;
+}
+function isIterable(value: unknown): value is AsyncIterable<unknown> | Iterable<unknown> {
+  return (
+    (typeof value === "object" || typeof value === "function") &&
+    value !== null &&
+    (typeof Reflect.get(value, Symbol.asyncIterator) === "function" ||
+      typeof Reflect.get(value, Symbol.iterator) === "function")
+  );
 }

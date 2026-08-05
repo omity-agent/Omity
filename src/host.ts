@@ -79,21 +79,22 @@ export async function runHostSession(
     const mcp = options.mcp
       ? await options.mcp(profiles)
       : (ownedMcp = await loadMcp(root, logger, settingsContext));
+    const tools = mcp.modelTools({
+      cwd: db.workspace(mode.sessionId),
+      session: paths.dir,
+    });
     const hooks = new HookRuntime(
       settings.hooks,
-      mcp.tools,
+      tools,
       db.db,
       logger,
       mode.sessionId,
       db.workspace(mode.sessionId),
       paths.dir,
+      mcp.freeformToolParameters,
     );
-    const { graph, checkpointer } = buildGraph(settings, mcp.tools, db.db, hooks, {
+    const { checkpointer, graph } = buildGraph(settings, tools, db.db, hooks, {
       freeformToolParameters: mcp.freeformToolParameters,
-      modelTools: mcp.modelTools({
-        cwd: db.workspace(mode.sessionId),
-        session: paths.dir,
-      }),
       toolExecutions,
     });
     options.onReady?.({

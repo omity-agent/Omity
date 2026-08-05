@@ -14,83 +14,83 @@ import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
 
 type ConsumeHook = (hookId: string, limit: number) => Promise<boolean>;
-type InvokeGraphTool = (call: ToolCall) => Promise<ToolMessage>;
+type InvokeTool = (call: ToolCall) => Promise<ToolMessage>;
 export function createHookNode(
   hooks: HookRuntime,
   consumeHook: ConsumeHook,
-  invokeTool: InvokeGraphTool,
+  invokeTool: InvokeTool,
 ) {
   return async (state: HookState, config: LangGraphRunnableConfig) => {
     const threadId = requireThreadId(config.configurable);
     let plan = initialPlan(state);
-    let toolOutputs = state.hookPlan ? state.hookToolOutputs : [];
+    let outputs = state.hookPlan ? state.hookToolOutputs : [];
     let clearPending = !state.hookPlan && state.hookPendingUserIds.length > 0;
     if (plan?.kind === "agent" && plan.when === "after" && state.hookPendingUserIds.length > 0) {
       plan = agentPlan("before", state.hookPendingUserIds);
       clearPending = true;
     }
     if (!plan) {
-      return command(null, modelNode, clearPending, toolOutputs);
+      return command(null, modelNode, clearPending, outputs);
     }
     if (plan.kind === "done") {
-      return command(plan, END, clearPending, toolOutputs);
+      return command(plan, END, clearPending, outputs);
     }
     if (plan.kind === "tools") {
-      const { output, plan: advancedPlan } = finishAwaited(plan, state.messages);
+      const { plan: advancedPlan, output } = finishAwaited(plan, state.messages);
       plan = advancedPlan;
       if (output) {
-        toolOutputs = [...toolOutputs, output];
+        outputs = [...outputs, output];
       }
     }
     for (;;) {
       if (plan.kind === "agent") {
         const sourceId = plan.sources[plan.sourceIndex];
         if (!sourceId) {
-          return finishAgent(plan, clearPending, toolOutputs);
+          return finishAgent(plan, clearPending, outputs);
         }
         const rule = hooks.matching("agent", plan.when)[plan.hookIndex];
         if (!rule) {
           plan = { ...plan, hookIndex: 0, sourceIndex: plan.sourceIndex + 1 };
         } else {
-          const result = await executeHook(
+          const result = await executeRule(
             rule,
             sourceId,
             hooks,
             threadId,
             consumeHook,
             invokeTool,
-            toolOutputs,
+            outputs,
           );
           plan = { ...plan, hookIndex: plan.hookIndex + 1 };
           if (result) {
-            return hookCommand(plan, rule, result, clearPending, toolOutputs);
+            return hookCommand(plan, rule, result, clearPending, outputs);
           }
         }
       } else {
         const original = restoreOriginal(plan.original);
         const call = original.tool_calls?.[plan.toolIndex];
         if (!call) {
-          return command(null, modelNode, clearPending, toolOutputs);
+          return command(null, modelNode, clearPending, outputs);
         }
         if (plan.stage === "original") {
-          return originalToolCommand(plan, original, call, toolOutputs);
+          return originalToolCommand(plan, original, call, outputs);
         }
         const rule = hooks.matching(call.name, plan.stage)[plan.hookIndex];
         if (!rule) {
           plan = nextToolStage(plan);
         } else {
-          const result = await executeHook(
+          const result = await executeRule(
             rule,
             requireCallId(call),
             hooks,
             threadId,
             consumeHook,
             invokeTool,
-            toolOutputs,
+            outputs,
           );
           plan = { ...plan, hookIndex: plan.hookIndex + 1 };
           if (result) {
-            return hookCommand(plan, rule, result, clearPending, toolOutputs);
+            return hookCommand(plan, rule, result, clearPending, outputs);
           }
         }
       }
@@ -98,31 +98,26 @@ export function createHookNode(
   };
 }
 function initialPlan(state: HookState): HookPlan | null {
-  if (state.hookPlan) {
-    return state.hookPlan;
-  }
-  return state.hookPendingUserIds.length > 0 ? agentPlan("before", state.hookPendingUserIds) : null;
+  return (
+    state.hookPlan ??
+    (state.hookPendingUserIds.length > 0 ? agentPlan("before", state.hookPendingUserIds) : null)
+  );
 }
-function executeHook(
+function executeRule(
   rule: HookRule,
   sourceId: string,
   hooks: HookRuntime,
   threadId: string,
-  consumeHook: ConsumeHook,
-  invokeTool: InvokeGraphTool,
+  consume: ConsumeHook,
+  invoke: InvokeTool,
   toolOutputs: HookState["hookToolOutputs"],
 ) {
-  return hooks.run(rule, sourceId, threadId, {
-    consume: consumeHook,
-    invoke: invokeTool,
-    toolOutputs,
-  });
+  return hooks.execute(rule, sourceId, threadId, { consume, invoke, toolOutputs });
 }
-export function requireThreadId(configurable: Record<string, unknown> | undefined) {
+function requireThreadId(configurable: Record<string, unknown> | undefined) {
   const threadId = configurable?.["thread_id"];
   if (typeof threadId !== "string" || !threadId) {
     throw new Error("Hook 执行缺少 thread_id");
   }
   return threadId;
 }
-export { hookNode } from "./commands";

@@ -1,8 +1,9 @@
+import { eq, sql } from "drizzle-orm";
 import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
-import { queryGet } from "../connection";
-import { settingsProfileNamesSchema } from "../../configuration/settings/context";
+import { sessionDatabase } from "../connection";
+import { sessions } from "../schema";
 
 export function createSessionRecord(
   db: Database,
@@ -13,25 +14,37 @@ export function createSessionRecord(
   if (hasSessionRecord(db, sessionId)) {
     throw sessionConflict(sessionId);
   }
-  const result = db.run(
-    "INSERT INTO sessions (id, workspace, profiles_json, control, created_at, updated_at) VALUES (?, ?, ?, 'running', unixepoch(), unixepoch())",
-    [sessionId, workspace, JSON.stringify(settingsProfileNamesSchema.parse(profiles))],
-  );
-  if (result.changes !== 1) {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    sessionDatabase(db)
+      .insert(sessions)
+      .values({
+        control: "running",
+        createdAt: now,
+        id: sessionId,
+        profiles: [...profiles],
+        updatedAt: now,
+        workspace,
+      })
+      .run();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("UNIQUE")) {
+      throw sessionConflict(sessionId);
+    }
+    throw error;
+  }
+  if (!hasSessionRecord(db, sessionId)) {
     throw sessionConflict(sessionId);
   }
 }
 export function hasSessionRecord(db: Database, sessionId: string) {
-  const query = db.prepare<{ value: number }, [string]>(
-    "SELECT 1 AS value FROM sessions WHERE id = ?",
+  return Boolean(
+    sessionDatabase(db)
+      .select({ id: sessions.id })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .get(),
   );
-  let row: { value: number } | null;
-  try {
-    row = query.get(sessionId);
-  } finally {
-    query.finalize();
-  }
-  return row !== null;
 }
 export function requireSessionRecord(db: Database, sessionId: string) {
   if (!hasSessionRecord(db, sessionId)) {
@@ -40,11 +53,11 @@ export function requireSessionRecord(db: Database, sessionId: string) {
 }
 export function readWorkspaceRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  const row = queryGet<{ workspace: string }>(
-    db,
-    "SELECT workspace FROM sessions WHERE id = ?",
-    sessionId,
-  );
+  const row = sessionDatabase(db)
+    .select({ workspace: sessions.workspace })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .get();
   if (!row) {
     throw sessionNotFound(sessionId);
   }
@@ -52,19 +65,23 @@ export function readWorkspaceRecord(db: Database, sessionId: string) {
 }
 export function readProfilesRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  const row = queryGet<{ profiles_json: string }>(
-    db,
-    "SELECT profiles_json FROM sessions WHERE id = ?",
-    sessionId,
-  );
+  const row = sessionDatabase(db)
+    .select({ profiles: sessions.profiles })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .get();
   if (!row) {
     throw sessionNotFound(sessionId);
   }
-  return settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown);
+  return row.profiles;
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  db.run("UPDATE sessions SET updated_at = MAX(updated_at, unixepoch()) WHERE id = ?", [sessionId]);
+  sessionDatabase(db)
+    .update(sessions)
+    .set({ updatedAt: sql`max(${sessions.updatedAt}, unixepoch())` })
+    .where(eq(sessions.id, sessionId))
+    .run();
 }
 export function touchQueueSessionRecord(db: Database, queueId: number) {
   const result = db.run(
@@ -78,15 +95,11 @@ export function touchQueueSessionRecord(db: Database, queueId: number) {
 }
 export function readControlRecord(db: Database, sessionId: string): Control {
   requireSessionRecord(db, sessionId);
-  const query = db.prepare<{ control: Control }, [string]>(
-    "SELECT control FROM sessions WHERE id = ?",
-  );
-  let row: { control: Control } | null;
-  try {
-    row = query.get(sessionId);
-  } finally {
-    query.finalize();
-  }
+  const row = sessionDatabase(db)
+    .select({ control: sessions.control })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .get();
   if (!row) {
     throw sessionNotFound(sessionId);
   }
@@ -94,8 +107,9 @@ export function readControlRecord(db: Database, sessionId: string): Control {
 }
 export function writeControlRecord(db: Database, sessionId: string, control: Control) {
   requireSessionRecord(db, sessionId);
-  db.run(
-    "UPDATE sessions SET control = ?, updated_at = MAX(updated_at, unixepoch()) WHERE id = ?",
-    [control, sessionId],
-  );
+  sessionDatabase(db)
+    .update(sessions)
+    .set({ control, updatedAt: sql`max(${sessions.updatedAt}, unixepoch())` })
+    .where(eq(sessions.id, sessionId))
+    .run();
 }

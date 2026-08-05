@@ -2,76 +2,29 @@ import type { CheckpointListOptions } from "@langchain/langgraph-checkpoint";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { SQLQueryBindings } from "bun:sqlite";
 
-export type SqlBinding = SQLQueryBindings;
 export interface CheckpointRow {
-  thread_id: string;
-  checkpoint_ns: string;
+  checkpoint: Uint8Array;
   checkpoint_id: string;
-  type: string;
-  checkpoint: Uint8Array | string;
-  metadata: Uint8Array | string;
+  checkpoint_ns: string;
+  metadata: Uint8Array;
   pending_writes: string;
+  thread_id: string;
+  type: string;
 }
-export interface WriteJson {
-  task_id: string;
-  idx: number;
+export interface WriteRow {
   channel: string;
+  task_id: string;
   type: string;
   value: string;
-  message_ids: number[];
 }
-export function checkpointSelectColumns() {
-  return `
-    SELECT thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata,
-      (
-        SELECT json_group_array(json_object(
-          'task_id', pw.task_id,
-          'idx', pw.idx,
-          'channel', pw.channel,
-          'type', pw.type,
-          'value', CAST(pw.value AS TEXT),
-          'message_ids', json(pw.message_ids)
-        ))
-        FROM (
-          SELECT w.task_id, w.idx, w.channel, w.type, w.value,
-            COALESCE((
-              SELECT json_group_array(message_id)
-              FROM (
-                SELECT message_id FROM write_messages wm
-                WHERE wm.thread_id = w.thread_id
-                  AND wm.checkpoint_ns = w.checkpoint_ns
-                  AND wm.checkpoint_id = w.checkpoint_id
-                  AND wm.task_id = w.task_id
-                  AND wm.idx = w.idx
-                ORDER BY ordinal
-              )
-            ), '[]') AS message_ids
-          FROM writes w
-          WHERE w.thread_id = checkpoints.thread_id
-            AND w.checkpoint_ns = checkpoints.checkpoint_ns
-            AND w.checkpoint_id = checkpoints.checkpoint_id
-          ORDER BY w.task_id, w.idx
-        ) AS pw
-      ) AS pending_writes`;
-}
-export function selectCheckpoint() {
-  return `${checkpointSelectColumns()}
-    FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?`;
-}
-export function filterBinding(value: unknown): SqlBinding {
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "bigint" ||
-    typeof value === "boolean" ||
-    value === null
-  ) {
-    return value;
+export function requiredString(value: unknown, name: string) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`缺少 ${name}`);
   }
-  return JSON.stringify(value);
+  return value;
 }
-export function optionalConfigString(value: unknown, name: string) {
-  if (value === undefined || value === null) {
+export function optionalString(value: unknown, name: string) {
+  if (value == null) {
     return undefined;
   }
   if (typeof value !== "string") {
@@ -79,22 +32,32 @@ export function optionalConfigString(value: unknown, name: string) {
   }
   return value;
 }
-export function requiredConfigString(value: unknown, name: string) {
-  const parsed = optionalConfigString(value, name);
-  if (!parsed) {
-    throw new Error(`缺少 ${name}`);
-  }
-  return parsed;
+export function configIdentity(config: RunnableConfig) {
+  return {
+    checkpointId: optionalString(config.configurable?.["checkpoint_id"], "checkpoint_id"),
+    checkpointNs: optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns") ?? "",
+    threadId: requiredString(config.configurable?.["thread_id"], "thread_id"),
+  };
 }
-export function buildListQuery(config: RunnableConfig, options?: CheckpointListOptions) {
-  const { limit, filter } = options ?? {};
+export function selectCheckpoint() {
+  return `SELECT thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata,
+    (SELECT json_group_array(json_object(
+      'task_id', task_id, 'channel', channel, 'type', type,
+      'value', CAST(value AS TEXT)
+    )) FROM (
+      SELECT task_id, channel, type, value FROM checkpoint_writes
+      WHERE thread_id = checkpoints.thread_id
+        AND checkpoint_ns = checkpoints.checkpoint_ns
+        AND checkpoint_id = checkpoints.checkpoint_id
+      ORDER BY task_id, write_index
+    )) AS pending_writes
+    FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?`;
+}
+export function listQuery(config: RunnableConfig, options?: CheckpointListOptions) {
   const clauses: string[] = [];
-  const args: SqlBinding[] = [];
-  const threadId = optionalConfigString(config.configurable?.["thread_id"], "thread_id");
-  const checkpointNs = optionalConfigString(
-    config.configurable?.["checkpoint_ns"],
-    "checkpoint_ns",
-  );
+  const args: SQLQueryBindings[] = [];
+  const threadId = optionalString(config.configurable?.["thread_id"], "thread_id");
+  const checkpointNs = optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns");
   if (threadId) {
     clauses.push("thread_id = ?");
     args.push(threadId);
@@ -103,30 +66,16 @@ export function buildListQuery(config: RunnableConfig, options?: CheckpointListO
     clauses.push("checkpoint_ns = ?");
     args.push(checkpointNs);
   }
-  const filterRecord = requireRecord(filter ?? {}, "checkpoint filter");
-  for (const [key, value] of Object.entries(filterRecord)) {
-    if (value !== undefined) {
-      clauses.push("json_extract(CAST(metadata AS TEXT), ?) = ?");
-      args.push(`$.${key}`, filterBinding(value));
-    }
+  if (options?.before || options?.filter) {
+    throw new Error("当前恢复存储不支持历史 checkpoint 查询");
   }
-  let sql = `${checkpointSelectColumns()} FROM checkpoints`;
-  if (clauses.length > 0) {
-    sql += ` WHERE ${clauses.join(" AND ")}`;
-  }
-  sql += " ORDER BY checkpoint_id DESC";
-  if (limit) {
+  let sql = selectCheckpoint().replace(
+    " WHERE thread_id = ? AND checkpoint_ns = ?",
+    clauses.length > 0 ? ` WHERE ${clauses.join(" AND ")}` : "",
+  );
+  if (options?.limit !== undefined) {
     sql += " LIMIT ?";
-    args.push(limit);
+    args.push(options.limit);
   }
   return { args, sql };
-}
-function requireRecord(value: unknown, name: string): Record<string, unknown> {
-  if (!isRecord(value)) {
-    throw new Error(`${name} 必须是对象`);
-  }
-  return value;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

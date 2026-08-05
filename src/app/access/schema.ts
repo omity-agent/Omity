@@ -1,32 +1,31 @@
-import type { Database } from "bun:sqlite";
-import { runTransaction } from "../../infrastructure/database/connection";
+import { blob, check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import type { AuthenticatorTransportFuture } from "@simplewebauthn/server";
+import { sql } from "drizzle-orm";
 
-export function applyAccessSchema(db: Database) {
-  runTransaction(db, () => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS credentials (
-        id TEXT PRIMARY KEY,
-        public_key BLOB NOT NULL,
-        counter INTEGER NOT NULL,
-        transports_json TEXT,
-        created_at INTEGER NOT NULL
-      )`);
-    db.run(`
-      CREATE TABLE IF NOT EXISTS challenges (
-        id TEXT PRIMARY KEY,
-        challenge TEXT NOT NULL,
-        purpose TEXT NOT NULL CHECK (purpose IN ('registration', 'authentication')),
-        expires_at INTEGER NOT NULL
-      )`);
-    db.run(`
-      CREATE TABLE IF NOT EXISTS access_sessions (
-        token_hash BLOB PRIMARY KEY,
-        expires_at INTEGER NOT NULL
-      )`);
-    db.run(`
-      CREATE TABLE IF NOT EXISTS registration_tickets (
-        token_hash BLOB PRIMARY KEY,
-        expires_at INTEGER NOT NULL
-      )`);
-  });
-}
+export const credentials = sqliteTable("credentials", {
+  counter: integer().notNull(),
+  createdAt: integer("created_at").notNull(),
+  id: text().primaryKey(),
+  publicKey: blob("public_key", { mode: "buffer" }).notNull(),
+  transports: text("transports_json", { mode: "json" }).$type<AuthenticatorTransportFuture[]>(),
+});
+export const challenges = sqliteTable(
+  "challenges",
+  {
+    challenge: text().notNull(),
+    expiresAt: integer("expires_at").notNull(),
+    id: text().primaryKey(),
+    purpose: text({ enum: ["registration", "authentication"] }).notNull(),
+  },
+  (table) => [
+    check("challenges_purpose", sql`${table.purpose} in ('registration', 'authentication')`),
+  ],
+);
+export const accessSessions = sqliteTable("access_sessions", {
+  expiresAt: integer("expires_at").notNull(),
+  tokenHash: blob("token_hash", { mode: "buffer" }).primaryKey(),
+});
+export const registrationTickets = sqliteTable("registration_tickets", {
+  expiresAt: integer("expires_at").notNull(),
+  tokenHash: blob("token_hash", { mode: "buffer" }).primaryKey(),
+});

@@ -19,6 +19,7 @@ export interface StoredHuman {
   type: "human";
 }
 export interface StoredAi {
+  aiSdkContent?: unknown;
   content: MessageContent;
   reasoning?: Record<string, unknown>;
   toolCalls?: ToolCall[];
@@ -54,6 +55,9 @@ function encodeAiMessage(message: AIMessage): StoredAi {
   return {
     content: message.content,
     type: "ai",
+    ...("aiSdkContent" in message.additional_kwargs
+      ? { aiSdkContent: message.additional_kwargs["aiSdkContent"] }
+      : {}),
     ...(message.tool_calls?.length
       ? { toolCalls: message.tool_calls.map((call) => storedToolCall(call, customTools)) }
       : {}),

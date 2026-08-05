@@ -29,18 +29,17 @@ function partitionAdditionalKwargs(original: AIMessage, callId: string, includeR
   );
 }
 function partitionResponseMetadata(original: AIMessage, callId: string, includeResponse: boolean) {
-  const responseMetadata = includeResponse ? { ...original.response_metadata } : {};
+  const metadata = includeResponse ? { ...original.response_metadata } : {};
   const { output } = original.response_metadata;
-  if (!Array.isArray(output)) {
-    return responseMetadata;
+  if (Array.isArray(output)) {
+    const partition = partitionCallItems(output, toolCallIds(original), callId, includeResponse);
+    if (partition) {
+      metadata["output"] = partition;
+    } else {
+      delete metadata["output"];
+    }
   }
-  const partition = partitionCallItems(output, toolCallIds(original), callId, includeResponse);
-  if (partition) {
-    responseMetadata["output"] = partition;
-  } else {
-    delete responseMetadata["output"];
-  }
-  return responseMetadata;
+  return metadata;
 }
 function partitionCallItems(
   items: unknown[],
@@ -61,8 +60,7 @@ function partitionCallRecord(
   callId: string,
   includeResponse: boolean,
 ) {
-  const hasCallIds = Object.keys(value).some((id) => allCallIds.has(id));
-  if (!hasCallIds) {
+  if (!Object.keys(value).some((id) => allCallIds.has(id))) {
     return includeResponse ? value : undefined;
   }
   const partition = Object.fromEntries(
@@ -80,8 +78,7 @@ function itemCallId(item: unknown, allCallIds: Set<string>) {
   if (typeof callId === "string" && allCallIds.has(callId)) {
     return callId;
   }
-  const { id } = item;
-  return typeof id === "string" && allCallIds.has(id) ? id : undefined;
+  return typeof item["id"] === "string" && allCallIds.has(item["id"]) ? item["id"] : undefined;
 }
 function toolCallIds(message: AIMessage) {
   return new Set(message.tool_calls?.flatMap((call) => (call.id ? [call.id] : [])));

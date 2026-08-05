@@ -114,9 +114,6 @@ export function pruneUnreferencedMessages(db: Database, sessionId?: string) {
   db.run(
     `DELETE FROM messages
      WHERE position IS NULL
-       AND NOT EXISTS (
-         SELECT 1 FROM write_messages WHERE write_messages.message_id = messages.id
-       )
        AND (? IS NULL OR session_id = ?)`,
     [sessionId ?? null, sessionId ?? null],
   );

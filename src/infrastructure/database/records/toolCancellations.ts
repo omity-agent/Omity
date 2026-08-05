@@ -1,38 +1,48 @@
+import { and, eq } from "drizzle-orm";
+import { events, queue, toolCancellations } from "../schema";
 import type { Database } from "bun:sqlite";
-import { queryGet } from "../connection";
+import { sessionDatabase } from "../connection";
 import { toolNotRunning } from "../../../errors";
 
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
-  const running = queryGet<{ found: number }>(
-    db,
-    `SELECT EXISTS(
-      SELECT 1 FROM events e
-      JOIN queue q ON q.id = e.queue_id
-      WHERE e.session_id = ? AND e.kind = 'tool_started'
-        AND e.payload_json = ? AND q.status = 'running'
-    ) AS found`,
-    sessionId,
-    JSON.stringify(callId),
-  );
-  if (running?.found !== 1) {
+  const orm = sessionDatabase(db);
+  const running = orm
+    .select({ id: events.id })
+    .from(events)
+    .innerJoin(queue, eq(queue.id, events.queueId))
+    .where(
+      and(
+        eq(events.sessionId, sessionId),
+        eq(events.kind, "tool_started"),
+        eq(events.payload, callId),
+        eq(queue.status, "running"),
+      ),
+    )
+    .get();
+  if (!running) {
     throw toolNotRunning(callId);
   }
-  db.run(
-    `INSERT INTO tool_cancellations (session_id, call_id, requested_at)
-     VALUES (?, ?, ?)
-     ON CONFLICT (session_id, call_id)
-     DO UPDATE SET requested_at = excluded.requested_at`,
-    [sessionId, callId, Date.now()],
-  );
+  orm
+    .insert(toolCancellations)
+    .values({ callId, requestedAt: Date.now(), sessionId })
+    .onConflictDoUpdate({
+      set: { requestedAt: Date.now() },
+      target: [toolCancellations.sessionId, toolCancellations.callId],
+    })
+    .run();
 }
 export function takeToolCancellation(db: Database, sessionId: string, callId: string) {
-  return (
-    db.run("DELETE FROM tool_cancellations WHERE session_id = ? AND call_id = ?", [
-      sessionId,
-      callId,
-    ]).changes > 0
+  return Boolean(
+    sessionDatabase(db)
+      .delete(toolCancellations)
+      .where(and(eq(toolCancellations.sessionId, sessionId), eq(toolCancellations.callId, callId)))
+      .returning({ callId: toolCancellations.callId })
+      .get(),
   );
 }
 export function clearToolCancellations(db: Database, sessionId: string) {
-  db.run("DELETE FROM tool_cancellations WHERE session_id = ?", [sessionId]);
+  sessionDatabase(db)
+    .delete(toolCancellations)
+    .where(eq(toolCancellations.sessionId, sessionId))
+    .run();
 }

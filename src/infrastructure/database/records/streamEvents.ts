@@ -1,7 +1,14 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { Database } from "bun:sqlite";
-import { queryGet } from "../connection";
+import { events } from "../schema";
+import { sessionDatabase } from "../connection";
 
+const sqliteSequence = sqliteTable("sqlite_sequence", {
+  name: text().notNull(),
+  seq: integer().notNull(),
+});
 export interface StreamToolCallDelta {
   index: number;
   argumentsDelta?: string;
@@ -22,7 +29,7 @@ interface StreamEventBase {
   partId: string;
   queueId: number;
 }
-interface StreamEventValues {
+export interface StreamEventValues {
   assistant_reasoning_delta: string;
   assistant_text_delta: string;
   tool_call_delta: StreamToolCallDelta;
@@ -46,19 +53,13 @@ interface StartedToolCall {
   partId: string;
   queueId: number;
 }
-interface ToolLifecycleRow {
-  kind: "tool_finished" | "tool_started";
-  message_id: string;
-  part_id: string;
-  payload_json: string;
-  queue_id: number;
-}
-interface SequenceRow {
-  seq: number;
-}
 export function streamEventCursor(db: Database) {
   const cursor =
-    queryGet<SequenceRow>(db, "SELECT seq FROM sqlite_sequence WHERE name = 'events'")?.seq ?? 0;
+    sessionDatabase(db)
+      .select({ value: sqliteSequence.seq })
+      .from(sqliteSequence)
+      .where(eq(sqliteSequence.name, "events"))
+      .get()?.value ?? 0;
   if (!Number.isSafeInteger(cursor)) {
     throw new Error(`流式事件游标超出安全整数范围：${String(cursor)}`);
   }
@@ -69,65 +70,64 @@ export function insertStreamEvent(
   sessionId: string,
   event: StreamEventDraft,
 ): StreamEvent {
-  const result = db.run(
-    `INSERT INTO events
-       (session_id, queue_id, message_id, part_id, kind, payload_json)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
+  const inserted = sessionDatabase(db)
+    .insert(events)
+    .values({
+      kind: event.kind,
+      messageId: event.messageId,
+      partId: event.partId,
+      payload: event.value,
+      queueId: event.queueId,
       sessionId,
-      event.queueId,
-      event.messageId,
-      event.partId,
-      event.kind,
-      JSON.stringify(event.value),
-    ],
-  );
-  const id = Number(result.lastInsertRowid);
-  if (!Number.isSafeInteger(id)) {
-    throw new Error(`流式事件 ID 超出安全整数范围：${String(result.lastInsertRowid)}`);
-  }
-  return { ...event, id };
+    })
+    .returning({ id: events.id })
+    .get();
+  return { ...event, id: inserted.id };
 }
 function loadStartedToolCalls(db: Database, sessionId: string): StartedToolCall[] {
-  const rows = db
-    .query<ToolLifecycleRow, [string]>(
-      `SELECT queue_id, message_id, part_id, kind, payload_json
-       FROM events
-       WHERE session_id = ? AND kind IN ('tool_started', 'tool_finished')
-       ORDER BY id`,
+  const rows = sessionDatabase(db)
+    .select()
+    .from(events)
+    .where(
+      and(eq(events.sessionId, sessionId), inArray(events.kind, ["tool_started", "tool_finished"])),
     )
-    .all(sessionId);
+    .orderBy(asc(events.id))
+    .all();
   const finished = new Set(
-    rows.flatMap((row) => (row.kind === "tool_finished" ? [readCallId(row)] : [])),
+    rows.flatMap((row) =>
+      row.kind === "tool_finished" ? [readCallId(row.kind, row.payload)] : [],
+    ),
   );
   const started = new Map<string, StartedToolCall>();
-  const pending = rows.filter((row) => row.kind === "tool_started");
+  const pending = rows.filter(
+    (row): row is typeof row & { kind: "tool_started" } => row.kind === "tool_started",
+  );
   for (const row of pending) {
-    const callId = readCallId(row);
+    const callId = readCallId(row.kind, row.payload);
     if (!finished.has(callId)) {
       const existing = started.get(callId);
       if (
         existing &&
-        (existing.messageId !== row.message_id ||
-          existing.partId !== row.part_id ||
-          existing.queueId !== row.queue_id)
+        (existing.messageId !== row.messageId ||
+          existing.partId !== row.partId ||
+          existing.queueId !== row.queueId)
       ) {
         throw new Error(`工具调用 ${callId} 绑定了多个流身份`);
       }
       started.set(callId, {
         callId,
-        messageId: row.message_id,
-        partId: row.part_id,
-        queueId: row.queue_id,
+        messageId: row.messageId,
+        partId: row.partId,
+        queueId: row.queueId,
       });
     }
   }
   return [...started.values()];
 }
-function readCallId(row: ToolLifecycleRow) {
-  const callId: unknown = JSON.parse(row.payload_json);
+function readCallId(kind: "tool_finished" | "tool_started", payload: unknown) {
+  const callId = payload;
   if (typeof callId !== "string" || callId.length === 0) {
-    throw new Error(`工具${row.kind === "tool_started" ? "开始" : "完成"}事件缺少调用 ID`);
+    throw new Error(`工具${kind === "tool_started" ? "开始" : "完成"}事件缺少调用 ID`);
   }
   return callId;
 }
@@ -152,16 +152,22 @@ export function finishToolStreams(db: Database, sessionId: string, messages: Bas
   );
 }
 function deleteTextStreams(db: Database, sessionId: string) {
-  db.run(
-    `DELETE FROM events
-     WHERE session_id = ?
-       AND kind IN ('assistant_reasoning_delta', 'assistant_text_delta')`,
-    [sessionId],
-  );
+  sessionDatabase(db)
+    .delete(events)
+    .where(
+      and(
+        eq(events.sessionId, sessionId),
+        inArray(events.kind, ["assistant_reasoning_delta", "assistant_text_delta"]),
+      ),
+    )
+    .run();
 }
 export function deleteSessionStream(db: Database, sessionId: string) {
-  db.run("DELETE FROM events WHERE session_id = ? AND kind <> 'user_appended'", [sessionId]);
+  sessionDatabase(db)
+    .delete(events)
+    .where(and(eq(events.sessionId, sessionId), ne(events.kind, "user_appended")))
+    .run();
 }
 export function deleteQueueStream(db: Database, queueId: number) {
-  db.run("DELETE FROM events WHERE queue_id = ?", [queueId]);
+  sessionDatabase(db).delete(events).where(eq(events.queueId, queueId)).run();
 }

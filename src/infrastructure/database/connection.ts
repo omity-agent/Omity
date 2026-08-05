@@ -1,7 +1,32 @@
 import type { Database, SQLQueryBindings } from "bun:sqlite";
+import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
+import {
+  checkpointWrites,
+  checkpoints,
+  composerDrafts,
+  hookUsage,
+  hostLeases,
+  queue,
+  sessions,
+  toolCancellations,
+} from "./schema/session";
+import { events, messages } from "./schema/conversation";
 import { parse, resolve } from "node:path";
 import { rmSync } from "node:fs";
 
+const sessionSchema = {
+  checkpointWrites,
+  checkpoints,
+  composerDrafts,
+  events,
+  hookUsage,
+  hostLeases,
+  messages,
+  queue,
+  sessions,
+  toolCancellations,
+};
+export type SessionDatabase = SQLiteBunDatabase<typeof sessionSchema>;
 export const sqliteBusyTimeoutMs = 5000;
 export function configureDatabase(db: Database) {
   db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
@@ -13,6 +38,9 @@ export function configureDatabase(db: Database) {
 export function configureReadonlyDatabase(db: Database) {
   db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
   db.run("PRAGMA foreign_keys = ON");
+}
+export function sessionDatabase(db: Database) {
+  return drizzle({ client: db, schema: sessionSchema });
 }
 export function closeDatabase(db: Database) {
   const clearQueryCache: unknown = Reflect.get(db, "clearQueryCache");

@@ -11,37 +11,31 @@ import { type HookToolOutput, readToolOutput } from "./storage/outputs";
 import type { HookWhen } from "../types";
 
 export interface AgentHookPlan {
-  kind: "agent";
-  when: HookWhen;
-  sources: string[];
-  sourceIndex: number;
   hookIndex: number;
+  kind: "agent";
+  sourceIndex: number;
+  sources: string[];
+  when: HookWhen;
 }
 export interface ToolHookPlan {
+  awaiting?: { callId: string };
+  hookIndex: number;
   kind: "tools";
   original: StoredMessage;
-  toolIndex: number;
-  stage: "before" | "original" | "after";
-  hookIndex: number;
-  responseEmitted: boolean;
   replaceMessageId?: string;
-  awaiting?: { callId: string };
+  responseEmitted: boolean;
+  stage: "before" | "original" | "after";
+  toolIndex: number;
 }
-export type HookPlan = AgentHookPlan | ToolHookPlan | { kind: "done"; finalMessageId: string };
+export type HookPlan = AgentHookPlan | ToolHookPlan | { finalMessageId: string; kind: "done" };
 export interface HookState {
-  messages: BaseMessage[];
   hookPendingUserIds: string[];
   hookPlan: HookPlan | null;
   hookToolOutputs: HookToolOutput[];
+  messages: BaseMessage[];
 }
 export function agentPlan(when: HookWhen, sources: string[]): AgentHookPlan {
-  return {
-    hookIndex: 0,
-    kind: "agent",
-    sourceIndex: 0,
-    sources,
-    when,
-  };
+  return { hookIndex: 0, kind: "agent", sourceIndex: 0, sources, when };
 }
 export function toolPlan(message: AIMessage): ToolHookPlan {
   if (!message.id) {
@@ -64,49 +58,32 @@ export function restoreOriginal(stored: StoredMessage) {
   }
   return message;
 }
-export function finishAwaited(
-  plan: ToolHookPlan,
-  messages: BaseMessage[],
-): { output?: HookToolOutput; plan: ToolHookPlan } {
+export function finishAwaited(plan: ToolHookPlan, messages: BaseMessage[]) {
   if (!plan.awaiting) {
     return { plan };
   }
-  const output = completedOutput(messages, plan.awaiting.callId);
+  const output = messages.findLast(
+    (message): message is ToolMessage =>
+      ToolMessage.isInstance(message) && message.tool_call_id === plan.awaiting?.callId,
+  );
   if (!output) {
     return { plan };
   }
   return {
     output: readToolOutput(output),
-    plan: {
-      ...plan,
-      awaiting: undefined,
-      hookIndex: 0,
-      stage: "after",
-    },
+    plan: { ...plan, awaiting: undefined, hookIndex: 0, stage: "after" as const },
   };
 }
 export function nextToolStage(plan: ToolHookPlan): ToolHookPlan {
-  if (plan.stage === "before") {
-    return { ...plan, hookIndex: 0, stage: "original" };
-  }
-  return {
-    ...plan,
-    hookIndex: 0,
-    stage: "before",
-    toolIndex: plan.toolIndex + 1,
-  };
+  return plan.stage === "before"
+    ? { ...plan, hookIndex: 0, stage: "original" }
+    : { ...plan, hookIndex: 0, stage: "before", toolIndex: plan.toolIndex + 1 };
 }
 export function requireCallId(call: ToolCall) {
   if (!call.id) {
     throw new Error(`工具调用缺少 ID：${call.name}`);
   }
   return call.id;
-}
-function completedOutput(messages: BaseMessage[], id: string) {
-  return messages.findLast(
-    (message): message is ToolMessage =>
-      ToolMessage.isInstance(message) && message.tool_call_id === id,
-  );
 }
 function storeMessage(message: BaseMessage) {
   const [stored] = mapChatMessagesToStoredMessages([message]);

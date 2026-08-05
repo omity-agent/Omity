@@ -1,37 +1,24 @@
-import type { AuthenticatorTransportFuture, WebAuthnCredential } from "@simplewebauthn/server";
-import {
-  closeDatabase,
-  configureDatabase,
-  queryAll,
-  queryGet,
-  runTransaction,
-} from "../../infrastructure/database/connection";
+import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
+import { accessSessions, challenges, credentials, registrationTickets } from "./schema";
+import { and, count, eq, gt, lte, sql } from "drizzle-orm";
+import { closeDatabase, configureDatabase } from "../../infrastructure/database/connection";
 import { createHash, randomBytes } from "node:crypto";
 import { Database } from "bun:sqlite";
-import { applyAccessSchema } from "./schema";
+import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { join } from "node:path";
-import { z } from "zod";
+import { migrateAccessDatabase } from "../../infrastructure/database/migrations";
 
-interface CredentialRow {
-  counter: number;
-  id: string;
-  public_key: Uint8Array;
-  transports_json: string | null;
-}
-interface ChallengeRow {
-  challenge: string;
-  expires_at: number;
-}
-const transportsSchema = z.array(
-  z.enum(["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]),
-);
+const schema = { accessSessions, challenges, credentials, registrationTickets };
+type AccessSchema = typeof schema;
 export class AccessStore {
   private readonly db: Database;
-  constructor(dataDir: string) {
+  private readonly orm: SQLiteBunDatabase<AccessSchema>;
+  constructor(dataDir: string, root = process.cwd()) {
     this.db = new Database(join(dataDir, "access.sqlite"), { create: true, strict: true });
     try {
       configureDatabase(this.db);
-      applyAccessSchema(this.db);
+      this.orm = drizzle({ client: this.db, schema });
+      migrateAccessDatabase(this.orm, root);
     } catch (error) {
       closeDatabase(this.db);
       throw error;
@@ -41,62 +28,60 @@ export class AccessStore {
     closeDatabase(this.db);
   }
   credentialCount() {
-    return (
-      queryGet<{ count: number }>(this.db, "SELECT COUNT(*) AS count FROM credentials")?.count ?? 0
-    );
+    return this.orm.select({ value: count() }).from(credentials).get()?.value ?? 0;
   }
   credentials(): WebAuthnCredential[] {
-    return queryAll<CredentialRow>(this.db, "SELECT * FROM credentials ORDER BY created_at").map(
-      toCredential,
-    );
+    return this.orm
+      .select()
+      .from(credentials)
+      .orderBy(credentials.createdAt)
+      .all()
+      .map(toCredential);
   }
   credential(id: string): WebAuthnCredential | undefined {
-    const row = queryGet<CredentialRow>(this.db, "SELECT * FROM credentials WHERE id = ?", id);
+    const row = this.orm.select().from(credentials).where(eq(credentials.id, id)).get();
     return row ? toCredential(row) : undefined;
   }
   addCredential(credential: WebAuthnCredential) {
-    this.db.run(
-      `INSERT INTO credentials (id, public_key, counter, transports_json, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [
-        credential.id,
-        credential.publicKey,
-        credential.counter,
-        credential.transports ? JSON.stringify(credential.transports) : null,
-        Date.now(),
-      ],
-    );
+    this.orm
+      .insert(credentials)
+      .values({
+        counter: credential.counter,
+        createdAt: Date.now(),
+        id: credential.id,
+        publicKey: Buffer.from(credential.publicKey),
+        transports: credential.transports,
+      })
+      .run();
   }
   updateCounter(id: string, counter: number) {
-    const result = this.db.run("UPDATE credentials SET counter = MAX(counter, ?) WHERE id = ?", [
-      counter,
-      id,
-    ]);
-    if (result.changes !== 1) {
+    const updated = this.orm
+      .update(credentials)
+      .set({ counter: sql`max(${credentials.counter}, ${counter})` })
+      .where(eq(credentials.id, id))
+      .returning({ id: credentials.id })
+      .all();
+    if (updated.length === 0) {
       throw new Error(`WebAuthn 凭据不存在：${id}`);
     }
   }
   createChallenge(purpose: "registration" | "authentication", challenge: string, ttlMs: number) {
     this.removeExpired();
     const id = randomToken();
-    this.db.run("INSERT INTO challenges (id, challenge, purpose, expires_at) VALUES (?, ?, ?, ?)", [
-      id,
-      challenge,
-      purpose,
-      Date.now() + ttlMs,
-    ]);
+    this.orm
+      .insert(challenges)
+      .values({ challenge, expiresAt: Date.now() + ttlMs, id, purpose })
+      .run();
     return id;
   }
   consumeChallenge(id: string, purpose: "registration" | "authentication") {
-    return runTransaction(this.db, () => {
-      const row = queryGet<ChallengeRow>(
-        this.db,
-        "SELECT challenge, expires_at FROM challenges WHERE id = ? AND purpose = ?",
-        id,
-        purpose,
-      );
-      this.db.run("DELETE FROM challenges WHERE id = ?", [id]);
-      if (!row || row.expires_at <= Date.now()) {
+    return this.orm.transaction((tx) => {
+      const row = tx
+        .delete(challenges)
+        .where(and(eq(challenges.id, id), eq(challenges.purpose, purpose)))
+        .returning({ challenge: challenges.challenge, expiresAt: challenges.expiresAt })
+        .get();
+      if (!row || row.expiresAt <= Date.now()) {
         throw new Error("WebAuthn 挑战不存在或已过期");
       }
       return row.challenge;
@@ -105,31 +90,30 @@ export class AccessStore {
   createSession(ttlMs: number) {
     this.removeExpired();
     const token = randomToken();
-    this.db.run("INSERT INTO access_sessions (token_hash, expires_at) VALUES (?, ?)", [
-      tokenHash(token),
-      Date.now() + ttlMs,
-    ]);
+    this.orm
+      .insert(accessSessions)
+      .values({ expiresAt: Date.now() + ttlMs, tokenHash: tokenHash(token) })
+      .run();
     return token;
   }
   createRegistrationTicket(ttlMs: number) {
     this.removeExpired();
     const token = randomToken();
-    this.db.run("INSERT INTO registration_tickets (token_hash, expires_at) VALUES (?, ?)", [
-      tokenHash(token),
-      Date.now() + ttlMs,
-    ]);
+    this.orm
+      .insert(registrationTickets)
+      .values({ expiresAt: Date.now() + ttlMs, tokenHash: tokenHash(token) })
+      .run();
     return token;
   }
   consumeRegistrationTicket(token: string) {
-    return runTransaction(this.db, () => {
+    return this.orm.transaction((tx) => {
       const hash = tokenHash(token);
-      const row = queryGet<{ expires_at: number }>(
-        this.db,
-        "SELECT expires_at FROM registration_tickets WHERE token_hash = ?",
-        hash,
-      );
-      this.db.run("DELETE FROM registration_tickets WHERE token_hash = ?", [hash]);
-      if (!row || row.expires_at <= Date.now()) {
+      const row = tx
+        .delete(registrationTickets)
+        .where(eq(registrationTickets.tokenHash, hash))
+        .returning({ expiresAt: registrationTickets.expiresAt })
+        .get();
+      if (!row || row.expiresAt <= Date.now()) {
         throw new Error("WebAuthn 注册链接不存在或已过期");
       }
     });
@@ -138,34 +122,42 @@ export class AccessStore {
     if (!token) {
       return false;
     }
-    const row = queryGet<{ expires_at: number }>(
-      this.db,
-      "SELECT expires_at FROM access_sessions WHERE token_hash = ?",
-      tokenHash(token),
+    return Boolean(
+      this.orm
+        .select({ tokenHash: accessSessions.tokenHash })
+        .from(accessSessions)
+        .where(
+          and(
+            eq(accessSessions.tokenHash, tokenHash(token)),
+            gt(accessSessions.expiresAt, Date.now()),
+          ),
+        )
+        .get(),
     );
-    return row !== null && row.expires_at > Date.now();
   }
   deleteSession(token?: string) {
     if (token) {
-      this.db.run("DELETE FROM access_sessions WHERE token_hash = ?", [tokenHash(token)]);
+      this.orm
+        .delete(accessSessions)
+        .where(eq(accessSessions.tokenHash, tokenHash(token)))
+        .run();
     }
   }
   private removeExpired() {
     const now = Date.now();
-    this.db.run("DELETE FROM challenges WHERE expires_at <= ?", [now]);
-    this.db.run("DELETE FROM access_sessions WHERE expires_at <= ?", [now]);
-    this.db.run("DELETE FROM registration_tickets WHERE expires_at <= ?", [now]);
+    this.orm.transaction((tx) => {
+      tx.delete(challenges).where(lte(challenges.expiresAt, now)).run();
+      tx.delete(accessSessions).where(lte(accessSessions.expiresAt, now)).run();
+      tx.delete(registrationTickets).where(lte(registrationTickets.expiresAt, now)).run();
+    });
   }
 }
-function toCredential(row: CredentialRow): WebAuthnCredential {
-  const transports = row.transports_json
-    ? (transportsSchema.parse(JSON.parse(row.transports_json)) as AuthenticatorTransportFuture[])
-    : undefined;
+function toCredential(row: typeof credentials.$inferSelect): WebAuthnCredential {
   return {
     counter: row.counter,
     id: row.id,
-    publicKey: new Uint8Array(row.public_key),
-    ...(transports ? { transports } : {}),
+    publicKey: new Uint8Array(row.publicKey),
+    ...(row.transports ? { transports: row.transports } : {}),
   };
 }
 function randomToken() {

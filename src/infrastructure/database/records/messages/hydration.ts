@@ -15,10 +15,13 @@ export function decodeMessage(value: string, id?: string) {
   }
   if (stored.type === "ai") {
     return new AIMessage({
+      additional_kwargs: {
+        ...(stored.aiSdkContent ? { aiSdkContent: stored.aiSdkContent } : {}),
+        ...(stored.reasoning ? { reasoning: stored.reasoning } : {}),
+      },
       content: stored.content,
       id,
       ...(stored.toolCalls ? { tool_calls: stored.toolCalls } : {}),
-      ...(stored.reasoning ? { additional_kwargs: { reasoning: stored.reasoning } } : {}),
       ...(stored.usage ? { usage_metadata: restoredUsage(stored.usage) } : {}),
     });
   }
@@ -60,6 +63,7 @@ function parseAiMessage(value: Record<string, unknown>): StoredAi {
     throw new Error("AI message content 无效");
   }
   return {
+    ...("aiSdkContent" in value ? { aiSdkContent: value["aiSdkContent"] } : {}),
     content,
     type: "ai",
     ...(isToolCallArray(value["toolCalls"]) ? { toolCalls: value["toolCalls"] } : {}),

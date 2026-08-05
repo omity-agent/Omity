@@ -1,14 +1,9 @@
 import { CanceledRunError, type QueueRun, cancelRun, finishRun, setRunStatus } from "./run";
-import { type HostContext, readGraphState, streamGraphWithTaskInterrupts } from "./context";
-import {
-  completeActiveStream,
-  createStreamLogState,
-  discardActiveStream,
-  handleStreamEvent,
-  recordToolExecutionStarted,
-} from "./stream";
+import { type HostContext, readGraphState, streamGraph } from "./context";
+import { completeActiveStream, createStreamLogState, discardActiveStream } from "./stream";
 import { consumeBoundaryAppends, recoverConsumedAppends } from "./appends";
 import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
+import { recordAiStreamPart, recordToolStarted } from "./aiStream";
 import { HostLeaseLostError } from "./execution/lease";
 import type { QueueItem } from "../types";
 import { captureError } from "../failures/details";
@@ -29,22 +24,15 @@ export async function processQueue(ctx: HostContext, item: QueueItem) {
   };
   try {
     ctx.assertLease?.();
-    if (pauseForStop(ctx, run)) {
-      return;
-    }
-    if (!(await waitIfPaused(ctx, run))) {
-      return;
-    }
-    if (pauseForStop(ctx, run)) {
+    if (pauseForStop(ctx, run) || !(await waitIfPaused(ctx, run))) {
       return;
     }
     for (const runItem of run.items) {
       ctx.db.startQueue(ctx.sessionId, runItem);
     }
-    if (pauseForStop(ctx, run)) {
-      return;
+    if (!pauseForStop(ctx, run)) {
+      await runGraphUntilBoundary(ctx, run);
     }
-    await runGraphUntilBoundary(ctx, run);
   } catch (error) {
     if (error instanceof CanceledRunError) {
       return;
@@ -70,31 +58,23 @@ export async function processQueue(ctx: HostContext, item: QueueItem) {
     end();
   }
 }
-function isTerminal(status: QueueItem["status"]) {
-  return status === "done" || status === "canceled";
-}
 async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
   const [item] = run.items;
   const config = {
     configurable: { thread_id: run.threadId },
-    context: { sessionId: ctx.sessionId },
-    interruptAfter: ["request_model", "invoke_tool"],
-    interruptBefore: ["model_request", "tools"] as ["model_request", "tools"],
+    interruptAfter: ["request_model", "invoke_tool"] as string[],
+    interruptBefore: ["model_request", "tools"] as string[],
     recursionLimit: ctx.settings.agent.recursionLimit,
   };
   const checkpoint = await ctx.checkpointer.getTuple(config);
-  let input: Parameters<HostContext["graph"]["stream"]>[0];
-  if (checkpoint) {
-    const state = readGraphState(await ctx.graph.getState(config));
-    input = recoverConsumedAppends(ctx, run, state);
-  } else {
-    input = {
-      hookPendingUserIds: [queueMessageId(ctx.sessionId, item.id)],
-      messages: ctx.db.history(ctx.sessionId),
-    };
-  }
-  let modelRetry = 0;
-  const streamLogState = createStreamLogState();
+  let input: Parameters<HostContext["graph"]["stream"]>[0] = checkpoint
+    ? recoverConsumedAppends(ctx, run, readGraphState(await ctx.graph.getState(config)))
+    : {
+        hookPendingUserIds: [queueMessageId(ctx.sessionId, item.id)],
+        messages: ctx.db.history(ctx.sessionId),
+      };
+  let retries = 0;
+  const streamState = createStreamLogState();
   for (;;) {
     ctx.assertLease?.();
     if (pauseForStop(ctx, run)) {
@@ -102,74 +82,53 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
     }
     let reachedBoundary = false;
     try {
-      const stream = await streamGraphWithTaskInterrupts(ctx.graph, input, {
+      const stream = await streamGraph(ctx.graph, input, {
         ...config,
         signal: ctx.controller.signal,
-        streamMode: ["messages", "updates", "debug"],
+        streamMode: ["custom", "updates", "debug"],
       });
       for await (const event of stream) {
-        handleStreamEvent(ctx, event, streamLogState, item.id);
+        handleGraphEvent(ctx, item.id, event, streamState);
       }
-      modelRetry = 0;
+      retries = 0;
       reachedBoundary = true;
     } catch (error) {
+      discardActiveStream(ctx, streamState, item.id);
       if (!isRetryableModelError(error)) {
-        discardActiveStream(ctx, streamLogState, item.id);
         throw error;
       }
-      discardActiveStream(ctx, streamLogState, item.id);
-      modelRetry += 1;
-      const shouldRetry = await waitBeforeModelRetry(ctx, run, error, modelRetry, {
+      retries += 1;
+      const retry = await waitBeforeModelRetry(ctx, run, error, retries, {
         cancel: () => {
           cancelRun(ctx, run);
           return Promise.reject(new CanceledRunError("运行已取消"));
         },
-        pause: async () => {
-          setRunStatus(ctx, run, "paused");
-          return waitIfPaused(ctx, run);
-        },
-        stop: () => {
-          setRunStatus(ctx, run, "paused");
-        },
+        pause: () => waitIfPaused(ctx, run),
+        stop: () => setRunStatus(ctx, run, "paused"),
       });
-      if (!shouldRetry) {
+      if (!retry) {
         return;
       }
     }
     if (reachedBoundary) {
       ctx.assertLease?.();
-      if (pauseForStop(ctx, run)) {
-        return;
-      }
       const control = ctx.db.control(ctx.sessionId);
       if (control === "cancel") {
         cancelRun(ctx, run);
         return;
       }
       const state = readGraphState(await ctx.graph.getState(config));
-      const { messages } = state.values;
-      if (messages.length > 0) {
-        ctx.db.syncHistory(ctx.sessionId, messages);
-        completeActiveStream(streamLogState);
+      if (state.values.messages.length > 0) {
+        ctx.db.syncHistory(ctx.sessionId, state.values.messages);
+        completeActiveStream(streamState);
         ctx.observer?.changed?.(ctx.sessionId);
-        ctx.logger.debug("已持久化节点上下文", { messages: messages.length });
       }
-      ctx.logger.debug("LangGraph 边界", {
-        next: state.next,
-        tasks: state.tasks.map((task) => task.name),
-      });
       if (ctx.stopping?.aborted) {
         setRunStatus(ctx, run, "paused");
         return;
       }
-      if (control === "pause" || control === "pause_cancel") {
-        ctx.logger.warn("已在节点边界暂停", {
-          next: state.next,
-          queueId: item.id,
-        });
-        if (!(await waitIfPaused(ctx, run))) {
-          return;
-        }
+      if ((control === "pause" || control === "pause_cancel") && !(await waitIfPaused(ctx, run))) {
+        return;
       }
       const appendInput = consumeBoundaryAppends(ctx, run, state);
       if (appendInput) {
@@ -179,19 +138,46 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
         finishRun(ctx, run, state.values.messages, state.values.hookPlan);
         return;
       } else {
-        const nextActivity = state.next.includes("tools")
+        const activity = state.next.includes("tools")
           ? "tool"
           : state.next.includes("model_request")
             ? "model"
             : undefined;
-        if (nextActivity) {
-          ctx.observer?.activity?.(ctx.sessionId, nextActivity);
+        if (activity) {
+          ctx.observer?.activity?.(ctx.sessionId, activity);
         }
-        if (nextActivity === "tool") {
-          recordToolExecutionStarted(ctx, messages, item.id, streamLogState);
+        if (activity === "tool") {
+          recordToolStarted(ctx, state.values.messages, item.id);
         }
         input = null;
       }
     }
   }
+}
+function handleGraphEvent(
+  ctx: HostContext,
+  queueId: number,
+  event: unknown,
+  state: ReturnType<typeof createStreamLogState>,
+) {
+  if (Array.isArray(event)) {
+    const [mode, part] = event;
+    if (mode !== "custom") {
+      return;
+    }
+    if (!isAiStreamEvent(part)) {
+      throw new Error("LangGraph custom 事件不是 AI SDK 流事件");
+    }
+    recordAiStreamPart(ctx, queueId, part, state);
+  }
+}
+function isAiStreamEvent(value: unknown): value is Parameters<typeof recordAiStreamPart>[2] {
+  if (typeof value !== "object" || value === null || !("part" in value)) {
+    return false;
+  }
+  const { part } = value;
+  return typeof part === "object" && part !== null && "type" in part;
+}
+function isTerminal(status: QueueItem["status"]) {
+  return status === "done" || status === "canceled";
 }

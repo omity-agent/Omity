@@ -72,18 +72,6 @@ function cancelActiveRuns(
      WHERE session_id = ? AND status IN ('pending', 'running', 'paused')`,
     [sessionId],
   );
-  const threadIds = new Set(active.map((item) => `${sessionId}:${String(item.runId ?? item.id)}`));
-  const removeCheckpoint = db.prepare("DELETE FROM checkpoints WHERE thread_id = ?");
-  const removeWrites = db.prepare("DELETE FROM writes WHERE thread_id = ?");
-  try {
-    for (const threadId of threadIds) {
-      removeCheckpoint.run(threadId);
-      removeWrites.run(threadId);
-    }
-  } finally {
-    removeCheckpoint.finalize();
-    removeWrites.finalize();
-  }
   const removeEvent = db.prepare("DELETE FROM events WHERE queue_id = ?");
   try {
     for (const item of active) {
