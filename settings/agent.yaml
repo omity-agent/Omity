@@ -3,6 +3,7 @@ recursionLimit: 25
 prompts:
   - priority.md
   - system.md
+  - directory.md
   - skills.md
   - agents_md.md
 
