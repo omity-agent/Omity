@@ -101,6 +101,7 @@ export function Message({
 }) {
   const { t } = useTranslation();
   const tone = roleTone({ role: item.role });
+  const forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork");
   const handleFork = useCallback(() => {
     reportPromiseErrors(onFork(item.id));
   }, [item.id, onFork]);
@@ -111,11 +112,11 @@ export function Message({
           <span className={actions({ role: item.role })}>
             {canFork ? (
               <IconButton
-                aria-label={t("fork")}
+                aria-label={forkLabel}
                 className={cx(forkButton, tone)}
                 disabled={forkDisabled}
                 onClick={handleFork}
-                title={t("fork")}
+                title={forkLabel}
                 type="button"
                 variant="ghost"
               >

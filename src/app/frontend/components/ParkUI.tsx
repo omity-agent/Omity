@@ -16,6 +16,11 @@ import { css, cx } from "styled-system/css";
 
 const fieldClasses = fieldRecipe();
 const compactControl = css({
+  _disabled: {
+    color: "muted",
+    cursor: "not-allowed",
+    opacity: 0.4,
+  },
   _focusVisible: {
     outlineColor: "mutedStrong",
     outlineOffset: "2px",

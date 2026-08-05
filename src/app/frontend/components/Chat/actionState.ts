@@ -15,9 +15,8 @@ interface ChatActionInput {
 export interface ChatActionState {
   controlDisabled: boolean;
   controlState: ChatControlState;
-  deleteDisabled: boolean;
   nextControl: RequestedControl;
-  queueRunning: boolean;
+  sessionActionDisabled: boolean;
 }
 export function pauseRequestPending(
   requestedSessionId: string | undefined,
@@ -34,18 +33,22 @@ export function deriveChatActionState({
 }: ChatActionInput): ChatActionState {
   const queueRunning = queue.some(({ status }) => status === "running");
   const queuePaused = queue.some(({ status }) => status === "paused");
+  const sessionActive =
+    queueRunning ||
+    sessionStatus === "model" ||
+    sessionStatus === "tool" ||
+    sessionStatus === "pausing";
   const pausePhase = resolvePausePhase({
-    paused: queuePaused,
-    requested: pausing || pauseRequested(control),
-    running: queueRunning,
+    paused: queuePaused || sessionStatus === "paused",
+    requested: pausing || pauseRequested(control) || sessionStatus === "pausing",
+    running: sessionActive,
   });
   const resumable = pausePhase === "paused";
   const waitingForPause = pausePhase === "pausing";
   return {
     controlDisabled: waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
     controlState: waitingForPause ? "pausing" : resumable ? "resume" : "pause",
-    deleteDisabled: queueRunning || sessionStatus === "model" || sessionStatus === "tool",
     nextControl: resumable ? "running" : "pause",
-    queueRunning,
+    sessionActionDisabled: sessionActive,
   };
 }

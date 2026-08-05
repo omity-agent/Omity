@@ -43,7 +43,7 @@ export function DeleteSessionButton({
       className={confirming ? armed : undefined}
       disabled={disabled}
       onClick={handleDelete}
-      title={disabled ? t("runningDeleteDisabled") : undefined}
+      title={disabled ? t("pauseBeforeDelete") : undefined}
       type="button"
       variant="ghost"
     >

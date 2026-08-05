@@ -146,7 +146,7 @@ export function ChatPage({
         {view.map((item) => (
           <Message
             canFork={item.role === "user" && item.id > 0 && item.id !== firstUserMessageId}
-            forkDisabled={actionState.queueRunning}
+            forkDisabled={actionState.sessionActionDisabled}
             item={item}
             key={item.key}
             latestDetailIndex={
@@ -161,7 +161,7 @@ export function ChatPage({
         attachmentSettings={attachmentSettings}
         controlDisabled={actionState.controlDisabled}
         controlState={actionState.controlState}
-        deleteDisabled={actionState.deleteDisabled}
+        deleteDisabled={actionState.sessionActionDisabled}
         disabled={!activeId}
         draft={forkDraft}
         draftSaveDelayMs={draftSaveDelayMs}
