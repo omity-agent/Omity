@@ -6,6 +6,7 @@ const retryableNames = new Set([
   "ModelEmptyResponseError",
   "TimeoutError",
 ]);
+const retryableApiCodes = new Set(["server_is_overloaded"]);
 export class ModelEmptyResponseError extends Error {
   override readonly name = "ModelEmptyResponseError";
   constructor() {
@@ -27,27 +28,30 @@ const retryableCodes = new Set([
   "UND_ERR_SOCKET",
   "stream_read_error",
 ]);
-export function isModelNetworkError(error: unknown): boolean {
-  if (isNetworkError(error)) {
-    return true;
-  }
-  if (!isRecord(error)) {
-    return false;
-  }
-  if (typeof error["name"] === "string") {
-    if (error["name"] === "AbortError") {
-      return false;
-    }
-    if (retryableNames.has(error["name"])) {
+export function isRetryableModelError(error: unknown): boolean {
+  const pending = [error];
+  const visited = new Set<unknown>();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (isNetworkError(current)) {
       return true;
     }
+    if (isRecord(current) && !visited.has(current)) {
+      visited.add(current);
+      const { name } = current;
+      if (name !== "AbortError" && typeof name === "string" && retryableNames.has(name)) {
+        return true;
+      }
+      const { code } = current;
+      if (typeof code === "string" && (retryableCodes.has(code) || retryableApiCodes.has(code))) {
+        return true;
+      }
+      pending.push(current["cause"], current["error"], current["details"]);
+    }
   }
-  if (typeof error["code"] === "string" && retryableCodes.has(error["code"])) {
-    return true;
-  }
-  return isModelNetworkError(error["cause"]);
+  return false;
 }
-export function modelNetworkRetryDelayMs(attempt: number): number {
+export function modelRetryDelayMs(attempt: number): number {
   const exponent = Math.min(Math.max(0, attempt - 1), 5);
   return Math.min(30_000, 1000 * 2 ** exponent);
 }

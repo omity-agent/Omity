@@ -7,6 +7,7 @@ import type {
 import type { HonoRequest } from "hono/request";
 import { HttpError } from "./errors";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
+import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/context";
 import { z } from "zod";
 
 export const requestBodyLimit = 1024 * 1024;
@@ -25,6 +26,7 @@ const messageFieldsSchema = z.object({
 const sessionFieldsSchema = z.object({
   history: historySchema,
   message: nonEmptyMessage,
+  profile: settingsProfileNameSchema.optional(),
   workspace: z.string().trim().min(1).max(32_767),
 });
 export const composerDraftBody = z
@@ -100,20 +102,26 @@ export async function readSessionForm(request: HonoRequest): Promise<SessionSubm
   const form = await readFormData(request);
   const fields = {
     message: singleText(form, "message"),
+    profile: optionalText(form, "profile"),
     workspace: singleText(form, "workspace"),
   };
-  let history: unknown;
-  try {
-    history = JSON.parse(singleText(form, "history")) as unknown;
-  } catch {
-    throw new HttpError(400, "初始历史消息不是有效的 JSON");
-  }
+  const history = parseJsonField(form, "history", "初始历史消息");
   const result = sessionFieldsSchema.safeParse({ ...fields, history });
   if (!result.success) {
     throw new HttpError(400, `新建会话参数无效：${result.error.message}`);
   }
-  const attachments = readAttachments(form, new Set(["workspace", "message", "history"]));
+  const attachments = readAttachments(
+    form,
+    new Set(["workspace", "profile", "message", "history"]),
+  );
   return { ...result.data, attachments };
+}
+function parseJsonField(form: FormData, name: string, label: string) {
+  try {
+    return JSON.parse(singleText(form, name)) as unknown;
+  } catch {
+    throw new HttpError(400, `${label}不是有效的 JSON`);
+  }
 }
 async function readFormData(request: HonoRequest) {
   try {
@@ -141,7 +149,17 @@ function readAttachments(form: FormData, fields: Set<string>) {
 function singleText(form: FormData, name: string) {
   const values = form.getAll(name);
   if (values.length !== 1 || typeof values[0] !== "string") {
-    throw new HttpError(400, `消息字段必须是单个文本值：${name}`);
+    throw new HttpError(400, `表单字段必须是单个文本值：${name}`);
+  }
+  return values[0];
+}
+function optionalText(form: FormData, name: string) {
+  const values = form.getAll(name);
+  if (values.length === 0) {
+    return undefined;
+  }
+  if (values.length !== 1 || typeof values[0] !== "string") {
+    throw new HttpError(400, `表单字段必须是单个文本值：${name}`);
   }
   return values[0];
 }

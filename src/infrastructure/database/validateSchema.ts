@@ -2,7 +2,14 @@ import type { Database } from "bun:sqlite";
 import { queryAll } from "./connection";
 
 export function assertCoreSchema(db: Database) {
-  assertColumns(db, "sessions", ["id", "workspace", "control", "created_at", "updated_at"]);
+  assertColumns(db, "sessions", [
+    "id",
+    "workspace",
+    "profiles_json",
+    "control",
+    "created_at",
+    "updated_at",
+  ]);
   assertColumns(db, "queue", ["id", "session_id", "root_id", "content", "status", "error"]);
   assertColumns(db, "composer_drafts", ["session_id", "content", "revision", "updated_at"]);
   assertColumns(db, "host_leases", ["session_id", "owner_id", "expires_at"]);

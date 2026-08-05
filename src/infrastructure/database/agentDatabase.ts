@@ -32,6 +32,7 @@ import {
   createSessionRecord,
   hasSessionRecord,
   readControlRecord,
+  readProfilesRecord,
   readWorkspaceRecord,
   requireSessionRecord,
   touchQueueSessionRecord,
@@ -67,9 +68,10 @@ export class AgentDatabase extends RecoverableDatabase {
   onChange(notify: (event: StreamEvent) => void) {
     this.notify = notify;
   }
-  resetSession(sessionId: string, workspace: string) {
+  resetSession(sessionId: string, workspace: string, profiles: readonly string[] = []) {
+    const selectedProfiles = this.hasSession(sessionId) ? this.profiles(sessionId) : profiles;
     runTransaction(this.db, () => {
-      resetSessionStorage(this.db, sessionId, workspace);
+      resetSessionStorage(this.db, sessionId, workspace, selectedProfiles);
     });
   }
   requestStorageReclaim() {
@@ -83,14 +85,17 @@ export class AgentDatabase extends RecoverableDatabase {
     this.storageReclaimPending = !reclaimed;
     return reclaimed;
   }
-  createSession(sessionId: string, workspace: string) {
-    createSessionRecord(this.db, sessionId, workspace);
+  createSession(sessionId: string, workspace: string, profiles: readonly string[] = []) {
+    createSessionRecord(this.db, sessionId, workspace, profiles);
   }
   hasSession(sessionId: string) {
     return hasSessionRecord(this.db, sessionId);
   }
   workspace(sessionId: string) {
     return readWorkspaceRecord(this.db, sessionId);
+  }
+  profiles(sessionId: string) {
+    return readProfilesRecord(this.db, sessionId);
   }
   appendUser(sessionId: string, content: string) {
     this.requireSession(sessionId);

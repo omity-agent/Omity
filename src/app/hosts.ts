@@ -66,7 +66,7 @@ export class AppHosts {
     const hostPromise = runHostSession({ kind, sessionId }, this.appRoot, {
       controller: force,
       cwd: root,
-      mcp: () => this.mcp.load(),
+      mcp: (sessionProfiles) => this.mcp.load(sessionProfiles),
       observer: this.observer(force),
       onReady: (controls) => {
         cancelTool = (callId) => controls.cancelTool(callId);

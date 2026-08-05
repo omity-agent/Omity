@@ -12,6 +12,9 @@ export interface BootstrapData {
   attachments: AttachmentSettings;
   cwd: string;
   frontend: FrontendSettings;
+  profiles: {
+    available: string[];
+  };
   sessions: SessionInfo[];
 }
 export { transcriptKey, useSessionTranscript, type TranscriptData } from "./transcript/query";

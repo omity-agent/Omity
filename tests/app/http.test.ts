@@ -104,7 +104,12 @@ test("session creation validates and forwards the complete initial state", async
     },
   });
   const api = createApi(controller);
-  const body = sessionForm("F:/workspace", [{ assistant: "旧回答", user: "旧问题" }], "新问题");
+  const body = sessionForm(
+    "F:/workspace",
+    [{ assistant: "旧回答", user: "旧问题" }],
+    "新问题",
+    "work",
+  );
   const response = await api.request("/api/sessions", {
     body,
     method: "POST",
@@ -116,6 +121,7 @@ test("session creation validates and forwards the complete initial state", async
         attachments: [],
         history: [{ assistant: "旧回答", user: "旧问题" }],
         message: "新问题",
+        profile: "work",
         workspace: "F:/workspace",
       },
     ],
@@ -192,10 +198,14 @@ function sessionForm(
   workspace: string,
   history: { user: string; assistant: string }[],
   message: string,
+  profile?: string,
 ) {
   const body = new FormData();
   body.set("workspace", workspace);
   body.set("history", JSON.stringify(history));
   body.set("message", message);
+  if (profile !== undefined) {
+    body.set("profile", profile);
+  }
   return body;
 }

@@ -11,10 +11,12 @@ import { assertCoreSchema } from "../infrastructure/database/validateSchema";
 import { resolve } from "node:path";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
+import { settingsProfileNamesSchema } from "../infrastructure/configuration/settings/context";
 
 export interface RegisteredSession {
   id: string;
   workspace: string;
+  profiles: string[];
   createdAt: number;
   updatedAt: number;
   control: Control;
@@ -25,6 +27,7 @@ export interface RegisteredSession {
 interface SessionRow {
   id: string;
   workspace: string;
+  profiles_json: string;
   created_at: number;
   updated_at: number;
   control: Control;
@@ -33,7 +36,7 @@ interface SessionRow {
   error: string | null;
 }
 const sessionSelect = `
-  SELECT s.id, s.workspace, s.created_at,
+	  SELECT s.id, s.workspace, s.profiles_json, s.created_at,
     MAX(
       s.updated_at,
       COALESCE(
@@ -140,6 +143,7 @@ function toSession(row: SessionRow): RegisteredSession {
     error: row.error ? parseError(row.error) : null,
     id: row.id,
     paused: row.paused === 1,
+    profiles: settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown),
     queueInProgress: row.queue_in_progress === 1,
     updatedAt: row.updated_at,
     workspace: row.workspace,

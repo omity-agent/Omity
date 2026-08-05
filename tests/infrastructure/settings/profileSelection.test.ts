@@ -1,7 +1,12 @@
+import {
+  availableSettingsProfiles,
+  createSettingsContext,
+  prioritizeSettingsProfile,
+  selectSettingsProfiles,
+} from "../../../src/infrastructure/configuration/settings/context";
 import { expect, test } from "bun:test";
 import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 
 test("profile selection rejects a missing profile directory", () => {
@@ -48,6 +53,44 @@ test("empty profile selection uses only repository defaults", () => {
     mkdirSync(userSettingsDir);
     writeFileSync(join(userSettingsDir, "profile.yaml"), "[]\n");
     expect(createSettingsContext(root, userSettingsDir).profiles).toEqual([]);
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+test("available profiles are sorted and can be selected per context", () => {
+  const root = createTestDirectory("configuration");
+  const userSettingsDir = join(root, "user-settings");
+  try {
+    mkdirSync(join(userSettingsDir, "profiles", "work"), { recursive: true });
+    mkdirSync(join(userSettingsDir, "profiles", "base"), { recursive: true });
+    const context = createSettingsContext(root, userSettingsDir, []);
+    expect(availableSettingsProfiles(context)).toEqual(["base", "work"]);
+    expect(selectSettingsProfiles(context, ["work", "base"]).profiles).toEqual([
+      { directory: resolve(userSettingsDir, "profiles", "work"), name: "work" },
+      { directory: resolve(userSettingsDir, "profiles", "base"), name: "base" },
+    ]);
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+});
+test("selected profile is applied after every profile from profile.yaml", () => {
+  const root = createTestDirectory("configuration");
+  const userSettingsDir = join(root, "user-settings");
+  try {
+    for (const name of ["base", "work", "urgent"]) {
+      mkdirSync(join(userSettingsDir, "profiles", name), { recursive: true });
+    }
+    const context = createSettingsContext(root, userSettingsDir, ["base", "work"]);
+    expect(prioritizeSettingsProfile(context)).toBe(context);
+    expect(prioritizeSettingsProfile(context, "urgent").profiles.map(({ name }) => name)).toEqual([
+      "base",
+      "work",
+      "urgent",
+    ]);
+    expect(prioritizeSettingsProfile(context, "base").profiles.map(({ name }) => name)).toEqual([
+      "work",
+      "base",
+    ]);
   } finally {
     rmSync(root, { force: true, recursive: true });
   }

@@ -120,6 +120,9 @@ export const bootstrapResponseSchema = z.object({
     draftSaveDelayMs: integer.nonnegative(),
     transcriptRefreshIntervalMs: integer.nonnegative(),
   }),
+  profiles: z.object({
+    available: z.array(z.string()),
+  }),
   sessions: z.array(sessionInfoSchema),
 });
 export const sessionResponseSchema = z.object({ session: sessionInfoSchema });

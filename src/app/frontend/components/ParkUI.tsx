@@ -103,6 +103,13 @@ export function Input({ className, size = "sm", ...props }: InputProps) {
     className: cx(inputRecipe({ size }), compactControl, surfacedControl, className),
   });
 }
+type SelectProps = Omit<ComponentProps<"select">, "size"> & InputVariantProps;
+export function Select({ className, size = "sm", ...props }: SelectProps) {
+  return createElement("select", {
+    ...props,
+    className: cx(inputRecipe({ size }), compactControl, surfacedControl, className),
+  });
+}
 type TextareaProps = ComponentProps<"textarea"> & TextareaVariantProps;
 export function Textarea({ className, size = "md", ...props }: TextareaProps) {
   return createElement("textarea", {

@@ -73,12 +73,12 @@ export function appDataRoot() {
     if (!path) {
       throw new Error("缺少环境变量 APPDATA，无法定位用户 AppData 目录");
     }
-    return path;
+    return forwardSlashPath(path);
   }
   if (process.platform === "darwin") {
-    return join(homedir(), "Library", "Application Support");
+    return forwardSlashPath(join(homedir(), "Library", "Application Support"));
   }
-  return process.env["XDG_DATA_HOME"] ?? join(homedir(), ".local", "share");
+  return forwardSlashPath(process.env["XDG_DATA_HOME"] ?? join(homedir(), ".local", "share"));
 }
 function resolveString(value: string, options: PlaceholderOptions) {
   const exact = exactPlaceholder.exec(value);
@@ -105,7 +105,7 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
   if (name === "cwd" || name === "session") {
     const value = options.session?.[name];
     if (value !== undefined) {
-      return { matched: true, value };
+      return { matched: true, value: forwardSlashPath(value) };
     }
     if (options.deferSession) {
       return { matched: false };
@@ -145,4 +145,7 @@ function isScalar(value: unknown): value is string | number | boolean | null {
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+function forwardSlashPath(path: string) {
+  return path.replaceAll("\\", "/");
 }

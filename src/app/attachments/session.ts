@@ -8,6 +8,7 @@ export async function createSessionWithAttachments(options: {
   settings: Settings;
   sessionId: string;
   workspace: string;
+  profiles: string[];
   history: InitialMessagePair[];
   message: string;
   attachments: PendingAttachment[];
@@ -23,6 +24,7 @@ export async function createSessionWithAttachments(options: {
       options.settings,
       options.sessionId,
       options.workspace,
+      options.profiles,
       options.history,
       saved.content,
     );

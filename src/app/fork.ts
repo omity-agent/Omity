@@ -21,6 +21,7 @@ interface ForkOptions {
   sourceSessionId: string;
   targetSessionId: string;
   workspace: string;
+  profiles: string[];
   beforeMessageId: number;
 }
 export function forkDatabaseBeforeMessage(options: ForkOptions) {
@@ -34,7 +35,7 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
     throw new Error("每个 session 的第一条用户消息不能 Fork");
   }
   runTransaction(options.target.db, () => {
-    options.target.createSession(options.targetSessionId, options.workspace);
+    options.target.createSession(options.targetSessionId, options.workspace, options.profiles);
     insertMessages(options.target.db, options.targetSessionId, messages);
     copyHookUsage(
       options.source.db,

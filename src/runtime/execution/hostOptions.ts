@@ -9,7 +9,7 @@ export interface HostControls {
 export interface HostRunOptions {
   controller?: AbortController;
   cwd?: string;
-  mcp?: () => Promise<LoadedMcp>;
+  mcp?: (profiles: string[]) => Promise<LoadedMcp>;
   observer?: HostObserver;
   onReady?: (controls: HostControls) => void;
   owner?: ProcessOwner;

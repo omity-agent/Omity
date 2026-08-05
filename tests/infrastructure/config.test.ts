@@ -53,7 +53,10 @@ test("prompt files expand current working directory placeholder", () => {
   });
   const settings = loadSettings(root, { cwd: workspace });
   expect(settings.paths.dataDir).toBe(resolve(root, "data"));
-  expect(settings.agent.systemPrompt).toBe(`workspace: ${workspace}\n\nskills from ${workspace}`);
+  const displayedWorkspace = workspace.replaceAll("\\", "/");
+  expect(settings.agent.systemPrompt).toBe(
+    `workspace: ${displayedWorkspace}\n\nskills from ${displayedWorkspace}`,
+  );
 });
 test("user settings deeply override defaults and preserve relative path semantics", () => {
   const root = createTestDirectory("layered-configuration");
@@ -162,7 +165,7 @@ test("hook variables preserve exact values and reject ambiguous output", () => {
       { cwd: `\${cwd}/src`, exact: `\${toolOutputs.fromEnd.1.output}` },
       { cwd: "F:\\work", toolOutputs: [{ output: previous }] },
     ),
-  ).toEqual({ cwd: "F:\\work/src", exact: previous });
+  ).toEqual({ cwd: "F:/work/src", exact: previous });
   expect(() =>
     resolveHookArgs(
       { invalid: `result=\${toolOutputs.fromEnd.1.output}` },

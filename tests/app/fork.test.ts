@@ -9,7 +9,7 @@ afterEach(cleanupDatabaseDirs);
 test("fork copies messages before selected user message", () => {
   const source = makeDb();
   const target = makeDb();
-  source.resetSession("source", workspace);
+  source.resetSession("source", workspace, ["base", "work"]);
   const first = source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
   appendAssistantMessage(source.db, "source", "第一条回复");
@@ -20,6 +20,7 @@ test("fork copies messages before selected user message", () => {
   const forkMessageId = userMessageId(source, forkPoint);
   forkDatabaseBeforeMessage({
     beforeMessageId: forkMessageId,
+    profiles: source.profiles("source"),
     source,
     sourceSessionId: "source",
     target,
@@ -28,6 +29,7 @@ test("fork copies messages before selected user message", () => {
   });
   expect(target.history("target").map((message) => message.text)).toEqual(["第一条", "第一条回复"]);
   expect(target.control("target")).toBe("running");
+  expect(target.profiles("target")).toEqual(["base", "work"]);
   expect(readOnlyQueue(target)).toMatchObject({
     content: "不要复制",
     status: "draft",
@@ -50,6 +52,7 @@ test("fork preserves hook usage counters", () => {
   expect(consumeHookUsage(source.db, "source", "limited", 3)).toBeTrue();
   forkDatabaseBeforeMessage({
     beforeMessageId: userMessageId(source, forkPoint),
+    profiles: [],
     source,
     sourceSessionId: "source",
     target,
@@ -71,6 +74,7 @@ test("first user message cannot fork", () => {
   expect(() => {
     forkDatabaseBeforeMessage({
       beforeMessageId: firstMessageId,
+      profiles: [],
       source,
       sourceSessionId: "source",
       target,
@@ -117,6 +121,7 @@ test("fork point must be a user message", () => {
   expect(() => {
     forkDatabaseBeforeMessage({
       beforeMessageId: assistantRow,
+      profiles: [],
       source,
       sourceSessionId: "source",
       target,
@@ -162,6 +167,7 @@ test("fork preserves completed takeover pairs in an editable draft", () => {
   const forkPoint = { id: userMessageId(source, appended) };
   forkDatabaseBeforeMessage({
     beforeMessageId: forkPoint.id,
+    profiles: [],
     source,
     sourceSessionId: "source",
     target,

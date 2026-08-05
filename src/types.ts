@@ -3,6 +3,7 @@ export type SessionStatus = "tool" | "model" | "idle" | "pausing" | "paused" | "
 export interface HostMode {
   kind: "new" | "load" | "overwrite";
   sessionId: string;
+  profile?: string;
 }
 export type QueueStatus = "draft" | "pending" | "running" | "paused" | "done" | "canceled";
 export type LogLevel = "debug" | "info" | "warn" | "error";

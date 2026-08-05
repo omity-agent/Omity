@@ -29,7 +29,11 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     case "load":
     case "overwrite": {
       await runHost(
-        { kind: command.action, sessionId: command.sessionId } satisfies HostMode,
+        {
+          kind: command.action,
+          profile: "profile" in command ? command.profile : undefined,
+          sessionId: command.sessionId,
+        } satisfies HostMode,
         root,
       );
       return;

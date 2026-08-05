@@ -12,9 +12,9 @@ import { pauseForStop, waitIfPaused } from "./execution/pause";
 import { HostLeaseLostError } from "./execution/lease";
 import type { QueueItem } from "../types";
 import { captureError } from "../failures/details";
-import { isModelNetworkError } from "./network";
+import { isRetryableModelError } from "./network";
 import { queueMessageId } from "../infrastructure/database/records/messages/history";
-import { waitBeforeModelNetworkRetry } from "./retry";
+import { waitBeforeModelRetry } from "./retry";
 
 export async function processQueue(ctx: HostContext, item: QueueItem) {
   const end = ctx.logger.child(`队列 #${item.id.toString()}`);
@@ -90,7 +90,7 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
       messages: ctx.db.history(ctx.sessionId),
     };
   }
-  let modelNetworkRetry = 0;
+  let modelRetry = 0;
   const streamLogState = createStreamLogState();
   for (;;) {
     ctx.assertLease?.();
@@ -107,16 +107,16 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
       for await (const event of stream) {
         handleStreamEvent(ctx, event, streamLogState, item.id);
       }
-      modelNetworkRetry = 0;
+      modelRetry = 0;
       reachedBoundary = true;
     } catch (error) {
-      if (!isModelNetworkError(error)) {
+      if (!isRetryableModelError(error)) {
         discardActiveStream(ctx, streamLogState, item.id);
         throw error;
       }
       discardActiveStream(ctx, streamLogState, item.id);
-      modelNetworkRetry += 1;
-      const shouldRetry = await waitBeforeModelNetworkRetry(ctx, run, error, modelNetworkRetry, {
+      modelRetry += 1;
+      const shouldRetry = await waitBeforeModelRetry(ctx, run, error, modelRetry, {
         cancel: () => {
           cancelRun(ctx, run);
           return Promise.reject(new CanceledRunError("运行已取消"));

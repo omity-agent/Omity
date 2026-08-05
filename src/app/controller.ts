@@ -5,7 +5,11 @@ import { type ProcessOwner, appOwner } from "../infrastructure/process/ownership
 import { type SessionInfo, projectSession } from "./sessionState";
 import {
   type SettingsContext,
+  availableSettingsProfiles,
   createSettingsContext,
+  prioritizeSettingsProfile,
+  selectSettingsProfiles,
+  settingsProfileNames,
 } from "../infrastructure/configuration/settings/context";
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { createAppFork, createAppSession } from "./runtime/sessionActions";
@@ -30,6 +34,7 @@ export class AppController {
   private readonly settings: Settings;
   private readonly registry: AppRegistry;
   private readonly hosts: AppHosts;
+  private readonly settingsContext: SettingsContext;
   constructor(
     private readonly appRoot: string,
     options: {
@@ -38,15 +43,19 @@ export class AppController {
       settingsContext?: SettingsContext;
     } = {},
   ) {
-    const settingsContext = options.settingsContext ?? createSettingsContext(appRoot);
-    this.settings = loadSettings(appRoot, { settingsContext });
+    this.settingsContext = options.settingsContext ?? createSettingsContext(appRoot);
+    this.settings = loadSettings(appRoot, { settingsContext: this.settingsContext });
     const discovered = new AppRegistry(this.settings);
     recoverAppSessions(this.settings, discovered.list(), options.abandonedOwner);
     this.registry = new AppRegistry(this.settings);
     this.events = new AppEvents();
     const owner = options.owner ?? appOwner();
-    const mcp = new AppMcp(() =>
-      loadMcp(appRoot, new Logger(this.settings.logging.level, true), settingsContext),
+    const mcp = new AppMcp((profiles) =>
+      loadMcp(
+        appRoot,
+        new Logger(this.settings.logging.level, true),
+        selectSettingsProfiles(this.settingsContext, profiles),
+      ),
     );
     this.hosts = new AppHosts(
       appRoot,
@@ -60,7 +69,7 @@ export class AppController {
       owner,
       this.settings.host.shutdownTimeoutMs,
       mcp,
-      settingsContext,
+      this.settingsContext,
     );
   }
   close = () => this.hosts.close();
@@ -69,6 +78,9 @@ export class AppController {
       attachments: this.settings.attachments,
       cwd: this.appRoot,
       frontend: this.settings.frontend,
+      profiles: {
+        available: availableSettingsProfiles(this.settingsContext),
+      },
       sessions: this.sessions(),
     };
   }
@@ -83,7 +95,10 @@ export class AppController {
     return directory?.path() ?? null;
   }
   async createSession(submission: SessionSubmission) {
-    const created = await createAppSession(this.appRoot, submission, this.settings);
+    const sessionContext = prioritizeSettingsProfile(this.settingsContext, submission.profile);
+    const profiles = settingsProfileNames(sessionContext);
+    const sessionSettings = loadSettings(this.appRoot, { settingsContext: sessionContext });
+    const created = await createAppSession(this.appRoot, submission, sessionSettings, profiles);
     const session = this.registry.refresh(created.sessionId);
     await this.hosts.start(created.sessionId, created.workspace, "load");
     const info = this.sessionInfo(session);
@@ -133,6 +148,7 @@ export class AppController {
     const id = await createAppFork({
       beforeMessageId,
       pauseSource: () => this.control(sessionId, "pause"),
+      profiles: session.profiles,
       settings: this.settings,
       sourceSessionId: sessionId,
       workspace: session.workspace,

@@ -2,7 +2,12 @@ import type { Database } from "bun:sqlite";
 import { createSessionRecord } from "./records/sessions";
 import { deleteSessionStream } from "./records/streamEvents";
 
-export function resetSessionStorage(db: Database, sessionId: string, workspace: string) {
+export function resetSessionStorage(
+  db: Database,
+  sessionId: string,
+  workspace: string,
+  profiles: readonly string[],
+) {
   db.run("DELETE FROM writes");
   db.run("DELETE FROM checkpoints");
   db.run("DELETE FROM hook_usage");
@@ -11,5 +16,5 @@ export function resetSessionStorage(db: Database, sessionId: string, workspace: 
   db.run("DELETE FROM messages WHERE session_id = ?", [sessionId]);
   db.run("DELETE FROM queue WHERE session_id = ?", [sessionId]);
   db.run("DELETE FROM sessions WHERE id = ?", [sessionId]);
-  createSessionRecord(db, sessionId, workspace);
+  createSessionRecord(db, sessionId, workspace, profiles);
 }

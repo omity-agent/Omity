@@ -1,16 +1,8 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
-import {
-  type Page,
-  readPage,
-  resolvePage,
-  sessionPage,
-  usePageNavigation,
-  writePage,
-} from "./route";
+import { type Page, readPage, resolvePage, usePageNavigation, writePage } from "./route";
 import {
   type SessionInfo,
   cancelTool,
-  createSession,
   deleteSession,
   forkSession,
   pickWorkspacePath,
@@ -30,11 +22,13 @@ import { Sidebar } from "./components/Sidebar";
 import { cx } from "styled-system/css";
 import { pauseRequestPending } from "./components/Chat/actionState";
 import { recentWorkspaces } from "./services/recentWorkspaces";
+import { useNewSession } from "./services/newSession";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 
 const emptySessions: SessionInfo[] = [];
+const emptyProfiles: string[] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
 export function App() {
   return (
@@ -47,7 +41,6 @@ function AuthenticatedApp() {
   const queryClient = useQueryClient();
   const bootstrap = useBootstrap();
   const [page, setPage] = useState(readPage);
-  const [newWorkspace, setNewWorkspace] = useState<string>();
   const [pausingSessionId, setPausingSessionId] = useState<string>();
   const sessions = bootstrap.data?.sessions ?? emptySessions;
   const cwd = bootstrap.data?.cwd ?? "";
@@ -64,29 +57,29 @@ function AuthenticatedApp() {
     writePage(nextPage, replace);
     setPage(nextPage);
   }, []);
+  const {
+    create: createNewSession,
+    open: openNewSession,
+    profile: newProfile,
+    setProfile: setNewProfile,
+    setWorkspace: setNewWorkspace,
+    workspace: newWorkspace,
+  } = useNewSession({
+    cwd,
+    navigate,
+    queryClient,
+  });
   usePageNavigation(page, currentPage, setPage);
   const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue);
   const { activeSession: displayedActiveSession, sessions: displayedSessions } =
     useSessionPresentation(sessions, activeSession?.id, pausing);
   const unreadSessionIds = useSessionAttention(queryClient, activeSession?.id);
   const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]);
-  const openNewSession = useCallback(() => {
-    setNewWorkspace(undefined);
-    navigate({ kind: "new" });
-  }, [navigate]);
   const selectSession = useCallback(
     (id: string) => {
-      navigate(sessionPage(id));
+      navigate({ id, kind: "session" });
     },
     [navigate],
-  );
-  const createNewSession = useCallback<ChatPageProps["onCreate"]>(
-    async (initialState, attachments) => {
-      const { session } = await createSession(newWorkspace ?? cwd, initialState, attachments);
-      addSession(queryClient, session);
-      navigate(sessionPage(session.id));
-    },
-    [cwd, navigate, newWorkspace, queryClient],
   );
   const cancelSessionTool = useCallback<ChatPageProps["onCancelTool"]>(
     async (toolCallId) => {
@@ -134,7 +127,7 @@ function AuthenticatedApp() {
       const { session } = await forkSession(activeSession.id, messageId);
       addSession(queryClient, session);
       setPausingSessionId(undefined);
-      navigate(sessionPage(session.id));
+      navigate({ id: session.id, kind: "session" });
     },
     [activeSession, navigate, queryClient],
   );
@@ -181,6 +174,8 @@ function AuthenticatedApp() {
           control={transcript.control}
           queue={transcript.queue}
           recentWorkspaces={workspaces}
+          availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
+          selectedProfile={newProfile}
           sessionStatus={displayedActiveSession?.status}
           view={transcript.view}
           workspace={newWorkspace ?? cwd}
@@ -190,6 +185,7 @@ function AuthenticatedApp() {
           onDelete={deleteActiveSession}
           onFork={forkActiveSession}
           onPickWorkspace={pickWorkspacePath}
+          onProfileChange={setNewProfile}
           onSend={sendSessionMessage}
           onWorkspaceChange={setNewWorkspace}
         />

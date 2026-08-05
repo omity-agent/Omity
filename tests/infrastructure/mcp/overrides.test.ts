@@ -115,7 +115,11 @@ test("MCP tool descriptions resolve session placeholders per model binding", () 
       session: join(root, "sessions", "abc"),
     });
     expect(modelTool?.description).toBe(
-      `workspace=${join(root, "workspace")}\nsession=${join(root, "sessions", "abc")}`,
+      `workspace=${join(root, "workspace").replaceAll("\\", "/")}\nsession=${join(
+        root,
+        "sessions",
+        "abc",
+      ).replaceAll("\\", "/")}`,
     );
   } finally {
     rmSync(root, { recursive: true });

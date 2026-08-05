@@ -18,6 +18,12 @@ afterEach(() => {
 test("command line parser models commands as discriminated unions", () => {
   expect(parseValue(["host", "new", "123"])).toEqual({
     action: "new",
+    profile: undefined,
+    sessionId: "123",
+  });
+  expect(parseValue(["host", "new", "123", "--profile", "work"])).toEqual({
+    action: "new",
+    profile: "work",
     sessionId: "123",
   });
   expect(parseValue(["client", "append", "123", "你好", "世界"])).toEqual({
@@ -33,6 +39,9 @@ test("command line parser models commands as discriminated unions", () => {
 test("command line parser rejects removed Oclif syntax", () => {
   expect(parseSync(cliParser, ["host", "123", "new"]).success).toBeFalse();
   expect(parseSync(cliParser, ["client", "123", "append=你好"]).success).toBeFalse();
+  expect(
+    parseSync(cliParser, ["host", "new", "123", "--profile", "base", "--profile", "work"]).success,
+  ).toBeFalse();
 });
 test("client cancel during pause preserves pause state", () => {
   const { dbPath, root } = makeSession("123");

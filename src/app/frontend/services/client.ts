@@ -26,11 +26,15 @@ export async function bootstrap(signal?: AbortSignal) {
 }
 export async function createSession(
   workspace: string,
+  profile: string | undefined,
   initialState: InitialSessionState,
   attachments: PendingAttachment[],
 ) {
   const body = new FormData();
   body.set("workspace", workspace);
+  if (profile !== undefined) {
+    body.set("profile", profile);
+  }
   body.set("history", JSON.stringify(initialState.history));
   body.set("message", initialState.message);
   appendAttachments(body, attachments);

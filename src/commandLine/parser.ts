@@ -10,6 +10,11 @@ type HostAction = HostMode["kind"] | "delete";
 const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
   description: message`会话 ID，例如 ${"123"}。`,
 });
+const profile = optional(
+  option("--profile", string({ metavar: "PROFILE", pattern: /\S/u }), {
+    description: message`选择一个优先级高于 profile.yaml 默认配置的 Profile。`,
+  }),
+);
 const appCommand = command(
   "app",
   object({
@@ -30,10 +35,10 @@ const appCommand = command(
 const hostCommand = command(
   "host",
   or(
-    hostAction("new", "新建并启动 Host 会话。"),
+    hostCreateAction("new", "新建并启动 Host 会话。"),
     hostAction("load", "加载并启动 Host 会话。"),
     hostAction("delete", "删除 Host 会话。"),
-    hostAction("overwrite", "删除后重新新建并启动 Host 会话。"),
+    hostCreateAction("overwrite", "删除后重新新建并启动 Host 会话。"),
   ),
   { brief: message`管理 Host 会话。` },
 );
@@ -70,6 +75,20 @@ function hostAction<const T extends HostAction>(action: T, brief: string) {
     action,
     object({
       action: constant(action),
+      sessionId,
+    }),
+    { brief: message`${text(brief)}` },
+  );
+}
+function hostCreateAction<const T extends Extract<HostAction, "new" | "overwrite">>(
+  action: T,
+  brief: string,
+) {
+  return command(
+    action,
+    object({
+      action: constant(action),
+      profile,
       sessionId,
     }),
     { brief: message`${text(brief)}` },

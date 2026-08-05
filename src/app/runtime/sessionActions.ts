@@ -11,6 +11,7 @@ export async function createAppSession(
   appRoot: string,
   submission: SessionSubmission,
   settings: Settings,
+  profiles: string[],
 ) {
   const workspace = normalizeWorkspacePath(submission.workspace, appRoot);
   const sessionId = reserveSessionId(settings);
@@ -19,6 +20,7 @@ export async function createAppSession(
       attachments: submission.attachments,
       history: submission.history,
       message: submission.message,
+      profiles,
       sessionId,
       settings,
       workspace,
@@ -35,12 +37,14 @@ export async function createAppFork(options: {
   settings: Settings;
   sourceSessionId: string;
   workspace: string;
+  profiles: string[];
 }) {
   const targetSessionId = reserveSessionId(options.settings);
   let targetCreated = false;
   try {
     forkSessionStorage({
       beforeMessageId: options.beforeMessageId,
+      profiles: options.profiles,
       settings: options.settings,
       sourceSessionId: options.sourceSessionId,
       targetSessionId,

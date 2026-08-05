@@ -8,6 +8,8 @@
   "initialState": "Initial State",
   "initialStateDescription": "构造模型接收到的初始对话。历史消息对按时间排列，末尾用户消息将触发首次回复。",
   "workspace": "工作目录",
+  "profile": "Profile",
+  "defaultProfile": "默认",
   "recentWorkspaces": "最近使用",
   "chooseFolder": "选择文件夹",
   "create": "创建",

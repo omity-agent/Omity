@@ -2,14 +2,20 @@ import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
 import { queryGet } from "../connection";
+import { settingsProfileNamesSchema } from "../../configuration/settings/context";
 
-export function createSessionRecord(db: Database, sessionId: string, workspace: string) {
+export function createSessionRecord(
+  db: Database,
+  sessionId: string,
+  workspace: string,
+  profiles: readonly string[],
+) {
   if (hasSessionRecord(db, sessionId)) {
     throw sessionConflict(sessionId);
   }
   const result = db.run(
-    "INSERT INTO sessions (id, workspace, control, created_at, updated_at) VALUES (?, ?, 'running', unixepoch(), unixepoch())",
-    [sessionId, workspace],
+    "INSERT INTO sessions (id, workspace, profiles_json, control, created_at, updated_at) VALUES (?, ?, ?, 'running', unixepoch(), unixepoch())",
+    [sessionId, workspace, JSON.stringify(settingsProfileNamesSchema.parse(profiles))],
   );
   if (result.changes !== 1) {
     throw sessionConflict(sessionId);
@@ -43,6 +49,18 @@ export function readWorkspaceRecord(db: Database, sessionId: string) {
     throw sessionNotFound(sessionId);
   }
   return row.workspace;
+}
+export function readProfilesRecord(db: Database, sessionId: string) {
+  requireSessionRecord(db, sessionId);
+  const row = queryGet<{ profiles_json: string }>(
+    db,
+    "SELECT profiles_json FROM sessions WHERE id = ?",
+    sessionId,
+  );
+  if (!row) {
+    throw sessionNotFound(sessionId);
+  }
+  return settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown);
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);

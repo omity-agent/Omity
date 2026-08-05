@@ -4,10 +4,11 @@ import { assertCoreSchema } from "./validateSchema";
 
 export const migrationSql = [
   `
-    CREATE TABLE IF NOT EXISTS sessions (
-      id TEXT PRIMARY KEY,
-      workspace TEXT NOT NULL,
-      control TEXT NOT NULL,
+	    CREATE TABLE IF NOT EXISTS sessions (
+	      id TEXT PRIMARY KEY,
+	      workspace TEXT NOT NULL,
+	      profiles_json TEXT NOT NULL,
+	      control TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     )
@@ -129,7 +130,7 @@ export const migrationSql = [
     )
   `,
 ] as const;
-const schemaVersion = 2;
+const schemaVersion = 3;
 export function applySchema(db: Database) {
   const version = queryGet<{ user_version: number }>(db, "PRAGMA user_version")?.user_version;
   if (version === schemaVersion) {

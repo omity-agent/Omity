@@ -13,6 +13,7 @@ import { Button } from "../ParkUI";
 import type { InitialSessionState } from "../../../initialState";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
 import { PendingAttachments } from "../Chat/Composer/attachments";
+import { ProfilePicker } from "./ProfilePicker";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { claimShortId } from "../../../../infrastructure/randomId";
 import { reportPromiseErrors } from "../../services/errors";
@@ -24,18 +25,24 @@ export function NewSessionPage({
   draftSaveDelayMs,
   pageClassName,
   recentWorkspaces,
+  availableProfiles,
+  selectedProfile,
   workspace,
   onCreate,
   onPickWorkspace,
+  onProfileChange,
   onWorkspaceChange,
 }: {
   attachmentSettings?: AttachmentSettings;
   draftSaveDelayMs?: number;
   pageClassName: string;
   recentWorkspaces: string[];
+  availableProfiles: string[];
+  selectedProfile?: string;
   workspace: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
+  onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
   const { t } = useTranslation();
@@ -143,6 +150,11 @@ export function NewSessionPage({
               workspace={workspace}
               onChange={onWorkspaceChange}
               onPick={onPickWorkspace}
+            />
+            <ProfilePicker
+              available={availableProfiles}
+              selected={selectedProfile}
+              onChange={onProfileChange}
             />
           </div>
           <div className={messageFlow}>

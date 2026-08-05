@@ -14,6 +14,7 @@ const loadedEnvironmentName = "OMITY_TEST_ENV_LOADED";
 const presetEnvironmentName = "OMITY_TEST_ENV_PRESET";
 const environmentNames = [environmentName, loadedEnvironmentName, presetEnvironmentName] as const;
 const previousEnvironment = new Map(environmentNames.map((name) => [name, process.env[name]]));
+const forwardSlashPath = (path: string) => path.replaceAll("\\", "/");
 afterEach(() => {
   for (const directory of directories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
@@ -69,8 +70,8 @@ timeoutMs: 1000
   const settings = loadSettings(root, { cwd: workspace, sessionId: "session-id" });
   expect(settings.paths.dataDir).toBe(resolve(root, environment, "data"));
   expect(settings.model.model).toBe(environment);
-  const session = resolve(settings.paths.dataDir, "sessions", "session-id");
-  const expanded = `${session}|${workspace}|${appDataRoot()}|${environment}`;
+  const session = forwardSlashPath(resolve(settings.paths.dataDir, "sessions", "session-id"));
+  const expanded = `${session}|${forwardSlashPath(workspace)}|${appDataRoot()}|${environment}`;
   expect(settings.agent.systemPrompt).toBe(`system: ${expanded}\n\nskills: ${expanded}`);
   expect(settings.hooks[0]?.id).toBe(session);
   expect(settings.hooks[0]?.args).toEqual({
@@ -90,8 +91,14 @@ test("hook variables resolve the session directory", () => {
   const session = String.raw`F:\data\sessions\abc`;
   expect(
     resolveHookArgs(
-      { path: `\${session}`, summary: `session=\${session}` },
+      {
+        path: `\${session}`,
+        summary: `cwd=\${cwd}; session=\${session}`,
+      },
       { cwd: String.raw`F:\work`, session, toolOutputs: [] },
     ),
-  ).toEqual({ path: session, summary: `session=${session}` });
+  ).toEqual({
+    path: "F:/data/sessions/abc",
+    summary: "cwd=F:/work; session=F:/data/sessions/abc",
+  });
 });

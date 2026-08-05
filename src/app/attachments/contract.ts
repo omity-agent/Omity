@@ -12,6 +12,7 @@ export interface MessageSubmission {
 }
 export interface SessionSubmission {
   workspace: string;
+  profile?: string;
   history: InitialMessagePair[];
   message: string;
   attachments: PendingAttachment[];

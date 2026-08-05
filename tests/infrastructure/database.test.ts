@@ -30,15 +30,18 @@ test("database waits for transient writer contention", () => {
   expect(row?.timeout).toBe(sqliteBusyTimeoutMs);
   expect(db.db.query<{ auto_vacuum: number }, []>("PRAGMA auto_vacuum").get()?.auto_vacuum).toBe(2);
   expect(db.db.query<{ user_version: number }, []>("PRAGMA user_version").get()?.user_version).toBe(
-    2,
+    3,
   );
   db.close();
 });
 test("existing sessions are explicit", () => {
   const db = makeDb();
   expect(db.hasSession("123")).toBe(false);
-  db.createSession("123", workspace);
+  db.createSession("123", workspace, ["base", "work"]);
   expect(db.hasSession("123")).toBe(true);
+  expect(db.profiles("123")).toEqual(["base", "work"]);
+  db.resetSession("123", workspace);
+  expect(db.profiles("123")).toEqual(["base", "work"]);
   expect(() => {
     db.createSession("123", workspace);
   }).toThrow("会话已存在：123");

@@ -8,6 +8,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
       cwd: "F:/workspace",
       frontend: { draftSaveDelayMs: 0, transcriptRefreshIntervalMs: 0 },
+      profiles: { available: [] },
       sessions: [],
     }),
     cancelTool: notConfigured,

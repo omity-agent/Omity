@@ -49,6 +49,8 @@ export function ChatPage({
   pausing,
   queue,
   recentWorkspaces,
+  availableProfiles,
+  selectedProfile,
   sessionStatus,
   view,
   workspace,
@@ -59,6 +61,7 @@ export function ChatPage({
   onDelete,
   onFork,
   onPickWorkspace,
+  onProfileChange,
   onWorkspaceChange,
 }: {
   activeId?: string;
@@ -69,6 +72,8 @@ export function ChatPage({
   pausing: boolean;
   queue: DisplayQueue[];
   recentWorkspaces: string[];
+  availableProfiles: string[];
+  selectedProfile?: string;
   sessionStatus?: SessionStatus;
   view: TimelineMessage[];
   workspace?: string;
@@ -83,6 +88,7 @@ export function ChatPage({
   onDelete: () => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
+  onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
   const { t } = useTranslation();
@@ -117,9 +123,12 @@ export function ChatPage({
           draftSaveDelayMs={draftSaveDelayMs}
           pageClassName={page}
           recentWorkspaces={recentWorkspaces}
+          availableProfiles={availableProfiles}
+          selectedProfile={selectedProfile}
           workspace={workspace ?? ""}
           onCreate={onCreate}
           onPickWorkspace={onPickWorkspace}
+          onProfileChange={onProfileChange}
           onWorkspaceChange={onWorkspaceChange}
         />
       );
