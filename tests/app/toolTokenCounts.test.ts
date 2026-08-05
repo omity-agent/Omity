@@ -9,3 +9,6 @@ test("counts custom tool input as raw text instead of its object wrapper", () =>
     countTokens(JSON.stringify({ input })),
   );
 });
+test("counts special tokens in context", () => {
+  expect(() => countTokens("hello <|endoftext|> world")).not.toThrow();
+});

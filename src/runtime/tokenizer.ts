@@ -1,6 +1,8 @@
-import { getEncoding } from "js-tiktoken";
+import {
+  ALL_SPECIAL_TOKENS,
+  countTokens as countGptTokens,
+} from "gpt-tokenizer/encoding/o200k_base";
 
-const tokenizer = getEncoding("o200k_base");
 export function countTokens(text: string) {
-  return tokenizer.encode(text).length;
+  return countGptTokens(text, { allowedSpecial: ALL_SPECIAL_TOKENS });
 }
