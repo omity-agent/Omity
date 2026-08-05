@@ -21,7 +21,7 @@ export interface RegisteredSession {
   updatedAt: number;
   control: Control;
   paused: boolean;
-  queueInProgress: boolean;
+  queueRunning: boolean;
   error: ErrorDetails | null;
 }
 interface SessionRow {
@@ -32,7 +32,7 @@ interface SessionRow {
   updated_at: number;
   control: Control;
   paused: number;
-  queue_in_progress: number;
+  queue_running: number;
   error: string | null;
 }
 const sessionSelect = `
@@ -50,8 +50,8 @@ const sessionSelect = `
     s.control,
     EXISTS(
       SELECT 1 FROM queue q
-      WHERE q.session_id = s.id AND q.status IN ('pending', 'running')
-    ) AS queue_in_progress,
+      WHERE q.session_id = s.id AND q.status = 'running'
+    ) AS queue_running,
     EXISTS(
       SELECT 1 FROM queue q
       WHERE q.session_id = s.id AND q.status = 'paused'
@@ -144,7 +144,7 @@ function toSession(row: SessionRow): RegisteredSession {
     id: row.id,
     paused: row.paused === 1,
     profiles: settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown),
-    queueInProgress: row.queue_in_progress === 1,
+    queueRunning: row.queue_running === 1,
     updatedAt: row.updated_at,
     workspace: row.workspace,
   };

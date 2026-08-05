@@ -1,3 +1,4 @@
+import { pauseRequested, resolvePausePhase } from "./pauseState";
 import type { ErrorDetails } from "../failures/details";
 import type { RegisteredSession } from "./registry";
 import type { SessionStatus } from "../types";
@@ -24,7 +25,7 @@ export function projectSession(
   };
 }
 export function resolveSessionState(
-  session: Pick<RegisteredSession, "control" | "paused" | "queueInProgress" | "error">,
+  session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
   activity: Extract<SessionStatus, "tool" | "model" | "idle">,
   hostError: ErrorDetails | null,
 ) {
@@ -34,19 +35,20 @@ export function resolveSessionState(
   };
 }
 export function resolveSessionStatus(
-  session: Pick<RegisteredSession, "control" | "paused" | "queueInProgress" | "error">,
+  session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
   activity: Extract<SessionStatus, "tool" | "model" | "idle">,
   hostError: ErrorDetails | null,
 ): SessionStatus {
   if (hostError || session.error) {
     return "error";
   }
-  const pauseRequested = session.control === "pause" || session.control === "pause_cancel";
-  if (session.paused) {
-    return "paused";
-  }
-  if (pauseRequested) {
-    return session.queueInProgress ? "pausing" : "paused";
+  const pausePhase = resolvePausePhase({
+    paused: session.paused,
+    requested: pauseRequested(session.control),
+    running: session.queueRunning,
+  });
+  if (pausePhase !== "active") {
+    return pausePhase;
   }
   return activity;
 }

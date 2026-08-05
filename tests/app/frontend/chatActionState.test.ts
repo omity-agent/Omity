@@ -3,14 +3,14 @@ import {
   deriveChatActionState,
   pauseRequestPending,
 } from "../../../src/app/frontend/components/Chat/actionState";
-import type { Control, SessionStatus } from "../../../src/types";
+import type { Control, QueueStatus, SessionStatus } from "../../../src/types";
 import { expect, test } from "bun:test";
 
 interface MatrixCase {
   name: string;
   control: Control;
   pausing?: boolean;
-  queue: string[];
+  queue: QueueStatus[];
   sessionStatus: SessionStatus;
   expected: ChatActionState;
 }
@@ -46,6 +46,13 @@ const matrix: MatrixCase[] = [
   {
     control: "pause",
     expected: state("resume", false, "running", false, false),
+    name: "pending append remains resumable with its paused run",
+    queue: ["paused", "pending"],
+    sessionStatus: "paused",
+  },
+  {
+    control: "pause",
+    expected: state("resume", false, "running", false, false),
     name: "pause control without a paused queue",
     queue: [],
     sessionStatus: "idle",
@@ -67,11 +74,18 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "pause",
-    expected: state("pausing", true, "pause", true, false),
-    name: "pause request before a pending queue starts",
+    expected: state("resume", false, "running", false, false),
+    name: "pending queue has already reached a requested pause",
+    queue: ["pending"],
+    sessionStatus: "paused",
+  },
+  {
+    control: "running",
+    expected: state("resume", false, "running", false, false),
+    name: "local pause request with an unstarted queue is resumable",
     pausing: true,
     queue: ["pending"],
-    sessionStatus: "model",
+    sessionStatus: "paused",
   },
   {
     control: "pause",
@@ -115,8 +129,11 @@ test.each(matrix)("derives chat actions for $name", (entry) => {
   ).toEqual(entry.expected);
 });
 test("pause request remains pending until the running queue reaches a boundary", () => {
-  expect(pauseRequestPending("session", "session", [{ status: "pending" }])).toBe(true);
+  expect(pauseRequestPending("session", "session", [{ status: "pending" }])).toBe(false);
   expect(pauseRequestPending("session", "session", [{ status: "running" }])).toBe(true);
+  expect(
+    pauseRequestPending("session", "session", [{ status: "paused" }, { status: "pending" }]),
+  ).toBe(false);
   expect(pauseRequestPending("session", "session", [{ status: "paused" }])).toBe(false);
   expect(pauseRequestPending("session", "session", [{ status: "done" }])).toBe(false);
 });

@@ -48,7 +48,7 @@ export function confirmOptimisticUser(
     }
     const optimistic = current.view.find((item) => item.key === key);
     const queueItem = current.queue.find(({ id }) => id === queueId);
-    const queue = queueItem
+    const queue: TranscriptData["queue"] = queueItem
       ? current.queue
       : [
           ...current.queue,

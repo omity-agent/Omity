@@ -1,4 +1,5 @@
 import type { ErrorDetails } from "../../failures/details";
+import type { QueueStatus } from "../../types";
 import type { StreamEvent } from "../../infrastructure/database/records/streamEvents";
 
 export type DisplayRole = "user" | "assistant" | "tool";
@@ -41,7 +42,7 @@ export interface DisplayQueue {
   id: number;
   afterEventId?: number;
   content: string;
-  status: string;
+  status: QueueStatus;
   error: ErrorDetails | null;
   userMessageId?: number | null;
   root?: boolean;

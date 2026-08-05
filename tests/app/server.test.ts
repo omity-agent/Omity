@@ -38,6 +38,25 @@ test("app session summaries expose paused queue errors", async () => {
   });
   await controller.close();
 });
+test("pending appends do not turn a paused run into a pausing session", async () => {
+  const root = makeRoot();
+  const workspace = join(root, "workspace");
+  mkdirSync(workspace);
+  const paths = sessionPaths(loadSettings(root), "paused-session");
+  const db = new AgentDatabase(paths.dbPath);
+  db.createSession("paused-session", workspace);
+  const queueId = db.appendUser("paused-session", "first");
+  db.setQueueStatus(queueId, "paused");
+  db.setControl("paused-session", "pause");
+  db.appendUser("paused-session", "appended");
+  db.close();
+  const controller = new AppController(root);
+  expect(controller.bootstrap().sessions[0]).toMatchObject({
+    id: "paused-session",
+    status: "paused",
+  });
+  await controller.close();
+});
 test("app registry serves a memory projection refreshed one session at a time", () => {
   const root = makeRoot();
   const workspace = join(root, "workspace");
@@ -99,17 +118,21 @@ test("session status prioritizes errors and pauses over host activity", () => {
     control: "running" as const,
     error: null,
     paused: false,
-    queueInProgress: true,
+    queueRunning: true,
   };
   const failure = captureError(new Error("Run failed"));
   expect(resolveSessionStatus(running, "model", null)).toBe("model");
   expect(resolveSessionStatus(running, "tool", failure)).toBe("error");
-  expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("paused");
+  expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
   expect(resolveSessionStatus({ ...running, error: failure }, "model", null)).toBe("error");
   expect(resolveSessionStatus({ ...running, control: "pause" }, "model", null)).toBe("pausing");
   expect(
-    resolveSessionStatus({ ...running, control: "pause", queueInProgress: false }, "idle", null),
+    resolveSessionStatus({ ...running, control: "pause", queueRunning: false }, "idle", null),
   ).toBe("paused");
+  expect(
+    resolveSessionStatus({ ...running, paused: true, queueRunning: false }, "idle", null),
+  ).toBe("paused");
+  expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
 });
 test("session state exposes host errors before queue errors", () => {
   const runError = captureError(new Error("Run failed"));
@@ -118,7 +141,7 @@ test("session state exposes host errors before queue errors", () => {
     control: "running" as const,
     error: runError,
     paused: true,
-    queueInProgress: false,
+    queueRunning: false,
   };
   expect(resolveSessionState(session, "model", hostError)).toEqual({
     error: hostError,

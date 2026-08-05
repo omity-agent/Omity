@@ -1,12 +1,12 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type DisplayMessage, type DisplayToolCall } from "./timeline";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
+import type { QueueStatus, Settings } from "../types";
 import { contentToText, messageReasoning } from "../runtime/content";
 import { freeformCallIds, rawFreeformInput } from "./timeline/freeform";
 import { modelTokenUsage, toolInputTokens, toolOutputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
-import type { Settings } from "../types";
 import { existsSync } from "node:fs";
 import { extractToolImages } from "../runtime/modelImages";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
@@ -24,7 +24,7 @@ interface MessageRow {
 interface QueueRow {
   id: number;
   content: string;
-  status: string;
+  status: QueueStatus;
   error: string | null;
   user_message_id: number | null;
   root_id: number | null;
