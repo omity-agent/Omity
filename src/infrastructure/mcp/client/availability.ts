@@ -1,8 +1,19 @@
 const unavailableCode = "MCP_STDIO_UNAVAILABLE";
-
+const processExitedCode = "MCP_STDIO_PROCESS_EXITED";
 export interface StdioRestartPolicy {
   delayMs: number;
   maxAttempts: number;
+}
+export class McpStdioProcessExitedError extends Error {
+  readonly code = processExitedCode;
+  override readonly name = "McpStdioProcessExitedError";
+  constructor(
+    readonly diagnostics?: string,
+    readonly operation?: string,
+    cause?: unknown,
+  ) {
+    super("MCP stdio 子进程意外退出", cause === undefined ? undefined : { cause });
+  }
 }
 export class McpStdioUnavailableError extends Error {
   readonly code = unavailableCode;

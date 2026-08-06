@@ -1,20 +1,11 @@
 import type { AttachmentSettings } from "../../../attachments/contract";
 import type { DisplayEvent } from "../../../timeline";
-import type { ErrorDetails } from "../../../../failures/details";
 import type { SessionInfo } from "../../../sessionState";
 import type { TranscriptSnapshot } from "../transcript/cache";
+import { errorDetailsSchema } from "./errors";
 import { z } from ".";
 
 const integer = z.number().int();
-const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
-  z.object({
-    cause: errorDetailsSchema.optional(),
-    details: z.record(z.string(), z.json()).optional(),
-    message: z.string(),
-    name: z.string(),
-    stack: z.string().optional(),
-  }),
-);
 const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: integer,
   error: errorDetailsSchema.nullable(),

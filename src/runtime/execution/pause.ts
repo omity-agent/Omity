@@ -17,9 +17,9 @@ export function pauseForMcpUnavailable(ctx: HostContext, run: QueueRun, error: u
   }
   const details = captureError(unavailable);
   setRunStatus(ctx, run, "paused", details);
-  ctx.logger.error("MCP stdio 不可用，队列已暂停", {
-    error: details,
+  ctx.logger.warn("MCP stdio 不可用，队列已暂停", {
     queueId: run.items[0].id,
+    server: unavailable.serverName,
   });
   return true;
 }

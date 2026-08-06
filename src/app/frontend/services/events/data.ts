@@ -1,11 +1,11 @@
 import type { DisplayEvent } from "../../../timeline";
-import type { ErrorDetails } from "../../../../failures/details";
 import type { SessionInfo } from "../../../sessionState";
+import { errorDetailsSchema } from "../validation/errors";
 import { z } from "../validation";
 
 const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: z.number().int(),
-  error: z.custom<ErrorDetails>().nullable(),
+  error: errorDetailsSchema.nullable(),
   id: z.string(),
   status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
   updatedAt: z.number().int(),

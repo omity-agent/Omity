@@ -16,6 +16,14 @@ export interface ErrorDetails {
   cause?: ErrorDetails;
   details?: Record<string, ErrorValue>;
 }
+export interface ErrorSummaryItem {
+  name: string;
+  message: string;
+  details?: Record<string, ErrorValue>;
+}
+export interface ErrorSummary extends ErrorSummaryItem {
+  causes?: ErrorSummaryItem[];
+}
 const errorValueSchema: z.ZodType<ErrorValue> = z.lazy(() =>
   z.union([
     z.null(),
@@ -36,6 +44,8 @@ const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
   }),
 );
 const errorValuesSchema = z.record(z.string(), errorValueSchema);
+const hiddenDetailKeys = new Set(["pregelTaskId"]);
+const structuralErrorKeys = new Set(["name", "message", "stack", "cause", ...hiddenDetailKeys]);
 export function captureError(error: unknown): ErrorDetails {
   const serializedError: unknown = serializeError(error);
   const json = JSON.stringify(serializedError);
@@ -54,6 +64,28 @@ export function captureError(error: unknown): ErrorDetails {
 export function stringifyError(error: ErrorDetails) {
   return JSON.stringify(error);
 }
+export function summarizeError(error: ErrorDetails): ErrorSummary {
+  const levels: ErrorSummaryItem[] = [];
+  const seen = new Set<string>();
+  let current: ErrorDetails | undefined = error;
+  while (current) {
+    const level = summarizeLevel(current);
+    const identity = JSON.stringify(level);
+    if (!seen.has(identity)) {
+      seen.add(identity);
+      levels.push(level);
+    }
+    current = current.cause;
+  }
+  const [root, ...causes] = levels;
+  if (!root) {
+    throw new Error("错误摘要缺少根错误");
+  }
+  return causes.length > 0 ? { ...root, causes } : root;
+}
+export function errorFingerprint(error: ErrorDetails) {
+  return JSON.stringify(summarizeError(error));
+}
 export function parseError(value: string): ErrorDetails {
   const parsed: unknown = JSON.parse(value);
   const result = errorDetailsSchema.safeParse(parsed);
@@ -65,7 +97,7 @@ export function parseError(value: string): ErrorDetails {
 function adaptSerializedError(serialized: Record<string, unknown>, source?: unknown): ErrorDetails {
   const details: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(serialized)) {
-    if (!["name", "message", "stack", "cause"].includes(key)) {
+    if (!structuralErrorKeys.has(key)) {
       details[key] = sourceProperty(source, key, value);
     }
   }
@@ -85,6 +117,22 @@ function adaptSerializedError(serialized: Record<string, unknown>, source?: unkn
         }),
     ...(Object.keys(parsedDetails).length > 0 ? { details: parsedDetails } : {}),
   };
+}
+function summarizeLevel(error: ErrorDetails): ErrorSummaryItem {
+  const details = visibleDetails(error.details);
+  return {
+    ...(Object.keys(details).length > 0 ? { details } : {}),
+    message: error.message,
+    name: error.name,
+  };
+}
+function visibleDetails(details: Record<string, ErrorValue> | undefined) {
+  if (!details) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(details).filter(([key]) => !hiddenDetailKeys.has(key)),
+  ) as Record<string, ErrorValue>;
 }
 function sourceProperty(source: unknown, key: string, serialized: unknown) {
   if (!isRecord(source)) {

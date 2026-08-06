@@ -16,13 +16,45 @@ test("session errors are logged once until they clear", () => {
   reportSessionErrors([failed], reported);
   reportSessionErrors([failed], reported);
   expect(log).toHaveBeenCalledTimes(1);
-  expect(log).toHaveBeenCalledWith("failed", {
-    error: failed.error,
+  expect(log).toHaveBeenCalledWith("会话运行失败", {
+    error: { message: "failed", name: "Error" },
     sessionId: "session",
   });
   reportSessionErrors([session(null)], reported);
   reportSessionErrors([failed], reported);
   expect(log).toHaveBeenCalledTimes(2);
+  log.mockRestore();
+});
+test("session error reports omit unstable runtime metadata and recursive stacks", () => {
+  const log = spyOn(console, "error").mockReturnValue(undefined);
+  const reported = new Set<string>();
+  const first = mcpError("task-1", "outer stack 1", "cause stack 1");
+  const second = mcpError("task-2", "outer stack 2", "cause stack 2");
+  reportSessionErrors([session(first)], reported);
+  reportSessionErrors([session(second)], reported);
+  expect(log).toHaveBeenCalledTimes(1);
+  expect(log).toHaveBeenCalledWith("会话运行失败", {
+    error: {
+      causes: [
+        {
+          details: {
+            code: "MCP_STDIO_PROCESS_EXITED",
+            diagnostics: "terminal failed",
+          },
+          message: "MCP stdio 子进程意外退出",
+          name: "McpStdioProcessExitedError",
+        },
+      ],
+      details: {
+        code: "MCP_STDIO_UNAVAILABLE",
+        maxAttempts: 3,
+        serverName: "terminal",
+      },
+      message: 'MCP stdio 服务器 "terminal" 在 3 次重启后仍不可用',
+      name: "McpStdioUnavailableError",
+    },
+    sessionId: "session",
+  });
   log.mockRestore();
 });
 test("the same error object is printed only once across reporting boundaries", () => {
@@ -42,6 +74,7 @@ test("structured errors retain SDK fields, response headers, body and cause", ()
     code: "upstream_error",
     error: { provider: "upstream", type: "gateway_error" },
     headers: new Headers({ "x-request-id": "req-123" }),
+    pregelTaskId: "internal-task-id",
     requestID: "req-123",
     status: 502,
   });
@@ -62,6 +95,7 @@ test("structured errors retain SDK fields, response headers, body and cause", ()
     message: "502 Upstream request failed",
     name: "Error",
   });
+  expect(persisted.details).not.toHaveProperty("pregelTaskId");
 });
 test("persisted error details are validated recursively", () => {
   expect(() =>
@@ -109,5 +143,27 @@ function session(error: ErrorDetails | null): SessionInfo {
     status: error ? "error" : "idle",
     updatedAt: 1,
     workspace: "F:/workspace",
+  };
+}
+function mcpError(pregelTaskId: string, stack: string, causeStack: string): ErrorDetails {
+  return {
+    cause: {
+      details: {
+        code: "MCP_STDIO_PROCESS_EXITED",
+        diagnostics: "terminal failed",
+      },
+      message: "MCP stdio 子进程意外退出",
+      name: "McpStdioProcessExitedError",
+      stack: causeStack,
+    },
+    details: {
+      code: "MCP_STDIO_UNAVAILABLE",
+      maxAttempts: 3,
+      pregelTaskId,
+      serverName: "terminal",
+    },
+    message: 'MCP stdio 服务器 "terminal" 在 3 次重启后仍不可用',
+    name: "McpStdioUnavailableError",
+    stack,
   };
 }

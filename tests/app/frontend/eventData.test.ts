@@ -20,6 +20,19 @@ test("state events require an epoch and sequence ID", () => {
     id: "session",
   });
 });
+test("state events validate structured session errors", () => {
+  const data = JSON.stringify({
+    createdAt: 1,
+    error: { message: "failed", name: "Error", stack: 42 },
+    id: "session",
+    status: "error",
+    updatedAt: 1,
+    workspace: "F:/workspace",
+  });
+  expect(() => readSessionEvent(message(data, "123e4567-e89b-42d3-a456-426614174000:1"))).toThrow(
+    "SSE session 事件结构无效",
+  );
+});
 test("content event IDs must match their persisted cursors", () => {
   expect(readContentSyncEvent(message('{"eventCursor":4}', "4"))).toEqual({
     eventCursor: 4,

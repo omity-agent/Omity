@@ -1,5 +1,10 @@
 import { type ConnectedStdioClient, type StdioConnector, connectStdioClient } from "./stdio";
-import { McpStdioUnavailableError, type StdioRestartPolicy } from "./availability";
+import {
+  McpStdioProcessExitedError,
+  McpStdioUnavailableError,
+  type StdioRestartPolicy,
+} from "./availability";
+import { captureError, summarizeError } from "../../../failures/details";
 import { interruptibleDelay, requestSignal, waitForSignal } from "./interruptible";
 import type { Logger } from "../../logging/logger";
 import type { StdioConnection } from "@langchain/mcp-adapters";
@@ -68,7 +73,7 @@ export class RestartingStdioClient {
         if (signal?.aborted || !connection.isClosed()) {
           throw error;
         }
-        this.recordClosure(connection);
+        this.recordClosure(connection, method, error);
         await waitForSignal(this.ensureRecovery(), signal);
       }
     }
@@ -81,13 +86,7 @@ export class RestartingStdioClient {
     await connection.closed;
     try {
       await this.recovering;
-    } catch (error) {
-      if (!(error instanceof McpStdioUnavailableError) && !this.controller.signal.aborted) {
-        this.logger.error("MCP stdio 恢复任务异常", {
-          error: error instanceof Error ? error.message : String(error),
-          server: this.serverName,
-        });
-      }
+    } catch {
       return;
     }
     if (this.controller.signal.aborted || this.current !== connection) {
@@ -102,15 +101,18 @@ export class RestartingStdioClient {
       }
     }
   }
-  private recordClosure(connection: ConnectedStdioClient) {
+  private recordClosure(
+    connection: ConnectedStdioClient,
+    operation?: "callTool" | "listTools" | "readResource",
+    cause?: unknown,
+  ) {
     if (this.current === connection) {
       this.current = undefined;
     }
-    const stderr = connection.diagnostics();
-    this.lastFailure = new Error(
-      stderr
-        ? `MCP stdio 子进程意外退出\n\n子进程 stderr：\n${stderr}`
-        : "MCP stdio 子进程意外退出",
+    this.lastFailure = new McpStdioProcessExitedError(
+      connection.diagnostics() || undefined,
+      operation,
+      cause,
     );
   }
   private ensureRecovery() {
@@ -155,11 +157,6 @@ export class RestartingStdioClient {
       }
       this.controller.signal.throwIfAborted();
       const attempt = ++this.restartAttempts;
-      this.logger.warn("正在重启 MCP stdio 子进程", {
-        attempt,
-        maximum: this.policy.maxAttempts,
-        server: this.serverName,
-      });
       try {
         const connection = await this.connect(
           this.serverName,
@@ -176,7 +173,7 @@ export class RestartingStdioClient {
         this.lastFailure = error;
         this.logger.warn("MCP stdio 子进程重启失败", {
           attempt,
-          error: error instanceof Error ? error.message : String(error),
+          maximum: this.policy.maxAttempts,
           server: this.serverName,
         });
       }
@@ -186,9 +183,8 @@ export class RestartingStdioClient {
       this.policy.maxAttempts,
       this.lastFailure,
     );
-    this.logger.error("MCP stdio 自动重启已达到上限", {
-      error: this.unavailable.message,
-      server: this.serverName,
+    this.logger.error(this.unavailable.message, {
+      lastFailure: summarizeError(captureError(this.lastFailure)),
     });
     throw this.unavailable;
   }
