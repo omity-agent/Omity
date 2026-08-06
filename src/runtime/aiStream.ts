@@ -4,6 +4,7 @@ import type { AiStreamEvent } from "../agent/aiAgent";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
 import { findToolStreamIdentity } from "../infrastructure/database/records/toolStreamIdentity";
+import { toUIMessageChunk } from "ai";
 
 type AiStreamContext = Pick<
   HostContext,
@@ -15,27 +16,27 @@ export function recordAiStreamPart(
   event: AiStreamEvent,
   state: StreamLogState,
 ) {
-  const { part } = event;
-  if (part.type === "text-delta" || part.type === "reasoning-delta") {
-    const kind = part.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta";
-    const messageId = streamMessageId(state, part.id);
+  const chunk = toUIMessageChunk(event.part);
+  if (chunk?.type === "text-delta" || chunk?.type === "reasoning-delta") {
+    const kind = chunk.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta";
+    const messageId = streamMessageId(state, chunk.id);
     ctx.db.appendStream(ctx.sessionId, {
       kind,
       messageId,
       partId: sequentialPart(state.parts, kind),
       queueId,
-      value: part.text,
+      value: chunk.delta,
     });
-    if (part.type === "text-delta") {
+    if (chunk.type === "text-delta") {
       if (ctx.settings.logging.streamTokens) {
-        ctx.logger.token(part.text);
+        ctx.logger.token(chunk.delta);
       }
-      ctx.observer?.token(ctx.sessionId, queueId, part.text);
+      ctx.observer?.token(ctx.sessionId, queueId, chunk.delta);
     }
-  } else if (part.type === "tool-input-start") {
-    ctx.toolExecutions?.announce(part.id);
-    const messageId = streamMessageId(state, part.id);
-    const index = toolIndex(state, part.id);
+  } else if (chunk?.type === "tool-input-start") {
+    ctx.toolExecutions?.announce(chunk.toolCallId);
+    const messageId = streamMessageId(state, chunk.toolCallId);
+    const index = toolIndex(state, chunk.toolCallId);
     ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
@@ -43,20 +44,20 @@ export function recordAiStreamPart(
       queueId,
       value: {
         ...(event.freeform ? { freeform: true } : {}),
-        idDelta: part.id,
+        idDelta: chunk.toolCallId,
         index,
-        nameDelta: part.toolName,
+        nameDelta: chunk.toolName,
       },
     });
-  } else if (part.type === "tool-input-delta") {
-    const messageId = streamMessageId(state, part.id);
-    const index = toolIndex(state, part.id);
+  } else if (chunk?.type === "tool-input-delta") {
+    const messageId = streamMessageId(state, chunk.toolCallId);
+    const index = toolIndex(state, chunk.toolCallId);
     ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
       partId: toolPart(state.parts, index),
       queueId,
-      value: { argumentsDelta: part.delta, index },
+      value: { argumentsDelta: chunk.inputTextDelta, index },
     });
   }
 }

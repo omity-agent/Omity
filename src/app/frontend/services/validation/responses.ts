@@ -108,6 +108,7 @@ export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object(
   events: z.array(eventSchema),
   messages: z.array(messageSchema),
   queue: z.array(queueSchema),
+  transcriptRevision: integer.nonnegative(),
 });
 const attachmentSettingsSchema: z.ZodType<AttachmentSettings> = z.object({
   allowedSuffixes: z.array(z.string()),

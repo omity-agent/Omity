@@ -50,10 +50,7 @@ export function buildTimeline(
       .filter((item) => item.status === "pending" && !knownQueue.has(item.id))
       .map(
         (item) =>
-          [
-            item.id,
-            synthetic("user", item.content, `queue-${item.id.toString()}`, item.afterEventId),
-          ] as const,
+          [item.id, synthetic("user", item.content, `queue-${item.id.toString()}`)] as const,
       ),
   );
   const activeQueueIds = new Set(
@@ -88,69 +85,26 @@ function timelineTail(
 ) {
   const result: TimelineMessage[] = [];
   let stream: DisplayEvent[] = [];
-  const optimisticInsertions: TimelineInsertion[] = optimistic.map((message) => ({ message }));
-  const pendingInsertions: TimelineInsertion[] = [...pending].flatMap(([queueId, message]) =>
-    message.afterEventId === undefined ? [] : [{ message, queueId }],
-  );
-  const insertions: TimelineInsertion[] = [...optimisticInsertions, ...pendingInsertions].toSorted(
-    (left, right) => requireAfterEventId(left.message) - requireAfterEventId(right.message),
-  );
   const flushStream = () => {
     result.push(...streamTimelineMessages(stream, outputs, startedCallIds, finishedCallIds));
     stream = [];
   };
   for (const event of events) {
-    while (insertions.length > 0 && requireAfterEventId(insertions[0]?.message) < event.id) {
-      flushStream();
-      appendInsertion(result, pending, requireInsertion(insertions.shift()));
-    }
     if (event.kind === "user_appended") {
       const message = pending.get(event.queueId);
       if (message) {
         flushStream();
         result.push(message);
         pending.delete(event.queueId);
-        const insertionIndex = insertions.findIndex(({ queueId }) => queueId === event.queueId);
-        if (insertionIndex !== -1) {
-          insertions.splice(insertionIndex, 1);
-        }
       }
     } else {
       stream.push(event);
     }
   }
   flushStream();
-  for (const insertion of insertions) {
-    appendInsertion(result, pending, insertion);
-  }
   result.push(...pending.values());
+  result.push(...optimistic);
   return result;
-}
-interface TimelineInsertion {
-  message: TimelineMessage;
-  queueId?: number;
-}
-function requireAfterEventId(message: TimelineMessage | undefined) {
-  if (message?.afterEventId === undefined) {
-    throw new Error("乐观消息缺少流事件边界");
-  }
-  return message.afterEventId;
-}
-function requireInsertion(insertion: TimelineInsertion | undefined) {
-  if (!insertion) {
-    throw new Error("乐观消息不存在");
-  }
-  return insertion;
-}
-function appendInsertion(
-  result: TimelineMessage[],
-  pending: Map<number, TimelineMessage>,
-  insertion: TimelineInsertion,
-) {
-  result.push(insertion.message);
-  if (insertion.queueId !== undefined) {
-    pending.delete(insertion.queueId);
-  }
 }
 function withParts(
   message: DisplayMessage,
@@ -180,14 +134,8 @@ function withParts(
     ],
   };
 }
-function synthetic(
-  role: DisplayRole,
-  content: string,
-  key: string,
-  afterEventId?: number,
-): TimelineMessage {
+function synthetic(role: DisplayRole, content: string, key: string): TimelineMessage {
   return {
-    ...(afterEventId === undefined ? {} : { afterEventId }),
     content,
     createdAt: 0,
     id: -1,

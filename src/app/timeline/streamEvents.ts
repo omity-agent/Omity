@@ -40,16 +40,16 @@ export function eventMessageId(event: DisplayEvent) {
   return event.messageId;
 }
 export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayMessage>) {
-  const finished = new Set(
-    events.flatMap((event) => (event.kind === "tool_finished" ? [event.value] : [])),
+  const completed = events.flatMap((event) =>
+    event.kind === "tool_finished" ? [event.value] : [],
   );
-  const started = new Set(
-    events.flatMap((event) =>
-      event.kind === "tool_started" && !outputs.has(event.value) && !finished.has(event.value)
-        ? [event.value]
-        : [],
+  const finished = new Set(completed.filter((callId) => outputs.has(callId)));
+  const started = new Set([
+    ...completed.filter((callId) => !outputs.has(callId)),
+    ...events.flatMap((event) =>
+      event.kind === "tool_started" && !outputs.has(event.value) ? [event.value] : [],
     ),
-  );
+  ]);
   return { finished, started };
 }
 export function streamTimelineMessages(

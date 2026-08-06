@@ -86,7 +86,9 @@ test("persists only replay and display message fields", () => {
 test("persists user and tool boundaries while clearing persisted text deltas", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "问题");
+  db.appendUser("123", "问题");
+  expect(db.db.query("SELECT id FROM events").all()).toEqual([]);
+  db.startQueue("123", required(db.nextQueue("123")));
   db.setControl("123", "pause");
   db.appendStream("123", {
     kind: "assistant_text_delta",
@@ -114,7 +116,6 @@ test("persists user and tool boundaries while clearing persisted text deltas", (
       []
     >("SELECT queue_id, message_id, part_id, kind, payload_json FROM events ORDER BY id")
     .all();
-  expect(queueId).toBe(1);
   expect(events).toEqual([
     {
       kind: "user_appended",
@@ -171,12 +172,11 @@ test("retains the unchanged prefix and queue message identity", () => {
   const firstSync = messageRows(db);
   db.syncHistory("123", [required(db.history("123")[0]), new AIMessage("修订稿")]);
   const secondSync = messageRows(db);
-  const queueMessageId = queueMessageRowId(db, queueId);
+  expect(queueMessageRowId(db, queueId)).toBe(original[0]?.id);
   db.close();
   expect(firstSync[0]).toEqual(original[0]);
   expect(secondSync[0]).toEqual(original[0]);
   expect(secondSync[1]?.id).not.toBe(firstSync[1]?.id);
-  expect(queueMessageId).toBe(original[0]?.id);
 });
 function messageRows(db: ReturnType<typeof makeDb>) {
   const query = db.db.prepare<{ id: number; created_at: number }, []>(

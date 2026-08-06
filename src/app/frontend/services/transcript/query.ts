@@ -38,6 +38,12 @@ export function useSessionTranscript(
       await refreshTranscript(queryClient, id);
     },
     {
+      asyncRetryerOptions: {
+        backoff: "exponential",
+        baseWait: Math.max(refreshIntervalMs ?? 0, 250),
+        maxAttempts: 4,
+        maxWait: 2000,
+      },
       onError: (error) => {
         reportError(error);
       },

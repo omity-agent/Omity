@@ -54,6 +54,7 @@ function withSessionDatabase<T>(
 export function loadTranscript(db: AgentDatabase, sessionId: string) {
   return runTransaction(db.db, () => {
     const control = db.control(sessionId);
+    const transcriptRevision = db.transcriptRevision(sessionId);
     const messages = queryAll<MessageRow>(
       db.db,
       `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at
@@ -85,7 +86,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
       sessionId,
     ).map(persistedDisplayEvent);
     const eventCursor = db.eventCursor();
-    return { control, eventCursor, events, messages, queue };
+    return { control, eventCursor, events, messages, queue, transcriptRevision };
   });
 }
 function toDisplayMessage(row: MessageRow): DisplayMessage {

@@ -82,7 +82,7 @@ test("keeps a streaming tool call before a pending user append", () => {
   );
   expect(view[2]?.content).toBe("追加问题");
 });
-test("places output generated after an append behind the user message", () => {
+test("places output generated after the consumed boundary behind the user message", () => {
   const queue: DisplayQueue[] = [
     {
       content: "",

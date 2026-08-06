@@ -1,7 +1,7 @@
-import { eq, sql } from "drizzle-orm";
 import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
+import { eq } from "drizzle-orm";
 import { sessionDatabase } from "../connection";
 import { sessions } from "../schema";
 
@@ -23,6 +23,7 @@ export function createSessionRecord(
         createdAt: now,
         id: sessionId,
         profiles: [...profiles],
+        transcriptRevision: 0,
         updatedAt: now,
         workspace,
       })
@@ -77,21 +78,41 @@ export function readProfilesRecord(db: Database, sessionId: string) {
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  sessionDatabase(db)
-    .update(sessions)
-    .set({ updatedAt: sql`max(${sessions.updatedAt}, unixepoch())` })
-    .where(eq(sessions.id, sessionId))
-    .run();
+  const result = db.run(
+    `UPDATE sessions
+     SET transcript_revision = transcript_revision + 1,
+       updated_at = MAX(updated_at, unixepoch())
+     WHERE id = ? AND transcript_revision < ?`,
+    [sessionId, Number.MAX_SAFE_INTEGER],
+  );
+  if (result.changes !== 1) {
+    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  }
 }
 export function touchQueueSessionRecord(db: Database, queueId: number) {
   const result = db.run(
-    `UPDATE sessions SET updated_at = MAX(updated_at, unixepoch())
-     WHERE id = (SELECT session_id FROM queue WHERE id = ?)`,
-    [queueId],
+    `UPDATE sessions
+     SET updated_at = MAX(updated_at, unixepoch()),
+       transcript_revision = transcript_revision + 1
+     WHERE id = (SELECT session_id FROM queue WHERE id = ?)
+       AND transcript_revision < ?`,
+    [queueId, Number.MAX_SAFE_INTEGER],
   );
   if (result.changes !== 1) {
-    throw new Error(`队列不存在：${queueId.toString()}`);
+    throw new Error(`队列不存在或 Transcript 版本已耗尽：${queueId.toString()}`);
   }
+}
+export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
+  requireSessionRecord(db, sessionId);
+  const row = sessionDatabase(db)
+    .select({ revision: sessions.transcriptRevision })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .get();
+  if (!row || !Number.isSafeInteger(row.revision)) {
+    throw new Error(`Transcript 版本无效：${sessionId}`);
+  }
+  return row.revision;
 }
 export function readControlRecord(db: Database, sessionId: string): Control {
   requireSessionRecord(db, sessionId);
@@ -107,9 +128,14 @@ export function readControlRecord(db: Database, sessionId: string): Control {
 }
 export function writeControlRecord(db: Database, sessionId: string, control: Control) {
   requireSessionRecord(db, sessionId);
-  sessionDatabase(db)
-    .update(sessions)
-    .set({ control, updatedAt: sql`max(${sessions.updatedAt}, unixepoch())` })
-    .where(eq(sessions.id, sessionId))
-    .run();
+  const result = db.run(
+    `UPDATE sessions
+     SET control = ?, transcript_revision = transcript_revision + 1,
+       updated_at = MAX(updated_at, unixepoch())
+     WHERE id = ? AND transcript_revision < ?`,
+    [control, sessionId, Number.MAX_SAFE_INTEGER],
+  );
+  if (result.changes !== 1) {
+    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  }
 }

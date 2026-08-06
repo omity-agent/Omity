@@ -5,6 +5,7 @@ import {
   deleteQueueStream,
   finishToolStreams,
   insertStreamEvent,
+  insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/streamEvents";
 import {
@@ -24,28 +25,26 @@ import {
 } from "./records/toolCancellations";
 import {
   closeDatabase,
-  configureDatabase,
+  openSessionDatabase,
   reclaimDatabasePages,
   runTransaction,
-  sessionDatabase,
 } from "./connection";
 import {
   createSessionRecord,
   hasSessionRecord,
   readControlRecord,
   readProfilesRecord,
+  readTranscriptRevisionRecord,
   readWorkspaceRecord,
   requireSessionRecord,
   touchQueueSessionRecord,
   touchSessionRecord,
   writeControlRecord,
 } from "./records/sessions";
-import { loadMessages, queueMessageId } from "./records/messages/history";
 import type { BaseMessage } from "@langchain/core/messages";
-import { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../failures/details";
 import { RecoverableDatabase } from "./records/recovery";
-import { migrateSessionDatabase } from "./migrations";
+import { loadMessages } from "./records/messages/history";
 import { resetSessionStorage } from "./maintenance";
 import { syncMessages } from "./records/messages/sync";
 
@@ -53,15 +52,7 @@ export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
   private storageReclaimPending = false;
   constructor(path: string, root = process.cwd()) {
-    const db = new Database(path, { create: true, strict: true });
-    try {
-      configureDatabase(db);
-      migrateSessionDatabase(sessionDatabase(db), root);
-    } catch (error) {
-      closeDatabase(db);
-      throw error;
-    }
-    super(db);
+    super(openSessionDatabase(path, root));
   }
   close() {
     closeDatabase(this.db);
@@ -100,20 +91,11 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   appendUser(sessionId: string, content: string) {
     this.requireSession(sessionId);
-    const { event, queueId } = runTransaction(this.db, () => {
+    return runTransaction(this.db, () => {
       const insertedQueueId = appendUserQueue(this.db, sessionId, content);
-      const insertedEvent = insertStreamEvent(this.db, sessionId, {
-        kind: "user_appended",
-        messageId: queueMessageId(sessionId, insertedQueueId),
-        partId: "user",
-        queueId: insertedQueueId,
-        value: null,
-      });
       touchSessionRecord(this.db, sessionId);
-      return { event: insertedEvent, queueId: insertedQueueId };
+      return insertedQueueId;
     });
-    this.notify?.(event);
-    return queueId;
   }
   appendDraft(sessionId: string, content: string) {
     this.requireSession(sessionId);
@@ -133,7 +115,16 @@ export class AgentDatabase extends RecoverableDatabase {
     return nextQueueRow(this.db, sessionId);
   }
   startQueue(sessionId: string, item: QueueItem) {
-    return runTransaction(this.db, () => startQueueRecord(this.db, sessionId, item));
+    const result = runTransaction(this.db, () => {
+      const userMessageId = startQueueRecord(this.db, sessionId, item);
+      const boundary = insertUserBoundaryEvent(this.db, sessionId, item.id);
+      touchSessionRecord(this.db, sessionId);
+      return { boundary, userMessageId };
+    });
+    if (result.boundary) {
+      this.notify?.(result.boundary);
+    }
+    return result.userMessageId;
   }
   setQueueStatus(queueId: number, status: QueueStatus, error?: ErrorDetails) {
     runTransaction(this.db, () => {
@@ -150,13 +141,19 @@ export class AgentDatabase extends RecoverableDatabase {
   eventCursor() {
     return streamEventCursor(this.db);
   }
+  transcriptRevision(sessionId: string) {
+    return readTranscriptRevisionRecord(this.db, sessionId);
+  }
   syncHistory(sessionId: string, messages: BaseMessage[]) {
     this.requireSession(sessionId);
     const finished = runTransaction(this.db, () => {
-      syncMessages(this.db, sessionId, messages);
-      const events = finishToolStreams(this.db, sessionId, messages);
+      const messagesChanged = syncMessages(this.db, sessionId, messages);
+      const streams = finishToolStreams(this.db, sessionId, messages);
       clearToolCancellations(this.db, sessionId);
-      return events;
+      if (messagesChanged || streams.changed) {
+        touchSessionRecord(this.db, sessionId);
+      }
+      return streams.events;
     });
     for (const event of finished) {
       this.notify?.(event);
@@ -181,14 +178,19 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
     this.requireSession(sessionId);
-    return this.notifyStream(insertStreamEvent(this.db, sessionId, event));
+    const inserted = runTransaction(this.db, () => {
+      const result = insertStreamEvent(this.db, sessionId, event);
+      touchSessionRecord(this.db, sessionId);
+      return result;
+    });
+    this.notify?.(inserted);
+    return inserted;
   }
   discardQueueStream(queueId: number) {
-    deleteQueueStream(this.db, queueId);
-  }
-  private notifyStream<T extends StreamEvent>(event: T) {
-    this.notify?.(event);
-    return event;
+    runTransaction(this.db, () => {
+      touchQueueSessionRecord(this.db, queueId);
+      deleteQueueStream(this.db, queueId);
+    });
   }
   private requireSession(sessionId: string) {
     requireSessionRecord(this.db, sessionId);

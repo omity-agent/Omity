@@ -110,6 +110,7 @@ test("live stream events match persisted snapshots and keep their cursor", () =>
   const db = makeDb();
   db.resetSession("stream-session", workspace);
   const queueId = db.appendUser("stream-session", "question");
+  db.startQueue("stream-session", required(db.nextQueue("stream-session")));
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
   const event = db.appendStream("stream-session", {
@@ -131,6 +132,7 @@ test("live stream events match persisted snapshots and keep their cursor", () =>
   const completed = loadTranscript(db, "stream-session");
   expect(completed.events.map(({ kind }) => kind)).toEqual(["user_appended"]);
   expect(completed.eventCursor).toBe(event.id);
+  expect(completed.transcriptRevision).toBeGreaterThan(streaming.transcriptRevision);
   db.close();
 });
 test("snapshot refresh does not discard a tool event committed after its events were read", () => {

@@ -29,6 +29,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       events: [],
       messages: [],
       queue: [],
+      transcriptRevision: 0,
     }),
   };
   return { ...controller, ...overrides };

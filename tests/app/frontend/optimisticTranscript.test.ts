@@ -90,7 +90,7 @@ test("stream deltas preserve optimistic users", () => {
     role: "user",
   });
 });
-test("stream deltas generated after an optimistic append stay behind the user", () => {
+test("output remains before an optimistic user until its server boundary arrives", () => {
   const client = new QueryClient();
   client.setQueryData<TranscriptData>(transcriptKey("session"), {
     ...empty(),
@@ -129,12 +129,11 @@ test("stream deltas generated after an optimistic append stay behind the user", 
     ]),
   );
   expect(transcript(client).view.map(({ content, role }) => `${role}:${content}`)).toEqual([
-    "assistant:before",
+    "assistant:before\n\nafter",
     "user:hello",
-    "assistant:after",
   ]);
 });
-test("send confirmation preserves the optimistic stream boundary until refresh", () => {
+test("send confirmation does not turn the stale client cursor into a boundary", () => {
   const client = new QueryClient();
   client.setQueryData<TranscriptData>(transcriptKey("session"), {
     ...empty(),
@@ -174,9 +173,8 @@ test("send confirmation preserves the optimistic stream boundary until refresh",
     ]),
   );
   expect(transcript(client).view.map(({ content, role }) => `${role}:${content}`)).toEqual([
-    "assistant:before",
+    "assistant:before\n\nafter",
     "user:hello",
-    "assistant:after",
   ]);
 });
 function transcript(client: QueryClient) {

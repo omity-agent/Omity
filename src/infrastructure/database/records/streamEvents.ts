@@ -84,6 +84,29 @@ export function insertStreamEvent(
     .get();
   return { ...event, id: inserted.id };
 }
+export function insertUserBoundaryEvent(db: Database, sessionId: string, queueId: number) {
+  const existing = sessionDatabase(db)
+    .select({ id: events.id })
+    .from(events)
+    .where(
+      and(
+        eq(events.sessionId, sessionId),
+        eq(events.queueId, queueId),
+        eq(events.kind, "user_appended"),
+      ),
+    )
+    .get();
+  if (existing) {
+    return null;
+  }
+  return insertStreamEvent(db, sessionId, {
+    kind: "user_appended",
+    messageId: `queue:${sessionId}:${queueId.toString()}`,
+    partId: "user",
+    queueId,
+    value: null,
+  });
+}
 function loadStartedToolCalls(db: Database, sessionId: string): StartedToolCall[] {
   const rows = sessionDatabase(db)
     .select()
@@ -133,11 +156,11 @@ function readCallId(kind: "tool_finished" | "tool_started", payload: unknown) {
 }
 export function finishToolStreams(db: Database, sessionId: string, messages: BaseMessage[]) {
   const started = loadStartedToolCalls(db, sessionId);
-  deleteTextStreams(db, sessionId);
+  const deletedText = deleteTextStreams(db, sessionId);
   const completedCallIds = new Set(
     messages.flatMap((message) => (ToolMessage.isInstance(message) ? [message.tool_call_id] : [])),
   );
-  return started.flatMap((tool) =>
+  const finishedEvents = started.flatMap((tool) =>
     completedCallIds.has(tool.callId)
       ? [
           insertStreamEvent(db, sessionId, {
@@ -150,17 +173,17 @@ export function finishToolStreams(db: Database, sessionId: string, messages: Bas
         ]
       : [],
   );
+  return { changed: deletedText || finishedEvents.length > 0, events: finishedEvents };
 }
 function deleteTextStreams(db: Database, sessionId: string) {
-  sessionDatabase(db)
-    .delete(events)
-    .where(
-      and(
-        eq(events.sessionId, sessionId),
-        inArray(events.kind, ["assistant_reasoning_delta", "assistant_text_delta"]),
-      ),
-    )
-    .run();
+  return (
+    db.run(
+      `DELETE FROM events
+     WHERE session_id = ?
+       AND kind IN ('assistant_reasoning_delta', 'assistant_text_delta')`,
+      [sessionId],
+    ).changes > 0
+  );
 }
 export function deleteSessionStream(db: Database, sessionId: string) {
   sessionDatabase(db)

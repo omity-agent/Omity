@@ -53,16 +53,33 @@ test("completed snapshots replace cleared stream events", () => {
   expect(data.view).toHaveLength(1);
   expect(data.view[0]?.content).toBe("AB");
 });
-test("an older snapshot cannot replace a completed transcript", () => {
+test("a lower revision cannot replace tool output at the same event cursor", () => {
   const call = toolCallEvent(1);
-  const completed = reconcileTranscript(snapshot(3, [call, startedEvent(2), finishedEvent(3)]));
-  const stale = reconcileTranscript(snapshot(2, [call, startedEvent(2)]), completed);
+  const completed = reconcileTranscript({
+    ...snapshot(3, [call, startedEvent(2), finishedEvent(3)], 4),
+    messages: [toolOutput()],
+  });
+  const stale = reconcileTranscript(snapshot(3, [call, startedEvent(2)], 3), completed);
   expect(stale).toBe(completed);
   const tool = stale.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
   expect(tool?.type === "tool" ? tool.started : undefined).toBeUndefined();
   expect(tool?.type === "tool" ? tool.call.streaming : undefined).toBeUndefined();
+  expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
 });
-function snapshot(eventCursor: number, events: DisplayEvent[]): TranscriptSnapshot {
+test("a completion event keeps the tool active until a snapshot contains its output", () => {
+  const data = reconcileTranscript(
+    snapshot(3, [toolCallEvent(1), startedEvent(2), finishedEvent(3)]),
+  );
+  const tool = data.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
+  expect(tool?.type === "tool" ? tool.started : undefined).toBe(true);
+  expect(tool?.type === "tool" ? tool.call.streaming : undefined).toBe(true);
+  expect(tool?.type === "tool" ? tool.output : undefined).toBeUndefined();
+});
+function snapshot(
+  eventCursor: number,
+  events: DisplayEvent[],
+  transcriptRevision = eventCursor,
+): TranscriptSnapshot {
   return {
     control: "running",
     eventCursor,
@@ -77,6 +94,21 @@ function snapshot(eventCursor: number, events: DisplayEvent[]): TranscriptSnapsh
         userMessageId: 1,
       },
     ],
+    transcriptRevision,
+  };
+}
+function toolOutput() {
+  return {
+    content: "done",
+    createdAt: 1,
+    id: 10,
+    images: [],
+    queueId: 1,
+    reasoning: "",
+    role: "tool" as const,
+    sourceId: "tool-1",
+    toolCallId: "call-1",
+    toolCalls: [],
   };
 }
 function textEvent(id: number, text: string): DisplayEvent {

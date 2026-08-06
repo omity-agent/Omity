@@ -20,6 +20,15 @@ export function resetSessionStorage(
   profiles: readonly string[],
 ) {
   const orm = sessionDatabase(db);
+  const previousRevision =
+    orm
+      .select({ revision: sessions.transcriptRevision })
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .get()?.revision ?? -1;
+  if (!Number.isSafeInteger(previousRevision) || previousRevision >= Number.MAX_SAFE_INTEGER) {
+    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  }
   orm.delete(checkpointWrites).run();
   orm.delete(checkpoints).run();
   orm.delete(hookUsage).run();
@@ -29,4 +38,9 @@ export function resetSessionStorage(
   orm.delete(queue).where(eq(queue.sessionId, sessionId)).run();
   orm.delete(sessions).where(eq(sessions.id, sessionId)).run();
   createSessionRecord(db, sessionId, workspace, profiles);
+  orm
+    .update(sessions)
+    .set({ transcriptRevision: previousRevision + 1 })
+    .where(eq(sessions.id, sessionId))
+    .run();
 }

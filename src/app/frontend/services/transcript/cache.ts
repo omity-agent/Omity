@@ -13,6 +13,7 @@ export interface TranscriptSnapshot {
   messages: DisplayMessage[];
   events: DisplayEvent[];
   eventCursor: number;
+  transcriptRevision: number;
 }
 export interface TranscriptData extends TranscriptSnapshot {
   snapshotCursor: number;
@@ -26,6 +27,7 @@ export function emptyTranscriptData(): TranscriptData {
     messages: [],
     queue: [],
     snapshotCursor: 0,
+    transcriptRevision: 0,
     view: [],
   };
 }
@@ -33,7 +35,11 @@ export function reconcileTranscript(
   snapshot: TranscriptSnapshot,
   current?: TranscriptData,
 ): TranscriptData {
-  if (current && snapshot.eventCursor < current.snapshotCursor) {
+  if (
+    current &&
+    (snapshot.transcriptRevision < current.transcriptRevision ||
+      snapshot.eventCursor < current.snapshotCursor)
+  ) {
     return current;
   }
   const replay = current?.events.filter((event) => event.id > snapshot.eventCursor) ?? [];

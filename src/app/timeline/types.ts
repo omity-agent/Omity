@@ -40,7 +40,6 @@ export interface DisplayMessage {
 }
 export interface DisplayQueue {
   id: number;
-  afterEventId?: number;
   content: string;
   status: QueueStatus;
   error: ErrorDetails | null;
@@ -51,7 +50,6 @@ export type DisplayEvent = StreamEvent;
 export interface TimelineMessage {
   id: number;
   key: string;
-  afterEventId?: number;
   optimistic?: true;
   role: DisplayRole;
   content: string;

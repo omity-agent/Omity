@@ -1,4 +1,4 @@
-import type { Database, SQLQueryBindings } from "bun:sqlite";
+import { Database, type SQLQueryBindings } from "bun:sqlite";
 import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import {
   checkpointWrites,
@@ -12,6 +12,7 @@ import {
 } from "./schema/session";
 import { events, messages } from "./schema/conversation";
 import { parse, resolve } from "node:path";
+import { migrateSessionDatabase } from "./migrations";
 import { rmSync } from "node:fs";
 
 const sessionSchema = {
@@ -28,6 +29,17 @@ const sessionSchema = {
 };
 export type SessionDatabase = SQLiteBunDatabase<typeof sessionSchema>;
 export const sqliteBusyTimeoutMs = 5000;
+export function openSessionDatabase(path: string, root = process.cwd()) {
+  const db = new Database(path, { create: true, strict: true });
+  try {
+    configureDatabase(db);
+    migrateSessionDatabase(sessionDatabase(db), root);
+    return db;
+  } catch (error) {
+    closeDatabase(db);
+    throw error;
+  }
+}
 export function configureDatabase(db: Database) {
   db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
   db.run("PRAGMA auto_vacuum = INCREMENTAL");
