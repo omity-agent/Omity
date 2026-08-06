@@ -1,4 +1,5 @@
 import { errorFingerprint, summarizeError } from "../../../../failures/details";
+import type { BrowserWarning } from "../../../../types";
 import type { SessionInfo } from "../client";
 
 export function reportSessionErrors(sessions: SessionInfo[], reported: Set<string>) {
@@ -21,4 +22,7 @@ export function reportSessionErrors(sessions: SessionInfo[], reported: Set<strin
       reported.delete(identity);
     }
   }
+}
+export function reportBrowserWarning(warning: BrowserWarning) {
+  console.warn(warning.message, warning.details);
 }

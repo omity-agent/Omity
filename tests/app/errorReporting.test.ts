@@ -5,9 +5,12 @@ import {
   stringifyError,
 } from "../../src/failures/details";
 import { expect, spyOn, test } from "bun:test";
+import {
+  reportBrowserWarning,
+  reportSessionErrors,
+} from "../../src/app/frontend/services/events/reporting";
 import type { SessionInfo } from "../../src/app/frontend/services/client";
 import { reportError } from "../../src/app/frontend/services/errors";
-import { reportSessionErrors } from "../../src/app/frontend/services/events/reporting";
 
 test("session errors are logged once until they clear", () => {
   const log = spyOn(console, "error").mockReturnValue(undefined);
@@ -64,6 +67,28 @@ test("the same error object is printed only once across reporting boundaries", (
   reportError(error);
   expect(log).toHaveBeenCalledTimes(1);
   expect(log).toHaveBeenCalledWith(error, { path: "/api/test" });
+  log.mockRestore();
+});
+test("browser warnings use the warning console level", () => {
+  const log = spyOn(console, "warn").mockReturnValue(undefined);
+  reportBrowserWarning({
+    code: "model_api_unavailable",
+    details: {
+      attempt: 2,
+      delayMs: 1000,
+      error: { message: "upstream unavailable", name: "Error" },
+      queueId: 7,
+      sessionId: "session",
+    },
+    message: "模型 API 暂不可用，正在重试",
+  });
+  expect(log).toHaveBeenCalledWith("模型 API 暂不可用，正在重试", {
+    attempt: 2,
+    delayMs: 1000,
+    error: { message: "upstream unavailable", name: "Error" },
+    queueId: 7,
+    sessionId: "session",
+  });
   log.mockRestore();
 });
 test("structured errors retain SDK fields, response headers, body and cause", () => {

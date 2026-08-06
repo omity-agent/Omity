@@ -1,4 +1,4 @@
-import type { SessionStatus, Settings } from "../types";
+import type { BrowserWarning, SessionStatus, Settings } from "../types";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { BaseMessage } from "@langchain/core/messages";
 import type { BunSqliteSaver } from "../checkpointer";
@@ -23,6 +23,7 @@ export interface HostObserver {
   changed?: (sessionId: string) => void;
   transcript?: (sessionId: string, event: StreamEvent) => void;
   token: (sessionId: string, queueId: number, text: string) => void;
+  warning?: (sessionId: string, warning: BrowserWarning) => void;
 }
 export interface HostContext {
   assertLease?: () => void;
@@ -36,6 +37,10 @@ export interface HostContext {
   settings: Settings;
   stopping?: AbortSignal;
   toolExecutions?: ToolExecutions;
+  wake?: (delayMs: number) => Promise<void>;
+}
+interface WakeContext {
+  controller: AbortController;
   wake?: (delayMs: number) => Promise<void>;
 }
 export async function streamGraph(
@@ -53,7 +58,7 @@ export async function streamGraph(
   }
   return result;
 }
-export function waitForWake(ctx: HostContext, delayMs: number) {
+export function waitForWake(ctx: WakeContext, delayMs: number) {
   return ctx.wake ? ctx.wake(delayMs) : abortableSleep(delayMs, ctx.controller.signal);
 }
 async function abortableSleep(delayMs: number, signal: AbortSignal) {

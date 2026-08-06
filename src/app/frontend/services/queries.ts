@@ -1,10 +1,15 @@
 import { type FrontendSettings, type SessionInfo, bootstrap, stateEvents } from "./client";
 import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
-import { readDeletedEvent, readSessionEvent, readSessionsEvent } from "./events/data";
+import {
+  readDeletedEvent,
+  readSessionEvent,
+  readSessionsEvent,
+  readWarningEvent,
+} from "./events/data";
+import { reportBrowserWarning, reportSessionErrors } from "./events/reporting";
 import { useEffect, useRef } from "react";
 import type { AttachmentSettings } from "../../attachments/contract";
 import { reportError } from "./errors";
-import { reportSessionErrors } from "./events/reporting";
 import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
@@ -70,9 +75,17 @@ export function useBootstrap() {
         reportError(error);
       }
     };
+    const warning = (event: Event) => {
+      try {
+        reportBrowserWarning(readWarningEvent(event));
+      } catch (error) {
+        reportError(error);
+      }
+    };
     events.addEventListener("sessions", replace);
     events.addEventListener("session", upsert);
     events.addEventListener("deleted", remove);
+    events.addEventListener("warning", warning);
     return () => {
       events.close();
     };

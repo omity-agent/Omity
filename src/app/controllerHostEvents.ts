@@ -1,5 +1,6 @@
 import type { AppEvents } from "./events";
 import type { AppHostEvents } from "./hosts";
+import type { BrowserWarning } from "../types";
 import type { SessionInfo } from "./sessionState";
 import { displayStreamEvent } from "./timeline";
 
@@ -17,5 +18,8 @@ export function controllerHostEvents(
       events.notifyTranscript(sessionId, displayStreamEvent(event));
     },
     wait: (sessionId, delayMs) => events.wait(sessionId, delayMs),
+    warning: (sessionId, warning: BrowserWarning) => {
+      events.notifyWarning({ ...warning, details: { ...warning.details, sessionId } });
+    },
   };
 }

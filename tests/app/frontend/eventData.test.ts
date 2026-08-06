@@ -3,6 +3,7 @@ import {
   readContentSyncEvent,
   readSessionEvent,
   readTranscriptEvent,
+  readWarningEvent,
 } from "../../../src/app/frontend/services/events/data";
 
 test("state events require an epoch and sequence ID", () => {
@@ -50,6 +51,26 @@ test("content event IDs must match their persisted cursors", () => {
   });
   expect(readTranscriptEvent(message(delta, "5"))).toMatchObject({ id: 5 });
   expect(() => readTranscriptEvent(message(delta, "6"))).toThrow("data.id 不一致");
+});
+test("warning events validate the model retry payload", () => {
+  expect(
+    readWarningEvent(
+      message(
+        JSON.stringify({
+          code: "model_api_unavailable",
+          details: {
+            attempt: 2,
+            delayMs: 1000,
+            error: { message: "upstream unavailable", name: "Error" },
+            queueId: 3,
+            sessionId: "session",
+          },
+          message: "模型 API 暂不可用，正在重试",
+        }),
+        "123e4567-e89b-42d3-a456-426614174000:2",
+      ),
+    ),
+  ).toMatchObject({ code: "model_api_unavailable", details: { attempt: 2 } });
 });
 function message(data: string, lastEventId: string) {
   return new MessageEvent("test", { data, lastEventId });

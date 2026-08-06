@@ -30,6 +30,20 @@ test("state SSE starts with a versioned snapshot and sends versioned mutations",
   const deleted = await frames.next();
   expect(deleted).toContain('event: deleted\ndata: {"sessionId":"test"}\n');
   expect(eventId(deleted)).not.toBe(eventId(changed));
+  controller.events.notifyWarning({
+    code: "model_api_unavailable",
+    details: {
+      attempt: 2,
+      delayMs: 1000,
+      error: { message: "upstream unavailable", name: "Error" },
+      queueId: 3,
+      sessionId: "test",
+    },
+    message: "模型 API 暂不可用，正在重试",
+  });
+  const warning = await frames.next();
+  expect(warning).toContain('event: warning\ndata: {"code":"model_api_unavailable"');
+  expect(warning).toContain('"queueId":3');
   abort.abort();
   await frames.cancel();
 });

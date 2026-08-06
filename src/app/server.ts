@@ -1,3 +1,8 @@
+import {
+  closeAppResources,
+  createShutdownLogger,
+  listenForShutdownSignal,
+} from "./runtime/shutdown";
 import { AccessService } from "./access/service";
 import type { AddressInfo } from "node:net";
 import { AppController } from "./controller";
@@ -11,7 +16,6 @@ import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
-import { promisify } from "node:util";
 
 export interface AppServerOptions {
   root: string;
@@ -25,10 +29,12 @@ export async function startAppServer(options: AppServerOptions) {
   const host = options.host ?? settings.server.host;
   const port = options.port ?? settings.server.port;
   const lock = AppInstanceLock.acquire(settings.paths.dataDir);
-  const shutdown = waitForShutdownSignal();
+  const shutdown = listenForShutdownSignal();
   let access: AccessService | undefined;
   let controller: AppController | undefined;
   let server: ReturnType<typeof createServer> | undefined;
+  let failure: unknown;
+  let signal: Awaited<typeof shutdown.signal> | undefined;
   try {
     access = new AccessService(settings);
     controller = new AppController(options.root, {
@@ -54,14 +60,36 @@ export async function startAppServer(options: AppServerOptions) {
     await listening;
     const url = appUrl(host, listeningPort(server.address()));
     options.onReady?.(url);
-    await shutdown;
+    signal = await shutdown.signal;
+  } catch (error) {
+    failure = error;
   } finally {
-    if (server?.listening) {
-      await closeServer(server);
-    }
-    await controller?.close();
-    access?.close();
-    lock.release();
+    shutdown.dispose();
+  }
+  const logger = createShutdownLogger();
+  let closeFailure: unknown;
+  try {
+    await closeAppResources(
+      {
+        access,
+        controller,
+        releaseLock: () => lock.release(),
+        server,
+      },
+      logger,
+      signal ?? "startup-failure",
+    );
+  } catch (error) {
+    closeFailure = error;
+  }
+  if (failure && closeFailure) {
+    throw new AggregateError([failure, closeFailure], "服务端启动和关闭均失败");
+  }
+  if (failure) {
+    throw failure;
+  }
+  if (closeFailure) {
+    throw closeFailure;
   }
 }
 function listeningPort(address: string | AddressInfo | null) {
@@ -69,21 +97,4 @@ function listeningPort(address: string | AddressInfo | null) {
     throw new Error("无法获取 WebUI 监听端口");
   }
   return address.port;
-}
-async function waitForShutdownSignal() {
-  const controller = new AbortController();
-  try {
-    await Promise.race([
-      once(process, "SIGINT", { signal: controller.signal }),
-      once(process, "SIGTERM", { signal: controller.signal }),
-    ]);
-  } finally {
-    controller.abort();
-  }
-}
-async function closeServer(server: ReturnType<typeof createServer>) {
-  const close = promisify(server.close.bind(server));
-  const closed = close();
-  server.closeAllConnections();
-  await closed;
 }

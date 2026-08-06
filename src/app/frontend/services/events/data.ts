@@ -1,3 +1,4 @@
+import type { BrowserWarning } from "../../../../types";
 import type { DisplayEvent } from "../../../timeline";
 import type { SessionInfo } from "../../../sessionState";
 import { errorDetailsSchema } from "../validation/errors";
@@ -15,6 +16,17 @@ const sessionsEventSchema = z.object({
   sessions: z.array(sessionInfoSchema),
 });
 const deletedEventSchema = z.object({ sessionId: z.string() });
+const warningEventSchema: z.ZodType<BrowserWarning> = z.object({
+  code: z.literal("model_api_unavailable"),
+  details: z.object({
+    attempt: z.number().int().positive(),
+    delayMs: z.number().int().positive(),
+    error: errorDetailsSchema,
+    queueId: z.number().int().positive(),
+    sessionId: z.string().min(1),
+  }),
+  message: z.string().min(1),
+});
 const syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() });
 const eventBase = {
   id: z.number().int().positive(),
@@ -62,6 +74,10 @@ export function readSessionEvent(event: Event) {
 export function readDeletedEvent(event: Event) {
   readStateEventId(event, "deleted");
   return readEventData(event, deletedEventSchema, "deleted").sessionId;
+}
+export function readWarningEvent(event: Event) {
+  readStateEventId(event, "warning");
+  return readEventData(event, warningEventSchema, "warning");
 }
 export function readTranscriptEvent(event: Event) {
   const data = readEventData(event, displayEventSchema, "delta");

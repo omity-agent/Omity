@@ -1,3 +1,4 @@
+import type { BrowserWarning } from "../types";
 import { ContentChannel } from "./events/contentChannel";
 import type { Context } from "hono";
 import type { DisplayEvent } from "./timeline";
@@ -20,6 +21,9 @@ export class AppEvents {
   }
   notifyDeleted(sessionId: string) {
     this.state.notifyDeleted(sessionId);
+  }
+  notifyWarning(warning: BrowserWarning) {
+    this.state.notifyWarning(warning);
   }
   invalidateTranscript(sessionId: string, eventCursor: number) {
     this.content.invalidate(sessionId, eventCursor);

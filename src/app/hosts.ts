@@ -1,5 +1,5 @@
+import type { BrowserWarning, HostMode, SessionStatus } from "../types";
 import { type ErrorDetails, captureError } from "../failures/details";
-import type { HostMode, SessionStatus } from "../types";
 import type { AppMcp } from "./runtime/mcp";
 import type { ProcessOwner } from "../infrastructure/process/ownership";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
@@ -19,6 +19,7 @@ export interface AppHostEvents {
   activity: (sessionId: string) => void;
   changed: (sessionId: string) => void;
   transcript: (sessionId: string, event: StreamEvent) => void;
+  warning: (sessionId: string, warning: BrowserWarning) => void;
   wait: (sessionId: string, delayMs: number) => Promise<void>;
 }
 const noToolCancellation: RunningHost["cancelTool"] = () => false;
@@ -132,6 +133,9 @@ export class AppHosts {
       token: () => undefined,
       transcript: (changedSessionId: string, event: StreamEvent) => {
         this.events.transcript(changedSessionId, event);
+      },
+      warning: (changedSessionId: string, warning: BrowserWarning) => {
+        this.events.warning(changedSessionId, warning);
       },
     };
   }

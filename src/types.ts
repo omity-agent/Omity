@@ -1,5 +1,18 @@
+import type { ErrorDetails } from "./failures/details";
+
 export type Control = "running" | "pause" | "cancel" | "pause_cancel";
 export type SessionStatus = "tool" | "model" | "idle" | "pausing" | "paused" | "error";
+export interface BrowserWarning {
+  code: "model_api_unavailable";
+  details: {
+    attempt: number;
+    delayMs: number;
+    error: ErrorDetails;
+    queueId: number;
+    sessionId: string;
+  };
+  message: string;
+}
 export interface HostMode {
   kind: "new" | "load" | "overwrite";
   sessionId: string;
