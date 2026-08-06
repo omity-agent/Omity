@@ -1,5 +1,6 @@
 import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { acceptMessageId, sequentialPart, toolPart } from "./stream/parts";
+import { appendReasoningDelta, flushReasoning } from "./content";
 import type { AiStreamEvent } from "../agent/aiAgent";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
@@ -17,15 +18,34 @@ export function recordAiStreamPart(
   state: StreamLogState,
 ) {
   const chunk = toUIMessageChunk(event.part);
+  if (chunk?.type === "reasoning-end") {
+    const value = flushReasoning(state.parts.reasoning);
+    if (!value) {
+      return;
+    }
+    const messageId = streamMessageId(state, chunk.id);
+    ctx.db.appendStream(ctx.sessionId, {
+      kind: "assistant_reasoning_delta",
+      messageId,
+      partId: sequentialPart(state.parts, "assistant_reasoning_delta"),
+      queueId,
+      value,
+    });
+    return;
+  }
   if (chunk?.type === "text-delta" || chunk?.type === "reasoning-delta") {
     const kind = chunk.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta";
     const messageId = streamMessageId(state, chunk.id);
+    const value =
+      chunk.type === "reasoning-delta"
+        ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
+        : chunk.delta;
     ctx.db.appendStream(ctx.sessionId, {
       kind,
       messageId,
       partId: sequentialPart(state.parts, kind),
       queueId,
-      value: chunk.delta,
+      value,
     });
     if (chunk.type === "text-delta") {
       if (ctx.settings.logging.streamTokens) {

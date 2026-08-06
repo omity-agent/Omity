@@ -18,7 +18,7 @@ test("streamed reasoning separates summary parts and reasoning items", () => {
     new AIMessageChunk({ content: [] }),
   ];
   expect(chunks.map((chunk) => streamedMessageReasoning(chunk, state)).join("")).toBe(
-    "**First** detail\n\n**Second**\n\n**Third**",
+    "**First** detail\n**Second**\n**Third**",
   );
 });
 test("persisted reasoning is rebuilt from Responses API summary parts", () => {
@@ -29,7 +29,7 @@ test("persisted reasoning is rebuilt from Responses API summary parts", () => {
     content: [{ reasoning: "concatenated", type: "reasoning" }],
     response_metadata: { output: [first, second] },
   });
-  expect(messageReasoning(message)).toBe("**First**\n\n**Second**\n\n**Third**");
+  expect(messageReasoning(message)).toBe("**First**\n**Second**\n**Third**");
 });
 test("existing summary newlines are not duplicated", () => {
   const message = new AIMessage({

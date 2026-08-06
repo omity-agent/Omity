@@ -64,6 +64,15 @@ export function createReasoningStreamState(): ReasoningStreamState {
     trailingNewlines: 0,
   };
 }
+export function appendReasoningDelta(id: string, text: string, state: ReasoningStreamState) {
+  const changed = id !== state.itemId;
+  state.breakBeforeNext ||= changed && state.hasText;
+  state.itemId = id;
+  if (changed) {
+    state.partIndex = undefined;
+  }
+  return appendReasoningPart({ text }, state);
+}
 export function streamedMessageReasoning(message: BaseMessage, state: ReasoningStreamState) {
   const summary = readReasoningSummary(message.additional_kwargs["reasoning"]);
   if (summary?.id && summary.id !== state.itemId) {
@@ -75,7 +84,7 @@ export function streamedMessageReasoning(message: BaseMessage, state: ReasoningS
     return summary.parts.map((part) => appendReasoningPart(part, state)).join("");
   }
   const reasoning = contentBlocksToReasoning(message.contentBlocks);
-  return reasoning ? appendReasoningPart({ text: reasoning }, state) : flushAsterisks(state);
+  return reasoning ? appendReasoningPart({ text: reasoning }, state) : flushReasoning(state);
 }
 export function contentBlocksToReasoning(content: unknown): string {
   if (!Array.isArray(content)) {
@@ -103,7 +112,7 @@ function appendReasoningPart(part: ReasoningPart, state: ReasoningStreamState) {
   const changedPart =
     part.index !== undefined && state.partIndex !== undefined && part.index !== state.partIndex;
   const needsBreak = state.hasText && (state.breakBeforeNext || changedPart);
-  let output = needsBreak ? flushAsterisks(state) : "";
+  let output = needsBreak ? flushReasoning(state) : "";
   const prefix = needsBreak
     ? missingNewlines(state.trailingNewlines, leadingNewlines(part.text))
     : "";
@@ -125,7 +134,7 @@ function joinReasoningParts(parts: ReasoningPart[]) {
       return appendReasoningPart(part, state);
     })
     .join("");
-  return text + flushAsterisks(state);
+  return text + flushReasoning(state);
 }
 function appendReasoningText(text: string, state: ReasoningStreamState) {
   const combined = state.pendingAsterisks + text;
@@ -139,7 +148,7 @@ function appendReasoningText(text: string, state: ReasoningStreamState) {
   updateStreamTail(state, normalized);
   return normalized;
 }
-function flushAsterisks(state: ReasoningStreamState) {
+export function flushReasoning(state: ReasoningStreamState) {
   const pending = state.pendingAsterisks;
   state.pendingAsterisks = "";
   updateStreamTail(state, pending);
@@ -168,7 +177,7 @@ function readReasoningSummary(value: unknown): ReasoningSummary | null {
   };
 }
 function missingNewlines(trailing: number, leading: number) {
-  return "\n".repeat(Math.max(0, 2 - trailing - leading));
+  return "\n".repeat(Math.max(0, 1 - trailing - leading));
 }
 function leadingNewlines(value: string) {
   return /^\n*/.exec(value)?.[0].length ?? 0;

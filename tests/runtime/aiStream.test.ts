@@ -51,7 +51,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
   );
   const [streaming] = timeline(events);
   expect(streaming?.parts).toHaveLength(2);
-  expect(streaming?.parts[0]).toEqual({ content: "firstsecond", type: "reasoning" });
+  expect(streaming?.parts[0]).toEqual({ content: "first\nsecond", type: "reasoning" });
   expect(streaming?.parts[1]).toMatchObject({
     call: { name: "shell", rawInput: "dir" },
     phase: "streaming",

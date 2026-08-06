@@ -23,7 +23,7 @@ export function Reasoning({ content: reasoning, latest }: { content: string; lat
       tone="model"
     >
       <div className={content}>
-        <MarkdownView content={reasoning} />
+        <MarkdownView content={reasoning} preserveLineBreaks />
       </div>
     </Frame>
   );
