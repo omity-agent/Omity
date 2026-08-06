@@ -46,7 +46,7 @@ const frame = sva({
       appearance: "none",
       bg: "transparent",
       borderWidth: 0,
-      color: "inherit",
+      color: "muted",
       cursor: "pointer",
       display: "flex",
       flex: "1",

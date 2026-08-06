@@ -8,6 +8,17 @@
     "style": "warn",
     "suspicious": "warn"
   },
+  "jsPlugins": [
+    {
+      "name": "@tanstack/query",
+      "specifier": "@tanstack/eslint-plugin-query"
+    },
+    {
+      "name": "@pandacss",
+      "specifier": "@pandacss/eslint-plugin"
+    },
+    "eslint-plugin-i18next"
+  ],
   "options": {
     "typeAware": true,
     "typeCheck": true
@@ -25,6 +36,22 @@
     "jest"
   ],
   "rules": {
+    "@pandacss/file-not-included": "error",
+    "@pandacss/no-config-function-in-source": "error",
+    "@pandacss/no-debug": "warn",
+    "@pandacss/no-dynamic-styling": "warn",
+    "@pandacss/no-hardcoded-color": "warn",
+    "@pandacss/no-invalid-nesting": "error",
+    "@pandacss/no-invalid-token-paths": "error",
+    "@pandacss/no-property-renaming": "warn",
+    "@pandacss/no-unsafe-token-fn-usage": "warn",
+    "@pandacss/no-deprecated-tokens": "warn",
+    "@tanstack/query/no-rest-destructuring": "warn",
+    "@tanstack/query/stable-query-client": "error",
+    "@tanstack/query/no-unstable-deps": "error",
+    "@tanstack/query/infinite-query-property-order": "error",
+    "@tanstack/query/no-void-query-fn": "error",
+    "@tanstack/query/mutation-property-order": "error",
     "typescript/no-deprecated": "error",
     "consistent-type-specifier-style": "allow",
     "exports-last": "allow",
@@ -62,5 +89,8 @@
     "prefer-default-export": "allow",
     "react-in-jsx-scope": "allow",
     "require-hook": "allow"
+  },
+  "settings": {
+    "@pandacss/configPath": "./panda.config.ts"
   }
 }

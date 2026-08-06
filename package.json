@@ -70,7 +70,9 @@
   "devDependencies": {
     "@babel/core": "latest",
     "@pandacss/dev": "beta",
+    "@pandacss/eslint-plugin": "latest",
     "@rolldown/plugin-babel": "latest",
+    "@tanstack/eslint-plugin-query": "latest",
     "@types/bun": "latest",
     "@vitejs/plugin-react": "latest",
     "babel-plugin-react-compiler": "latest",

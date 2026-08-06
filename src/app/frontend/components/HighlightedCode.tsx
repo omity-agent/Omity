@@ -57,7 +57,7 @@ const block = css({
 });
 const codeElement = css({
   bg: "transparent",
-  color: "inherit",
+  color: "text",
   display: "block",
   fontFamily: "inherit",
   fontSize: "inherit",
