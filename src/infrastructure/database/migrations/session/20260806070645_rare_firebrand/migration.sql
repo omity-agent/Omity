@@ -83,6 +83,7 @@ CREATE TABLE `sessions` (
 	`created_at` integer NOT NULL,
 	`id` text PRIMARY KEY,
 	`profiles_json` text NOT NULL,
+	`transcript_revision` integer DEFAULT 0 NOT NULL,
 	`updated_at` integer NOT NULL,
 	`workspace` text NOT NULL,
 	CONSTRAINT "sessions_control" CHECK("control" in ('running', 'pause', 'cancel', 'pause_cancel'))
