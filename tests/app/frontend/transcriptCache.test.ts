@@ -62,8 +62,7 @@ test("a lower revision cannot replace tool output at the same event cursor", () 
   const stale = reconcileTranscript(snapshot(3, [call, startedEvent(2)], 3), completed);
   expect(stale).toBe(completed);
   const tool = stale.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
-  expect(tool?.type === "tool" ? tool.started : undefined).toBeUndefined();
-  expect(tool?.type === "tool" ? tool.call.streaming : undefined).toBeUndefined();
+  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
 });
 test("a completion event keeps the tool active until a snapshot contains its output", () => {
@@ -71,8 +70,7 @@ test("a completion event keeps the tool active until a snapshot contains its out
     snapshot(3, [toolCallEvent(1), startedEvent(2), finishedEvent(3)]),
   );
   const tool = data.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
-  expect(tool?.type === "tool" ? tool.started : undefined).toBe(true);
-  expect(tool?.type === "tool" ? tool.call.streaming : undefined).toBe(true);
+  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("awaiting-output");
   expect(tool?.type === "tool" ? tool.output : undefined).toBeUndefined();
 });
 function snapshot(

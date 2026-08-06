@@ -88,7 +88,7 @@ test("temporary tool identity upgrades to the formal call ID when execution star
   expect(part).toMatchObject({
     call: { id: "call-1", inputText: '{"cmd":"pwd"}' },
     key: "stream:message-live:tool-0",
-    started: true,
+    phase: "running",
     type: "tool",
   });
 });

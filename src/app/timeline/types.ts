@@ -16,9 +16,9 @@ export interface DisplayToolCall {
   messageId?: string;
   inputText?: string;
   rawInput?: string;
-  streaming?: boolean;
   temporary?: true;
 }
+export type ToolCallPhase = "streaming" | "pending" | "running" | "awaiting-output" | "completed";
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
@@ -64,6 +64,13 @@ export type TimelinePart =
       type: "tool";
       call: DisplayToolCall;
       key: string;
+      phase: Exclude<ToolCallPhase, "completed">;
       output?: DisplayMessage;
-      started?: boolean;
+    }
+  | {
+      type: "tool";
+      call: DisplayToolCall;
+      key: string;
+      output: DisplayMessage;
+      phase: "completed";
     };

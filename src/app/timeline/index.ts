@@ -3,7 +3,9 @@ import type {
   DisplayMessage,
   DisplayQueue,
   DisplayRole,
+  DisplayToolCall,
   TimelineMessage,
+  TimelinePart,
 } from "./types";
 import {
   eventMessageId,
@@ -24,6 +26,7 @@ export type {
   TokenUsage,
   TimelineMessage,
   TimelinePart,
+  ToolCallPhase,
 } from "./types";
 export { displayStreamEvent } from "./streamEvents";
 export function buildTimeline(
@@ -37,10 +40,10 @@ export function buildTimeline(
       item.role === "tool" && item.toolCallId ? [[item.toolCallId, item] as const] : [],
     ),
   );
-  const { finished: finishedCallIds, started: startedCallIds } = toolCallLifecycle(events, outputs);
+  const lifecycle = toolCallLifecycle(events, outputs);
   const visible = messages
     .filter((item) => item.role !== "tool")
-    .map((item) => withParts(item, `message-${item.id.toString()}`, outputs, startedCallIds));
+    .map((item) => withParts(item, `message-${item.id.toString()}`, outputs, lifecycle));
   const persistedSourceIds = new Set(
     messages.map((item) => item.sourceId).filter((id) => id !== undefined),
   );
@@ -65,14 +68,7 @@ export function buildTimeline(
       (activeQueueIds.has(eventQueueId(event)) &&
         (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
   );
-  const live = timelineTail(
-    liveEvents,
-    pending,
-    optimistic,
-    outputs,
-    startedCallIds,
-    finishedCallIds,
-  );
+  const live = timelineTail(liveEvents, pending, optimistic, outputs, lifecycle);
   return groupAssistantMessages([...visible, ...live]);
 }
 function timelineTail(
@@ -80,13 +76,12 @@ function timelineTail(
   pending: Map<number, TimelineMessage>,
   optimistic: TimelineMessage[],
   outputs: Map<string, DisplayMessage>,
-  startedCallIds: Set<string>,
-  finishedCallIds: Set<string>,
+  lifecycle: ReturnType<typeof toolCallLifecycle>,
 ) {
   const result: TimelineMessage[] = [];
   let stream: DisplayEvent[] = [];
   const flushStream = () => {
-    result.push(...streamTimelineMessages(stream, outputs, startedCallIds, finishedCallIds));
+    result.push(...streamTimelineMessages(stream, outputs, lifecycle));
     stream = [];
   };
   for (const event of events) {
@@ -110,7 +105,7 @@ function withParts(
   message: DisplayMessage,
   key: string,
   outputs: Map<string, DisplayMessage>,
-  startedCallIds: Set<string>,
+  lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage {
   return {
     content: message.content,
@@ -124,15 +119,20 @@ function withParts(
         ? [{ content: message.reasoning, type: "reasoning" } as const]
         : []),
       ...(message.content.trim() ? [{ content: message.content, type: "content" } as const] : []),
-      ...message.toolCalls.map((call) => ({
-        call,
-        key: displayToolCallKey(call),
-        output: outputs.get(call.id),
-        type: "tool" as const,
-        ...(startedCallIds.has(call.id) ? { started: true } : {}),
-      })),
+      ...message.toolCalls.map((call) => toolPart(call, outputs, lifecycle)),
     ],
   };
+}
+function toolPart(
+  call: DisplayToolCall,
+  outputs: Map<string, DisplayMessage>,
+  lifecycle: ReturnType<typeof toolCallLifecycle>,
+): Extract<TimelinePart, { type: "tool" }> {
+  const key = displayToolCallKey(call);
+  const output = outputs.get(call.id);
+  return output
+    ? { call, key, output, phase: "completed", type: "tool" }
+    : { call, key, phase: lifecycle.get(call.id) ?? "pending", type: "tool" };
 }
 function synthetic(role: DisplayRole, content: string, key: string): TimelineMessage {
   return {

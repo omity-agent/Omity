@@ -58,7 +58,7 @@ test("syncing tool output emits a versioned completion event", () => {
     .flatMap((message) => message.parts)
     .find((part) => part.type === "tool");
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
-  expect(tool?.type === "tool" ? tool.started : undefined).toBeUndefined();
+  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
   db.close();
 });
 test("syncing one tool does not drop the remaining parallel tool calls", () => {

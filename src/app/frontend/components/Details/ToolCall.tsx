@@ -1,6 +1,6 @@
 import { Badge, IconButton } from "../ParkUI";
 import { CircleStop, LoaderCircle, Wrench } from "lucide-react";
-import type { DisplayMessage, DisplayToolCall } from "../../../timeline";
+import type { DisplayMessage, DisplayToolCall, ToolCallPhase } from "../../../timeline";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { Frame } from "./Frame";
 import { HighlightedCode } from "../HighlightedCode";
@@ -60,21 +60,21 @@ export function ToolCall({
   latest,
   onCancel,
   output,
-  started,
+  phase,
 }: {
   call: DisplayToolCall;
   latest: boolean;
   onCancel: (toolCallId: string) => Promise<void>;
   output?: DisplayMessage;
-  started?: boolean;
+  phase: ToolCallPhase;
 }) {
   const { t } = useTranslation();
   const [cancelling, setCancelling] = useState(false);
-  const running = started && output === undefined;
-  const showOutput = output !== undefined || started;
+  const running = phase === "running";
+  const showOutput = output !== undefined || phase === "running" || phase === "awaiting-output";
   const showOutputCode = output
     ? output.content.trim().length > 0 || output.images.length === 0
-    : started;
+    : showOutput;
   const handleCancel = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
@@ -94,9 +94,9 @@ export function ToolCall({
   );
   const frameAccessory = useMemo(
     () =>
-      call.streaming || running ? (
+      phase === "streaming" || running ? (
         <span className={accessory}>
-          {call.streaming ? <Badge>{t("streaming")}</Badge> : null}
+          {phase === "streaming" ? <Badge>{t("streaming")}</Badge> : null}
           {running ? (
             <IconButton
               aria-label={t("stopTool")}
@@ -116,7 +116,7 @@ export function ToolCall({
           ) : null}
         </span>
       ) : undefined,
-    [call.streaming, cancelling, handleCancel, running, t],
+    [cancelling, handleCancel, phase, running, t],
   );
   return (
     <Frame

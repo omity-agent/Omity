@@ -94,8 +94,7 @@ test("completed streamed tool call exposes its output and settled state", () => 
     (item) => item.type === "tool",
   );
   expect(part?.output).toBe(output);
-  expect(part?.started).toBeUndefined();
-  expect(part?.call.streaming).toBeUndefined();
+  expect(part?.type === "tool" ? part.phase : undefined).toBe("completed");
 });
 test("persisted single-call execution reconciles with its original multi-call stream", () => {
   const persisted: DisplayMessage = {

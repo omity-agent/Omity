@@ -42,7 +42,7 @@ test("streaming tool call is hidden after the final tool call is visible", () =>
   const view = buildTimeline(messages, queue, events);
   expect(view).toHaveLength(1);
   expect(toolCalls(view[0])).toHaveLength(1);
-  expect(toolCalls(view[0])[0]?.streaming).toBeUndefined();
+  expect(toolParts(view[0])[0]?.phase).toBe("pending");
 });
 test("streaming tool call is grouped with previous assistant message", () => {
   const messages: DisplayMessage[] = [
@@ -137,7 +137,7 @@ test("started tool call exposes an empty output state", () => {
     },
   ];
   const part = buildTimeline(messages, [], events)[0]?.parts.find((item) => item.type === "tool");
-  expect(part?.started).toBe(true);
+  expect(part?.type === "tool" ? part.phase : undefined).toBe("running");
   expect(part?.output).toBeUndefined();
 });
 test("grouped assistant messages retain the latest token usage", () => {
@@ -173,4 +173,7 @@ function assistant(id: number, usage: NonNullable<DisplayMessage["usage"]>): Dis
 }
 function toolCalls(message: ReturnType<typeof buildTimeline>[number] | undefined) {
   return message?.parts.flatMap((part) => (part.type === "tool" ? [part.call] : [])) ?? [];
+}
+function toolParts(message: ReturnType<typeof buildTimeline>[number] | undefined) {
+  return message?.parts.filter((part) => part.type === "tool") ?? [];
 }

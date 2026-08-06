@@ -32,7 +32,6 @@ const toolCallSchema = z.object({
   messageId: z.string().optional(),
   name: z.string(),
   rawInput: z.string().optional(),
-  streaming: z.boolean().optional(),
   temporary: z.literal(true).optional(),
 });
 const tokenUsageSchema = z.object({

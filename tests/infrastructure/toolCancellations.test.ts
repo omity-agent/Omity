@@ -35,3 +35,31 @@ test("tool cancellation rejects calls that are not running", () => {
     db.close();
   }
 });
+test("tool cancellation rejects calls that already finished", () => {
+  const db = makeDb();
+  try {
+    db.resetSession("session", workspace);
+    db.appendUser("session", "run tool");
+    const item = required(db.nextQueue("session"));
+    db.startQueue("session", item);
+    insertStreamEvent(db.db, "session", {
+      kind: "tool_started",
+      messageId: "message-1",
+      partId: "tool-0",
+      queueId: item.id,
+      value: "call-1",
+    });
+    insertStreamEvent(db.db, "session", {
+      kind: "tool_finished",
+      messageId: "message-1",
+      partId: "tool-0",
+      queueId: item.id,
+      value: "call-1",
+    });
+    expect(() => db.requestToolCancellation("session", "call-1")).toThrow(
+      toolNotRunning("call-1").message,
+    );
+  } finally {
+    db.close();
+  }
+});

@@ -4,6 +4,7 @@ import type {
   DisplayToolCall,
   TimelineMessage,
   TimelinePart,
+  ToolCallPhase,
 } from "./types";
 import { reconcileToolStreams, streamCallKey } from "./tool/correlation";
 import { countTokens } from "../../runtime/tokenizer";
@@ -40,23 +41,23 @@ export function eventMessageId(event: DisplayEvent) {
   return event.messageId;
 }
 export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayMessage>) {
-  const completed = events.flatMap((event) =>
-    event.kind === "tool_finished" ? [event.value] : [],
-  );
-  const finished = new Set(completed.filter((callId) => outputs.has(callId)));
-  const started = new Set([
-    ...completed.filter((callId) => !outputs.has(callId)),
-    ...events.flatMap((event) =>
-      event.kind === "tool_started" && !outputs.has(event.value) ? [event.value] : [],
-    ),
-  ]);
-  return { finished, started };
+  const phases = new Map<string, Extract<ToolCallPhase, "running" | "awaiting-output">>();
+  for (const event of events) {
+    if (event.kind === "tool_started") {
+      phases.set(event.value, "running");
+    } else if (event.kind === "tool_finished") {
+      phases.set(event.value, "awaiting-output");
+    }
+  }
+  for (const callId of outputs.keys()) {
+    phases.delete(callId);
+  }
+  return phases;
 }
 export function streamTimelineMessages(
   events: DisplayEvent[],
   outputs: Map<string, DisplayMessage>,
-  startedCallIds: Set<string>,
-  finishedCallIds: Set<string>,
+  lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage[] {
   const messages = new Map<string, StreamMessage>();
   for (const event of events) {
@@ -86,9 +87,7 @@ export function streamTimelineMessages(
     }
   }
   reconcileToolStreams(messages.values(), events);
-  return [...messages.values()].map((message) =>
-    timelineMessage(message, outputs, startedCallIds, finishedCallIds),
-  );
+  return [...messages.values()].map((message) => timelineMessage(message, outputs, lifecycle));
 }
 function createPart(
   event: Exclude<DisplayEvent, { kind: "tool_finished" | "tool_started" | "user_appended" }>,
@@ -127,8 +126,7 @@ function mergePart(
 function timelineMessage(
   message: StreamMessage,
   outputs: Map<string, DisplayMessage>,
-  startedCallIds: Set<string>,
-  finishedCallIds: Set<string>,
+  lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage {
   const parts = message.order.flatMap((partId): TimelinePart[] => {
     const part = message.parts.get(partId);
@@ -143,19 +141,17 @@ function timelineMessage(
     }
     const callId = part.id ?? streamCallKey(message.messageId, partId);
     const output = outputs.get(callId);
-    const call = displayCall(
-      part,
-      message.messageId,
-      partId,
-      output === undefined && !finishedCallIds.has(callId),
-    );
+    const call = displayCall(part, message.messageId, partId);
+    const key = streamCallKey(message.messageId, partId);
+    if (output) {
+      return [{ call, key, output, phase: "completed", type: "tool" }];
+    }
     return [
       {
         call,
-        key: streamCallKey(message.messageId, partId),
-        output,
+        key,
+        phase: lifecycle.get(call.id) ?? "streaming",
         type: "tool",
-        ...(startedCallIds.has(call.id) ? { started: true } : {}),
       },
     ];
   });
@@ -168,12 +164,7 @@ function timelineMessage(
     role: "assistant",
   };
 }
-function displayCall(
-  part: ToolPart,
-  messageId: string,
-  partId: string,
-  streaming: boolean,
-): DisplayToolCall {
+function displayCall(part: ToolPart, messageId: string, partId: string): DisplayToolCall {
   const inputText = part.args;
   return {
     id: part.id ?? streamCallKey(messageId, partId),
@@ -183,7 +174,6 @@ function displayCall(
     inputTokens: countTokens(inputText),
     messageId,
     name: part.name || "tool",
-    ...(streaming ? { streaming: true } : {}),
     ...(part.formal ? {} : { temporary: true }),
     ...(part.freeform ? { rawInput: inputText } : {}),
   };

@@ -154,7 +154,7 @@ export function Message({
               latest={index === latestDetailIndex}
               onCancel={onCancelTool}
               output={part.output}
-              started={part.started}
+              phase={part.phase}
             />
           );
         })}

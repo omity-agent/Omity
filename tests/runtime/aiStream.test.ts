@@ -54,6 +54,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
   expect(streaming?.parts[0]).toEqual({ content: "firstsecond", type: "reasoning" });
   expect(streaming?.parts[1]).toMatchObject({
     call: { name: "shell", rawInput: "dir" },
+    phase: "streaming",
     type: "tool",
   });
   recordToolStarted(
@@ -69,13 +70,13 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
   const [, started] = timeline(events)[0]?.parts ?? [];
   expect(started).toMatchObject({
     call: { id: "call-1", name: "shell" },
-    started: true,
+    phase: "running",
     type: "tool",
   });
   db.close();
 });
 function timeline(events: StreamEvent[]) {
   const outputs = new Map();
-  const { finished, started } = toolCallLifecycle(events, outputs);
-  return streamTimelineMessages(events, outputs, started, finished);
+  const lifecycle = toolCallLifecycle(events, outputs);
+  return streamTimelineMessages(events, outputs, lifecycle);
 }

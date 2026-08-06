@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { events, queue, toolCancellations } from "../schema";
 import type { Database } from "bun:sqlite";
 import { sessionDatabase } from "../connection";
@@ -7,19 +7,20 @@ import { toolNotRunning } from "../../../errors";
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
   const orm = sessionDatabase(db);
   const running = orm
-    .select({ id: events.id })
+    .select({ kind: events.kind })
     .from(events)
     .innerJoin(queue, eq(queue.id, events.queueId))
     .where(
       and(
         eq(events.sessionId, sessionId),
-        eq(events.kind, "tool_started"),
         eq(events.payload, callId),
+        inArray(events.kind, ["tool_started", "tool_finished"]),
         eq(queue.status, "running"),
       ),
     )
+    .orderBy(desc(events.id))
     .get();
-  if (!running) {
+  if (running?.kind !== "tool_started") {
     throw toolNotRunning(callId);
   }
   orm
