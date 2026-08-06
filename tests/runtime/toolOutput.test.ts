@@ -17,6 +17,9 @@ test("normalizes MCP text content before size handling", async () => {
   const short = "短输出";
   const shortMessage = new ToolMessage({
     content: JSON.stringify({ content: [{ text: short, type: "text" }] }),
+    id: "short-message",
+    metadata: { source: "mcp" },
+    response_metadata: { requestId: "request-1" },
     tool_call_id: "call-0",
   });
   const original = "结构化长输出 ".repeat(100);
@@ -40,6 +43,12 @@ test("normalizes MCP text content before size handling", async () => {
   });
   const outputPath = onlyOutputPath(root);
   expect(normalized.content).toBe(short);
+  expect(normalized).toMatchObject({
+    id: "short-message",
+    metadata: { source: "mcp" },
+    response_metadata: { requestId: "request-1" },
+    tool_call_id: "call-0",
+  });
   expect(readFileSync(outputPath, "utf8")).toBe(original);
   expect(redirected.name).toBe("demo_tool");
 });

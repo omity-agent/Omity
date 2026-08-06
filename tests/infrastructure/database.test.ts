@@ -1,4 +1,4 @@
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import {
   cleanupDatabaseDirs,
@@ -9,6 +9,8 @@ import {
 } from "../support/database";
 import { runTransaction, sqliteBusyTimeoutMs } from "../../src/infrastructure/database/connection";
 import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
+import { decodeMessage } from "../../src/infrastructure/database/records/messages/hydration";
+import { encodeMessage } from "../../src/infrastructure/database/records/messages/payload";
 
 afterEach(cleanupDatabaseDirs);
 test("queue append and transcript lifecycle", () => {
@@ -142,6 +144,17 @@ test("conversation and queue changes advance the session activity time", () => {
   db.setQueueStatus(queueId, "canceled");
   expect(updatedAt(db)).toBeGreaterThan(1);
   db.close();
+});
+test("persists custom tool markers in tool metadata", () => {
+  const message = new ToolMessage({
+    content: "工具结果",
+    metadata: { customTool: true },
+    tool_call_id: "call-1",
+  });
+  const stored = encodeMessage(message, "history");
+  const restored = decodeMessage(JSON.stringify(stored));
+  expect(stored).toMatchObject({ custom: true });
+  expect(restored).toMatchObject({ metadata: { customTool: true } });
 });
 function setUpdatedAt(database: ReturnType<typeof makeDb>, value: number) {
   database.db.run("UPDATE sessions SET updated_at = ? WHERE id = '123'", [value]);

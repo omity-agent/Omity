@@ -101,10 +101,8 @@ function prepareCompletionsMessages(messages: BaseMessage[]) {
   });
 }
 function copyToolMessage(message: ToolMessage, content: ContentBlock[] | string) {
-  const { artifact } = message;
-  return new ToolMessage({
-    additional_kwargs: message.additional_kwargs,
-    artifact,
+  const copy = new ToolMessage({
+    artifact: message.artifact,
     content,
     id: message.id,
     metadata: message.metadata,
@@ -113,6 +111,8 @@ function copyToolMessage(message: ToolMessage, content: ContentBlock[] | string)
     status: message.status,
     tool_call_id: message.tool_call_id,
   });
+  copy.additional_kwargs = message.additional_kwargs;
+  return copy;
 }
 function readImage(value: Record<string, unknown>): ToolImage | null {
   if (value["type"] === "image") {

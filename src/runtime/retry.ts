@@ -18,7 +18,7 @@ export async function waitBeforeModelRetry(
   controls: RetryControls,
 ) {
   const delayMs = ctx.settings.model.retryDelayMs;
-  console.warn("模型 API 暂时不可用，将继续重试", {
+  console.warn("模型 API 暂不可用，正在重试", {
     attempt,
     delayMs,
     error: captureError(error),

@@ -26,7 +26,6 @@ export function decodeMessage(value: string, id?: string) {
     });
   }
   return new ToolMessage({
-    additional_kwargs: stored.custom === true ? { customTool: true } : {},
     artifact:
       stored.structuredOutput === undefined
         ? undefined
@@ -34,9 +33,14 @@ export function decodeMessage(value: string, id?: string) {
     content: stored.content,
     id,
     metadata:
-      stored.largeOutputTokens === undefined
+      stored.custom !== true && stored.largeOutputTokens === undefined
         ? undefined
-        : { largeOutput: { tokens: stored.largeOutputTokens } },
+        : {
+            ...(stored.custom === true ? { customTool: true } : {}),
+            ...(stored.largeOutputTokens === undefined
+              ? {}
+              : { largeOutput: { tokens: stored.largeOutputTokens } }),
+          },
     name: stored.name,
     tool_call_id: stored.toolCallId,
   });

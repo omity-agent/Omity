@@ -72,7 +72,7 @@ function encodeToolMessage(message: ToolMessage, mode: MessageStorageMode): Stor
     content: message.content,
     toolCallId: message.tool_call_id,
     type: "tool",
-    ...(message.additional_kwargs["customTool"] === true ? { custom: true } : {}),
+    ...(message.metadata?.["customTool"] === true ? { custom: true } : {}),
     ...(largeOutputTokens === undefined ? {} : { largeOutputTokens }),
     ...(message.name ? { name: message.name } : {}),
     ...(structuredOutput === undefined ? {} : { structuredOutput }),

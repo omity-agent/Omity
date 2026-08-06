@@ -3,8 +3,8 @@ import { expect, test } from "bun:test";
 import { MockLanguageModelV4 } from "ai/test";
 import { ToolMessage } from "@langchain/core/messages";
 import { fromModelMessages } from "../../src/agent/fromAiMessages";
-import { toModelMessages } from "../../src/agent/aiMessages";
 import { messageReasoning } from "../../src/runtime/content";
+import { toModelMessages } from "../../src/agent/aiMessages";
 import { z } from "zod";
 
 const usage = {
