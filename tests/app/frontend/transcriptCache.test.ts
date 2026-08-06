@@ -65,13 +65,33 @@ test("a lower revision cannot replace tool output at the same event cursor", () 
   expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
 });
-test("a completion event keeps the tool active until a snapshot contains its output", () => {
+test("a completion event carries the output and settles the tool immediately", () => {
   const data = reconcileTranscript(
     snapshot(3, [toolCallEvent(1), startedEvent(2), finishedEvent(3)]),
   );
   const tool = data.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
-  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("running");
-  expect(tool?.type === "tool" ? tool.output : undefined).toBeUndefined();
+  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
+  expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
+});
+test("serialized tool completions settle only the completed call", () => {
+  const current = reconcileTranscript(
+    snapshot(3, [
+      toolCallEvent(1, "call-1", "tool-0", 0, "first"),
+      toolCallEvent(2, "call-2", "tool-1", 1, "second"),
+      startedEvent(3, "call-1", "tool-0"),
+    ]),
+  );
+  const next = appendTranscriptEvents(current, [
+    finishedEvent(4, "call-1", "tool-0", "first done"),
+    startedEvent(5, "call-2", "tool-1"),
+  ]);
+  const tools = next.view.flatMap((message) =>
+    message.parts.flatMap((part) => (part.type === "tool" ? [part] : [])),
+  );
+  expect(tools.map((tool) => [tool.call.id, tool.phase])).toEqual([
+    ["call-1", "completed"],
+    ["call-2", "running"],
+  ]);
 });
 function snapshot(
   eventCursor: number,
@@ -119,37 +139,51 @@ function textEvent(id: number, text: string): DisplayEvent {
     value: text,
   };
 }
-function toolCallEvent(id: number): DisplayEvent {
+function toolCallEvent(
+  id: number,
+  callId = "call-1",
+  partId = "tool-0",
+  index = 0,
+  name = "shell",
+): DisplayEvent {
   return {
     id,
     kind: "tool_call_delta",
     messageId: "message-1",
-    partId: "tool-0",
+    partId,
     queueId: 1,
     value: {
-      idDelta: "call-1",
-      index: 0,
-      nameDelta: "shell",
+      idDelta: callId,
+      index,
+      nameDelta: name,
     },
   };
 }
-function startedEvent(id: number): DisplayEvent {
+function startedEvent(id: number, callId = "call-1", partId = "tool-0"): DisplayEvent {
   return {
     id,
     kind: "tool_started",
     messageId: "message-1",
-    partId: "tool-0",
+    partId,
     queueId: 1,
-    value: "call-1",
+    value: callId,
   };
 }
-function finishedEvent(id: number): DisplayEvent {
+function finishedEvent(
+  id: number,
+  callId = "call-1",
+  partId = "tool-0",
+  content = "done",
+): DisplayEvent {
   return {
     id,
     kind: "tool_finished",
     messageId: "message-1",
-    partId: "tool-0",
+    partId,
     queueId: 1,
-    value: "call-1",
+    value: {
+      callId,
+      output: { content, images: [], outputTokens: 1 },
+    },
   };
 }

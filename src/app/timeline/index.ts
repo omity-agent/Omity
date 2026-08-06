@@ -4,6 +4,7 @@ import type {
   DisplayQueue,
   DisplayRole,
   DisplayToolCall,
+  DisplayToolOutput,
   TimelineMessage,
   TimelinePart,
 } from "./types";
@@ -23,6 +24,7 @@ export type {
   DisplayQueue,
   DisplayRole,
   DisplayToolCall,
+  DisplayToolOutput,
   TokenUsage,
   TimelineMessage,
   TimelinePart,
@@ -37,7 +39,9 @@ export function buildTimeline(
 ): TimelineMessage[] {
   const outputs = new Map(
     messages.flatMap((item) =>
-      item.role === "tool" && item.toolCallId ? [[item.toolCallId, item] as const] : [],
+      item.role === "tool" && item.toolCallId
+        ? [[item.toolCallId, item as DisplayToolOutput] as const]
+        : [],
     ),
   );
   const persistedToolCalls = messages.flatMap((item) => item.toolCalls);
@@ -83,7 +87,7 @@ function timelineTail(
   events: DisplayEvent[],
   pending: Map<number, TimelineMessage>,
   optimistic: TimelineMessage[],
-  outputs: Map<string, DisplayMessage>,
+  outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   persistedToolCalls: DisplayToolCall[],
 ) {
@@ -122,7 +126,7 @@ function timelineTail(
 function withParts(
   message: DisplayMessage,
   key: string,
-  outputs: Map<string, DisplayMessage>,
+  outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage {
   return {
@@ -143,14 +147,19 @@ function withParts(
 }
 function toolPart(
   call: DisplayToolCall,
-  outputs: Map<string, DisplayMessage>,
+  outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): Extract<TimelinePart, { type: "tool" }> {
   const key = displayToolCallKey(call);
   const output = outputs.get(call.id);
-  return output
-    ? { call, key, output, phase: "completed", type: "tool" }
-    : { call, key, phase: lifecycle.get(call.id) ?? "pending", type: "tool" };
+  if (output) {
+    return { call, key, output, phase: "completed", type: "tool" };
+  }
+  const state = lifecycle.get(call.id);
+  if (state?.phase === "completed") {
+    return { call, key, output: state.output, phase: "completed", type: "tool" };
+  }
+  return { call, key, phase: state?.phase ?? "pending", type: "tool" };
 }
 function synthetic(role: DisplayRole, content: string, key: string): TimelineMessage {
   return {

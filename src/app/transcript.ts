@@ -4,7 +4,7 @@ import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persis
 import type { QueueStatus, Settings } from "../types";
 import { contentToText, messageReasoning } from "../runtime/content";
 import { freeformCallIds, rawFreeformInput } from "./timeline/freeform";
-import { modelTokenUsage, toolInputTokens, toolOutputTokens } from "./timeline/tokenCounts";
+import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { existsSync } from "node:fs";
@@ -13,6 +13,7 @@ import { messageRowsToChatMessages } from "../infrastructure/database/records/me
 import { parseError } from "../failures/details";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
+import { toolOutputTokens } from "../runtime/toolOutput";
 
 interface MessageRow {
   id: number;

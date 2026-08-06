@@ -1,4 +1,4 @@
-import { AIMessage, type BaseMessage, type ToolMessage } from "@langchain/core/messages";
+import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { TokenUsage } from "./types";
 import { countTokens } from "../../runtime/tokenizer";
 
@@ -17,20 +17,6 @@ export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
     throw new Error("工具输入无法序列化");
   }
   return countTokens(serialized);
-}
-export function toolOutputTokens(message: ToolMessage, text: string) {
-  const largeOutput: unknown = message.metadata?.["largeOutput"];
-  if (largeOutput === undefined) {
-    return countTokens(text);
-  }
-  if (!isRecord(largeOutput)) {
-    throw new Error("工具大输出 metadata 无效");
-  }
-  const { tokens } = largeOutput;
-  if (typeof tokens !== "number" || !Number.isSafeInteger(tokens) || tokens < 0) {
-    throw new Error("工具大输出 token 数无效");
-  }
-  return tokens;
 }
 export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
   if (!AIMessage.isInstance(message) || !message.usage_metadata) {

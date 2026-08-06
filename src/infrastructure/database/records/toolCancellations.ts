@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { events, queue, toolCancellations } from "../schema";
 import type { Database } from "bun:sqlite";
 import { sessionDatabase } from "../connection";
@@ -13,9 +13,12 @@ export function requestToolCancellation(db: Database, sessionId: string, callId:
     .where(
       and(
         eq(events.sessionId, sessionId),
-        eq(events.payload, callId),
         inArray(events.kind, ["tool_started", "tool_finished"]),
         eq(queue.status, "running"),
+        or(
+          eq(events.payload, callId),
+          eq(sql`json_extract(${events.payload}, '$.callId')`, callId),
+        ),
       ),
     )
     .orderBy(desc(events.id))

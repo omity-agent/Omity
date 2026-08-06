@@ -2,6 +2,7 @@ import type {
   StreamEvent,
   StreamEventKind,
 } from "../../infrastructure/database/records/streamEvents";
+import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
 import { z } from "zod";
 
 export interface PersistedEventRow {
@@ -12,6 +13,11 @@ export interface PersistedEventRow {
   kind: StreamEventKind;
   payload_json: string;
 }
+const toolOutputSchema: z.ZodType<ToolOutputSnapshot> = z.object({
+  content: z.string(),
+  images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
+  outputTokens: z.number().int().nonnegative().optional(),
+});
 const payloadSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
@@ -28,8 +34,15 @@ const payloadSchema = z.discriminatedUnion("kind", [
     }),
   }),
   z.object({
-    kind: z.enum(["tool_finished", "tool_started"]),
-    value: z.string(),
+    kind: z.literal("tool_finished"),
+    value: z.object({
+      callId: z.string().min(1),
+      output: toolOutputSchema,
+    }),
+  }),
+  z.object({
+    kind: z.literal("tool_started"),
+    value: z.string().min(1),
   }),
   z.object({ kind: z.literal("user_appended"), value: z.null() }),
 ]);
@@ -50,7 +63,10 @@ export function persistedDisplayEvent(row: PersistedEventRow): StreamEvent {
   if (parsed.data.kind === "tool_call_delta") {
     return { ...base, kind: parsed.data.kind, value: parsed.data.value };
   }
-  if (parsed.data.kind === "tool_finished" || parsed.data.kind === "tool_started") {
+  if (parsed.data.kind === "tool_finished") {
+    return { ...base, kind: parsed.data.kind, value: parsed.data.value };
+  }
+  if (parsed.data.kind === "tool_started") {
     return { ...base, kind: parsed.data.kind, value: parsed.data.value };
   }
   if (parsed.data.kind === "user_appended") {

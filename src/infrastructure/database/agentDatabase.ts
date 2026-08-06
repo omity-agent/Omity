@@ -3,7 +3,6 @@ import {
   type StreamEvent,
   type StreamEventDraft,
   deleteQueueStream,
-  finishToolStreams,
   insertStreamEvent,
   insertUserBoundaryEvent,
   streamEventCursor,
@@ -44,6 +43,7 @@ import {
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import { RecoverableDatabase } from "./records/recovery";
+import { finishToolStreams } from "./records/toolCompletion";
 import { loadMessages } from "./records/messages/history";
 import { resetSessionStorage } from "./maintenance";
 import { syncMessages } from "./records/messages/sync";

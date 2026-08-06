@@ -1,6 +1,7 @@
 import type { ErrorDetails } from "../../failures/details";
 import type { QueueStatus } from "../../types";
 import type { StreamEvent } from "../../infrastructure/database/records/streamEvents";
+import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
 
 export type DisplayRole = "user" | "assistant" | "tool";
 export interface DisplayImage {
@@ -47,6 +48,7 @@ export interface DisplayQueue {
   root?: boolean;
 }
 export type DisplayEvent = StreamEvent;
+export type DisplayToolOutput = ToolOutputSnapshot;
 export interface TimelineMessage {
   id: number;
   key: string;
@@ -65,12 +67,12 @@ export type TimelinePart =
       call: DisplayToolCall;
       key: string;
       phase: Exclude<ToolCallPhase, "completed">;
-      output?: DisplayMessage;
+      output?: DisplayToolOutput;
     }
   | {
       type: "tool";
       call: DisplayToolCall;
       key: string;
-      output: DisplayMessage;
+      output: DisplayToolOutput;
       phase: "completed";
     };

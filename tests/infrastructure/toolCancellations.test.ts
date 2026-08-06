@@ -54,7 +54,10 @@ test("tool cancellation rejects calls that already finished", () => {
       messageId: "message-1",
       partId: "tool-0",
       queueId: item.id,
-      value: "call-1",
+      value: {
+        callId: "call-1",
+        output: { content: "done", images: [], outputTokens: 1 },
+      },
     });
     expect(() => db.requestToolCancellation("session", "call-1")).toThrow(
       toolNotRunning("call-1").message,

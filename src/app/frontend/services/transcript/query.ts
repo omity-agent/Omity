@@ -69,10 +69,6 @@ export function useSessionTranscript(
     const delta = (event: Event) => {
       try {
         const incoming = readTranscriptEvent(event);
-        if (incoming.kind === "tool_finished") {
-          void refresh.maybeExecute(sessionId);
-          return;
-        }
         deltas.addItem(incoming);
       } catch (error) {
         reportError(error);

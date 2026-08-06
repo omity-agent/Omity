@@ -1,14 +1,14 @@
 import type {
   DisplayEvent,
-  DisplayMessage,
   DisplayToolCall,
+  DisplayToolOutput,
   TimelineMessage,
   TimelinePart,
-  ToolCallPhase,
 } from "./types";
 import { reconcileToolStreams, streamCallKey } from "./tool/correlation";
 import { countTokens } from "../../runtime/tokenizer";
 
+type ToolLifecycle = { phase: "running" } | { output: DisplayToolOutput; phase: "completed" };
 type TextPart = {
   [Kind in "assistant_reasoning_delta" | "assistant_text_delta"]: {
     content: string;
@@ -40,21 +40,28 @@ export function eventQueueId(event: DisplayEvent) {
 export function eventMessageId(event: DisplayEvent) {
   return event.messageId;
 }
-export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayMessage>) {
-  const phases = new Map<string, Extract<ToolCallPhase, "running">>();
+export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayToolOutput>) {
+  const phases = new Map<string, ToolLifecycle>();
   for (const event of events) {
     if (event.kind === "tool_started") {
-      phases.set(event.value, "running");
+      phases.set(event.value, { phase: "running" });
+    }
+    if (event.kind === "tool_finished") {
+      phases.set(event.value.callId, { output: event.value.output, phase: "completed" });
     }
   }
   for (const callId of outputs.keys()) {
-    phases.delete(callId);
+    const output = outputs.get(callId);
+    if (!output) {
+      throw new Error(`工具输出快照不存在：${callId}`);
+    }
+    phases.set(callId, { output, phase: "completed" });
   }
   return phases;
 }
 export function streamTimelineMessages(
   events: DisplayEvent[],
-  outputs: Map<string, DisplayMessage>,
+  outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage[] {
   const messages = new Map<string, StreamMessage>();
@@ -123,7 +130,7 @@ function mergePart(
 }
 function timelineMessage(
   message: StreamMessage,
-  outputs: Map<string, DisplayMessage>,
+  outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
 ): TimelineMessage {
   const parts = message.order.flatMap((partId): TimelinePart[] => {
@@ -144,11 +151,15 @@ function timelineMessage(
     if (output) {
       return [{ call, key, output, phase: "completed", type: "tool" }];
     }
+    const state = lifecycle.get(call.id);
+    if (state?.phase === "completed") {
+      return [{ call, key, output: state.output, phase: "completed", type: "tool" }];
+    }
     return [
       {
         call,
         key,
-        phase: lifecycle.get(call.id) ?? "streaming",
+        phase: state?.phase ?? "streaming",
         type: "tool",
       },
     ];

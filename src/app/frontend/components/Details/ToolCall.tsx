@@ -1,6 +1,6 @@
 import { Badge, IconButton } from "../ParkUI";
 import { CircleStop, LoaderCircle, Wrench } from "lucide-react";
-import type { DisplayMessage, DisplayToolCall, ToolCallPhase } from "../../../timeline";
+import type { DisplayToolCall, DisplayToolOutput, ToolCallPhase } from "../../../timeline";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { Frame } from "./Frame";
 import { HighlightedCode } from "../HighlightedCode";
@@ -65,7 +65,7 @@ export function ToolCall({
   call: DisplayToolCall;
   latest: boolean;
   onCancel: (toolCallId: string) => Promise<void>;
-  output?: DisplayMessage;
+  output?: DisplayToolOutput;
   phase: ToolCallPhase;
 }) {
   const { t } = useTranslation();

@@ -51,6 +51,21 @@ test("content event IDs must match their persisted cursors", () => {
   });
   expect(readTranscriptEvent(message(delta, "5"))).toMatchObject({ id: 5 });
   expect(() => readTranscriptEvent(message(delta, "6"))).toThrow("data.id 不一致");
+  const finished = JSON.stringify({
+    id: 7,
+    kind: "tool_finished",
+    messageId: "message",
+    partId: "tool-0",
+    queueId: 1,
+    value: {
+      callId: "call-1",
+      output: { content: "done", images: [], outputTokens: 1 },
+    },
+  });
+  expect(readTranscriptEvent(message(finished, "7"))).toMatchObject({
+    kind: "tool_finished",
+    value: { callId: "call-1", output: { content: "done" } },
+  });
 });
 test("warning events validate the model retry payload", () => {
   expect(

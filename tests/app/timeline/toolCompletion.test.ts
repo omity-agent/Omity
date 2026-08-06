@@ -45,7 +45,10 @@ test("syncing tool output emits a versioned completion event", () => {
   expect(emitted).toHaveLength(1);
   expect(emitted[0]).toMatchObject({
     kind: "tool_finished",
-    value: "call-1",
+    value: {
+      callId: "call-1",
+      output: { content: "done" },
+    },
   });
   expect(transcript.eventCursor).toBe(required(emitted[0]).id);
   expect(transcript.events.map(({ kind }) => kind)).toEqual([
