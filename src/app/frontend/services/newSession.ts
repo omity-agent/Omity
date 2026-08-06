@@ -6,6 +6,9 @@ import type { QueryClient } from "@tanstack/react-query";
 import { addSession } from "./queries";
 import { createSession } from "./client";
 
+export function resolveNewSessionWorkspace(sourceWorkspace: string | undefined, cwd: string) {
+  return sourceWorkspace ?? cwd;
+}
 export function useNewSession({
   cwd,
   navigate,
@@ -17,14 +20,22 @@ export function useNewSession({
 }) {
   const [workspace, setWorkspace] = useState<string>();
   const [profile, setProfile] = useState<string>();
-  const open = useCallback(() => {
-    setWorkspace(undefined);
-    setProfile(undefined);
-    navigate({ kind: "new" });
-  }, [navigate]);
+  const open = useCallback(
+    (sourceWorkspace?: string) => {
+      setWorkspace(sourceWorkspace);
+      setProfile(undefined);
+      navigate({ kind: "new" });
+    },
+    [navigate],
+  );
   const create = useCallback(
     async (initialState: InitialSessionState, attachments: PendingAttachment[]) => {
-      const result = await createSession(workspace ?? cwd, profile, initialState, attachments);
+      const result = await createSession(
+        resolveNewSessionWorkspace(workspace, cwd),
+        profile,
+        initialState,
+        attachments,
+      );
       addSession(queryClient, result.session);
       navigate(sessionPage(result.session.id));
     },

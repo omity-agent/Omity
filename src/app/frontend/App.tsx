@@ -59,7 +59,7 @@ function AuthenticatedApp() {
   }, []);
   const {
     create: createNewSession,
-    open: openNewSession,
+    open: openNewSessionFrom,
     profile: newProfile,
     setProfile: setNewProfile,
     setWorkspace: setNewWorkspace,
@@ -69,6 +69,9 @@ function AuthenticatedApp() {
     navigate,
     queryClient,
   });
+  const openNewSession = useCallback(() => {
+    openNewSessionFrom(activeSession?.workspace);
+  }, [activeSession?.workspace, openNewSessionFrom]);
   usePageNavigation(page, currentPage, setPage);
   const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue);
   const { activeSession: displayedActiveSession, sessions: displayedSessions } =
