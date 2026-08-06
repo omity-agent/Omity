@@ -7,13 +7,13 @@ import type {
   TimelineMessage,
   TimelinePart,
 } from "./types";
+import { displayToolCallKey, sameToolCall } from "./tool/correlation";
 import {
   eventMessageId,
   eventQueueId,
   streamTimelineMessages,
   toolCallLifecycle,
 } from "./streamEvents";
-import { displayToolCallKey } from "./tool/correlation";
 import { groupAssistantMessages } from "./grouping";
 
 export type {
@@ -40,6 +40,7 @@ export function buildTimeline(
       item.role === "tool" && item.toolCallId ? [[item.toolCallId, item] as const] : [],
     ),
   );
+  const persistedToolCalls = messages.flatMap((item) => item.toolCalls);
   const lifecycle = toolCallLifecycle(events, outputs);
   const visible = messages
     .filter((item) => item.role !== "tool")
@@ -68,7 +69,14 @@ export function buildTimeline(
       (activeQueueIds.has(eventQueueId(event)) &&
         (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
   );
-  const live = timelineTail(liveEvents, pending, optimistic, outputs, lifecycle);
+  const live = timelineTail(
+    liveEvents,
+    pending,
+    optimistic,
+    outputs,
+    lifecycle,
+    persistedToolCalls,
+  );
   return groupAssistantMessages([...visible, ...live]);
 }
 function timelineTail(
@@ -77,11 +85,21 @@ function timelineTail(
   optimistic: TimelineMessage[],
   outputs: Map<string, DisplayMessage>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
+  persistedToolCalls: DisplayToolCall[],
 ) {
   const result: TimelineMessage[] = [];
   let stream: DisplayEvent[] = [];
   const flushStream = () => {
-    result.push(...streamTimelineMessages(stream, outputs, lifecycle));
+    result.push(
+      ...streamTimelineMessages(stream, outputs, lifecycle).flatMap((message) => {
+        const parts = message.parts.filter(
+          (part) =>
+            part.type !== "tool" ||
+            !persistedToolCalls.some((call) => sameToolCall(call, part.call)),
+        );
+        return parts.length > 0 ? [{ ...message, parts }] : [];
+      }),
+    );
     stream = [];
   };
   for (const event of events) {

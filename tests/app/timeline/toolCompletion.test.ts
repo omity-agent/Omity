@@ -59,6 +59,17 @@ test("syncing tool output emits a versioned completion event", () => {
     .find((part) => part.type === "tool");
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
   expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
+  const appendedQueueId = db.appendUser(sessionId, "next");
+  const appended = required(db.pendingAppends(sessionId).find(({ id }) => id === appendedQueueId));
+  db.startQueue(sessionId, appended);
+  const withAppend = loadTranscript(db, sessionId);
+  const timeline = buildTimeline(withAppend.messages, withAppend.queue, withAppend.events);
+  expect(timeline.map(({ role }) => role)).toEqual(["user", "assistant", "user"]);
+  expect(
+    timeline.flatMap((message) =>
+      message.parts.flatMap((part) => (part.type === "tool" ? [part.call.id] : [])),
+    ),
+  ).toEqual(["call-1"]);
   db.close();
 });
 test("syncing one tool does not drop the remaining parallel tool calls", () => {
