@@ -70,7 +70,7 @@ test("a completion event keeps the tool active until a snapshot contains its out
     snapshot(3, [toolCallEvent(1), startedEvent(2), finishedEvent(3)]),
   );
   const tool = data.view.flatMap((message) => message.parts).find((part) => part.type === "tool");
-  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("awaiting-output");
+  expect(tool?.type === "tool" ? tool.phase : undefined).toBe("running");
   expect(tool?.type === "tool" ? tool.output : undefined).toBeUndefined();
 });
 function snapshot(

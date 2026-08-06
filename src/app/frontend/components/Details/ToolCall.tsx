@@ -71,7 +71,7 @@ export function ToolCall({
   const { t } = useTranslation();
   const [cancelling, setCancelling] = useState(false);
   const running = phase === "running";
-  const showOutput = output !== undefined || phase === "running" || phase === "awaiting-output";
+  const showOutput = output !== undefined || running;
   const showOutputCode = output
     ? output.content.trim().length > 0 || output.images.length === 0
     : showOutput;

@@ -18,7 +18,7 @@ export interface DisplayToolCall {
   rawInput?: string;
   temporary?: true;
 }
-export type ToolCallPhase = "streaming" | "pending" | "running" | "awaiting-output" | "completed";
+export type ToolCallPhase = "streaming" | "pending" | "running" | "completed";
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;

@@ -41,12 +41,10 @@ export function eventMessageId(event: DisplayEvent) {
   return event.messageId;
 }
 export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayMessage>) {
-  const phases = new Map<string, Extract<ToolCallPhase, "running" | "awaiting-output">>();
+  const phases = new Map<string, Extract<ToolCallPhase, "running">>();
   for (const event of events) {
     if (event.kind === "tool_started") {
       phases.set(event.value, "running");
-    } else if (event.kind === "tool_finished") {
-      phases.set(event.value, "awaiting-output");
     }
   }
   for (const callId of outputs.keys()) {
