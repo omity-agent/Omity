@@ -1,3 +1,4 @@
+import { APICallError } from "@ai-sdk/provider";
 import isNetworkError from "is-network-error";
 
 const retryableNames = new Set([
@@ -36,6 +37,9 @@ export function isRetryableModelError(error: unknown): boolean {
   while (pending.length > 0) {
     const current = pending.pop();
     if (isNetworkError(current)) {
+      return true;
+    }
+    if (APICallError.isInstance(current) && current.isRetryable) {
       return true;
     }
     if (isRecord(current) && !visited.has(current)) {
