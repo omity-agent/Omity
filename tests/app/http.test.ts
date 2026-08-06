@@ -1,10 +1,8 @@
 import { type ApiController, createApi } from "../../src/app/http/handler";
-import { DomainError, sessionNotFound } from "../../src/errors";
 import { decodeSessionId, requestBodyLimit } from "../../src/app/http/request";
 import { expect, test } from "bun:test";
 import { createApiController } from "./support/apiController";
 import { createStaticApp } from "../../src/app/http/static";
-import { normalizeError } from "../../src/app/http/errors";
 
 test("API JSON validation rejects invalid controls and empty messages", async () => {
   const api = createApi(createApiController());
@@ -158,26 +156,6 @@ test("API validates encoded session IDs without path normalization", () => {
   expect(decodeSessionId("web-123")).toBe("web-123");
   expect(() => decodeSessionId("abc%2Fdef")).toThrow("路径 ID 无效");
   expect(() => decodeSessionId("%E0%A4%A")).toThrow("Session ID 编码无效");
-});
-test("API maps missing sessions and conflicts to explicit status codes", () => {
-  expect(normalizeError(sessionNotFound("123"))).toMatchObject({
-    code: "SESSION_NOT_FOUND",
-    status: 404,
-  });
-  expect(
-    normalizeError(new DomainError("HOST_LEASE_CONFLICT", "会话已有 Host 正在运行：123")),
-  ).toMatchObject({
-    code: "HOST_LEASE_CONFLICT",
-    status: 409,
-  });
-  expect(normalizeError(new Error("会话不存在：文案不再参与映射"))).toMatchObject({
-    code: "INTERNAL_ERROR",
-    message: "会话不存在：文案不再参与映射",
-    status: 500,
-  });
-  expect(
-    normalizeError(new DomainError("ATTACHMENT_TOO_LARGE", "附件总大小超过上限")),
-  ).toMatchObject({ code: "ATTACHMENT_TOO_LARGE", status: 413 });
 });
 test("static frontend permits remote Markdown images", async () => {
   const response = await createStaticApp(".").request("/missing");

@@ -1,5 +1,6 @@
 import { DomainError, type DomainErrorCode } from "../../errors";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { isRetryableModelError } from "../../runtime/network";
 import { isTerminalErrorSuppressed } from "../../failures/output";
 
 export type ApiErrorCode =
@@ -37,7 +38,11 @@ export class HttpError extends Error {
 }
 export function errorResponse(error: unknown) {
   const normalized = normalizeError(error);
-  if (normalized.status === 500 && !isTerminalErrorSuppressed(error)) {
+  if (
+    normalized.status === 500 &&
+    !isTerminalErrorSuppressed(error) &&
+    !isRetryableModelError(error)
+  ) {
     console.error(error);
   }
   return {
