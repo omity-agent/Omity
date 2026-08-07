@@ -28,7 +28,10 @@ export async function streamAiModel(options: AiModelOptions) {
     model: options.model ?? buildAiModel(options.settings),
     providerOptions: aiProviderOptions(options.settings, options.sessionId),
     temperature: options.settings.model.temperature,
-    timeout: { totalMs: options.settings.model.timeoutMs },
+    timeout: {
+      chunkMs: options.settings.model.timeoutMs,
+      firstChunkMs: options.settings.model.timeoutMs,
+    },
     tools: options.tools,
   });
   for await (const part of result.stream) {
