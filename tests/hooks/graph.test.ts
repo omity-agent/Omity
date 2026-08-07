@@ -41,7 +41,7 @@ test("takeover hooks bracket an AI SDK tool call without recursive hooks", async
     checkpointer: new MemorySaver(),
     hooks,
     model: modelWithToolCall(),
-    settings: testSettings(workspace),
+    settings: testSettings(),
     tools: [hookTool, originalTool],
   });
   const result = await graph.invoke(

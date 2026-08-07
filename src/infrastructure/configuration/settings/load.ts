@@ -1,7 +1,7 @@
 import { type SettingsContext, createSettingsContext } from "./context";
 import { join, resolve } from "node:path";
 import { parseAgentSettings, parseMainSettings, parseModelSettings } from "./schema";
-import { readLayeredSettingsYaml, resolveLayeredSettingsText } from "./files";
+import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
 import type { Settings } from "../../../types";
 import { buildSkillsList } from "../../../skills";
 import { isHookOutputVariable } from "../../../hooks/variables";
@@ -26,9 +26,9 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
   const main = parseMainSettings(requireLayeredYaml(context, "global", "main.yaml").value);
   const agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value);
   const model = parseModelSettings(requireLayeredYaml(context, "profile", "model.yaml").value);
-  const dataDir = resolveConfiguredPath(configRoot, main.paths.dataDir);
+  const storageDirectory = userDataDirectory();
   const session = options.sessionId
-    ? resolve(dataDir, "sessions", safeId(options.sessionId))
+    ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
     : undefined;
   const placeholders = {
     deferSession: true,
@@ -53,7 +53,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
           }
         : { matched: false },
   };
-  mkdirSync(dataDir, { recursive: true });
+  mkdirSync(storageDirectory, { recursive: true });
   return {
     ...main,
     agent: {
@@ -69,7 +69,6 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     },
     hooks: parseHookRules(hooks.value),
     model,
-    paths: { dataDir },
     skills,
     toolOutput: agent.toolOutput,
   };

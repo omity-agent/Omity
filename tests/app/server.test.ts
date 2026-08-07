@@ -9,9 +9,9 @@ import { appendAssistantMessage } from "../../src/infrastructure/database/record
 import { captureError } from "../../src/failures/details";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
-import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { required } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { writeTestConfiguration } from "../support/configuration";
 
 const dirs: string[] = [];
@@ -19,12 +19,13 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) {
     rmSync(dir, { force: true, recursive: true });
   }
+  rmSync(join(userDataDirectory(), "sessions"), { force: true, recursive: true });
 });
 test("app session summaries expose paused queue errors", async () => {
   const root = makeRoot();
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const paths = sessionPaths(loadSettings(root), "failed-session");
+  const paths = sessionPaths("failed-session");
   const db = new AgentDatabase(paths.dbPath);
   db.createSession("failed-session", workspace);
   const queueId = db.appendUser("failed-session", "test");
@@ -42,7 +43,7 @@ test("pending appends do not turn a paused run into a pausing session", async ()
   const root = makeRoot();
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const paths = sessionPaths(loadSettings(root), "paused-session");
+  const paths = sessionPaths("paused-session");
   const db = new AgentDatabase(paths.dbPath);
   db.createSession("paused-session", workspace);
   const queueId = db.appendUser("paused-session", "first");
@@ -61,12 +62,11 @@ test("app registry serves a memory projection refreshed one session at a time", 
   const root = makeRoot();
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const settings = loadSettings(root);
-  const paths = sessionPaths(settings, "cli-session");
+  const paths = sessionPaths("cli-session");
   const db = new AgentDatabase(paths.dbPath);
   db.createSession("cli-session", workspace);
   db.close();
-  const registry = new AppRegistry(settings);
+  const registry = new AppRegistry();
   const sessions = registry.list();
   expect(sessions).toHaveLength(1);
   const session = required(sessions[0]);
@@ -74,7 +74,7 @@ test("app registry serves a memory projection refreshed one session at a time", 
   expect(session.workspace).toBe(workspace);
   expect(typeof session.createdAt).toBe("number");
   expect(typeof session.updatedAt).toBe("number");
-  const secondPaths = sessionPaths(settings, "second-session");
+  const secondPaths = sessionPaths("second-session");
   const second = new AgentDatabase(secondPaths.dbPath);
   second.createSession("second-session", workspace);
   second.close();
@@ -88,30 +88,28 @@ test("app registry serves a memory projection refreshed one session at a time", 
   rmSync(secondPaths.dir, { force: true, recursive: true });
   registry.remove("second-session");
   expect(() => registry.require("second-session")).toThrow("会话不存在");
-  expect(existsSync(join(settings.paths.dataDir, "app.sqlite"))).toBe(false);
+  expect(existsSync(join(userDataDirectory(), "app.sqlite"))).toBe(false);
 });
 test("app registry includes the latest persisted message in the session activity time", () => {
   const root = makeRoot();
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const settings = loadSettings(root);
-  const paths = sessionPaths(settings, "conversation");
+  const paths = sessionPaths("conversation");
   const db = new AgentDatabase(paths.dbPath);
   db.createSession("conversation", workspace);
   appendAssistantMessage(db.db, "conversation", "已完成");
   db.db.run("UPDATE sessions SET updated_at = 1");
   db.db.run("UPDATE messages SET created_at = 50");
   db.close();
-  const session = required(new AppRegistry(settings).list()[0]);
+  const session = required(new AppRegistry().list()[0]);
   expect(session.updatedAt).toBe(50);
 });
 test("app instance lock rejects a second server for the same data directory", () => {
-  const root = makeRoot();
-  const { dataDir } = loadSettings(root).paths;
-  const lock = AppInstanceLock.acquire(dataDir);
-  expect(() => AppInstanceLock.acquire(dataDir)).toThrow("数据目录已有 App 在运行");
+  const directory = userDataDirectory();
+  const lock = AppInstanceLock.acquire(directory);
+  expect(() => AppInstanceLock.acquire(directory)).toThrow("数据目录已有 App 在运行");
   lock.release();
-  expect(existsSync(join(dataDir, "app.lock"))).toBe(false);
+  expect(existsSync(join(directory, "app.lock"))).toBe(false);
 });
 test("session status prioritizes errors and pauses over host activity", () => {
   const running = {

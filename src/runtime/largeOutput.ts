@@ -1,14 +1,13 @@
 import { type MessageContent, ToolMessage } from "@langchain/core/messages";
-import { join, resolve } from "node:path";
 import { claimShortIdAsync } from "../infrastructure/randomId";
 import { countTokens } from "./tokenizer";
 import { inspectToolTextContent } from "./outputText";
+import { join } from "node:path";
 import { mkdirSync } from "node:fs";
-import { safeId } from "../infrastructure/configuration/sessionPaths";
+import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { writeFile } from "node:fs/promises";
 
 interface LargeToolOutputOptions {
-  dataDir: string;
   maxTokens: number;
   sessionId: string;
 }
@@ -32,7 +31,7 @@ export async function redirectLargeToolOutput(
   if (tokens <= options.maxTokens) {
     return normalizedMessage;
   }
-  const outputPath = await writeLargeToolOutput(original, options.dataDir, options.sessionId);
+  const outputPath = await writeLargeToolOutput(original, options.sessionId);
   const content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n输出原文已完整保存于：\n${outputPath}\n如有需要请检索其中片段。`;
   return copyToolMessage(message, normalized.replaceText(content), {
     path: outputPath,
@@ -69,8 +68,8 @@ function mergeMetadata(
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-async function writeLargeToolOutput(content: string, dataDir: string, sessionId: string) {
-  const dir = resolve(dataDir, "sessions", safeId(sessionId), "large_output");
+async function writeLargeToolOutput(content: string, sessionId: string) {
+  const dir = join(resolveSessionPaths(sessionId).dir, "large_output");
   mkdirSync(dir, { recursive: true });
   let path = "";
   await claimShortIdAsync(async (id) => {

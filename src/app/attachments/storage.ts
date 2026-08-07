@@ -23,7 +23,7 @@ export async function saveMessageAttachments(
   if (selected.length === 0) {
     return saved(content, []);
   }
-  const session = resolveSessionPaths(settings, sessionId);
+  const session = resolveSessionPaths(sessionId);
   const directory = join(session.dir, "attachments");
   await mkdir(directory, { recursive: true });
   const written: string[] = [];

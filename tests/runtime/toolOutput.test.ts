@@ -2,18 +2,17 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, readdirSync, rmSync } from "node:fs";
 import { ToolMessage } from "@langchain/core/messages";
 import { countTokens } from "../../src/runtime/tokenizer";
-import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
 import { redirectLargeToolOutput } from "../../src/runtime/largeOutput";
+import { resolveSessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 
-const dirs: string[] = [];
 afterEach(() => {
-  for (const dir of dirs.splice(0)) {
-    rmSync(dir, { force: true, recursive: true });
+  for (const sessionId of ["demo", "demo-session"]) {
+    rmSync(resolveSessionPaths(sessionId).dir, { force: true, recursive: true });
   }
 });
 test("normalizes MCP text content before size handling", async () => {
-  const root = makeDir();
   const short = "短输出";
   const shortMessage = new ToolMessage({
     content: JSON.stringify({ content: [{ text: short, type: "text" }] }),
@@ -32,16 +31,14 @@ test("normalizes MCP text content before size handling", async () => {
     tool_call_id: "call-1",
   });
   const normalized = await redirectLargeToolOutput(shortMessage, {
-    dataDir: root,
     maxTokens: countTokens(short),
     sessionId: "demo-session",
   });
   const redirected = await redirectLargeToolOutput(message, {
-    dataDir: root,
     maxTokens: 1,
     sessionId: "demo-session",
   });
-  const outputPath = onlyOutputPath(root);
+  const outputPath = onlyOutputPath("demo-session");
   expect(normalized.content).toBe(short);
   expect(normalized).toMatchObject({
     id: "short-message",
@@ -53,34 +50,29 @@ test("normalizes MCP text content before size handling", async () => {
   expect(redirected.name).toBe("demo_tool");
 });
 test("accepts hook call IDs when writing large output", async () => {
-  const root = makeDir();
   const outputId = "omity-hook:session/thread:tool";
   const original = "long hook output";
   const redirected = await redirectLargeToolOutput(
     new ToolMessage({ content: original, tool_call_id: outputId }),
     {
-      dataDir: root,
       maxTokens: 1,
       sessionId: "demo-session",
     },
   );
-  const outputPath = onlyOutputPath(root);
+  const outputPath = onlyOutputPath("demo-session");
   expect(readFileSync(outputPath, "utf8")).toBe(original);
   expect(redirected.content).toContain(outputPath);
 });
 test("uses compact URL-safe large output file names", async () => {
-  const root = makeDir();
   await redirectLargeToolOutput(new ToolMessage({ content: "long output", tool_call_id: "call" }), {
-    dataDir: root,
     maxTokens: 1,
     sessionId: "demo-session",
   });
-  const names = readdirSync(join(root, "sessions", "demo-session", "large_output"));
+  const names = readdirSync(join(resolveSessionPaths("demo-session").dir, "large_output"));
   expect(names).toHaveLength(1);
   expect(names[0]).toMatch(/^[0-9a-z]{8}\.txt$/);
 });
 test("keeps MCP images outside the text size limit", async () => {
-  const root = makeDir();
   const imageData = "A".repeat(1024 * 1024);
   const imageMessage = new ToolMessage({
     content: JSON.stringify({
@@ -96,12 +88,10 @@ test("keeps MCP images outside the text size limit", async () => {
     tool_call_id: "call-3",
   });
   const imageRedirected = await redirectLargeToolOutput(imageMessage, {
-    dataDir: root,
     maxTokens: 1,
     sessionId: "demo",
   });
   const errorRedirected = await redirectLargeToolOutput(errorMessage, {
-    dataDir: root,
     maxTokens: 1,
     sessionId: "demo",
   });
@@ -111,7 +101,6 @@ test("keeps MCP images outside the text size limit", async () => {
   expect(errorRedirected).toBe(errorMessage);
 });
 test("redirects mixed output text without removing its image", async () => {
-  const root = makeDir();
   const text = "long text ".repeat(100);
   const image = {
     data: "A".repeat(1024 * 1024),
@@ -125,7 +114,6 @@ test("redirects mixed output text without removing its image", async () => {
       tool_call_id: "call-4",
     }),
     {
-      dataDir: root,
       maxTokens: 1,
       sessionId: "demo",
     },
@@ -135,13 +123,8 @@ test("redirects mixed output text without removing its image", async () => {
     image,
   ]);
 });
-function makeDir() {
-  const dir = createTestDirectory("large-output");
-  dirs.push(dir);
-  return dir;
-}
-function onlyOutputPath(root: string) {
-  const directory = join(root, "sessions", "demo-session", "large_output");
+function onlyOutputPath(sessionId: string) {
+  const directory = join(userDataDirectory(), "sessions", sessionId, "large_output");
   const [name] = readdirSync(directory);
   return join(directory, name ?? "");
 }

@@ -16,6 +16,7 @@ import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
+import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
 export interface AppServerOptions {
   root: string;
@@ -28,7 +29,7 @@ export async function startAppServer(options: AppServerOptions) {
   const settings = loadSettings(options.root, { settingsContext });
   const host = options.host ?? settings.server.host;
   const port = options.port ?? settings.server.port;
-  const lock = AppInstanceLock.acquire(settings.paths.dataDir);
+  const lock = AppInstanceLock.acquire(userDataDirectory());
   const shutdown = listenForShutdownSignal();
   let access: AccessService | undefined;
   let controller: AppController | undefined;

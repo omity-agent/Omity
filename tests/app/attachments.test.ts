@@ -1,23 +1,17 @@
 import { afterEach, expect, test } from "bun:test";
 import { attachmentPlaceholder, validateAttachmentBatch } from "../../src/app/attachments/contract";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
-import { createTestDirectory } from "../support/artifacts";
-import { join } from "node:path";
+import { readFileSync, rmSync } from "node:fs";
 import { required } from "../support/database";
+import { resolveSessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { saveMessageAttachments } from "../../src/app/attachments/storage";
 import { testSettings } from "../support/settings";
 
-const dirs: string[] = [];
 afterEach(() => {
-  for (const dir of dirs.splice(0)) {
-    rmSync(dir, { force: true, recursive: true });
-  }
+  rmSync(resolveSessionPaths("session").dir, { force: true, recursive: true });
 });
 test("referenced pasted files are saved and placeholders become absolute paths", async () => {
-  const root = temporaryDirectory();
-  const settings = testSettings(root);
+  const settings = testSettings();
   const sessionId = "session";
-  mkdirSync(join(root, "sessions", sessionId), { recursive: true });
   const id = "a1b2c3d4";
   const placeholder = attachmentPlaceholder(id, "../notes.txt");
   const saved = await saveMessageAttachments(
@@ -34,8 +28,7 @@ test("referenced pasted files are saved and placeholders become absolute paths",
   expect(readFileSync(savedPath, "utf8")).toBe("hello");
 });
 test("unreferenced files are ignored and missing references are rejected", async () => {
-  const root = temporaryDirectory();
-  const settings = testSettings(root);
+  const settings = testSettings();
   const id = "a1b2c3d4";
   const ignored = await saveMessageAttachments(settings, "session", "hello", [
     { file: new File(["hello"], "notes.txt"), id },
@@ -69,8 +62,3 @@ test("malformed attachment metadata is rejected explicitly", () => {
     validateAttachmentBatch([{ name: "notes.txt" }], settings);
   }).toThrow("附件 notes.txt 的大小无效");
 });
-function temporaryDirectory() {
-  const directory = createTestDirectory("attachments");
-  dirs.push(directory);
-  return directory;
-}

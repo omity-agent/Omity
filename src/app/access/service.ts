@@ -29,7 +29,7 @@ export class AccessService {
       settings.access.trustedProxies,
       settings.access.publicOrigin !== null,
     );
-    this.store = new AccessStore(settings.paths.dataDir);
+    this.store = new AccessStore();
     this.ceremony = new WebAuthnCeremony(settings, this.store);
     this.limiter = new RateLimiterMemory({
       blockDuration: Math.ceil(settings.access.loginRateLimit.windowMs / 1000),

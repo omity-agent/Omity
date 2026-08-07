@@ -22,13 +22,8 @@ export function prepareHostSession(
 ) {
   const workspace = normalizeWorkspacePath(options.cwd ?? root, root);
   const baseContext = options.settingsContext ?? createSettingsContext(root);
-  const baseSettings = loadSettings(root, {
-    cwd: workspace,
-    sessionId: mode.sessionId,
-    settingsContext: baseContext,
-  });
   if (mode.kind === "load") {
-    const paths = resolveSessionPaths(baseSettings, mode.sessionId);
+    const paths = resolveSessionPaths(mode.sessionId);
     const db = openLoadedDatabase(paths.dbPath, mode, options.recoverInterrupted ?? false);
     try {
       const profiles = db.profiles(mode.sessionId);
@@ -51,7 +46,7 @@ export function prepareHostSession(
     sessionId: mode.sessionId,
     settingsContext,
   });
-  const paths = prepareWritableSession(baseSettings, mode);
+  const paths = prepareWritableSession(mode);
   const db = new AgentDatabase(paths.dbPath);
   try {
     db.createSession(mode.sessionId, workspace, profiles);
@@ -61,8 +56,8 @@ export function prepareHostSession(
     throw error;
   }
 }
-function prepareWritableSession(settings: ReturnType<typeof loadSettings>, mode: HostMode) {
-  const planned = resolveSessionPaths(settings, mode.sessionId);
+function prepareWritableSession(mode: HostMode) {
+  const planned = resolveSessionPaths(mode.sessionId);
   const exists = existsSync(planned.dir);
   if (mode.kind === "new" && exists) {
     throw sessionConflict(mode.sessionId);
@@ -73,7 +68,7 @@ function prepareWritableSession(settings: ReturnType<typeof loadSettings>, mode:
   if (mode.kind === "overwrite") {
     removeDatabaseDirectory(planned.dir);
   }
-  return sessionPaths(settings, mode.sessionId);
+  return sessionPaths(mode.sessionId);
 }
 function openLoadedDatabase(path: string, mode: HostMode, recoverInterrupted: boolean) {
   if (!existsSync(path)) {

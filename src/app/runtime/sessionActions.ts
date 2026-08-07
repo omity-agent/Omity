@@ -6,6 +6,7 @@ import { createSessionWithAttachments } from "../attachments/session";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import { resolve } from "node:path";
+import { userDataDirectory } from "../../infrastructure/configuration/settings/files";
 
 export async function createAppSession(
   appRoot: string,
@@ -14,7 +15,7 @@ export async function createAppSession(
   profiles: string[],
 ) {
   const workspace = normalizeWorkspacePath(submission.workspace, appRoot);
-  const sessionId = reserveSessionId(settings);
+  const sessionId = reserveSessionId();
   try {
     await createSessionWithAttachments({
       attachments: submission.attachments,
@@ -26,7 +27,7 @@ export async function createAppSession(
       workspace,
     });
   } catch (error) {
-    removeSessionStorage(settings, sessionId);
+    removeSessionStorage(sessionId);
     throw error;
   }
   return { sessionId, workspace };
@@ -34,18 +35,16 @@ export async function createAppSession(
 export async function createAppFork(options: {
   beforeMessageId: number;
   pauseSource: () => Promise<unknown>;
-  settings: Settings;
   sourceSessionId: string;
   workspace: string;
   profiles: string[];
 }) {
-  const targetSessionId = reserveSessionId(options.settings);
+  const targetSessionId = reserveSessionId();
   let targetCreated = false;
   try {
     forkSessionStorage({
       beforeMessageId: options.beforeMessageId,
       profiles: options.profiles,
-      settings: options.settings,
       sourceSessionId: options.sourceSessionId,
       targetSessionId,
       workspace: options.workspace,
@@ -54,14 +53,14 @@ export async function createAppFork(options: {
     await options.pauseSource();
   } catch (error) {
     if (targetCreated) {
-      removeSessionStorage(options.settings, targetSessionId);
+      removeSessionStorage(targetSessionId);
     }
     throw error;
   }
   return targetSessionId;
 }
-function reserveSessionId(settings: Settings) {
-  const sessionsDir = resolve(settings.paths.dataDir, "sessions");
+function reserveSessionId() {
+  const sessionsDir = resolve(userDataDirectory(), "sessions");
   mkdirSync(sessionsDir, { recursive: true });
   return claimShortId((id) => {
     try {

@@ -1,10 +1,13 @@
 import { afterEach, expect, test } from "bun:test";
 import { join, resolve } from "node:path";
+import {
+  loadUserEnvironment,
+  userDataDirectory,
+} from "../../src/infrastructure/configuration/settings/files";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
 import { createTestDirectory } from "../support/artifacts";
 import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
-import { loadUserEnvironment } from "../../src/infrastructure/configuration/settings/files";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { writeTestConfiguration } from "../support/configuration";
 
@@ -46,7 +49,6 @@ test("settings resolve global and session placeholders in their allowed scopes",
   process.env[environmentName] = environment;
   mkdirSync(workspace);
   writeTestConfiguration(root, {
-    dataDir: `\${${environmentName}}/data`,
     hooksYaml: `hooks:
   - id: "\${session}"
     target: agent
@@ -69,9 +71,8 @@ timeoutMs: 1000
     systemPrompt: `system: \${session}|\${cwd}|\${appData}|\${${environmentName}}`,
   });
   const settings = loadSettings(root, { cwd: workspace, sessionId: "session-id" });
-  expect(settings.paths.dataDir).toBe(resolve(root, environment, "data"));
   expect(settings.model.model).toBe(environment);
-  const session = forwardSlashPath(resolve(settings.paths.dataDir, "sessions", "session-id"));
+  const session = forwardSlashPath(resolve(userDataDirectory(), "sessions", "session-id"));
   const expanded = `${session}|${forwardSlashPath(workspace)}|${appDataRoot()}|${environment}`;
   expect(settings.agent.systemPrompt).toBe(`system: ${expanded}\n\nskills: ${expanded}`);
   expect(settings.hooks[0]?.id).toBe(session);
@@ -79,14 +80,6 @@ timeoutMs: 1000
     output: `\${toolOutputs.fromEnd.1.output}`,
     paths: expanded,
   });
-});
-test("settings reject session placeholders outside prompts and hooks", () => {
-  const root = createTestDirectory("placeholders");
-  directories.push(root);
-  writeTestConfiguration(root, { dataDir: `\${session}` });
-  expect(() => loadSettings(root, { sessionId: "session-id" })).toThrow(
-    `会话占位符 \${session} 没有可用值`,
-  );
 });
 test("hook variables resolve the session directory", () => {
   const session = String.raw`F:\data\sessions\abc`;

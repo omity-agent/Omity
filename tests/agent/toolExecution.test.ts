@@ -17,7 +17,7 @@ test("structured tool artifacts remain available to Hook output references", asy
   const invoke = createToolInvoker([tool], {
     freeformToolParameters: new Map(),
     sessionId: "session",
-    settings: testSettings("F:/tmp"),
+    settings: testSettings(),
   });
   const output = await invoke(
     { args: { value: "ok" }, id: "call", name: "structured", type: "tool_call" },

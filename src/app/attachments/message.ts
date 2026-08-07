@@ -5,7 +5,6 @@ import { saveMessageAttachments } from "./storage";
 
 export async function enqueueMessageWithAttachments(
   settings: Settings,
-  appRoot: string,
   sessionId: string,
   content: string,
   attachments: PendingAttachment[],
@@ -14,7 +13,7 @@ export async function enqueueMessageWithAttachments(
   const saved = await saveMessageAttachments(settings, sessionId, content, attachments);
   try {
     await ensureHost();
-    const result = appendSessionMessage(sessionId, saved.content, appRoot);
+    const result = appendSessionMessage(sessionId, saved.content);
     return { ...result, content: saved.content };
   } catch (error) {
     await saved.discard();

@@ -19,7 +19,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     db,
     logger: new Logger("error", true),
     sessionId: "session",
-    settings: testSettings(workspace),
+    settings: testSettings(),
   };
   const state = createStreamLogState();
   recordAiStreamPart(

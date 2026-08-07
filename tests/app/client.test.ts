@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { cliParser } from "../../src/commandLine/parser";
 import { createTestDirectory } from "../support/artifacts";
-import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { parseSync } from "@optique/core/parser";
 import { rmSync } from "node:fs";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
@@ -44,11 +43,11 @@ test("command line parser rejects removed Oclif syntax", () => {
   ).toBeFalse();
 });
 test("client cancel during pause preserves pause state", () => {
-  const { dbPath, root } = makeSession("123");
+  const { dbPath } = makeSession("123");
   const db = new AgentDatabase(dbPath);
   db.setControl("123", "pause");
   db.close();
-  setSessionControl("123", "cancel", root);
+  setSessionControl("123", "cancel");
   const reopened = new AgentDatabase(dbPath);
   expect(reopened.control("123")).toBe("pause_cancel");
   reopened.close();
@@ -64,9 +63,10 @@ function makeSession(sessionId: string) {
   const root = createTestDirectory("client");
   dirs.push(root);
   writeTestConfiguration(root);
-  const paths = sessionPaths(loadSettings(root), sessionId);
+  const paths = sessionPaths(sessionId);
+  dirs.push(paths.dir);
   const db = new AgentDatabase(paths.dbPath);
   db.createSession(sessionId, root);
   db.close();
-  return { dbPath: paths.dbPath, root };
+  return { dbPath: paths.dbPath };
 }

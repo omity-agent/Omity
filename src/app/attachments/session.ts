@@ -21,7 +21,6 @@ export async function createSessionWithAttachments(options: {
   );
   try {
     createSessionStorage(
-      options.settings,
       options.sessionId,
       options.workspace,
       options.profiles,
@@ -30,7 +29,7 @@ export async function createSessionWithAttachments(options: {
     );
   } catch (error) {
     await saved.discard();
-    removeSessionStorage(options.settings, options.sessionId);
+    removeSessionStorage(options.sessionId);
     throw error;
   }
 }

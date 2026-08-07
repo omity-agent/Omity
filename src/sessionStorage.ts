@@ -1,25 +1,18 @@
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import { existsSync } from "node:fs";
-import { loadSettings } from "./infrastructure/configuration/settings/load";
 import { removeDatabaseDirectory } from "./infrastructure/database/connection";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "./errors";
 
-export function deleteHostSession(sessionId: string, root = process.cwd()) {
-  const settings = loadSettings(root);
-  const paths = resolveSessionPaths(settings, sessionId);
+export function deleteHostSession(sessionId: string) {
+  const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dir)) {
     throw sessionNotFound(sessionId);
   }
   removeDatabaseDirectory(paths.dir);
 }
-export function requestHostToolCancellation(
-  sessionId: string,
-  callId: string,
-  root = process.cwd(),
-) {
-  const settings = loadSettings(root);
-  const paths = resolveSessionPaths(settings, sessionId);
+export function requestHostToolCancellation(sessionId: string, callId: string) {
+  const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dbPath)) {
     throw sessionNotFound(sessionId);
   }

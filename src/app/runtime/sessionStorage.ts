@@ -1,20 +1,18 @@
 import { type InitialMessagePair, initialHistory } from "../initialState";
 import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
-import type { Settings } from "../../types";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/initialConversation";
 import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
 
 export function createSessionStorage(
-  settings: Settings,
   sessionId: string,
   workspace: string,
   profiles: string[],
   history: InitialMessagePair[],
   message: string,
 ) {
-  const paths = sessionPaths(settings, sessionId);
+  const paths = sessionPaths(sessionId);
   const db = new AgentDatabase(paths.dbPath);
   let initialized = false;
   try {
@@ -29,22 +27,20 @@ export function createSessionStorage(
   }
 }
 export function forkSessionStorage({
-  settings,
   sourceSessionId,
   targetSessionId,
   workspace,
   profiles,
   beforeMessageId,
 }: {
-  settings: Settings;
   sourceSessionId: string;
   targetSessionId: string;
   workspace: string;
   profiles: string[];
   beforeMessageId: number;
 }) {
-  const sourcePaths = resolveSessionPaths(settings, sourceSessionId);
-  const targetPaths = sessionPaths(settings, targetSessionId);
+  const sourcePaths = resolveSessionPaths(sourceSessionId);
+  const targetPaths = sessionPaths(targetSessionId);
   let created = false;
   let source: AgentDatabase | undefined;
   let target: AgentDatabase | undefined;
@@ -75,6 +71,6 @@ export function forkSessionStorage({
     }
   }
 }
-export function removeSessionStorage(settings: Settings, sessionId: string) {
-  removeDatabaseDirectory(resolveSessionPaths(settings, sessionId).dir);
+export function removeSessionStorage(sessionId: string) {
+  removeDatabaseDirectory(resolveSessionPaths(sessionId).dir);
 }

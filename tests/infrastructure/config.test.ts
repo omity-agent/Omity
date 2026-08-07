@@ -1,12 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
+import { createTestDirectory, testArtifactsRoot } from "../support/artifacts";
 import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { safeId, sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import { appDataRoot } from "../../src/infrastructure/configuration/placeholders";
-import { createTestDirectory } from "../support/artifacts";
 import { loadHookRules } from "../../src/infrastructure/configuration/hookRules";
 import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { resolveHookArgs } from "../../src/hooks/variables";
+import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { writeTestConfiguration } from "../support/configuration";
 
 const dirs: string[] = [];
@@ -15,32 +15,25 @@ afterEach(() => {
     rmSync(dir, { force: true, recursive: true });
   }
 });
-test("settings yaml resolves AppData data directory", () => {
+test("settings use the unified user data directory", () => {
   const root = createTestDirectory("configuration");
-  const appData = join(root, "app-data");
   dirs.push(root);
-  writeTestConfiguration(root, {
-    dataDir: `\${appData}/omity-agent`,
+  writeTestConfiguration(root);
+  const settings = loadSettings(root);
+  const directory = resolve(testArtifactsRoot, "user-data");
+  expect(userDataDirectory()).toBe(directory);
+  expect(settings).not.toHaveProperty("paths");
+  expect(settings.model.reasoning_effort).toBe("medium");
+  expect(settings.server).toEqual({ host: "127.0.0.1", port: 3030 });
+  expect(settings.toolOutput.maxTokens).toBe(8192);
+  expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
+  const paths = sessionPaths("abc-def");
+  expect(paths).toEqual({
+    dbPath: resolve(directory, "sessions", safeId("abc-def"), "agent.sqlite"),
+    dir: resolve(directory, "sessions", safeId("abc-def")),
   });
-  const restoreAppDataRoot = setAppDataRoot(appData);
-  try {
-    const settings = loadSettings(root);
-    mkdirSync(settings.paths.dataDir, { recursive: true });
-    expect(settings.paths.dataDir).toBe(resolve(appDataRoot(), "omity-agent"));
-    expect(settings.model.reasoning_effort).toBe("medium");
-    expect(settings.server).toEqual({ host: "127.0.0.1", port: 3030 });
-    expect(settings.toolOutput.maxTokens).toBe(8192);
-    expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
-    const paths = sessionPaths(settings, "abc-def");
-    expect(paths).toEqual({
-      dbPath: resolve(settings.paths.dataDir, "sessions", safeId("abc-def"), "agent.sqlite"),
-      dir: resolve(settings.paths.dataDir, "sessions", safeId("abc-def")),
-    });
-    expect(() => sessionPaths(settings, "abc/def")).toThrow("路径 ID 无效");
-    expect(() => sessionPaths(settings, "abc:def")).toThrow("路径 ID 无效");
-  } finally {
-    restoreAppDataRoot();
-  }
+  expect(() => sessionPaths("abc/def")).toThrow("路径 ID 无效");
+  expect(() => sessionPaths("abc:def")).toThrow("路径 ID 无效");
 });
 test("prompt files expand current working directory placeholder", () => {
   const root = createTestDirectory("configuration");
@@ -52,7 +45,6 @@ test("prompt files expand current working directory placeholder", () => {
     systemPrompt: `workspace: \${cwd}`,
   });
   const settings = loadSettings(root, { cwd: workspace });
-  expect(settings.paths.dataDir).toBe(resolve(root, "data"));
   const displayedWorkspace = workspace.replaceAll("\\", "/");
   expect(settings.agent.systemPrompt).toBe(
     `workspace: ${displayedWorkspace}\n\nskills from ${displayedWorkspace}`,
@@ -72,7 +64,7 @@ test("user settings deeply override defaults and preserve relative path semantic
   writeFileSync(join(userSettingsDir, "profile.yaml"), "- base\n- work\n");
   writeFileSync(
     join(userSettingsDir, "main.yaml"),
-    `paths: { dataDir: ./user-data }\nserver: { port: 4040 }\naccess:\n  loginRateLimit: { attempts: 3 }\n`,
+    `server: { port: 4040 }\naccess:\n  loginRateLimit: { attempts: 3 }\n`,
   );
   writeFileSync(join(baseProfileDir, "model.yaml"), "model: base-model\ntimeoutMs: 2000\n");
   writeFileSync(join(profileDir, "model.yaml"), "model: user-model\n");
@@ -88,7 +80,6 @@ test("user settings deeply override defaults and preserve relative path semantic
   writeFileSync(join(profileDir, "prompts", "system.md"), "user system\n");
   writeFileSync(join(profileDir, "prompts", "profile.md"), "profile only\n");
   const settings = loadSettings(root, { userSettingsDir });
-  expect(settings.paths.dataDir).toBe(resolve(root, "user-data"));
   expect(settings.server).toEqual({ host: "127.0.0.1", port: 4040 });
   expect(settings.access.loginRateLimit).toEqual({ attempts: 3, windowMs: 60_000 });
   expect([settings.model.adapter, settings.model.model]).toEqual(["completions", "user-model"]);
@@ -181,19 +172,3 @@ test("hook variables preserve exact values and reject ambiguous output", () => {
     ),
   ).toThrow("超出工具输出范围");
 });
-function setAppDataRoot(path: string) {
-  const names = ["APPDATA", "HOME", "XDG_DATA_HOME"] as const;
-  const previous = new Map(names.map((name) => [name, process.env[name]]));
-  for (const name of names) {
-    process.env[name] = path;
-  }
-  return () => {
-    for (const [name, value] of previous) {
-      if (value === undefined) {
-        Reflect.deleteProperty(process.env, name);
-      } else {
-        process.env[name] = value;
-      }
-    }
-  };
-}

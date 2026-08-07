@@ -5,11 +5,11 @@ import { AppController } from "../../src/app/controller";
 import { createTestDirectory } from "../support/artifacts";
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { join } from "node:path";
-import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { randomUUID } from "node:crypto";
 import { recoverHostSession } from "../../src/runtime/execution/recovery";
 import { required } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { writeTestConfiguration } from "../support/configuration";
 
 const roots: string[] = [];
@@ -17,6 +17,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) {
     rmSync(root, { force: true, recursive: true });
   }
+  rmSync(join(userDataDirectory(), "sessions"), { force: true, recursive: true });
 });
 test("app startup atomically pauses an orphaned run", async () => {
   const fixture = interruptedSession("orphan");
@@ -47,7 +48,7 @@ test("app startup reclaims the lease of its terminated predecessor", async () =>
   });
   fixture.db.close();
   const controller = new AppController(fixture.root, { abandonedOwner });
-  const reopened = openSession(fixture.root, "abandoned");
+  const reopened = openSession("abandoned");
   expect(reopened.control("abandoned")).toBe("pause");
   expect(reopened.queueStatus(fixture.queueId)).toBe("paused");
   expect(reopened.hostLease("abandoned")).toBeNull();
@@ -68,7 +69,7 @@ test("app startup never takes over a live standalone host", async () => {
   });
   fixture.db.close();
   const controller = new AppController(fixture.root);
-  const reopened = openSession(fixture.root, "live");
+  const reopened = openSession("live");
   expect(reopened.control("live")).toBe("running");
   expect(reopened.queueStatus(fixture.queueId)).toBe("running");
   expect(reopened.hostLease("live")).not.toBeNull();
@@ -99,7 +100,7 @@ test("resume stays paused when Host initialization fails", async () => {
   const controller = new AppController(fixture.root);
   const failure = await captureFailure(controller.control("resume-failure", "running"));
   expect(failure.message).toContain("MCP");
-  const reopened = openSession(fixture.root, "resume-failure");
+  const reopened = openSession("resume-failure");
   expect(reopened.control("resume-failure")).toBe("pause");
   expect(reopened.queueStatus(fixture.queueId)).toBe("paused");
   reopened.close();
@@ -111,15 +112,14 @@ function interruptedSession(sessionId: string) {
   writeTestConfiguration(root);
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const db = openSession(root, sessionId);
+  const db = openSession(sessionId);
   db.createSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "运行中的输入");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
   return { db, queueId, root };
 }
-function openSession(root: string, sessionId: string) {
-  const settings = loadSettings(root);
-  return new AgentDatabase(sessionPaths(settings, sessionId).dbPath);
+function openSession(sessionId: string) {
+  return new AgentDatabase(sessionPaths(sessionId).dbPath);
 }
 async function captureFailure(promise: Promise<unknown>) {
   let failure: unknown;

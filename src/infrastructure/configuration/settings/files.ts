@@ -21,7 +21,8 @@ interface LayeredSettingsTransforms {
   override?: OverrideTransform;
 }
 export function userDataDirectory() {
-  return join(homedir(), ".omity");
+  const configured = process.env["OMITY_HOME"];
+  return configured ? resolve(untildify(configured)) : join(homedir(), ".omity");
 }
 export function userEnvironmentPath() {
   return join(userDataDirectory(), ".env");
@@ -36,8 +37,7 @@ export function loadUserEnvironment(path = userEnvironmentPath()) {
   }
 }
 export function userSettingsDirectory() {
-  const configured = process.env["OMITY_SETTINGS_DIR"];
-  return configured ? resolve(untildify(configured)) : join(userDataDirectory(), "settings");
+  return join(userDataDirectory(), "settings");
 }
 export function readLayeredSettingsYaml(
   context: SettingsContext,

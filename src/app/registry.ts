@@ -1,4 +1,3 @@
-import type { Control, Settings } from "../types";
 import { type ErrorDetails, parseError } from "../failures/details";
 import {
   closeDatabase,
@@ -6,11 +5,13 @@ import {
   queryGet,
 } from "../infrastructure/database/connection";
 import { existsSync, readdirSync } from "node:fs";
+import type { Control } from "../types";
 import { Database } from "bun:sqlite";
 import { resolve } from "node:path";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
 import { settingsProfileNamesSchema } from "../infrastructure/configuration/settings/context";
+import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
 export interface RegisteredSession {
   id: string;
@@ -65,9 +66,9 @@ const sessionSelect = `
 export class AppRegistry {
   private readonly sessionsDir: string;
   private readonly sessions = new Map<string, RegisteredSession>();
-  constructor(private readonly settings: Settings) {
-    this.sessionsDir = resolve(settings.paths.dataDir, "sessions");
-    for (const session of scanSessions(this.settings, this.sessionsDir)) {
+  constructor() {
+    this.sessionsDir = resolve(userDataDirectory(), "sessions");
+    for (const session of scanSessions(this.sessionsDir)) {
       this.sessions.set(session.id, session);
     }
   }
@@ -82,7 +83,7 @@ export class AppRegistry {
     return session;
   }
   refresh(id: string) {
-    const session = readSession(resolveSessionPaths(this.settings, id).dbPath, id, false);
+    const session = readSession(resolveSessionPaths(id).dbPath, id, false);
     this.sessions.set(id, session);
     return session;
   }
@@ -92,13 +93,13 @@ export class AppRegistry {
     }
   }
 }
-function scanSessions(settings: Settings, sessionsDir: string) {
+function scanSessions(sessionsDir: string) {
   if (!existsSync(sessionsDir)) {
     return [];
   }
   return readdirSync(sessionsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => readSession(resolveSessionPaths(settings, entry.name).dbPath, undefined, true));
+    .map((entry) => readSession(resolveSessionPaths(entry.name).dbPath, undefined, true));
 }
 function compareSessions(left: RegisteredSession, right: RegisteredSession) {
   return right.updatedAt - left.updatedAt || right.createdAt - left.createdAt;

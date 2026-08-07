@@ -55,9 +55,6 @@ export interface HookRule {
   args: Record<string, unknown>;
 }
 export interface Settings {
-  paths: {
-    dataDir: string;
-  };
   server: {
     host: string;
     port: number;

@@ -140,9 +140,6 @@ const mainSettingsSchema = z
       level: z.enum(["debug", "info", "warn", "error"]),
       streamTokens: z.boolean(),
     }),
-    paths: z.object({
-      dataDir: z.string().min(1),
-    }),
     server: z
       .object({
         host: z.string().min(1),

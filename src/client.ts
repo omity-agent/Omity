@@ -1,18 +1,17 @@
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import type { Control } from "./types";
 import { existsSync } from "node:fs";
-import { loadSettings } from "./infrastructure/configuration/settings/load";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "./errors";
 
 type ClientControl = Control;
-export function appendSessionMessage(sessionId: string, content: string, root = process.cwd()) {
-  return withSessionDatabase(sessionId, root, (db) => ({
+export function appendSessionMessage(sessionId: string, content: string) {
+  return withSessionDatabase(sessionId, (db) => ({
     queueId: db.appendUser(sessionId, content),
   }));
 }
-export function setSessionControl(sessionId: string, control: ClientControl, root = process.cwd()) {
-  return withSessionDatabase(sessionId, root, (db) => {
+export function setSessionControl(sessionId: string, control: ClientControl) {
+  return withSessionDatabase(sessionId, (db) => {
     const stored =
       control === "cancel" &&
       (db.control(sessionId) === "pause" || db.control(sessionId) === "pause_cancel")
@@ -22,13 +21,8 @@ export function setSessionControl(sessionId: string, control: ClientControl, roo
     return { control };
   });
 }
-function withSessionDatabase<T>(
-  sessionId: string,
-  root: string,
-  operation: (db: AgentDatabase) => T,
-) {
-  const settings = loadSettings(root);
-  const paths = resolveSessionPaths(settings, sessionId);
+function withSessionDatabase<T>(sessionId: string, operation: (db: AgentDatabase) => T) {
+  const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dbPath)) {
     throw sessionNotFound(sessionId);
   }

@@ -1,6 +1,6 @@
 import type { Settings } from "../../src/types";
 
-export function testSettings(dataDir: string): Settings {
+export function testSettings(): Settings {
   return {
     access: {
       challengeTtlMs: 300_000,
@@ -36,7 +36,6 @@ export function testSettings(dataDir: string): Settings {
       temperature: 0,
       timeoutMs: 1000,
     },
-    paths: { dataDir },
     server: { host: "127.0.0.1", port: 3030 },
     skills: {
       directory: "~/.agents/skills",

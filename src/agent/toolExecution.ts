@@ -78,7 +78,6 @@ async function normalizeOutput(
     ? value
     : toolMessage(messageContent(value), call, callId);
   return redirectLargeToolOutput(message, {
-    dataDir: options.settings.paths.dataDir,
     maxTokens: options.settings.toolOutput.maxTokens,
     sessionId: options.sessionId,
   });

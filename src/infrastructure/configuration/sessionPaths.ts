@@ -1,14 +1,14 @@
-import type { Settings } from "../../types";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { userDataDirectory } from "./settings/files";
 
-export function sessionPaths(settings: Settings, sessionId: string) {
-  const paths = resolveSessionPaths(settings, sessionId);
+export function sessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
+  const paths = resolveSessionPaths(sessionId, storageDirectory);
   mkdirSync(paths.dir, { recursive: true });
   return paths;
 }
-export function resolveSessionPaths(settings: Settings, sessionId: string) {
-  const dir = resolve(settings.paths.dataDir, "sessions", safeId(sessionId));
+export function resolveSessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
+  const dir = resolve(storageDirectory, "sessions", safeId(sessionId));
   const dbPath = resolve(dir, "agent.sqlite");
   return { dbPath, dir };
 }

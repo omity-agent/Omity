@@ -45,9 +45,9 @@ export class AppController {
   ) {
     this.settingsContext = options.settingsContext ?? createSettingsContext(appRoot);
     this.settings = loadSettings(appRoot, { settingsContext: this.settingsContext });
-    const discovered = new AppRegistry(this.settings);
-    recoverAppSessions(this.settings, discovered.list(), options.abandonedOwner);
-    this.registry = new AppRegistry(this.settings);
+    const discovered = new AppRegistry();
+    recoverAppSessions(discovered.list(), options.abandonedOwner);
+    this.registry = new AppRegistry();
     this.events = new AppEvents();
     const owner = options.owner ?? appOwner();
     const mcp = new AppMcp((profiles) =>
@@ -109,37 +109,36 @@ export class AppController {
     const session = this.registry.require(sessionId);
     const result = await enqueueMessageWithAttachments(
       this.settings,
-      this.appRoot,
       sessionId,
       submission.content,
       submission.attachments,
       () => this.ensureHost(session),
     );
-    clearSessionDraft(this.settings, sessionId, submission.draftRevision);
+    clearSessionDraft(sessionId, submission.draftRevision);
     this.hosts.clearError(sessionId);
     this.publishChange(sessionId);
     return result;
   }
   composerDraft(sessionId: string) {
     this.registry.require(sessionId);
-    return readSessionDraft(this.settings, sessionId);
+    return readSessionDraft(sessionId);
   }
   saveComposerDraft(sessionId: string, content: string, revision: number) {
     this.registry.require(sessionId);
-    return writeSessionDraft(this.settings, sessionId, content, revision);
+    return writeSessionDraft(sessionId, content, revision);
   }
   async control(sessionId: string, control: Control) {
     const session = this.registry.require(sessionId);
     if (control === "running") {
       await this.ensureHost(session);
     }
-    const result = setSessionControl(sessionId, control, this.appRoot);
+    const result = setSessionControl(sessionId, control);
     this.publishChange(sessionId);
     return result;
   }
   cancelTool(sessionId: string, toolCallId: string) {
     this.registry.require(sessionId);
-    const result = cancelSessionTool(this.hosts, this.appRoot, sessionId, toolCallId);
+    const result = cancelSessionTool(this.hosts, sessionId, toolCallId);
     this.publishChange(sessionId);
     return result;
   }
@@ -149,7 +148,6 @@ export class AppController {
       beforeMessageId,
       pauseSource: () => this.control(sessionId, "pause"),
       profiles: session.profiles,
-      settings: this.settings,
       sourceSessionId: sessionId,
       workspace: session.workspace,
     });
@@ -162,7 +160,7 @@ export class AppController {
   async deleteSession(sessionId: string) {
     this.registry.require(sessionId);
     await this.hosts.stop(sessionId);
-    deleteHostSession(sessionId, this.appRoot);
+    deleteHostSession(sessionId);
     this.hosts.clearError(sessionId);
     this.registry.remove(sessionId);
     this.events.notifyDeleted(sessionId);
@@ -170,14 +168,14 @@ export class AppController {
   }
   transcript(sessionId: string) {
     this.registry.require(sessionId);
-    return loadSessionTranscript(this.settings, sessionId);
+    return loadSessionTranscript(sessionId);
   }
   eventCursor(sessionId: string) {
     this.registry.require(sessionId);
-    return loadSessionEventCursor(this.settings, sessionId);
+    return loadSessionEventCursor(sessionId);
   }
   private ensureHost(session: RegisteredSession) {
-    if (!this.hosts.has(session.id) && hasLiveHostLease(this.settings, session.id)) {
+    if (!this.hosts.has(session.id) && hasLiveHostLease(session.id)) {
       return Promise.resolve();
     }
     return this.hosts.ensure(session.id, session.workspace);

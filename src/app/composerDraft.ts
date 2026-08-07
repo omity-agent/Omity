@@ -1,13 +1,12 @@
 import { eq, gt, gte, sql } from "drizzle-orm";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Database } from "bun:sqlite";
-import type { Settings } from "../types";
 import { composerDrafts } from "../infrastructure/database/schema";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionDatabase } from "../infrastructure/database/connection";
 
-export function readSessionDraft(settings: Settings, sessionId: string) {
-  return withSessionDatabase(settings, sessionId, (db) => {
+export function readSessionDraft(sessionId: string) {
+  return withSessionDatabase(sessionId, (db) => {
     const row = sessionDatabase(db)
       .select({ content: composerDrafts.content, revision: composerDrafts.revision })
       .from(composerDrafts)
@@ -22,13 +21,8 @@ export function readSessionDraft(settings: Settings, sessionId: string) {
     };
   });
 }
-export function writeSessionDraft(
-  settings: Settings,
-  sessionId: string,
-  content: string,
-  revision: number,
-) {
-  return withSessionDatabase(settings, sessionId, (db) => {
+export function writeSessionDraft(sessionId: string, content: string, revision: number) {
+  return withSessionDatabase(sessionId, (db) => {
     const orm = sessionDatabase(db);
     orm
       .insert(composerDrafts)
@@ -50,8 +44,8 @@ export function writeSessionDraft(
     return row;
   });
 }
-export function clearSessionDraft(settings: Settings, sessionId: string, revision: number) {
-  withSessionDatabase(settings, sessionId, (db) => {
+export function clearSessionDraft(sessionId: string, revision: number) {
+  withSessionDatabase(sessionId, (db) => {
     sessionDatabase(db)
       .insert(composerDrafts)
       .values({ content: "", revision, sessionId, updatedAt: sql`unixepoch()` })
@@ -63,12 +57,8 @@ export function clearSessionDraft(settings: Settings, sessionId: string, revisio
       .run();
   });
 }
-function withSessionDatabase<T>(
-  settings: Settings,
-  sessionId: string,
-  operation: (db: Database) => T,
-) {
-  const { dbPath } = resolveSessionPaths(settings, sessionId);
+function withSessionDatabase<T>(sessionId: string, operation: (db: Database) => T) {
+  const { dbPath } = resolveSessionPaths(sessionId);
   const database = new AgentDatabase(dbPath);
   try {
     return operation(database.db);

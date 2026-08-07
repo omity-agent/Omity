@@ -21,7 +21,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       return;
     }
     case "delete": {
-      deleteHostSession(command.sessionId, root);
+      deleteHostSession(command.sessionId);
       console.log(`已删除会话 ${command.sessionId}`);
       return;
     }
@@ -39,7 +39,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       return;
     }
     case "append": {
-      const result = appendSessionMessage(command.sessionId, command.message.join(" "), root);
+      const result = appendSessionMessage(command.sessionId, command.message.join(" "));
       console.log(`已发送到会话 ${command.sessionId}（queue=${result.queueId.toString()}）`);
       return;
     }
@@ -47,7 +47,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     case "resume":
     case "cancel": {
       const control = command.action === "resume" ? "running" : command.action;
-      setSessionControl(command.sessionId, control, root);
+      setSessionControl(command.sessionId, control);
       console.log(`已发送控制指令 ${command.action} 到会话 ${command.sessionId}`);
       return;
     }

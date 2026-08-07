@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 interface TestConfigurationOptions {
   agentYaml?: string;
-  dataDir?: string;
   hooksYaml?: string;
   modelYaml?: string;
   systemPrompt?: string;
@@ -35,9 +34,7 @@ export function writeTestConfiguration(root: string, options: TestConfigurationO
   mkdirSync(promptsDir, { recursive: true });
   writeFileSync(
     join(settingsDir, "main.yaml"),
-    `paths:
-  dataDir: ${options.dataDir ?? "./data"}
-server:
+    `server:
   host: 127.0.0.1
   port: 3030
 access:

@@ -36,7 +36,7 @@ test("a paused run resumes from the model boundary without repeating the model c
     checkpointer: saver,
     hooks,
     model,
-    settings: testSettings(workspace),
+    settings: testSettings(),
     tools: [echo],
   });
   const stopping = new AbortController();
@@ -73,7 +73,7 @@ function context(
     graph,
     logger: new Logger("error", true),
     sessionId: "session",
-    settings: testSettings(workspace),
+    settings: testSettings(),
     stopping,
   };
 }

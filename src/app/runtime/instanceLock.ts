@@ -24,9 +24,9 @@ export class AppInstanceLock {
     readonly owner: AppInstanceOwner,
     readonly abandonedOwner?: AppInstanceOwner,
   ) {}
-  static acquire(dataDir: string) {
-    mkdirSync(dataDir, { recursive: true });
-    const path = resolve(dataDir, "app.lock");
+  static acquire(directory: string) {
+    mkdirSync(directory, { recursive: true });
+    const path = resolve(directory, "app.lock");
     let abandonedOwner: AppInstanceOwner | undefined;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const owner = { pid: process.pid, token: randomUUID() };
@@ -48,7 +48,7 @@ export class AppInstanceLock {
         const existingOwner = readOwner(path);
         if (isProcessRunning(existingOwner.pid)) {
           throw new Error(
-            `数据目录已有 App 在运行（PID ${existingOwner.pid.toString()}）：${dataDir}`,
+            `数据目录已有 App 在运行（PID ${existingOwner.pid.toString()}）：${directory}`,
             {
               cause: error,
             },

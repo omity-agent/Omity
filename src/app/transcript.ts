@@ -1,12 +1,12 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type DisplayMessage, type DisplayToolCall } from "./timeline";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
-import type { QueueStatus, Settings } from "../types";
 import { contentToText, messageReasoning } from "../runtime/content";
 import { freeformCallIds, rawFreeformInput } from "./timeline/freeform";
 import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import type { QueueStatus } from "../types";
 import { existsSync } from "node:fs";
 import { extractToolImages } from "../runtime/modelImages";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
@@ -30,18 +30,14 @@ interface QueueRow {
   user_message_id: number | null;
   root_id: number | null;
 }
-export function loadSessionTranscript(settings: Settings, sessionId: string) {
-  return withSessionDatabase(settings, sessionId, (db) => loadTranscript(db, sessionId));
+export function loadSessionTranscript(sessionId: string) {
+  return withSessionDatabase(sessionId, (db) => loadTranscript(db, sessionId));
 }
-export function loadSessionEventCursor(settings: Settings, sessionId: string) {
-  return withSessionDatabase(settings, sessionId, (db) => db.eventCursor());
+export function loadSessionEventCursor(sessionId: string) {
+  return withSessionDatabase(sessionId, (db) => db.eventCursor());
 }
-function withSessionDatabase<T>(
-  settings: Settings,
-  sessionId: string,
-  read: (db: AgentDatabase) => T,
-) {
-  const paths = resolveSessionPaths(settings, sessionId);
+function withSessionDatabase<T>(sessionId: string, read: (db: AgentDatabase) => T) {
+  const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dbPath)) {
     throw sessionNotFound(sessionId);
   }
