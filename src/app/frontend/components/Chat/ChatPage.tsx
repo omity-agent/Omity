@@ -9,6 +9,7 @@ import { NewSessionPage } from "../NewSession";
 import { TranscriptScroll } from "../TranscriptScroll";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
+import { findLatestDetail } from "./detailFocus";
 import { useTranslation } from "react-i18next";
 
 const page = css({
@@ -28,18 +29,6 @@ const empty = css({
   h: "full",
   placeItems: "center",
 });
-function findLatestDetail(view: TimelineMessage[]) {
-  for (let messageIndex = view.length - 1; messageIndex >= 0; messageIndex -= 1) {
-    const item = view[messageIndex];
-    if (item) {
-      const partIndex = item.parts.findLastIndex((part) => part.type !== "content");
-      if (partIndex !== -1) {
-        return { messageKey: item.key, partIndex };
-      }
-    }
-  }
-  return undefined;
-}
 export function ChatPage({
   activeId,
   attachmentSettings,
