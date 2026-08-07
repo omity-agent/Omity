@@ -1,16 +1,27 @@
-import { Button, IconButton } from "../../ParkUI";
-import { Pause, Play, Send, StepForward } from "lucide-react";
-import { composerActions, composerControls, resumeControls } from "./layout";
+import { LoaderCircle, Pause, Play, Send, StepForward } from "lucide-react";
+import { composerActions, composerControls, runtimeControls } from "./layout";
+import type { ChatControlState } from "../actionState";
 import { ContextUsage } from "../ContextUsage";
 import type { Control } from "../../../../../types";
 import { DeleteSessionButton } from "../DeleteSessionButton";
+import { IconButton } from "../../ParkUI";
 import type { TokenUsage } from "../../../../timeline";
+import { css } from "styled-system/css";
 import { reportPromiseErrors } from "../../../services/errors";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-type ControlState = "pause" | "pausing" | "resume";
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
+const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" });
+const sendAction = css({
+  _hover: {
+    bg: "mutedStrong",
+    borderColor: "mutedStrong",
+  },
+  bg: "text",
+  borderColor: "text",
+  color: "canvas",
+});
 export function Actions({
   controlDisabled,
   controlState,
@@ -21,7 +32,7 @@ export function Actions({
   onDelete,
 }: {
   controlDisabled: boolean;
-  controlState?: ControlState;
+  controlState?: ChatControlState;
   deleteDisabled: boolean;
   submitDisabled: boolean;
   usage?: TokenUsage | null;
@@ -51,7 +62,7 @@ export function Actions({
   const stepLabel = t("step");
   const control =
     controlState === "resume" ? (
-      <div aria-label={t("resume")} className={resumeControls} role="group">
+      <>
         <IconButton
           aria-label={resumeLabel}
           disabled={controlDisabled}
@@ -59,7 +70,7 @@ export function Actions({
           title={resumeLabel}
           type="button"
         >
-          <Play size={14} />
+          <Play size={16} />
         </IconButton>
         <IconButton
           aria-label={stepLabel}
@@ -68,28 +79,45 @@ export function Actions({
           title={stepLabel}
           type="button"
         >
-          <StepForward size={14} />
+          <StepForward size={16} />
         </IconButton>
-      </div>
+      </>
     ) : controlState ? (
       <IconButton
         aria-label={controlLabel}
         disabled={controlDisabled}
-        onClick={pause}
+        onClick={controlState === "pause" ? pause : undefined}
         title={controlLabel}
         type="button"
       >
-        <Pause size={14} />
+        {controlState === "pausing" ? (
+          <LoaderCircle className={activeIcon} size={16} />
+        ) : controlState === "stepping" ? (
+          <StepForward size={16} />
+        ) : (
+          <Pause size={16} />
+        )}
       </IconButton>
     ) : null;
+  const sendLabel = t("send");
   return (
     <div className={composerActions}>
       <div className={composerControls}>
-        <Button disabled={submitDisabled} type="submit" variant="outline">
-          <Send size={14} /> {t("send")}
-        </Button>
-        {onControl ? control : null}
         {onDelete ? <DeleteSessionButton disabled={deleteDisabled} onDelete={onDelete} /> : null}
+        {onControl ? (
+          <div aria-label={controlLabel} className={runtimeControls} role="group">
+            {control}
+          </div>
+        ) : null}
+        <IconButton
+          aria-label={sendLabel}
+          className={submitDisabled ? undefined : sendAction}
+          disabled={submitDisabled}
+          title={sendLabel}
+          type="submit"
+        >
+          <Send size={16} />
+        </IconButton>
       </div>
       {usage !== undefined ? <ContextUsage usage={usage} /> : null}
     </div>

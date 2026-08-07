@@ -22,18 +22,21 @@ export const composerActions = css({
   minW: { md: "controlColumn" },
 });
 export const composerControls = css({
-  "& > button": { minW: { _coarse: "11" } },
-  display: "grid",
-  gap: "2",
-  gridAutoColumns: { smDown: "minmax(0, 1fr)" },
-  gridAutoFlow: { base: "column", md: "row" },
-  w: { smDown: "full" },
+  alignItems: "center",
+  display: "flex",
+  gap: "1",
+  justifyContent: "flex-end",
+  w: "full",
 });
-export const resumeControls = css({
+export const runtimeControls = css({
   "& > button + button": { borderLeftWidth: "0" },
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  minW: "16",
+  "& > button:only-child": { w: "full" },
+  display: "flex",
+  justifyContent: "flex-end",
+  w: {
+    _coarse: "calc(token(sizes.11) + token(sizes.11))",
+    base: "16",
+  },
 });
 export const composerRole = css({
   alignItems: "center",

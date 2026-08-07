@@ -17,7 +17,7 @@ interface MatrixCase {
 const matrix: MatrixCase[] = [
   {
     control: "running",
-    expected: state("pause", true, false),
+    expected: state("resume", true, false),
     name: "idle session without active queue",
     queue: [],
     sessionStatus: "idle",
@@ -123,6 +123,20 @@ const matrix: MatrixCase[] = [
     name: "server-reported pause transition without a running queue snapshot",
     queue: [],
     sessionStatus: "pausing",
+  },
+  {
+    control: "step",
+    expected: state("stepping", true, true),
+    name: "step request before the paused queue resumes",
+    queue: ["paused"],
+    sessionStatus: "paused",
+  },
+  {
+    control: "step",
+    expected: state("stepping", true, true),
+    name: "running single step cannot be paused",
+    queue: ["running"],
+    sessionStatus: "model",
   },
 ];
 test.each(matrix)("derives chat actions for $name", (entry) => {

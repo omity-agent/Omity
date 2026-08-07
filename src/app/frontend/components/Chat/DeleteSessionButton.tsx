@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button } from "../ParkUI";
+import { IconButton } from "../ParkUI";
 import { Trash2 } from "lucide-react";
 import { css } from "styled-system/css";
 import { reportPromiseErrors } from "../../services/errors";
@@ -38,17 +38,17 @@ export function DeleteSessionButton({
     setConfirming(false);
     reportPromiseErrors(onDelete());
   }, [confirming, onDelete]);
+  const label = t(confirming ? "confirmDelete" : "deleteSession");
   return (
-    <Button
+    <IconButton
+      aria-label={label}
       className={confirming ? armed : undefined}
       disabled={disabled}
       onClick={handleDelete}
-      title={disabled ? t("pauseBeforeDelete") : undefined}
+      title={disabled ? t("pauseBeforeDelete") : label}
       type="button"
-      variant="ghost"
     >
-      <Trash2 size={14} />
-      {t(confirming ? "confirmDelete" : "deleteSession")}
-    </Button>
+      <Trash2 size={16} />
+    </IconButton>
   );
 }

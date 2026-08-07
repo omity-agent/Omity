@@ -16,8 +16,7 @@
     {
       "name": "@pandacss",
       "specifier": "@pandacss/eslint-plugin"
-    },
-    "eslint-plugin-i18next"
+    }
   ],
   "options": {
     "typeAware": true,

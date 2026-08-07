@@ -186,7 +186,7 @@ export function Composer({
         controlDisabled={controlDisabled}
         controlState={controlState}
         deleteDisabled={deleteDisabled}
-        submitDisabled={editorDisabled}
+        submitDisabled={editorDisabled || !content.trim()}
         usage={usage}
         onControl={onControl}
         onDelete={onDelete}

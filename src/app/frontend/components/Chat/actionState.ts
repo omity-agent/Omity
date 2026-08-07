@@ -1,7 +1,7 @@
 import type { Control, QueueStatus, SessionStatus } from "../../../../types";
 import { pauseRequested, resolvePausePhase } from "../../../pauseState";
 
-export type ChatControlState = "pause" | "pausing" | "resume";
+export type ChatControlState = "pause" | "pausing" | "resume" | "stepping";
 interface QueueState {
   status: QueueStatus;
 }
@@ -43,9 +43,17 @@ export function deriveChatActionState({
   });
   const resumable = pausePhase === "paused";
   const waitingForPause = pausePhase === "pausing";
+  const stepping = control === "step";
   return {
-    controlDisabled: waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
-    controlState: waitingForPause ? "pausing" : resumable ? "resume" : "pause",
-    sessionActionDisabled: sessionActive,
+    controlDisabled:
+      stepping || waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
+    controlState: stepping
+      ? "stepping"
+      : waitingForPause
+        ? "pausing"
+        : resumable || (sessionStatus === "idle" && !queueRunning)
+          ? "resume"
+          : "pause",
+    sessionActionDisabled: sessionActive || stepping,
   };
 }

@@ -93,7 +93,23 @@ export function LinkButton({
   });
 }
 export function IconButton(props: ButtonProps) {
-  const className = css({ minW: { _coarse: "11" } });
+  const className = css({
+    _disabled: {
+      _hover: {
+        bg: "surfaceInset",
+        borderColor: "line",
+        color: "muted",
+      },
+      bg: "surfaceInset",
+      borderColor: "line",
+      color: "muted",
+      opacity: 0.55,
+    },
+    h: { _coarse: "11", base: "8" },
+    minW: { _coarse: "11", base: "8" },
+    p: "0",
+    w: { _coarse: "11", base: "8" },
+  });
   return createElement(Button, {
     size: "sm",
     variant: "outline",
