@@ -31,7 +31,7 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "running",
-    expected: state("resume", false, false),
+    expected: state("resume", false, false, true),
     name: "persisted paused queue with stale running control",
     queue: ["paused"],
     sessionStatus: "idle",
@@ -45,7 +45,7 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "pause",
-    expected: state("resume", false, false),
+    expected: state("resume", false, false, true),
     name: "pending append remains resumable with its paused run",
     queue: ["paused", "pending"],
     sessionStatus: "paused",
@@ -104,7 +104,7 @@ const matrix: MatrixCase[] = [
   },
   {
     control: "running",
-    expected: state("resume", false, false),
+    expected: state("resume", false, false, true),
     name: "persisted pause supersedes a stale local pausing flag",
     pausing: true,
     queue: ["paused"],
@@ -162,10 +162,12 @@ function state(
   controlState: ChatActionState["controlState"],
   controlDisabled: boolean,
   sessionActionDisabled: boolean,
+  stepAvailable = false,
 ): ChatActionState {
   return {
     controlDisabled,
     controlState,
     sessionActionDisabled,
+    stepAvailable,
   };
 }

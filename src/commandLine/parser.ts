@@ -70,7 +70,7 @@ const clientCommand = command(
         sessionId,
         step: optional(
           flag("--step", {
-            description: message`只运行下一个模型或工具节点，然后再次暂停。`,
+            description: message`只运行下一次模型请求或同一批工具调用，然后再次暂停。`,
           }),
         ),
       }),

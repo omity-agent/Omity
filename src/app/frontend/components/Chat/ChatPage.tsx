@@ -154,6 +154,7 @@ export function ChatPage({
         key={forkDraft === undefined ? activeId : `draft:${forkDraft}`}
         userMessages={userMessages}
         usage={latestUsage}
+        stepAvailable={actionState.stepAvailable}
         onControl={onControl}
         onDelete={onDelete}
         onSend={onSend}

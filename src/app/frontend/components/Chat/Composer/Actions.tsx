@@ -27,6 +27,7 @@ export function Actions({
   controlState,
   deleteDisabled,
   submitDisabled,
+  stepAvailable = false,
   usage,
   onControl,
   onDelete,
@@ -35,6 +36,7 @@ export function Actions({
   controlState?: ChatControlState;
   deleteDisabled: boolean;
   submitDisabled: boolean;
+  stepAvailable?: boolean;
   usage?: TokenUsage | null;
   onControl?: (control: RequestedControl) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -72,15 +74,17 @@ export function Actions({
         >
           <Play size={16} />
         </IconButton>
-        <IconButton
-          aria-label={stepLabel}
-          disabled={controlDisabled}
-          onClick={step}
-          title={stepLabel}
-          type="button"
-        >
-          <StepForward size={16} />
-        </IconButton>
+        {stepAvailable ? (
+          <IconButton
+            aria-label={stepLabel}
+            disabled={controlDisabled}
+            onClick={step}
+            title={stepLabel}
+            type="button"
+          >
+            <StepForward size={16} />
+          </IconButton>
+        ) : null}
       </>
     ) : controlState ? (
       <IconButton

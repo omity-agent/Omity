@@ -25,6 +25,7 @@ export function Composer({
   controlDisabled = false,
   controlState,
   deleteDisabled = false,
+  stepAvailable = false,
   usage,
   onControl,
   onDelete,
@@ -186,6 +187,7 @@ export function Composer({
         controlDisabled={controlDisabled}
         controlState={controlState}
         deleteDisabled={deleteDisabled}
+        stepAvailable={stepAvailable}
         submitDisabled={editorDisabled || !content.trim()}
         usage={usage}
         onControl={onControl}

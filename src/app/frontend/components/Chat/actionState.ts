@@ -15,6 +15,7 @@ export interface ChatActionState {
   controlDisabled: boolean;
   controlState: ChatControlState;
   sessionActionDisabled: boolean;
+  stepAvailable: boolean;
 }
 export function pauseRequestPending(
   requestedSessionId: string | undefined,
@@ -55,5 +56,6 @@ export function deriveChatActionState({
           ? "resume"
           : "pause",
     sessionActionDisabled: sessionActive || stepping,
+    stepAvailable: !stepping && resumable && queuePaused,
   };
 }

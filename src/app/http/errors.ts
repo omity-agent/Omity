@@ -17,6 +17,7 @@ export type ApiErrorCode =
 const domainStatuses: Record<DomainErrorCode, ContentfulStatusCode> = {
   ATTACHMENT_INVALID: 400,
   ATTACHMENT_TOO_LARGE: 413,
+  CONTROL_NOT_READY: 409,
   FORK_MESSAGE_NOT_FOUND: 404,
   HOST_LEASE_CONFLICT: 409,
   QUEUE_CLAIM_CONFLICT: 409,

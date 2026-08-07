@@ -58,6 +58,25 @@ test("client cancel during pause preserves pause state", () => {
   expect(reopened.control("123")).toBe("pause_cancel");
   reopened.close();
 });
+test("single step is accepted only after a queue has reached pause", () => {
+  const { dbPath } = makeSession("step");
+  expect(() => setSessionControl("step", "step")).toThrow(
+    expect.objectContaining({ code: "CONTROL_NOT_READY" }),
+  );
+  const db = new AgentDatabase(dbPath);
+  db.appendUser("step", "run");
+  const item = db.nextQueue("step");
+  if (!item) {
+    throw new Error("测试队列不存在");
+  }
+  db.startQueue("step", item);
+  db.setQueueStatus(item.id, "paused");
+  db.close();
+  expect(setSessionControl("step", "step")).toEqual({ control: "step" });
+  const reopened = new AgentDatabase(dbPath);
+  expect(reopened.control("step")).toBe("step");
+  reopened.close();
+});
 function parseValue(args: string[]) {
   const result = parseSync(cliParser, args);
   if (!result.success) {

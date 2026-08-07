@@ -1,6 +1,7 @@
 import { AgentDatabase } from "./infrastructure/database/agentDatabase";
 import type { Control } from "./types";
 import { existsSync } from "node:fs";
+import { requestStepControlRecord } from "./infrastructure/database/records/queue/control";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "./errors";
 
@@ -12,6 +13,10 @@ export function appendSessionMessage(sessionId: string, content: string) {
 }
 export function setSessionControl(sessionId: string, control: ClientControl) {
   return withSessionDatabase(sessionId, (db) => {
+    if (control === "step") {
+      requestStepControlRecord(db.db, sessionId);
+      return { control };
+    }
     const stored =
       control === "cancel" &&
       (db.control(sessionId) === "pause" || db.control(sessionId) === "pause_cancel")

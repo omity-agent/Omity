@@ -14,6 +14,7 @@ export interface ComposerProps {
   controlDisabled?: boolean;
   controlState?: ChatControlState;
   deleteDisabled?: boolean;
+  stepAvailable?: boolean;
   usage?: TokenUsage | null;
   onControl?: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
   onDelete?: () => Promise<void>;

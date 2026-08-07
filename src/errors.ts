@@ -1,4 +1,5 @@
 export type DomainErrorCode =
+  | "CONTROL_NOT_READY"
   | "SESSION_NOT_FOUND"
   | "SESSION_CONFLICT"
   | "HOST_LEASE_CONFLICT"
@@ -24,4 +25,7 @@ export function sessionConflict(sessionId: string) {
 }
 export function toolNotRunning(callId: string) {
   return new DomainError("TOOL_NOT_RUNNING", `工具调用未在运行：${callId}`);
+}
+export function controlNotReady(control: string) {
+  return new DomainError("CONTROL_NOT_READY", `会话尚未准备好执行控制命令：${control}`);
 }
