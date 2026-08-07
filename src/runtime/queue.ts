@@ -6,6 +6,7 @@ import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/
 import { recordAiStreamPart, recordToolStarted } from "./aiStream";
 import { HostLeaseLostError } from "./execution/lease";
 import type { QueueItem } from "../types";
+import { advanceAfterCompletedStep } from "./execution/step";
 import { captureError } from "../failures/details";
 import { isRetryableModelError } from "./network";
 import { queueMessageId } from "../infrastructure/database/records/messages/history";
@@ -24,14 +25,15 @@ export async function processQueue(ctx: HostContext, item: QueueItem) {
   };
   try {
     ctx.assertLease?.();
-    if (pauseForStop(ctx, run) || !(await waitIfPaused(ctx, run))) {
+    const advance = pauseForStop(ctx, run) ? false : await waitIfPaused(ctx, run);
+    if (!advance) {
       return;
     }
     for (const runItem of run.items) {
       ctx.db.startQueue(ctx.sessionId, runItem);
     }
     if (!pauseForStop(ctx, run)) {
-      await runGraphUntilBoundary(ctx, run);
+      await runGraphUntilBoundary(ctx, run, advance === "step");
     }
   } catch (error) {
     if (error instanceof CanceledRunError) {
@@ -58,7 +60,7 @@ export async function processQueue(ctx: HostContext, item: QueueItem) {
     end();
   }
 }
-async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
+async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun, stepping: boolean) {
   const [item] = run.items;
   const config = {
     configurable: { thread_id: run.threadId },
@@ -103,7 +105,7 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
           cancelRun(ctx, run);
           return Promise.reject(new CanceledRunError("运行已取消"));
         },
-        pause: () => waitIfPaused(ctx, run),
+        pause: async () => (await waitIfPaused(ctx, run)) !== false,
         stop: () => setRunStatus(ctx, run, "paused"),
       });
       if (!retry) {
@@ -127,8 +129,14 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
         setRunStatus(ctx, run, "paused");
         return;
       }
-      if ((control === "pause" || control === "pause_cancel") && !(await waitIfPaused(ctx, run))) {
-        return;
+      if (control === "pause" || control === "pause_cancel") {
+        const advance = await waitIfPaused(ctx, run);
+        if (!advance) {
+          return;
+        }
+        stepping = advance === "step";
+      } else {
+        stepping = control === "step";
       }
       const appendInput = consumeBoundaryAppends(ctx, run, state);
       if (appendInput) {
@@ -138,6 +146,13 @@ async function runGraphUntilBoundary(ctx: HostContext, run: QueueRun) {
         finishRun(ctx, run, state.values.messages, state.values.hookPlan);
         return;
       } else {
+        if (stepping && state.next.includes("hooks")) {
+          const advance = await advanceAfterCompletedStep(ctx, run);
+          if (!advance) {
+            return;
+          }
+          stepping = advance === "step";
+        }
         const activity = state.next.includes("tools")
           ? "tool"
           : state.next.includes("model_request")

@@ -7,7 +7,7 @@ import {
   renewHostLeaseRecord,
 } from "./hostLeases";
 import { activeQueueRows, pauseRunRecord } from "./queue/runs";
-import { readControlRecord, writeControlRecord } from "./sessions";
+import { consumeStepControlRecord, readControlRecord, writeControlRecord } from "./sessions";
 import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../failures/details";
 import { pruneUnreferencedMessages } from "./messages/history";
@@ -94,6 +94,15 @@ export class RecoverableDatabase {
     return runTransaction(this.db, () => {
       writeControlRecord(this.db, sessionId, "pause");
       return pauseRunRecord(this.db, sessionId, runId, error);
+    });
+  }
+  pauseCompletedStep(sessionId: string, runId: number) {
+    return runTransaction(this.db, () => {
+      if (!consumeStepControlRecord(this.db, sessionId)) {
+        return false;
+      }
+      pauseRunRecord(this.db, sessionId, runId);
+      return true;
     });
   }
   recoverInterruptedSession(claim: InterruptedSessionClaim) {

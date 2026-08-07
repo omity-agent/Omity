@@ -2,7 +2,6 @@ import type { Control, QueueStatus, SessionStatus } from "../../../../types";
 import { pauseRequested, resolvePausePhase } from "../../../pauseState";
 
 export type ChatControlState = "pause" | "pausing" | "resume";
-type RequestedControl = Extract<Control, "running" | "pause">;
 interface QueueState {
   status: QueueStatus;
 }
@@ -15,7 +14,6 @@ interface ChatActionInput {
 export interface ChatActionState {
   controlDisabled: boolean;
   controlState: ChatControlState;
-  nextControl: RequestedControl;
   sessionActionDisabled: boolean;
 }
 export function pauseRequestPending(
@@ -48,7 +46,6 @@ export function deriveChatActionState({
   return {
     controlDisabled: waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
     controlState: waitingForPause ? "pausing" : resumable ? "resume" : "pause",
-    nextControl: resumable ? "running" : "pause",
     sessionActionDisabled: sessionActive,
   };
 }

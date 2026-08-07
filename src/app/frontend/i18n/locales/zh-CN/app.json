@@ -35,6 +35,8 @@
   "pause": "暂停",
   "pausing": "正在暂停",
   "resume": "继续",
+  "resumeContinuous": "继续持续运行",
+  "step": "向前一步",
   "fork": "Fork",
   "pauseBeforeFork": "会话进行中无法使用 Fork",
   "copy": "复制",

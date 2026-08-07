@@ -1,6 +1,6 @@
 import type { ErrorDetails } from "./failures/details";
 
-export type Control = "running" | "pause" | "cancel" | "pause_cancel";
+export type Control = "running" | "step" | "pause" | "cancel" | "pause_cancel";
 export type SessionStatus = "tool" | "model" | "idle" | "pausing" | "paused" | "error";
 export interface BrowserWarning {
   code: "model_api_unavailable";

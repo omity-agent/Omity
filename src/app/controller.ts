@@ -129,7 +129,7 @@ export class AppController {
   }
   async control(sessionId: string, control: Control) {
     const session = this.registry.require(sessionId);
-    if (control === "running") {
+    if (control === "running" || control === "step") {
       await this.ensureHost(session);
     }
     const result = setSessionControl(sessionId, control);

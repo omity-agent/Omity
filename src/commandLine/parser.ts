@@ -1,4 +1,4 @@
-import { argument, command, constant, option } from "@optique/core/primitives";
+import { argument, command, constant, flag, option } from "@optique/core/primitives";
 import { integer, string } from "@optique/core/valueparser";
 import { message, text } from "@optique/core/message";
 import { multiple, optional } from "@optique/core/modifiers";
@@ -63,7 +63,19 @@ const clientCommand = command(
       { brief: message`向会话发送一条消息。` },
     ),
     clientControl("pause", "请求暂停会话。"),
-    clientControl("resume", "请求继续会话。"),
+    command(
+      "resume",
+      object({
+        action: constant("resume"),
+        sessionId,
+        step: optional(
+          flag("--step", {
+            description: message`只运行下一个模型或工具节点，然后再次暂停。`,
+          }),
+        ),
+      }),
+      { brief: message`请求继续会话。` },
+    ),
     clientControl("cancel", "请求关闭 Host。"),
   ),
   { brief: message`向 Host 会话发送消息或控制指令。` },
@@ -94,7 +106,7 @@ function hostCreateAction<const T extends Extract<HostAction, "new" | "overwrite
     { brief: message`${text(brief)}` },
   );
 }
-function clientControl<const T extends "pause" | "resume" | "cancel">(action: T, brief: string) {
+function clientControl<const T extends "pause" | "cancel">(action: T, brief: string) {
   return command(
     action,
     object({

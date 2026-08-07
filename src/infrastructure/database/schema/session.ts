@@ -13,6 +13,7 @@ import { sql } from "drizzle-orm";
 
 const controls = [
   "running",
+  "step",
   "pause",
   "cancel",
   "pause_cancel",
@@ -39,7 +40,7 @@ export const sessions = sqliteTable(
   (table) => [
     check(
       "sessions_control",
-      sql`${table.control} in ('running', 'pause', 'cancel', 'pause_cancel')`,
+      sql`${table.control} in ('running', 'step', 'pause', 'cancel', 'pause_cancel')`,
     ),
   ],
 );

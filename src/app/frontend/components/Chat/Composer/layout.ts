@@ -29,6 +29,12 @@ export const composerControls = css({
   gridAutoFlow: { base: "column", md: "row" },
   w: { smDown: "full" },
 });
+export const resumeControls = css({
+  "& > button + button": { borderLeftWidth: "0" },
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  minW: "16",
+});
 export const composerRole = css({
   alignItems: "center",
   color: "mutedStrong",

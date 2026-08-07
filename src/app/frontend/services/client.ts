@@ -109,7 +109,7 @@ export async function sendMessage(
 }
 export async function setControl(
   sessionId: string,
-  control: Extract<Control, "running" | "pause" | "cancel">,
+  control: Extract<Control, "running" | "step" | "pause" | "cancel">,
 ) {
   return request(`api/sessions/${encodeURIComponent(sessionId)}/control`, controlResponseSchema, {
     body: JSON.stringify({ control }),

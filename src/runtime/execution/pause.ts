@@ -42,9 +42,9 @@ export async function waitIfPaused(ctx: HostContext, run: QueueRun) {
       cancelRun(ctx, run);
       throw new CanceledRunError("运行已取消");
     }
-    if (control === "running") {
+    if (control === "running" || control === "step") {
       setRunStatus(ctx, run, "running");
-      return true;
+      return control;
     }
     if (!pauseLogged) {
       setRunStatus(ctx, run, "paused");

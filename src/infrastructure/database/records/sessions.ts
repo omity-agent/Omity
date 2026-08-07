@@ -139,3 +139,20 @@ export function writeControlRecord(db: Database, sessionId: string, control: Con
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }
 }
+export function consumeStepControlRecord(db: Database, sessionId: string) {
+  requireSessionRecord(db, sessionId);
+  const result = db.run(
+    `UPDATE sessions
+     SET control = 'pause', transcript_revision = transcript_revision + 1,
+       updated_at = MAX(updated_at, unixepoch())
+     WHERE id = ? AND control = 'step' AND transcript_revision < ?`,
+    [sessionId, Number.MAX_SAFE_INTEGER],
+  );
+  if (result.changes === 1) {
+    return true;
+  }
+  if (readControlRecord(db, sessionId) === "step") {
+    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  }
+  return false;
+}

@@ -33,6 +33,12 @@ test("command line parser models commands as discriminated unions", () => {
   expect(parseValue(["client", "resume", "123"])).toEqual({
     action: "resume",
     sessionId: "123",
+    step: undefined,
+  });
+  expect(parseValue(["client", "resume", "123", "--step"])).toEqual({
+    action: "resume",
+    sessionId: "123",
+    step: true,
   });
 });
 test("command line parser rejects removed Oclif syntax", () => {

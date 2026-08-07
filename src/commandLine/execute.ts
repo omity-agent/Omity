@@ -46,9 +46,11 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     case "pause":
     case "resume":
     case "cancel": {
-      const control = command.action === "resume" ? "running" : command.action;
+      const control =
+        command.action === "resume" ? (command.step ? "step" : "running") : command.action;
       setSessionControl(command.sessionId, control);
-      console.log(`已发送控制指令 ${command.action} 到会话 ${command.sessionId}`);
+      const instruction = control === "step" ? "resume --step" : command.action;
+      console.log(`已发送控制指令 ${instruction} 到会话 ${command.sessionId}`);
       return;
     }
   }

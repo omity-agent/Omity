@@ -1,7 +1,6 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
-import { useCallback, useMemo } from "react";
 import { Composer } from "./Composer/index";
 import type { InitialSessionState } from "../../../initialState";
 import { Message } from "./Message";
@@ -10,6 +9,7 @@ import { TranscriptScroll } from "../TranscriptScroll";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
 import { findLatestDetail } from "./detailFocus";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 const page = css({
@@ -73,7 +73,7 @@ export function ChatPage({
     draftRevision: number,
     attachments: PendingAttachment[],
   ) => Promise<void>;
-  onControl: (control: Extract<Control, "running" | "pause">) => Promise<void>;
+  onControl: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
   onDelete: () => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
@@ -99,10 +99,6 @@ export function ChatPage({
   const userMessages = useMemo(
     () => view.filter((item) => item.role === "user").map((item) => item.content),
     [view],
-  );
-  const handleControl = useCallback(
-    () => onControl(actionState.nextControl),
-    [actionState.nextControl, onControl],
   );
   if (!activeId) {
     if (newSession) {
@@ -158,7 +154,7 @@ export function ChatPage({
         key={forkDraft === undefined ? activeId : `draft:${forkDraft}`}
         userMessages={userMessages}
         usage={latestUsage}
-        onControl={handleControl}
+        onControl={onControl}
         onDelete={onDelete}
         onSend={onSend}
       />

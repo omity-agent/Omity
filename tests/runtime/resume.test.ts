@@ -60,6 +60,42 @@ test("a paused run resumes from the model boundary without repeating the model c
   expect(calls).toEqual(["tool"]);
   db.close();
 });
+test("a paused run steps through exactly one model or tool node", async () => {
+  const db = makeDb();
+  db.resetSession("session", workspace);
+  db.appendUser("session", "run tool");
+  const calls: string[] = [];
+  const echo = tool(
+    () => {
+      calls.push("tool");
+      return Promise.resolve("echoed");
+    },
+    { description: "echo", name: "echo", schema: z.object({}) },
+  );
+  const model = modelWithToolCall();
+  const saver = new BunSqliteSaver(db.db);
+  const hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace);
+  const graph = createAgentGraph({
+    checkpointer: saver,
+    hooks,
+    model,
+    settings: testSettings(),
+    tools: [echo],
+  });
+  db.setControl("session", "step");
+  await processQueue(context(db, saver, graph), required(db.nextQueue("session")));
+  expect(db.nextQueue("session")?.status).toBe("paused");
+  expect(db.control("session")).toBe("pause");
+  expect(model.doStreamCalls).toHaveLength(1);
+  expect(calls).toEqual([]);
+  db.setControl("session", "step");
+  await processQueue(context(db, saver, graph), required(db.nextQueue("session")));
+  expect(db.nextQueue("session")?.status).toBe("paused");
+  expect(db.control("session")).toBe("pause");
+  expect(model.doStreamCalls).toHaveLength(1);
+  expect(calls).toEqual(["tool"]);
+  db.close();
+});
 function context(
   db: ReturnType<typeof makeDb>,
   checkpointer: BunSqliteSaver,

@@ -108,7 +108,7 @@ const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
   }),
 ]);
 export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object({
-  control: z.enum(["running", "pause", "cancel", "pause_cancel"]),
+  control: z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
   eventCursor: integer.nonnegative(),
   events: z.array(eventSchema),
   messages: z.array(messageSchema),
@@ -141,6 +141,6 @@ export const draftResponseSchema = z.object({
 export const revisionResponseSchema = z.object({ revision: integer.nonnegative() });
 export const messageResponseSchema = z.object({ content: z.string(), queueId: integer.positive() });
 export const controlResponseSchema = z.object({
-  control: z.enum(["running", "pause", "cancel"]),
+  control: z.enum(["running", "step", "pause", "cancel"]),
 });
 export const cancellationResponseSchema = z.object({ toolCallId: z.string() });
