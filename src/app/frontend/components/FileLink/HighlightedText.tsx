@@ -7,7 +7,7 @@ interface HighlightToken {
   text: string;
 }
 interface HighlightPiece extends HighlightToken {
-  path?: string;
+  link?: Pick<FilePathMatch, "kind" | "path">;
 }
 export function HighlightedText({ html, matches }: { html: string; matches: FilePathMatch[] }) {
   const pieces = useMemo(() => splitTokens(readTokens(html), matches), [html, matches]);
@@ -59,7 +59,7 @@ function splitTokens(tokens: HighlightToken[], matches: FilePathMatch[]) {
       );
       pieces.push({
         ...token,
-        ...(match ? { path: match.path } : {}),
+        ...(match ? { link: { kind: match.kind, path: match.path } } : {}),
         text: token.text.slice(start - offset, end - offset),
       });
     }
@@ -89,22 +89,22 @@ function groupPieces(pieces: HighlightPiece[]) {
     if (!piece) {
       break;
     }
-    const { path } = piece;
-    if (!path) {
+    const { link } = piece;
+    if (!link) {
       result.push(tokenNode(piece, index));
       index += 1;
     } else {
       const children: ReactNode[] = [];
       for (;;) {
         const current = pieces[index];
-        if (!current || current.path !== path) {
+        if (!current?.link || current.link.kind !== link.kind || current.link.path !== link.path) {
           break;
         }
         children.push(tokenNode(current, index));
         index += 1;
       }
       result.push(
-        <FileLinkMenu key={`path-${index.toString()}`} path={path}>
+        <FileLinkMenu key={`path-${index.toString()}`} kind={link.kind} path={link.path}>
           {children}
         </FileLinkMenu>,
       );

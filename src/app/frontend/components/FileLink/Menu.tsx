@@ -1,6 +1,7 @@
 import { ExternalLink, FolderOpen } from "lucide-react";
 import { type ReactNode, useCallback } from "react";
 import { css, cx } from "styled-system/css";
+import type { FilePathKind } from "../../../../fileLinks/types";
 import { Menu } from "@ark-ui/react/menu";
 import { Portal } from "@ark-ui/react/portal";
 import { activateFileLink } from "../../services/client";
@@ -18,10 +19,9 @@ const trigger = css({
     outlineStyle: "solid",
     outlineWidth: "1px",
   },
-  _hover: { color: "text" },
   bg: "transparent",
   borderWidth: "0",
-  color: "syntaxMeta",
+  color: "current",
   cursor: "pointer",
   display: "inline",
   font: "inherit",
@@ -29,6 +29,7 @@ const trigger = css({
   p: 0,
   textAlign: "inherit",
   textDecoration: "underline",
+  textDecorationColor: "current",
   textUnderlineOffset: "0.15em",
   verticalAlign: "baseline",
   whiteSpace: "inherit",
@@ -38,9 +39,9 @@ const content = css({
   borderColor: "lineStrong",
   borderRadius: "0",
   borderWidth: "1px",
-  minW: "40",
   p: "1",
   shadow: "lg",
+  w: "max-content",
   zIndex: "dropdown",
 });
 const item = css({
@@ -58,8 +59,17 @@ const item = css({
   py: "1.5",
   textAlign: "left",
   w: "full",
+  whiteSpace: "nowrap",
 });
-export function FileLinkMenu({ children, path }: { children: ReactNode; path: string }) {
+export function FileLinkMenu({
+  children,
+  kind,
+  path,
+}: {
+  children: ReactNode;
+  kind: FilePathKind;
+  path: string;
+}) {
   const { t } = useTranslation();
   const sessionId = useFileLinkSession();
   const run = useCallback(
@@ -88,12 +98,14 @@ export function FileLinkMenu({ children, path }: { children: ReactNode; path: st
                 {t("openFileLink")}
               </button>
             </Menu.Item>
-            <Menu.Item asChild value="reveal" onSelect={reveal}>
-              <button className={cx(classes.item, item)} type="button">
-                <FolderOpen aria-hidden size={14} />
-                {t("revealFileLink")}
-              </button>
-            </Menu.Item>
+            {kind === "file" ? (
+              <Menu.Item asChild value="reveal" onSelect={reveal}>
+                <button className={cx(classes.item, item)} type="button">
+                  <FolderOpen aria-hidden size={14} />
+                  {t("revealFileLink")}
+                </button>
+              </Menu.Item>
+            ) : null}
           </Menu.Content>
         </Menu.Positioner>
       </Portal>

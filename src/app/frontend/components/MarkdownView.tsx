@@ -52,9 +52,16 @@ export function MarkdownView({
 function markdownComponents(source: string, fileLinks: FilePathMatch[]): Components {
   return {
     a: ({ children, href, node, ...props }) => {
-      const path = pathFromFileLinkHref(href) ?? matchInsideNode(node, fileLinks)?.path;
-      if (path !== undefined) {
-        return <FileLinkMenu path={path}>{children}</FileLinkMenu>;
+      const linkedPath = pathFromFileLinkHref(href);
+      const match =
+        matchInsideNode(node, fileLinks) ??
+        fileLinks.find((candidate) => candidate.path === linkedPath);
+      if (match !== undefined) {
+        return (
+          <FileLinkMenu kind={match.kind} path={match.path}>
+            {children}
+          </FileLinkMenu>
+        );
       }
       return createElement(
         "a",
@@ -77,7 +84,14 @@ function markdownComponents(source: string, fileLinks: FilePathMatch[]): Compone
           {children}
         </Code>
       );
-      return matches[0] ? <FileLinkMenu path={matches[0].path}>{rendered}</FileLinkMenu> : rendered;
+      const [match] = matches;
+      return match ? (
+        <FileLinkMenu kind={match.kind} path={match.path}>
+          {rendered}
+        </FileLinkMenu>
+      ) : (
+        rendered
+      );
     },
     pre: ({ children }) => <>{children}</>,
     table: ({ node: _node, ...props }) => (
