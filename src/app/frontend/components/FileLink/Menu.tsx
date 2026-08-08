@@ -28,11 +28,19 @@ const trigger = css({
   lineHeight: "inherit",
   p: 0,
   textAlign: "inherit",
+  verticalAlign: "baseline",
+  whiteSpace: "inherit",
+});
+const label = css({
+  "& > *": {
+    textDecoration: "underline",
+    textDecorationColor: "current",
+    textUnderlineOffset: "0.15em",
+  },
+  "&:has(> *)": { textDecoration: "none" },
   textDecoration: "underline",
   textDecorationColor: "current",
   textUnderlineOffset: "0.15em",
-  verticalAlign: "baseline",
-  whiteSpace: "inherit",
 });
 const content = css({
   bg: "surfaceRaised",
@@ -87,7 +95,7 @@ export function FileLinkMenu({
   return (
     <Menu.Root positioning={positioning}>
       <Menu.Trigger className={trigger} title={path} type="button">
-        {children}
+        <span className={label}>{children}</span>
       </Menu.Trigger>
       <Portal>
         <Menu.Positioner className={classes.positioner}>

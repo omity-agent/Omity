@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { FileLinkMenu } from "./Menu";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 
@@ -113,11 +113,9 @@ function groupPieces(pieces: HighlightPiece[]) {
   return result;
 }
 function tokenNode(token: HighlightPiece, index: number) {
-  return token.className ? (
+  return (
     <span className={token.className} key={index}>
       {token.text}
     </span>
-  ) : (
-    <Fragment key={index}>{token.text}</Fragment>
   );
 }
