@@ -1,6 +1,7 @@
 node_modules/
 dist/
 src/app/frontend/dist/
+src/infrastructure/database/migrations
 styled-system/
 *.bun-build
 *.code-workspace
