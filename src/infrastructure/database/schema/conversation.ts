@@ -1,6 +1,7 @@
 import type { StreamEventKind, StreamEventValues } from "../records/streamEvents";
 import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { queue, sessions } from "./session";
+import type { FileLinkUnit } from "../../../fileLinks/types";
 import type { StoredConversationMessage } from "../records/messages/payload";
 import { sql } from "drizzle-orm";
 
@@ -34,6 +35,7 @@ export const messages = sqliteTable(
 export const events = sqliteTable(
   "events",
   {
+    fileLinks: text("file_links_json", { mode: "json" }).$type<FileLinkUnit[]>().notNull(),
     id: integer().primaryKey({ autoIncrement: true }),
     kind: text({ enum: streamEventKinds }).notNull(),
     messageId: text("message_id").notNull(),

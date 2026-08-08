@@ -11,7 +11,7 @@ type AiStreamContext = Pick<
   HostContext,
   "db" | "logger" | "observer" | "sessionId" | "settings" | "toolExecutions"
 >;
-export function recordAiStreamPart(
+export async function recordAiStreamPart(
   ctx: AiStreamContext,
   queueId: number,
   event: AiStreamEvent,
@@ -24,7 +24,7 @@ export function recordAiStreamPart(
       return;
     }
     const messageId = streamMessageId(state, chunk.id);
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "assistant_reasoning_delta",
       messageId,
       partId: sequentialPart(state.parts, "assistant_reasoning_delta"),
@@ -40,7 +40,7 @@ export function recordAiStreamPart(
       chunk.type === "reasoning-delta"
         ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
         : chunk.delta;
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind,
       messageId,
       partId: sequentialPart(state.parts, kind),
@@ -57,7 +57,7 @@ export function recordAiStreamPart(
     ctx.toolExecutions?.announce(chunk.toolCallId);
     const messageId = streamMessageId(state, chunk.toolCallId);
     const index = toolIndex(state, chunk.toolCallId);
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
       partId: toolPart(state.parts, index),
@@ -72,7 +72,7 @@ export function recordAiStreamPart(
   } else if (chunk?.type === "tool-input-delta") {
     const messageId = streamMessageId(state, chunk.toolCallId);
     const index = toolIndex(state, chunk.toolCallId);
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
       partId: toolPart(state.parts, index),
@@ -81,7 +81,11 @@ export function recordAiStreamPart(
     });
   }
 }
-export function recordToolStarted(ctx: AiStreamContext, messages: BaseMessage[], queueId: number) {
+export async function recordToolStarted(
+  ctx: AiStreamContext,
+  messages: BaseMessage[],
+  queueId: number,
+) {
   const completed = new Set(
     messages
       .filter((message) => ToolMessage.isInstance(message))
@@ -98,7 +102,7 @@ export function recordToolStarted(ctx: AiStreamContext, messages: BaseMessage[],
     messageId: call.id,
     partId: call.id,
   };
-  ctx.db.appendStream(ctx.sessionId, {
+  await ctx.db.appendStream(ctx.sessionId, {
     kind: "tool_started",
     messageId: identity.messageId,
     partId: identity.partId,

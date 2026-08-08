@@ -2,13 +2,14 @@ import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type DisplayMessage, type DisplayToolCall } from "./timeline";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
-import { freeformCallIds, rawFreeformInput } from "./timeline/freeform";
+import { freeformCallIds, rawFreeformInput } from "../runtime/freeform";
 import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { QueueStatus } from "../types";
 import { existsSync } from "node:fs";
 import { extractToolImages } from "../runtime/modelImages";
+import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { parseError } from "../failures/details";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
@@ -78,12 +79,13 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
     }));
     const events = queryAll<PersistedEventRow>(
       db.db,
-      `SELECT id, queue_id, message_id, part_id, kind, payload_json
+      `SELECT id, queue_id, message_id, part_id, kind, payload_json, file_links_json
        FROM events WHERE session_id = ? ORDER BY id`,
       sessionId,
     ).map(persistedDisplayEvent);
+    const fileLinks = loadFileLinkUnits(db.db, sessionId);
     const eventCursor = db.eventCursor();
-    return { control, eventCursor, events, messages, queue, transcriptRevision };
+    return { control, eventCursor, events, fileLinks, messages, queue, transcriptRevision };
   });
 }
 function toDisplayMessage(row: MessageRow): DisplayMessage {

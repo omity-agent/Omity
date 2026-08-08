@@ -142,13 +142,13 @@ function latestMessageId(db: ReturnType<typeof makeDb>) {
     query.finalize();
   }
 }
-test("fork preserves completed takeover pairs in an editable draft", () => {
+test("fork preserves completed takeover pairs in an editable draft", async () => {
   const source = makeDb();
   const target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
-  source.syncHistory("source", [
+  await source.syncHistory("source", [
     ...source.history("source"),
     new AIMessage({
       content: "",

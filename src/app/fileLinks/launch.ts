@@ -1,5 +1,5 @@
 import { realpath, stat } from "node:fs/promises";
-import type { FileLinkAction } from "./types";
+import type { FileLinkAction } from "../../fileLinks/types";
 import { dirname } from "node:path";
 import { once } from "node:events";
 import { spawn } from "node:child_process";

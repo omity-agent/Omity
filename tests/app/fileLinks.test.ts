@@ -1,13 +1,13 @@
-import { type ApiController, createApi } from "../../src/app/http/handler";
 import { describe, expect, test } from "bun:test";
+import { outputUnit, splitTextUnits } from "../../src/fileLinks/units";
+import { createApi } from "../../src/app/http/handler";
 import { createApiController } from "./support/apiController";
 import { createTestDirectory } from "../support/artifacts";
 import { fileLinkLauncher } from "../../src/app/fileLinks/launch";
-import { fileLinkProbeUnits } from "../../src/app/frontend/components/FileLink/probeUnits";
 import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { normalizeCodeMatches } from "../../src/app/frontend/components/FileLink/lineBreaks";
-import { probeFileLinks } from "../../src/app/fileLinks/probe";
+import { probeFileLinks } from "../../src/fileLinks/probe";
 
 describe("文件链接探测", () => {
   test("解析工作目录中的真实相对路径并保留文本位置", async () => {
@@ -24,20 +24,23 @@ describe("文件链接探测", () => {
     expect(position && text.slice(position.start, position.end)).toBe("./nested/linked.txt");
   });
   test("流式文本只探测完整行，完成后补上末行", () => {
-    const streaming = fileLinkProbeUnits("first\nsecond", "lines", false);
-    expect(streaming).toEqual([{ end: 5, key: "line-0", start: 0, text: "first" }]);
-    expect(fileLinkProbeUnits("first\nsecond", "lines", true)).toEqual([
-      { end: 5, key: "line-0", start: 0, text: "first" },
-      { end: 12, key: "line-1", start: 6, text: "second" },
+    expect(splitTextUnits("first\nsecond", 0, 0, false)).toEqual([
+      { end: 5, nextOffset: 6, start: 0, text: "first", unitIndex: 0 },
+    ]);
+    expect(splitTextUnits("first\nsecond", 0, 0, true)).toEqual([
+      { end: 5, nextOffset: 6, start: 0, text: "first", unitIndex: 0 },
+      { end: 12, nextOffset: 12, start: 6, text: "second", unitIndex: 1 },
     ]);
   });
   test("每个工具输出形成一个探测单元", () => {
-    expect(fileLinkProbeUnits("first\nsecond", "output", true)).toEqual([
-      { end: 12, key: "output", start: 0, text: "first\nsecond" },
-    ]);
-    expect(fileLinkProbeUnits("", "output", true)).toEqual([
-      { end: 0, key: "output", start: 0, text: "" },
-    ]);
+    expect(outputUnit("first\nsecond")).toEqual({
+      end: 12,
+      nextOffset: 12,
+      start: 0,
+      text: "first\nsecond",
+      unitIndex: 0,
+    });
+    expect(outputUnit("").text).toBe("");
   });
   test("CRLF 高亮文本与路径位置使用同一套偏移", () => {
     const code = "first\r\n./file.txt\r\nlast";
@@ -72,26 +75,16 @@ describe("文件链接动作", () => {
       command: "xdg-open",
     });
   });
-  test("HTTP 接口校验参数并绑定 Session", async () => {
-    const probeCalls: Parameters<ApiController["fileLinks"]>[] = [];
-    const actionCalls: Parameters<ApiController["activateFileLink"]>[] = [];
+  test("HTTP 接口校验激活动作并绑定 Session", async () => {
+    const actionCalls: Parameters<ReturnType<typeof createApiController>["activateFileLink"]>[] =
+      [];
     const controller = createApiController({
       activateFileLink: (...args) => {
         actionCalls.push(args);
         return Promise.resolve({ path: args[1] });
       },
-      fileLinks: (...args) => {
-        probeCalls.push(args);
-        return Promise.resolve([]);
-      },
     });
     const api = createApi(controller);
-    const probe = await api.request(
-      "/api/sessions/session/file-links/probe",
-      jsonRequest({ text: "./file.txt" }),
-    );
-    expect(probe.status).toBe(200);
-    expect(probeCalls).toEqual([["session", "./file.txt"]]);
     const action = await api.request(
       "/api/sessions/session/file-links/activate",
       jsonRequest({ action: "reveal", path: "F:/work/file.txt" }),

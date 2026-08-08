@@ -37,7 +37,7 @@ test("initial conversation keeps history outside the pending queue", () => {
   ]);
   db.close();
 });
-test("persists only replay and display message fields", () => {
+test("persists only replay and display message fields", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const reasoning = {
@@ -53,7 +53,7 @@ test("persists only replay and display message fields", () => {
       type: "message",
     },
   ];
-  db.syncHistory("123", [
+  await db.syncHistory("123", [
     new HumanMessage("问题"),
     new AIMessage({
       additional_kwargs: { reasoning },
@@ -83,21 +83,21 @@ test("persists only replay and display message fields", () => {
   expect(stored).not.toContain("do not persist");
   db.close();
 });
-test("persists user and tool boundaries while clearing persisted text deltas", () => {
+test("persists user and tool boundaries while clearing persisted text deltas", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   db.appendUser("123", "问题");
   expect(db.db.query("SELECT id FROM events").all()).toEqual([]);
   db.startQueue("123", required(db.nextQueue("123")));
   db.setControl("123", "pause");
-  db.appendStream("123", {
+  await db.appendStream("123", {
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
     queueId: 1,
     value: "答案",
   });
-  db.appendStream("123", {
+  void db.appendStream("123", {
     kind: "tool_call_delta",
     messageId: "message-1",
     partId: "tool-0",
@@ -140,18 +140,18 @@ test("persists user and tool boundaries while clearing persisted text deltas", (
     },
   ]);
   const answer = new AIMessage({ content: "答案", id: "message-1" });
-  db.syncHistory("123", [new HumanMessage("问题"), answer]);
+  await db.syncHistory("123", [new HumanMessage("问题"), answer]);
   expect(db.db.query("SELECT kind FROM events").all()).toEqual([
     { kind: "user_appended" },
     { kind: "tool_call_delta" },
   ]);
   db.close();
 });
-test("clears stream deltas when their queue becomes terminal", () => {
+test("clears stream deltas when their queue becomes terminal", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const queueId = db.appendUser("123", "问题");
-  db.appendStream("123", {
+  await db.appendStream("123", {
     kind: "tool_call_delta",
     messageId: "message-1",
     partId: "tool-0",
@@ -162,15 +162,15 @@ test("clears stream deltas when their queue becomes terminal", () => {
   expect(db.db.query("SELECT id FROM events").all()).toEqual([]);
   db.close();
 });
-test("retains the unchanged prefix and queue message identity", () => {
+test("retains the unchanged prefix and queue message identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const queueId = db.appendUser("123", "问题");
   db.startQueue("123", required(db.nextQueue("123")));
   const original = messageRows(db);
-  db.syncHistory("123", [...db.history("123"), new AIMessage("初稿")]);
+  await db.syncHistory("123", [...db.history("123"), new AIMessage("初稿")]);
   const firstSync = messageRows(db);
-  db.syncHistory("123", [required(db.history("123")[0]), new AIMessage("修订稿")]);
+  await db.syncHistory("123", [required(db.history("123")[0]), new AIMessage("修订稿")]);
   const secondSync = messageRows(db);
   expect(queueMessageRowId(db, queueId)).toBe(original[0]?.id);
   db.close();

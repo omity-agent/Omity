@@ -12,6 +12,7 @@ import {
 } from "./schema/session";
 import { events, messages } from "./schema/conversation";
 import { parse, resolve } from "node:path";
+import { fileLinkUnits } from "./schema/fileLinks";
 import { migrateSessionDatabase } from "./migrations";
 import { rmSync } from "node:fs";
 
@@ -20,6 +21,7 @@ const sessionSchema = {
   checkpoints,
   composerDrafts,
   events,
+  fileLinkUnits,
   hookUsage,
   hostLeases,
   messages,

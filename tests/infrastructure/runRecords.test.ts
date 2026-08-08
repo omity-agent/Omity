@@ -4,14 +4,14 @@ import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/dat
 import { queueMessageId } from "../../src/infrastructure/database/records/messages/history";
 
 afterEach(cleanupDatabaseDirs);
-test("replace history restores queue ids from user message identity", () => {
+test("replace history restores queue ids from user message identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const first = db.appendUser("123", "第一条");
   db.startQueue("123", required(db.nextQueue("123")));
   db.setQueueStatus(first, "done");
   const second = db.appendUser("123", "第二条");
-  db.syncHistory("123", [
+  await db.syncHistory("123", [
     new HumanMessage({
       content: "第一条",
       id: queueMessageId("123", first),
@@ -29,12 +29,12 @@ test("replace history restores queue ids from user message identity", () => {
   expect(rows.map((row) => row.queue_id)).toEqual([first, null, second, null]);
   db.close();
 });
-test("replacing a queued message body moves its queue identity", () => {
+test("replacing a queued message body moves its queue identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const queueId = db.appendUser("123", "旧正文");
   db.startQueue("123", required(db.nextQueue("123")));
-  db.syncHistory("123", [
+  await db.syncHistory("123", [
     new HumanMessage({
       content: "新正文",
       id: queueMessageId("123", queueId),
@@ -50,14 +50,14 @@ test("replacing a queued message body moves its queue identity", () => {
   ).toBe(1);
   db.close();
 });
-test("replace history rejects queue identities from another session", () => {
+test("replace history rejects queue identities from another session", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  expect(() => {
+  expect(
     db.syncHistory("123", [
       new HumanMessage({ content: "错误消息", id: queueMessageId("456", 1) }),
-    ]);
-  }).toThrow("用户消息属于其他会话");
+    ]),
+  ).rejects.toThrow("用户消息属于其他会话");
   db.close();
 });
 test("append during active run belongs to that run", () => {

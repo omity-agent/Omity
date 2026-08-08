@@ -26,7 +26,7 @@ export function createStreamLogState(): StreamLogState {
     toolIdentity: createToolStreamIdentityState(),
   };
 }
-export function handleStreamEvent(
+export async function handleStreamEvent(
   ctx: HostContext,
   event: unknown,
   state = createStreamLogState(),
@@ -62,7 +62,7 @@ export function handleStreamEvent(
     ctx.logger.token(text);
   }
   if (reasoning) {
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "assistant_reasoning_delta",
       messageId,
       partId: sequentialPart(state.parts, "assistant_reasoning_delta"),
@@ -71,7 +71,7 @@ export function handleStreamEvent(
     });
   }
   if (text) {
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "assistant_text_delta",
       messageId,
       partId: sequentialPart(state.parts, "assistant_text_delta"),
@@ -83,7 +83,7 @@ export function handleStreamEvent(
   for (const call of calls) {
     const partId = toolPart(state.parts, call.index);
     recordToolCallDelta(state.toolIdentity, messageId, call.index, partId, call.idDelta);
-    ctx.db.appendStream(ctx.sessionId, {
+    await ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
       partId,
@@ -103,7 +103,7 @@ export function completeActiveStream(state: StreamLogState) {
   state.aiToolIndexes.clear();
   state.parts = createStreamPartState();
 }
-export function recordToolExecutionStarted(
+export async function recordToolExecutionStarted(
   ctx: HostContext,
   messages: BaseMessage[],
   queueId: number,
@@ -130,7 +130,7 @@ export function recordToolExecutionStarted(
   }
   ctx.toolExecutions?.announce(call.id);
   const streamIdentity = resolveToolCallPart(state.toolIdentity, request.id, call.id, index);
-  ctx.db.appendStream(ctx.sessionId, {
+  await ctx.db.appendStream(ctx.sessionId, {
     kind: "tool_started",
     messageId: streamIdentity.messageId,
     partId: streamIdentity.partId,

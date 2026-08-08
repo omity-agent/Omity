@@ -51,7 +51,7 @@ export async function runGraphUntilBoundary(
         steppedOperation = undefined;
       }
       if (operation) {
-        announceOperation(ctx, item.id, operation, state.values.messages);
+        await announceOperation(ctx, item.id, operation, state.values.messages);
       }
     }
     let reachedBoundary = false;
@@ -62,7 +62,7 @@ export async function runGraphUntilBoundary(
         streamMode: ["custom", "updates", "debug"],
       });
       for await (const event of stream) {
-        handleGraphEvent(ctx, item.id, event, streamState);
+        await handleGraphEvent(ctx, item.id, event, streamState);
       }
       if (stepping && operation) {
         steppedOperation ??= operation;
@@ -96,7 +96,7 @@ export async function runGraphUntilBoundary(
       }
       state = readGraphState(await ctx.graph.getState(config));
       if (state.values.messages.length > 0) {
-        ctx.db.syncHistory(ctx.sessionId, state.values.messages);
+        await ctx.db.syncHistory(ctx.sessionId, state.values.messages);
         completeActiveStream(streamState);
         ctx.observer?.changed?.(ctx.sessionId);
       }
@@ -144,7 +144,7 @@ function nextOperation(next: string[]): AgentOperation | undefined {
 function stepIsComplete(completed: AgentOperation | undefined, next: AgentOperation) {
   return completed === "model" || (completed === "tools" && next === "model");
 }
-function announceOperation(
+async function announceOperation(
   ctx: HostContext,
   queueId: number,
   operation: AgentOperation,
@@ -152,10 +152,10 @@ function announceOperation(
 ) {
   ctx.observer?.activity?.(ctx.sessionId, operation === "tools" ? "tool" : "model");
   if (operation === "tools") {
-    recordToolStarted(ctx, messages, queueId);
+    await recordToolStarted(ctx, messages, queueId);
   }
 }
-function handleGraphEvent(
+async function handleGraphEvent(
   ctx: HostContext,
   queueId: number,
   event: unknown,
@@ -171,7 +171,7 @@ function handleGraphEvent(
   if (!isAiStreamEvent(part)) {
     throw new Error("LangGraph custom 事件不是 AI SDK 流事件");
   }
-  recordAiStreamPart(ctx, queueId, part, state);
+  await recordAiStreamPart(ctx, queueId, part, state);
 }
 function isAiStreamEvent(value: unknown): value is Parameters<typeof recordAiStreamPart>[2] {
   if (typeof value !== "object" || value === null || !("part" in value)) {

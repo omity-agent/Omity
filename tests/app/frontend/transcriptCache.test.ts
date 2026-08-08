@@ -102,6 +102,7 @@ function snapshot(
     control: "running",
     eventCursor,
     events,
+    fileLinks: [],
     messages: [],
     queue: [
       {

@@ -10,11 +10,11 @@ export async function cleanupCacheTests() {
   }
   await Promise.all(servers.splice(0).map((server) => server.stop(true)));
 }
-export function persist(messages: BaseMessage[]) {
+export async function persist(messages: BaseMessage[]) {
   const database = new AgentDatabase(":memory:");
   databases.push(database);
   database.createSession("session", process.cwd());
-  database.syncHistory("session", messages);
+  await database.syncHistory("session", messages);
   return database.history("session");
 }
 export function lookupTool() {

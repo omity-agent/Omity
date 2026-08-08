@@ -1,6 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { Database } from "bun:sqlite";
+import type { FileLinkUnit } from "../../../fileLinks/types";
 import type { ToolOutputSnapshot } from "../../../runtime/toolOutput";
 import { events } from "../schema";
 import { sessionDatabase } from "../connection";
@@ -25,6 +26,7 @@ export type StreamEventKind =
   | "user_appended";
 interface StreamEventBase {
   id: number;
+  fileLinks?: FileLinkUnit[];
   messageId: string;
   partId: string;
   queueId: number;
@@ -71,6 +73,7 @@ export function insertStreamEvent(
   const inserted = sessionDatabase(db)
     .insert(events)
     .values({
+      fileLinks: event.fileLinks ?? [],
       kind: event.kind,
       messageId: event.messageId,
       partId: event.partId,

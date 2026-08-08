@@ -1,4 +1,4 @@
-import type { FilePathMatch } from "../../../fileLinks/types";
+import type { FilePathMatch } from "../../../../fileLinks/types";
 
 export function normalizeCodeMatches(code: string, matches: FilePathMatch[]) {
   return {

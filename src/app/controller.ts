@@ -20,7 +20,7 @@ import { AppHosts } from "./hosts";
 import type { AppInstanceOwner } from "./runtime/instanceLock";
 import { AppMcp } from "./runtime/mcp";
 import { AsyncFileDialog } from "@bindrs/rfd";
-import type { FileLinkAction } from "./fileLinks/types";
+import type { FileLinkAction } from "../fileLinks/types";
 import { Logger } from "../infrastructure/logging/logger";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
@@ -29,7 +29,6 @@ import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadMcp } from "../infrastructure/mcp/loadTools";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
-import { probeFileLinks } from "./fileLinks/probe";
 import { setSessionControl } from "../client";
 
 export class AppController {
@@ -96,9 +95,6 @@ export class AppController {
   async pickWorkspace() {
     const directory = await new AsyncFileDialog().setTitle("选择工作目录").pickFolder();
     return directory?.path() ?? null;
-  }
-  fileLinks(sessionId: string, text: string) {
-    return probeFileLinks(text, this.registry.require(sessionId).workspace);
   }
   async activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
     this.registry.require(sessionId);

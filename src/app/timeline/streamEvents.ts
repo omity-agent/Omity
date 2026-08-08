@@ -1,36 +1,14 @@
-import type {
-  DisplayEvent,
-  DisplayToolCall,
-  DisplayToolOutput,
-  TimelineMessage,
-  TimelinePart,
-} from "./types";
-import { reconcileToolStreams, streamCallKey } from "./tool/correlation";
-import { countTokens } from "../../runtime/tokenizer";
+import type { DisplayEvent, DisplayToolOutput, TimelineMessage } from "./types";
+import {
+  type StreamMessage,
+  createStreamPart,
+  mergeStreamPart,
+  projectStreamMessage,
+} from "./stream/message";
+import type { FileLinkUnit } from "../../fileLinks/types";
+import { reconcileToolStreams } from "./tool/correlation";
 
 type ToolLifecycle = { phase: "running" } | { output: DisplayToolOutput; phase: "completed" };
-type TextPart = {
-  [Kind in "assistant_reasoning_delta" | "assistant_text_delta"]: {
-    content: string;
-    kind: Kind;
-  };
-}["assistant_reasoning_delta" | "assistant_text_delta"];
-interface ToolPart {
-  args: string;
-  formal?: true;
-  freeform?: boolean;
-  id?: string;
-  index: number;
-  kind: "tool_call_delta";
-  name: string;
-}
-type Part = TextPart | ToolPart;
-interface StreamMessage {
-  firstEventId: number;
-  messageId: string;
-  order: string[];
-  parts: Map<string, Part>;
-}
 export function displayStreamEvent(event: DisplayEvent): DisplayEvent {
   return event;
 }
@@ -63,131 +41,43 @@ export function streamTimelineMessages(
   events: DisplayEvent[],
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
+  fileLinks: FileLinkUnit[] = [],
 ): TimelineMessage[] {
   const messages = new Map<string, StreamMessage>();
   for (const event of events) {
-    if (
-      event.kind !== "tool_finished" &&
-      event.kind !== "tool_started" &&
-      event.kind !== "user_appended"
-    ) {
+    if (isPartEvent(event)) {
       let message = messages.get(event.messageId);
       if (!message) {
         message = {
+          contentLength: 0,
           firstEventId: event.id,
           messageId: event.messageId,
           order: [],
           parts: new Map(),
+          reasoningLength: 0,
         };
         messages.set(event.messageId, message);
       }
-      let part = message.parts.get(event.partId);
-      if (!part) {
-        part = createPart(event);
-        message.parts.set(event.partId, part);
-        message.order.push(event.partId);
+      const part = message.parts.get(event.partId);
+      if (part) {
+        mergeStreamPart(part, event, message);
       } else {
-        mergePart(part, event);
+        message.parts.set(event.partId, createStreamPart(event, message));
+        message.order.push(event.partId);
       }
     }
   }
   reconcileToolStreams(messages.values(), events);
-  return [...messages.values()].map((message) => timelineMessage(message, outputs, lifecycle));
+  return [...messages.values()].map((message) =>
+    projectStreamMessage(message, outputs, lifecycle, fileLinks),
+  );
 }
-function createPart(
-  event: Exclude<DisplayEvent, { kind: "tool_finished" | "tool_started" | "user_appended" }>,
-): Part {
-  if (event.kind === "tool_call_delta") {
-    return {
-      args: event.value.argumentsDelta ?? "",
-      ...(event.value.freeform ? { freeform: true } : {}),
-      ...(event.value.idDelta ? { id: event.value.idDelta } : {}),
-      index: event.value.index,
-      kind: event.kind,
-      name: event.value.nameDelta ?? "",
-    };
-  }
-  return { content: event.value, kind: event.kind };
-}
-function mergePart(
-  part: Part,
-  event: Exclude<DisplayEvent, { kind: "tool_finished" | "tool_started" | "user_appended" }>,
-) {
-  if (part.kind !== event.kind) {
-    throw new Error(`流片段 ${event.partId} 的类型发生变化`);
-  }
-  if (part.kind === "tool_call_delta" && event.kind === "tool_call_delta") {
-    if (part.index !== event.value.index) {
-      throw new Error(`工具流片段 ${event.partId} 的索引发生变化`);
-    }
-    part.args += event.value.argumentsDelta ?? "";
-    part.freeform ??= event.value.freeform;
-    part.id = appendDelta(part.id, event.value.idDelta);
-    part.name += event.value.nameDelta ?? "";
-  } else if (part.kind !== "tool_call_delta" && event.kind !== "tool_call_delta") {
-    part.content += event.value;
-  }
-}
-function timelineMessage(
-  message: StreamMessage,
-  outputs: Map<string, DisplayToolOutput>,
-  lifecycle: ReturnType<typeof toolCallLifecycle>,
-): TimelineMessage {
-  const parts = message.order.flatMap((partId): TimelinePart[] => {
-    const part = message.parts.get(partId);
-    if (!part) {
-      throw new Error(`流消息缺少片段：${partId}`);
-    }
-    if (part.kind === "assistant_reasoning_delta") {
-      return part.content.trim() ? [{ content: part.content, type: "reasoning" }] : [];
-    }
-    if (part.kind === "assistant_text_delta") {
-      return part.content.trim() ? [{ content: part.content, type: "content" }] : [];
-    }
-    const callId = part.id ?? streamCallKey(message.messageId, partId);
-    const output = outputs.get(callId);
-    const call = displayCall(part, message.messageId, partId);
-    const key = streamCallKey(message.messageId, partId);
-    if (output) {
-      return [{ call, key, output, phase: "completed", type: "tool" }];
-    }
-    const state = lifecycle.get(call.id);
-    if (state?.phase === "completed") {
-      return [{ call, key, output: state.output, phase: "completed", type: "tool" }];
-    }
-    return [
-      {
-        call,
-        key,
-        phase: state?.phase ?? "streaming",
-        type: "tool",
-      },
-    ];
-  });
-  return {
-    content: parts.flatMap((part) => (part.type === "content" ? [part.content] : [])).join(""),
-    createdAt: 0,
-    id: -1,
-    key: `stream-${message.messageId}-${message.firstEventId.toString()}`,
-    parts,
-    role: "assistant",
-  };
-}
-function displayCall(part: ToolPart, messageId: string, partId: string): DisplayToolCall {
-  const inputText = part.args;
-  return {
-    id: part.id ?? streamCallKey(messageId, partId),
-    index: part.index,
-    input: {},
-    inputText,
-    inputTokens: countTokens(inputText),
-    messageId,
-    name: part.name || "tool",
-    ...(part.formal ? {} : { temporary: true }),
-    ...(part.freeform ? { rawInput: inputText } : {}),
-  };
-}
-function appendDelta(current: string | undefined, incoming?: string) {
-  const value = (current ?? "") + (incoming ?? "");
-  return value || undefined;
+function isPartEvent(
+  event: DisplayEvent,
+): event is Exclude<DisplayEvent, { kind: "tool_finished" | "tool_started" | "user_appended" }> {
+  return (
+    event.kind !== "tool_finished" &&
+    event.kind !== "tool_started" &&
+    event.kind !== "user_appended"
+  );
 }

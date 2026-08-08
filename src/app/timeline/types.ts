@@ -1,4 +1,5 @@
 import type { ErrorDetails } from "../../failures/details";
+import type { FilePathMatch } from "../../fileLinks/types";
 import type { QueueStatus } from "../../types";
 import type { StreamEvent } from "../../infrastructure/database/records/streamEvents";
 import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
@@ -18,6 +19,7 @@ export interface DisplayToolCall {
   inputText?: string;
   rawInput?: string;
   temporary?: true;
+  fileLinks?: FilePathMatch[];
 }
 export type ToolCallPhase = "streaming" | "pending" | "running" | "completed";
 export interface TokenUsage {
@@ -48,7 +50,7 @@ export interface DisplayQueue {
   root?: boolean;
 }
 export type DisplayEvent = StreamEvent;
-export type DisplayToolOutput = ToolOutputSnapshot;
+export type DisplayToolOutput = ToolOutputSnapshot & { fileLinks?: FilePathMatch[] };
 export interface TimelineMessage {
   id: number;
   key: string;
@@ -60,8 +62,8 @@ export interface TimelineMessage {
   parts: TimelinePart[];
 }
 export type TimelinePart =
-  | { type: "content"; content: string }
-  | { type: "reasoning"; content: string }
+  | { type: "content"; content: string; fileLinks?: FilePathMatch[] }
+  | { type: "reasoning"; content: string; fileLinks?: FilePathMatch[] }
   | {
       type: "tool";
       call: DisplayToolCall;

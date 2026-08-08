@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { rmSync } from "node:fs";
 
 const dirs: string[] = [];
-export const workspace = String.raw`F:\workspace\test`;
+export const workspace = process.cwd();
 export function afterQuery(
   database: AgentDatabase,
   sqlFragment: string,

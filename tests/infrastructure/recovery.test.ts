@@ -77,20 +77,20 @@ test("recovery preserves pending work while normalizing an interrupted run", () 
   expect(db.control("123")).toBe("pause");
   db.close();
 });
-test("recovery completes a persisted cancel and removes only its run data", () => {
+test("recovery completes a persisted cancel and removes only its run data", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const root = db.appendUser("123", "取消我");
   const appended = db.appendUser("123", "也取消我");
   db.startQueue("123", required(db.nextQueue("123")));
-  db.appendStream("123", {
+  await db.appendStream("123", {
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
     queueId: root,
     value: "partial",
   });
-  db.appendStream("123", {
+  await db.appendStream("123", {
     kind: "assistant_text_delta",
     messageId: "message-2",
     partId: "text-1",

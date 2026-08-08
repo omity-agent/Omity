@@ -1,8 +1,12 @@
 import { parseDocument, stringify } from "yaml";
-import type { DisplayToolCall } from "../../../timeline";
 
+interface ToolInputSource {
+  input: unknown;
+  inputText?: string;
+  rawInput?: string;
+}
 const recoverableEndErrors = new Set(["BAD_INDENT", "MISSING_CHAR"]);
-export function formatToolInput(call: DisplayToolCall) {
+export function formatToolInput(call: ToolInputSource) {
   if (call.rawInput !== undefined) {
     return call.rawInput;
   }

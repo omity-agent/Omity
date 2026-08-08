@@ -129,15 +129,11 @@ export function Message({
           </span>
         </div>
         {item.parts.map((part, index) => {
-          const complete =
-            item.role !== "assistant" || item.id !== -1 || index < item.parts.length - 1;
-          const fileLinkIdentity = `${item.key}:${part.type}:${index.toString()}`;
           if (part.type === "content") {
             return (
               <MarkdownView
-                complete={complete}
                 content={part.content}
-                fileLinkIdentity={fileLinkIdentity}
+                fileLinks={part.fileLinks}
                 key={`content-${index.toString()}`}
                 preserveLineBreaks={item.role === "user"}
               />
@@ -146,9 +142,8 @@ export function Message({
           if (part.type === "reasoning") {
             return (
               <Reasoning
-                complete={complete}
                 content={part.content}
-                fileLinkIdentity={fileLinkIdentity}
+                fileLinks={part.fileLinks}
                 key={`reasoning-${index.toString()}-${index === latestDetailIndex ? "latest" : "settled"}`}
                 latest={index === latestDetailIndex}
               />

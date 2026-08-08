@@ -1,11 +1,28 @@
 import type { AttachmentSettings } from "../../../attachments/contract";
 import type { DisplayEvent } from "../../../timeline";
+import type { FileLinkUnit } from "../../../../fileLinks/types";
 import type { SessionInfo } from "../../../sessionState";
 import type { TranscriptSnapshot } from "../transcript/cache";
 import { errorDetailsSchema } from "./errors";
 import { z } from ".";
 
 const integer = z.number().int();
+const fileLinkMatchSchema = z.object({
+  kind: z.enum(["directory", "file"]),
+  path: z.string(),
+  position: z.object({
+    end: integer.nonnegative(),
+    start: integer.nonnegative(),
+  }),
+});
+const fileLinkUnitSchema: z.ZodType<FileLinkUnit> = z.object({
+  end: integer.nonnegative(),
+  matches: z.array(fileLinkMatchSchema),
+  ownerId: z.string(),
+  start: integer.nonnegative(),
+  surface: z.enum(["content", "reasoning", "tool_input", "tool_output"]),
+  unitIndex: integer.nonnegative(),
+});
 const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: integer,
   error: errorDetailsSchema.nullable(),
@@ -15,6 +32,7 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   workspace: z.string(),
 });
 const toolCallSchema = z.object({
+  fileLinks: z.array(fileLinkMatchSchema).optional(),
   id: z.string(),
   index: integer.nonnegative(),
   input: z.unknown(),
@@ -54,6 +72,7 @@ const queueSchema = z.object({
 });
 const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
   z.object({
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: integer.positive(),
     kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
     messageId: z.string().min(1),
@@ -62,6 +81,7 @@ const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
     value: z.string(),
   }),
   z.object({
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: integer.positive(),
     kind: z.literal("tool_call_delta"),
     messageId: z.string().min(1),
@@ -76,6 +96,7 @@ const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
     }),
   }),
   z.object({
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: integer.positive(),
     kind: z.literal("tool_finished"),
     messageId: z.string().min(1),
@@ -91,6 +112,7 @@ const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
     }),
   }),
   z.object({
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: integer.positive(),
     kind: z.literal("tool_started"),
     messageId: z.string().min(1),
@@ -99,6 +121,7 @@ const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
     value: z.string().min(1),
   }),
   z.object({
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: integer.positive(),
     kind: z.literal("user_appended"),
     messageId: z.string().min(1),
@@ -111,6 +134,7 @@ export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object(
   control: z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
   eventCursor: integer.nonnegative(),
   events: z.array(eventSchema),
+  fileLinks: z.array(fileLinkUnitSchema),
   messages: z.array(messageSchema),
   queue: z.array(queueSchema),
   transcriptRevision: integer.nonnegative(),

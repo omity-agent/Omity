@@ -1,9 +1,9 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "4bd5c8ad-9ad4-47a6-9360-7585098f91b7",
+  "id": "aa1346f5-3328-4848-8e34-b878f674c563",
   "prevIds": [
-    "f779e682-ac93-4b5d-94f4-9480c49bd74b"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -12,6 +12,10 @@
     },
     {
       "name": "messages",
+      "entityType": "tables"
+    },
+    {
+      "name": "file_link_units",
       "entityType": "tables"
     },
     {
@@ -45,6 +49,16 @@
     {
       "name": "tool_cancellations",
       "entityType": "tables"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "file_links_json",
+      "entityType": "columns",
+      "table": "events"
     },
     {
       "type": "integer",
@@ -185,6 +199,116 @@
       "name": "source_id",
       "entityType": "columns",
       "table": "messages"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "end",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "matches_json",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "next_offset",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "owner_id",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "queue_id",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "start",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "surface",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "text",
+      "entityType": "columns",
+      "table": "file_link_units"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "unit_index",
+      "entityType": "columns",
+      "table": "file_link_units"
     },
     {
       "type": "text",
@@ -648,6 +772,36 @@
     },
     {
       "columns": [
+        "queue_id"
+      ],
+      "tableTo": "queue",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "nameExplicit": false,
+      "name": "fk_file_link_units_queue_id_queue_id_fk",
+      "entityType": "fks",
+      "table": "file_link_units"
+    },
+    {
+      "columns": [
+        "session_id"
+      ],
+      "tableTo": "sessions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_file_link_units_session_id_sessions_id_fk",
+      "entityType": "fks",
+      "table": "file_link_units"
+    },
+    {
+      "columns": [
         "session_id"
       ],
       "tableTo": "sessions",
@@ -756,6 +910,15 @@
     },
     {
       "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "file_link_units_pk",
+      "table": "file_link_units",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
         "session_id"
       ],
       "nameExplicit": false,
@@ -839,6 +1002,32 @@
       "name": "messages_queue",
       "entityType": "indexes",
       "table": "messages"
+    },
+    {
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false
+        },
+        {
+          "value": "owner_id",
+          "isExpression": false
+        },
+        {
+          "value": "surface",
+          "isExpression": false
+        },
+        {
+          "value": "unit_index",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "file_link_unit_owner",
+      "entityType": "indexes",
+      "table": "file_link_units"
     },
     {
       "columns": [

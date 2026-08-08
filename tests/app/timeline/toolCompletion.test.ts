@@ -6,13 +6,13 @@ import { buildTimeline } from "../../../src/app/timeline";
 import { loadTranscript } from "../../../src/app/transcript";
 
 afterEach(cleanupDatabaseDirs);
-test("syncing tool output emits a versioned completion event", () => {
+test("syncing tool output emits a versioned completion event", async () => {
   const db = makeDb();
   const sessionId = "tool-finished-session";
   db.resetSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "run command");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
-  db.appendStream(sessionId, {
+  void db.appendStream(sessionId, {
     kind: "tool_call_delta",
     messageId: "assistant-1",
     partId: "tool-0",
@@ -23,7 +23,7 @@ test("syncing tool output emits a versioned completion event", () => {
       nameDelta: "shell",
     },
   });
-  db.appendStream(sessionId, {
+  void db.appendStream(sessionId, {
     kind: "tool_started",
     messageId: "assistant-1",
     partId: "tool-0",
@@ -32,7 +32,7 @@ test("syncing tool output emits a versioned completion event", () => {
   });
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
-  db.syncHistory(sessionId, [
+  await db.syncHistory(sessionId, [
     new HumanMessage({ content: "run command", id: `queue:${sessionId}:${queueId.toString()}` }),
     new AIMessage({
       content: "",
@@ -75,14 +75,14 @@ test("syncing tool output emits a versioned completion event", () => {
   ).toEqual(["call-1"]);
   db.close();
 });
-test("syncing one tool does not drop the remaining parallel tool calls", () => {
+test("syncing one tool does not drop the remaining parallel tool calls", async () => {
   const db = makeDb();
   const sessionId = "partial-tool-finished-session";
   db.resetSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "run commands");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
   try {
-    db.syncHistory(sessionId, [
+    await db.syncHistory(sessionId, [
       new HumanMessage({ content: "run commands", id: `queue:${sessionId}:${queueId.toString()}` }),
       new AIMessage({
         content: "",
@@ -94,35 +94,35 @@ test("syncing one tool does not drop the remaining parallel tool calls", () => {
         ],
       }),
     ]);
-    db.appendStream(sessionId, {
+    void db.appendStream(sessionId, {
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-0",
       queueId,
       value: { idDelta: "call-1", index: 0, nameDelta: "tool-1" },
     });
-    db.appendStream(sessionId, {
+    void db.appendStream(sessionId, {
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-1",
       queueId,
       value: { idDelta: "call-2", index: 1, nameDelta: "tool-2" },
     });
-    db.appendStream(sessionId, {
+    void db.appendStream(sessionId, {
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-2",
       queueId,
       value: { idDelta: "call-3", index: 2, nameDelta: "tool-3" },
     });
-    db.appendStream(sessionId, {
+    void db.appendStream(sessionId, {
       kind: "tool_started",
       messageId: "assistant-1",
       partId: "tool-0",
       queueId,
       value: "call-1",
     });
-    db.syncHistory(sessionId, [
+    await db.syncHistory(sessionId, [
       new HumanMessage({ content: "run commands", id: `queue:${sessionId}:${queueId.toString()}` }),
       new AIMessage({
         content: "",
@@ -144,7 +144,7 @@ test("syncing one tool does not drop the remaining parallel tool calls", () => {
       "tool_finished",
     ]);
     expect(callIds).toEqual(["call-1", "call-2", "call-3"]);
-    db.syncHistory(sessionId, db.history(sessionId));
+    await db.syncHistory(sessionId, db.history(sessionId));
     expect(
       loadTranscript(db, sessionId).events.filter(({ kind }) => kind === "tool_finished"),
     ).toHaveLength(1);

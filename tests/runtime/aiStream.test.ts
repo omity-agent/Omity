@@ -9,7 +9,7 @@ import { createStreamLogState } from "../../src/runtime/stream";
 import { testSettings } from "../support/settings";
 
 afterEach(cleanupDatabaseDirs);
-test("AI SDK stream groups response parts and exposes tool metadata before execution", () => {
+test("AI SDK stream groups response parts and exposes tool metadata before execution", async () => {
   const db = makeDb();
   db.resetSession("session", workspace);
   const queueId = db.appendUser("session", "run");
@@ -22,19 +22,19 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     settings: testSettings(),
   };
   const state = createStreamLogState();
-  recordAiStreamPart(
+  await recordAiStreamPart(
     context,
     queueId,
     { part: { id: "reasoning-1", text: "first", type: "reasoning-delta" } },
     state,
   );
-  recordAiStreamPart(
+  await recordAiStreamPart(
     context,
     queueId,
     { part: { id: "reasoning-2", text: "second", type: "reasoning-delta" } },
     state,
   );
-  recordAiStreamPart(
+  await recordAiStreamPart(
     context,
     queueId,
     {
@@ -43,7 +43,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     },
     state,
   );
-  recordAiStreamPart(
+  await recordAiStreamPart(
     context,
     queueId,
     { part: { delta: "dir", id: "call-1", type: "tool-input-delta" } },
@@ -57,7 +57,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     phase: "streaming",
     type: "tool",
   });
-  recordToolStarted(
+  await recordToolStarted(
     context,
     [
       new AIMessage({

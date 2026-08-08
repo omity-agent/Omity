@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode, useMemo } from "react";
 import { FileLinkMenu } from "./Menu";
-import type { FilePathMatch } from "../../../fileLinks/types";
+import type { FilePathMatch } from "../../../../fileLinks/types";
 
 interface HighlightToken {
   className?: string;

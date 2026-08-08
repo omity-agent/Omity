@@ -19,10 +19,10 @@ import { countTokens } from "../../src/runtime/tokenizer";
 import { loadTranscript } from "../../src/app/transcript";
 
 afterEach(cleanupDatabaseDirs);
-test("transcript exposes Responses API token and cache usage", () => {
+test("transcript exposes Responses API token and cache usage", async () => {
   const db = makeDb();
   db.resetSession("usage-session", workspace);
-  db.syncHistory("usage-session", [
+  await db.syncHistory("usage-session", [
     new HumanMessage("问题"),
     new AIMessage({
       content: "答案",
@@ -42,12 +42,12 @@ test("transcript exposes Responses API token and cache usage", () => {
   });
   db.close();
 });
-test("transcript counts raw tool input and output text", () => {
+test("transcript counts raw tool input and output text", async () => {
   const db = makeDb();
   const args = { command: "echo 你好" };
   const output = "执行完成";
   db.resetSession("tool-token-session", workspace);
-  db.syncHistory("tool-token-session", [
+  await db.syncHistory("tool-token-session", [
     new HumanMessage("运行命令"),
     new AIMessage({
       content: "",
@@ -67,11 +67,11 @@ test("transcript counts raw tool input and output text", () => {
   expect(part.output?.outputTokens).toBe(countTokens(output));
   db.close();
 });
-test("transcript exposes original Freeform tool input", () => {
+test("transcript exposes original Freeform tool input", async () => {
   const db = makeDb();
   const input = "*** Begin Patch\n*** End Patch";
   db.resetSession("freeform-session", workspace);
-  db.syncHistory("freeform-session", [
+  await db.syncHistory("freeform-session", [
     new AIMessage({
       additional_kwargs: {
         __openai_custom_tool_call_ids__: { "call-1": "ct-1" },
@@ -86,10 +86,10 @@ test("transcript exposes original Freeform tool input", () => {
   expect(part?.type === "tool" ? part.call.rawInput : undefined).toBe(input);
   db.close();
 });
-test("transcript keeps the original token count for redirected output", () => {
+test("transcript keeps the original token count for redirected output", async () => {
   const db = makeDb();
   db.resetSession("large-output-session", workspace);
-  db.syncHistory("large-output-session", [
+  await db.syncHistory("large-output-session", [
     new AIMessage({
       content: "",
       tool_calls: [{ args: {}, id: "call-1", name: "shell" }],
@@ -106,14 +106,14 @@ test("transcript keeps the original token count for redirected output", () => {
   expect(part?.output?.outputTokens).toBe(12_345);
   db.close();
 });
-test("live stream events match persisted snapshots and keep their cursor", () => {
+test("live stream events match persisted snapshots and keep their cursor", async () => {
   const db = makeDb();
   db.resetSession("stream-session", workspace);
   const queueId = db.appendUser("stream-session", "question");
   db.startQueue("stream-session", required(db.nextQueue("stream-session")));
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
-  const event = db.appendStream("stream-session", {
+  const event = await db.appendStream("stream-session", {
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
@@ -128,7 +128,7 @@ test("live stream events match persisted snapshots and keep their cursor", () =>
   ]);
   expect(streaming.events[1]).toEqual(displayStreamEvent(event));
   expect(streaming.eventCursor).toBe(event.id);
-  db.syncHistory("stream-session", [new HumanMessage("question"), new AIMessage("hello")]);
+  await db.syncHistory("stream-session", [new HumanMessage("question"), new AIMessage("hello")]);
   const completed = loadTranscript(db, "stream-session");
   expect(completed.events.map(({ kind }) => kind)).toEqual(["user_appended"]);
   expect(completed.eventCursor).toBe(event.id);
@@ -146,7 +146,7 @@ test("snapshot refresh does not discard a tool event committed after its events 
   const emitted: StreamEvent[] = [];
   writer.onChange((event) => emitted.push(event));
   const racingReader = afterQuery(reader, "FROM events WHERE session_id", () => {
-    writer.appendStream(sessionId, {
+    void writer.appendStream(sessionId, {
       kind: "tool_call_delta",
       messageId: "assistant-race",
       partId: "tool-0",

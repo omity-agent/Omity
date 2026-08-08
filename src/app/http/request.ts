@@ -45,7 +45,6 @@ export const fileLinkActionBody = z
     path: z.string().min(1).max(32_767),
   })
   .strict();
-export const fileLinkProbeBody = z.object({ text: z.string().max(requestBodyLimit) }).strict();
 export const forkBody = z.object({ beforeMessageId: z.number().int().positive() }).strict();
 const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional();
 const credentialBase = {

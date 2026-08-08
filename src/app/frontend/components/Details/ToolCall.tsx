@@ -6,7 +6,7 @@ import { Frame } from "./Frame";
 import { HighlightedCode } from "../HighlightedCode";
 import { css } from "styled-system/css";
 import { formatTokens } from "../../tokenUnits";
-import { formatToolInput } from "./toolInput";
+import { formatToolInput } from "../../../../fileLinks/toolInput";
 import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
 
@@ -138,9 +138,7 @@ export function ToolCall({
             autoFollow={latest}
             className={codeBlock}
             code={inputCode}
-            fileLinkComplete={phase !== "streaming"}
-            fileLinkIdentity={`tool-input:${call.id}`}
-            fileLinkMode="lines"
+            fileLinkMatches={call.fileLinks}
             language={call.rawInput === undefined ? "yaml" : "plaintext"}
           />
         </section>
@@ -157,8 +155,7 @@ export function ToolCall({
                 autoFollow={latest}
                 className={codeBlock}
                 code={output?.content ?? ""}
-                fileLinkIdentity={`tool-output:${call.id}`}
-                fileLinkMode="output"
+                fileLinkMatches={output?.fileLinks}
               />
             ) : null}
             {output && output.images.length > 0 ? (

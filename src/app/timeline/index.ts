@@ -2,7 +2,6 @@ import type {
   DisplayEvent,
   DisplayMessage,
   DisplayQueue,
-  DisplayRole,
   DisplayToolCall,
   DisplayToolOutput,
   TimelineMessage,
@@ -15,7 +14,10 @@ import {
   streamTimelineMessages,
   toolCallLifecycle,
 } from "./streamEvents";
+import { linkedCall, linkedOutput, matchesFor, optionalLinks } from "./build/fileLinks";
+import type { FileLinkUnit } from "../../fileLinks/types";
 import { groupAssistantMessages } from "./grouping";
+import { syntheticMessage } from "./build/synthetic";
 
 export type {
   DisplayEvent,
@@ -36,6 +38,7 @@ export function buildTimeline(
   queue: DisplayQueue[],
   events: DisplayEvent[],
   optimistic: TimelineMessage[] = [],
+  fileLinks: FileLinkUnit[] = [],
 ): TimelineMessage[] {
   const outputs = new Map(
     messages.flatMap((item) =>
@@ -48,7 +51,7 @@ export function buildTimeline(
   const lifecycle = toolCallLifecycle(events, outputs);
   const visible = messages
     .filter((item) => item.role !== "tool")
-    .map((item) => withParts(item, `message-${item.id.toString()}`, outputs, lifecycle));
+    .map((item) => withParts(item, `message-${item.id.toString()}`, outputs, lifecycle, fileLinks));
   const persistedSourceIds = new Set(
     messages.map((item) => item.sourceId).filter((id) => id !== undefined),
   );
@@ -58,7 +61,7 @@ export function buildTimeline(
       .filter((item) => item.status === "pending" && !knownQueue.has(item.id))
       .map(
         (item) =>
-          [item.id, synthetic("user", item.content, `queue-${item.id.toString()}`)] as const,
+          [item.id, syntheticMessage("user", item.content, `queue-${item.id.toString()}`)] as const,
       ),
   );
   const activeQueueIds = new Set(
@@ -80,6 +83,7 @@ export function buildTimeline(
     outputs,
     lifecycle,
     persistedToolCalls,
+    fileLinks,
   );
   return groupAssistantMessages([...visible, ...live]);
 }
@@ -90,12 +94,13 @@ function timelineTail(
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   persistedToolCalls: DisplayToolCall[],
+  fileLinks: FileLinkUnit[],
 ) {
   const result: TimelineMessage[] = [];
   let stream: DisplayEvent[] = [];
   const flushStream = () => {
     result.push(
-      ...streamTimelineMessages(stream, outputs, lifecycle).flatMap((message) => {
+      ...streamTimelineMessages(stream, outputs, lifecycle, fileLinks).flatMap((message) => {
         const parts = message.parts.filter(
           (part) =>
             part.type !== "tool" ||
@@ -128,6 +133,7 @@ function withParts(
   key: string,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
+  fileLinks: FileLinkUnit[],
 ): TimelineMessage {
   return {
     content: message.content,
@@ -138,10 +144,24 @@ function withParts(
     ...(message.usage ? { usage: message.usage } : {}),
     parts: [
       ...(message.reasoning.trim()
-        ? [{ content: message.reasoning, type: "reasoning" } as const]
+        ? [
+            {
+              content: message.reasoning,
+              ...optionalLinks(matchesFor(fileLinks, message.sourceId, "reasoning")),
+              type: "reasoning",
+            } as const,
+          ]
         : []),
-      ...(message.content.trim() ? [{ content: message.content, type: "content" } as const] : []),
-      ...message.toolCalls.map((call) => toolPart(call, outputs, lifecycle)),
+      ...(message.content.trim()
+        ? [
+            {
+              content: message.content,
+              ...optionalLinks(matchesFor(fileLinks, message.sourceId, "content")),
+              type: "content",
+            } as const,
+          ]
+        : []),
+      ...message.toolCalls.map((call) => toolPart(call, outputs, lifecycle, fileLinks)),
     ],
   };
 }
@@ -149,25 +169,29 @@ function toolPart(
   call: DisplayToolCall,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
+  fileLinks: FileLinkUnit[],
 ): Extract<TimelinePart, { type: "tool" }> {
   const key = displayToolCallKey(call);
+  const withLinks = linkedCall(call, fileLinks);
   const output = outputs.get(call.id);
   if (output) {
-    return { call, key, output, phase: "completed", type: "tool" };
+    return {
+      call: withLinks,
+      key,
+      output: linkedOutput(output, call.id, fileLinks),
+      phase: "completed",
+      type: "tool",
+    };
   }
   const state = lifecycle.get(call.id);
   if (state?.phase === "completed") {
-    return { call, key, output: state.output, phase: "completed", type: "tool" };
+    return {
+      call: withLinks,
+      key,
+      output: linkedOutput(state.output, call.id, fileLinks),
+      phase: "completed",
+      type: "tool",
+    };
   }
-  return { call, key, phase: state?.phase ?? "pending", type: "tool" };
-}
-function synthetic(role: DisplayRole, content: string, key: string): TimelineMessage {
-  return {
-    content,
-    createdAt: 0,
-    id: -1,
-    key,
-    parts: content.trim() ? [{ content, type: "content" }] : [],
-    role,
-  };
+  return { call: withLinks, key, phase: state?.phase ?? "pending", type: "tool" };
 }

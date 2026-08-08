@@ -3,7 +3,6 @@ import {
   type StreamEvent,
   type StreamEventDraft,
   deleteQueueStream,
-  insertStreamEvent,
   insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/streamEvents";
@@ -17,11 +16,6 @@ import {
   setQueueStatusRecord,
   startQueueRecord,
 } from "./records/queue/operations";
-import {
-  clearToolCancellations,
-  requestToolCancellation,
-  takeToolCancellation,
-} from "./records/toolCancellations";
 import {
   closeDatabase,
   openSessionDatabase,
@@ -40,19 +34,23 @@ import {
   touchSessionRecord,
   writeControlRecord,
 } from "./records/sessions";
+import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
+import { requestToolCancellation, takeToolCancellation } from "./records/toolCancellations";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
+import { FileLinkIndexer } from "./fileLinkIndexer";
 import { RecoverableDatabase } from "./records/recovery";
-import { finishToolStreams } from "./records/toolCompletion";
+import { appendFileLinkStream } from "./fileLinkAppend";
 import { loadMessages } from "./records/messages/history";
 import { resetSessionStorage } from "./maintenance";
-import { syncMessages } from "./records/messages/sync";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
+  private readonly fileLinks: FileLinkIndexer;
   private storageReclaimPending = false;
   constructor(path: string, root = process.cwd()) {
     super(openSessionDatabase(path, root));
+    this.fileLinks = new FileLinkIndexer(this.db);
   }
   close() {
     closeDatabase(this.db);
@@ -90,7 +88,7 @@ export class AgentDatabase extends RecoverableDatabase {
     return readProfilesRecord(this.db, sessionId);
   }
   appendUser(sessionId: string, content: string) {
-    this.requireSession(sessionId);
+    requireSessionRecord(this.db, sessionId);
     return runTransaction(this.db, () => {
       const insertedQueueId = appendUserQueue(this.db, sessionId, content);
       touchSessionRecord(this.db, sessionId);
@@ -98,7 +96,7 @@ export class AgentDatabase extends RecoverableDatabase {
     });
   }
   appendDraft(sessionId: string, content: string) {
-    this.requireSession(sessionId);
+    requireSessionRecord(this.db, sessionId);
     return runTransaction(this.db, () => {
       const queueId = appendDraftQueue(this.db, sessionId, content);
       touchSessionRecord(this.db, sessionId);
@@ -134,6 +132,9 @@ export class AgentDatabase extends RecoverableDatabase {
         deleteQueueStream(this.db, queueId);
       }
     });
+    if (status === "canceled") {
+      discardIndexedQueue(this.db, this.fileLinks, queueId);
+    }
   }
   queueStatus(queueId: number) {
     return queueStatusRecord(this.db, queueId);
@@ -144,23 +145,21 @@ export class AgentDatabase extends RecoverableDatabase {
   transcriptRevision(sessionId: string) {
     return readTranscriptRevisionRecord(this.db, sessionId);
   }
-  syncHistory(sessionId: string, messages: BaseMessage[]) {
-    this.requireSession(sessionId);
-    const finished = runTransaction(this.db, () => {
-      const messagesChanged = syncMessages(this.db, sessionId, messages);
-      const streams = finishToolStreams(this.db, sessionId, messages);
-      clearToolCancellations(this.db, sessionId);
-      if (messagesChanged || streams.changed) {
-        touchSessionRecord(this.db, sessionId);
-      }
-      return streams.events;
+  async syncHistory(sessionId: string, messages: BaseMessage[]) {
+    requireSessionRecord(this.db, sessionId);
+    const finished = await syncIndexedHistory({
+      db: this.db,
+      fileLinks: this.fileLinks,
+      messages,
+      sessionId,
+      workspace: this.workspace(sessionId),
     });
     for (const event of finished) {
       this.notify?.(event);
     }
   }
   history(sessionId: string): BaseMessage[] {
-    this.requireSession(sessionId);
+    requireSessionRecord(this.db, sessionId);
     return loadMessages(this.db, sessionId);
   }
   control(sessionId: string): Control {
@@ -170,29 +169,27 @@ export class AgentDatabase extends RecoverableDatabase {
     writeControlRecord(this.db, sessionId, control);
   }
   requestToolCancellation(sessionId: string, callId: string) {
-    this.requireSession(sessionId);
+    requireSessionRecord(this.db, sessionId);
     requestToolCancellation(this.db, sessionId, callId);
   }
   takeToolCancellation(sessionId: string, callId: string) {
     return takeToolCancellation(this.db, sessionId, callId);
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
-    this.requireSession(sessionId);
-    const inserted = runTransaction(this.db, () => {
-      const result = insertStreamEvent(this.db, sessionId, event);
-      touchSessionRecord(this.db, sessionId);
-      return result;
+    return appendFileLinkStream({
+      db: this.db,
+      event,
+      fileLinks: this.fileLinks,
+      notify: this.notify,
+      sessionId,
+      workspace: this.workspace(sessionId),
     });
-    this.notify?.(inserted);
-    return inserted;
   }
   discardQueueStream(queueId: number) {
     runTransaction(this.db, () => {
       touchQueueSessionRecord(this.db, queueId);
       deleteQueueStream(this.db, queueId);
     });
-  }
-  private requireSession(sessionId: string) {
-    requireSessionRecord(this.db, sessionId);
+    discardIndexedQueue(this.db, this.fileLinks, queueId);
   }
 }

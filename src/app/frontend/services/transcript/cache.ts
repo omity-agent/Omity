@@ -6,6 +6,7 @@ import {
   buildTimeline,
 } from "../../../timeline";
 import type { Control } from "../../../../types";
+import type { FileLinkUnit } from "../../../../fileLinks/types";
 
 export interface TranscriptSnapshot {
   control: Control;
@@ -13,6 +14,7 @@ export interface TranscriptSnapshot {
   messages: DisplayMessage[];
   events: DisplayEvent[];
   eventCursor: number;
+  fileLinks: FileLinkUnit[];
   transcriptRevision: number;
 }
 export interface TranscriptData extends TranscriptSnapshot {
@@ -24,6 +26,7 @@ export function emptyTranscriptData(): TranscriptData {
     control: "running",
     eventCursor: 0,
     events: [],
+    fileLinks: [],
     messages: [],
     queue: [],
     snapshotCursor: 0,
@@ -44,11 +47,13 @@ export function reconcileTranscript(
   }
   const replay = current?.events.filter((event) => event.id > snapshot.eventCursor) ?? [];
   const events = mergeEvents(snapshot.events, replay);
+  const replayLinks = replay.flatMap((event) => event.fileLinks ?? []);
   return buildTranscript(
     {
       ...snapshot,
       eventCursor: Math.max(snapshot.eventCursor, current?.eventCursor ?? 0),
       events,
+      fileLinks: mergeFileLinks(snapshot.fileLinks, replayLinks),
     },
     optimisticMessages(current),
     snapshot.eventCursor,
@@ -65,6 +70,10 @@ export function appendTranscriptEvents(current: TranscriptData, incoming: Displa
       ...current,
       eventCursor: Math.max(current.eventCursor, ...accepted.map((event) => event.id)),
       events,
+      fileLinks: mergeFileLinks(
+        current.fileLinks,
+        accepted.flatMap((event) => event.fileLinks ?? []),
+      ),
     },
     optimisticMessages(current),
     current.snapshotCursor,
@@ -91,8 +100,24 @@ function buildTranscript(
   return {
     ...snapshot,
     snapshotCursor,
-    view: buildTimeline(snapshot.messages, snapshot.queue, snapshot.events, optimistic),
+    view: buildTimeline(
+      snapshot.messages,
+      snapshot.queue,
+      snapshot.events,
+      optimistic,
+      snapshot.fileLinks,
+    ),
   };
+}
+function mergeFileLinks(left: FileLinkUnit[], right: FileLinkUnit[]) {
+  return [
+    ...new Map(
+      [...left, ...right].map((unit) => [
+        `${unit.ownerId}\0${unit.surface}\0${unit.unitIndex.toString()}`,
+        unit,
+      ]),
+    ).values(),
+  ];
 }
 function mergeEvents(left: DisplayEvent[], right: DisplayEvent[]) {
   return [...new Map([...left, ...right].map((event) => [event.id, event])).values()].toSorted(

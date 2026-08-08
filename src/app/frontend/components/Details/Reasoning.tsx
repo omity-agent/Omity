@@ -1,4 +1,5 @@
 import { BrainCircuit } from "lucide-react";
+import type { FilePathMatch } from "../../../../fileLinks/types";
 import { Frame } from "./Frame";
 import { MarkdownView } from "../MarkdownView";
 import { css } from "styled-system/css";
@@ -13,14 +14,12 @@ const content = css({
   pt: "3",
 });
 export function Reasoning({
-  complete,
   content: reasoning,
-  fileLinkIdentity,
+  fileLinks,
   latest,
 }: {
-  complete: boolean;
   content: string;
-  fileLinkIdentity: string;
+  fileLinks?: FilePathMatch[];
   latest: boolean;
 }) {
   const { t } = useTranslation();
@@ -33,12 +32,7 @@ export function Reasoning({
       tone="model"
     >
       <div className={content}>
-        <MarkdownView
-          complete={complete}
-          content={reasoning}
-          fileLinkIdentity={fileLinkIdentity}
-          preserveLineBreaks
-        />
+        <MarkdownView content={reasoning} fileLinks={fileLinks} preserveLineBreaks />
       </div>
     </Frame>
   );
