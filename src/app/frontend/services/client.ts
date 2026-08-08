@@ -11,7 +11,9 @@ import {
   transcriptResponseSchema,
   workspaceResponseSchema,
 } from "./validation/responses";
+import { fileLinkActionSchema, fileLinkMatchesSchema } from "./validation/fileLinks";
 import type { Control } from "../../../types";
+import type { FileLinkAction } from "../../fileLinks/types";
 import type { InitialSessionState } from "../../initialState";
 import { request } from "./request";
 
@@ -62,6 +64,27 @@ export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
     `api/sessions/${encodeURIComponent(sessionId)}/transcript`,
     transcriptResponseSchema,
     { signal },
+  );
+}
+export async function probeFileLinks(sessionId: string, text: string, signal?: AbortSignal) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/file-links/probe`,
+    fileLinkMatchesSchema,
+    {
+      body: JSON.stringify({ text }),
+      method: "POST",
+      signal,
+    },
+  );
+}
+export async function activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/file-links/activate`,
+    fileLinkActionSchema,
+    {
+      body: JSON.stringify({ action, path }),
+      method: "POST",
+    },
   );
 }
 export function contentEvents(sessionId: string) {

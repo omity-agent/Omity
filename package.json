@@ -15,6 +15,7 @@
   "dependencies": {
     "@ai-sdk/openai": "latest",
     "@ai-sdk/provider": "latest",
+    "@ark-ui/react": "latest",
     "@bindrs/rfd": "latest",
     "@codemirror/lang-markdown": "latest",
     "@codemirror/language": "latest",
@@ -56,6 +57,7 @@
     "nanoid": "latest",
     "openai": "latest",
     "openai-codex-oauth": "latest",
+    "pathprobe": "latest",
     "rate-limiter-flexible": "latest",
     "react": "canary",
     "react-dom": "canary",

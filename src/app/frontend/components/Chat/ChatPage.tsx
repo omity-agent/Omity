@@ -2,6 +2,7 @@ import type { AttachmentSettings, PendingAttachment } from "../../../attachments
 import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
 import { Composer } from "./Composer/index";
+import { FileLinkProvider } from "../FileLink/context";
 import type { InitialSessionState } from "../../../initialState";
 import { Message } from "./Message";
 import { NewSessionPage } from "../NewSession";
@@ -126,22 +127,24 @@ export function ChatPage({
   }
   return (
     <div className={page}>
-      <TranscriptScroll activeId={activeId} view={view}>
-        {view.length === 0 ? <div className={empty}>{t("noMessages")}</div> : null}
-        {view.map((item) => (
-          <Message
-            canFork={item.role === "user" && item.id > 0 && item.id !== firstUserMessageId}
-            forkDisabled={actionState.sessionActionDisabled}
-            item={item}
-            key={item.key}
-            latestDetailIndex={
-              item.key === latestDetail?.messageKey ? latestDetail.partIndex : undefined
-            }
-            onFork={onFork}
-            onCancelTool={onCancelTool}
-          />
-        ))}
-      </TranscriptScroll>
+      <FileLinkProvider sessionId={activeId}>
+        <TranscriptScroll activeId={activeId} view={view}>
+          {view.length === 0 ? <div className={empty}>{t("noMessages")}</div> : null}
+          {view.map((item) => (
+            <Message
+              canFork={item.role === "user" && item.id > 0 && item.id !== firstUserMessageId}
+              forkDisabled={actionState.sessionActionDisabled}
+              item={item}
+              key={item.key}
+              latestDetailIndex={
+                item.key === latestDetail?.messageKey ? latestDetail.partIndex : undefined
+              }
+              onFork={onFork}
+              onCancelTool={onCancelTool}
+            />
+          ))}
+        </TranscriptScroll>
+      </FileLinkProvider>
       <Composer
         attachmentSettings={attachmentSettings}
         controlDisabled={actionState.controlDisabled}

@@ -75,6 +75,7 @@ export function ToolCall({
   const showOutputCode = output
     ? output.content.trim().length > 0 || output.images.length === 0
     : showOutput;
+  const inputCode = formatToolInput(call);
   const handleCancel = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
@@ -136,7 +137,10 @@ export function ToolCall({
           <HighlightedCode
             autoFollow={latest}
             className={codeBlock}
-            code={formatToolInput(call)}
+            code={inputCode}
+            fileLinkComplete={phase !== "streaming"}
+            fileLinkIdentity={`tool-input:${call.id}`}
+            fileLinkMode="lines"
             language={call.rawInput === undefined ? "yaml" : "plaintext"}
           />
         </section>
@@ -153,6 +157,8 @@ export function ToolCall({
                 autoFollow={latest}
                 className={codeBlock}
                 code={output?.content ?? ""}
+                fileLinkIdentity={`tool-output:${call.id}`}
+                fileLinkMode="output"
               />
             ) : null}
             {output && output.images.length > 0 ? (

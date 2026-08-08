@@ -39,6 +39,13 @@ export const controlBody = z
   .object({ control: z.enum(["running", "step", "pause", "cancel"]) })
   .strict();
 export const cancelToolBody = z.object({ toolCallId: z.string().min(1).max(1024) }).strict();
+export const fileLinkActionBody = z
+  .object({
+    action: z.enum(["open", "reveal"]),
+    path: z.string().min(1).max(32_767),
+  })
+  .strict();
+export const fileLinkProbeBody = z.object({ text: z.string().max(requestBodyLimit) }).strict();
 export const forkBody = z.object({ beforeMessageId: z.number().int().positive() }).strict();
 const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional();
 const credentialBase = {

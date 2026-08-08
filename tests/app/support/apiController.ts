@@ -3,6 +3,7 @@ import { AppEvents } from "../../../src/app/events";
 
 export function createApiController(overrides: Partial<ApiController> = {}): ApiController {
   const controller: ApiController = {
+    activateFileLink: notConfigured,
     assertSession: () => undefined,
     bootstrap: () => ({
       attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
@@ -18,6 +19,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
     deleteSession: notConfigured,
     eventCursor: () => 0,
     events: new AppEvents(),
+    fileLinks: notConfigured,
     forkSession: notConfigured,
     pickWorkspace: notConfigured,
     saveComposerDraft: notConfigured,

@@ -12,7 +12,17 @@ const content = css({
   mt: 0,
   pt: "3",
 });
-export function Reasoning({ content: reasoning, latest }: { content: string; latest: boolean }) {
+export function Reasoning({
+  complete,
+  content: reasoning,
+  fileLinkIdentity,
+  latest,
+}: {
+  complete: boolean;
+  content: string;
+  fileLinkIdentity: string;
+  latest: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <Frame
@@ -23,7 +33,12 @@ export function Reasoning({ content: reasoning, latest }: { content: string; lat
       tone="model"
     >
       <div className={content}>
-        <MarkdownView content={reasoning} preserveLineBreaks />
+        <MarkdownView
+          complete={complete}
+          content={reasoning}
+          fileLinkIdentity={fileLinkIdentity}
+          preserveLineBreaks
+        />
       </div>
     </Frame>
   );

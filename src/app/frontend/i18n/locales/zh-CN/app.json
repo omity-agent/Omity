@@ -8,6 +8,8 @@
   "initialState": "Initial State",
   "initialStateDescription": "构造模型接收到的初始对话。历史消息对按时间排列，末尾用户消息将触发首次回复。",
   "workspace": "工作目录",
+  "openFileLink": "打开",
+  "revealFileLink": "在文件夹中显示",
   "profile": "Profile",
   "defaultProfile": "默认",
   "recentWorkspaces": "最近使用",

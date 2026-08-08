@@ -6,6 +6,8 @@ import {
   composerDraftBody,
   controlBody,
   decodeSessionId,
+  fileLinkActionBody,
+  fileLinkProbeBody,
   forkBody,
   readJson,
   readMessageForm,
@@ -19,12 +21,14 @@ import { bodyLimit } from "hono/body-limit";
 export type ApiController = Pick<
   AppController,
   | "bootstrap"
+  | "activateFileLink"
   | "sessions"
   | "pickWorkspace"
   | "createSession"
   | "deleteSession"
   | "transcript"
   | "eventCursor"
+  | "fileLinks"
   | "composerDraft"
   | "saveComposerDraft"
   | "sendMessage"
@@ -71,6 +75,14 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.get("/api/sessions/:sessionId/transcript", (c) =>
     c.json(controller.transcript(sessionId(c))),
   );
+  app.post("/api/sessions/:sessionId/file-links/probe", regularBodyLimit, async (c) => {
+    const body = await readJson(c.req, fileLinkProbeBody);
+    return c.json({ matches: await controller.fileLinks(sessionId(c), body.text) });
+  });
+  app.post("/api/sessions/:sessionId/file-links/activate", regularBodyLimit, async (c) => {
+    const body = await readJson(c.req, fileLinkActionBody);
+    return c.json(await controller.activateFileLink(sessionId(c), body.path, body.action));
+  });
   app.get("/api/sessions/:sessionId/events/content", (c) => {
     const id = sessionId(c);
     controller.assertSession(id);
