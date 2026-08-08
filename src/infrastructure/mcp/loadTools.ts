@@ -8,7 +8,7 @@ import type { SessionPlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
-import { disableMcpRequestTimeout } from "./client/timeout";
+import { disableAdapterRequestTimeout } from "./client/timeout";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 import { readLayeredSettingsYaml } from "../configuration/settings/files";
 import { resolve } from "node:path";
@@ -70,7 +70,7 @@ async function connectMcp(
   const end = logger.child("MCP 工具加载");
   let pool: McpClientPool | undefined;
   try {
-    disableMcpRequestTimeout();
+    disableAdapterRequestTimeout();
     const connectedPool = new McpClientPool(
       configuration.mcpServers,
       configuration.stdio.restart,

@@ -1,7 +1,8 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "@langchain/mcp-adapters";
 import { Writable } from "node:stream";
+import { disableClientRequestTimeout } from "./timeout";
 
 const maximumStderrBytes = 64 * 1024;
 export interface ConnectedStdioClient {
@@ -43,10 +44,14 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
     isClosed = true;
     closed.resolve();
   };
-  const client = new Client({ name: "omity-agent", version: "1.0.0" });
+  const client = new Client(
+    { name: "omity-agent", version: "1.0.0" },
+    { versionNegotiation: { mode: "auto" } },
+  );
   Reflect.set(client, "onclose", closeTransport);
   try {
     await client.connect(transport, signal ? { signal } : undefined);
+    disableClientRequestTimeout(client);
     return {
       client,
       close: async () => {

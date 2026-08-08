@@ -35,7 +35,8 @@ export class RestartingStdioClient {
     client.install(await connect(serverName, connection, client.controller.signal));
     return client;
   }
-  callTool = (...args: unknown[]) => this.invoke("callTool", args);
+  callTool = (params: unknown, _resultSchema?: unknown, options?: unknown) =>
+    this.invoke("callTool", [params, options]);
   listTools = (...args: unknown[]) => this.invoke("listTools", args);
   readResource = (...args: unknown[]) => this.invoke("readResource", args);
   async close() {
@@ -57,25 +58,24 @@ export class RestartingStdioClient {
       this.unavailable = undefined;
       this.restartAttempts = 0;
     }
-    for (;;) {
-      signal?.throwIfAborted();
-      const connection = this.current ?? (await waitForSignal(this.ensureRecovery(), signal));
-      try {
-        const operation: unknown = connection.client[method];
-        if (typeof operation !== "function") {
-          throw new TypeError(`MCP 客户端缺少 ${method} 方法`);
-        }
-        const result: unknown = await Reflect.apply(operation, connection.client, args);
-        this.restartAttempts = 0;
-        this.lastFailure = undefined;
-        return result;
-      } catch (error) {
-        if (signal?.aborted || !connection.isClosed()) {
-          throw error;
-        }
-        this.recordClosure(connection, method, error);
-        await waitForSignal(this.ensureRecovery(), signal);
+    signal?.throwIfAborted();
+    const connection = this.current ?? (await waitForSignal(this.ensureRecovery(), signal));
+    try {
+      const operation: unknown = connection.client[method];
+      if (typeof operation !== "function") {
+        throw new TypeError(`MCP 客户端缺少 ${method} 方法`);
       }
+      const result: unknown = await Reflect.apply(operation, connection.client, args);
+      this.restartAttempts = 0;
+      this.lastFailure = undefined;
+      return result;
+    } catch (error) {
+      if (signal?.aborted || !connection.isClosed()) {
+        throw error;
+      }
+      const failure = this.recordClosure(connection, method, error);
+      await waitForSignal(this.ensureRecovery(), signal);
+      throw failure;
     }
   }
   private install(connection: ConnectedStdioClient) {
@@ -106,18 +106,27 @@ export class RestartingStdioClient {
     operation?: "callTool" | "listTools" | "readResource",
     cause?: unknown,
   ) {
-    if (this.current === connection) {
-      this.current = undefined;
-    }
-    this.lastFailure = new McpStdioProcessExitedError(
+    const failure = new McpStdioProcessExitedError(
       connection.diagnostics() || undefined,
       operation,
       cause,
     );
+    if (this.current === connection) {
+      this.current = undefined;
+      this.lastFailure = failure;
+      this.logger.warn(
+        `${failure.message}：${this.serverName}`,
+        summarizeError(captureError(failure)),
+      );
+    }
+    return failure;
   }
   private ensureRecovery() {
     if (this.controller.signal.aborted) {
       return Promise.reject(this.controller.signal.reason);
+    }
+    if (this.current) {
+      return Promise.resolve(this.current);
     }
     if (this.unavailable) {
       return Promise.reject(this.unavailable);

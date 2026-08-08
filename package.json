@@ -27,6 +27,7 @@
     "@langchain/langgraph-checkpoint": "latest",
     "@langchain/mcp-adapters": "latest",
     "@lezer/highlight": "latest",
+    "@modelcontextprotocol/client": "latest",
     "@modelcontextprotocol/sdk": "latest",
     "@optique/core": "latest",
     "@optique/run": "latest",
