@@ -25,10 +25,12 @@ const trigger = css({
   cursor: "pointer",
   display: "inline",
   font: "inherit",
+  lineHeight: "inherit",
   p: 0,
   textAlign: "inherit",
   textDecoration: "underline",
   textUnderlineOffset: "0.15em",
+  verticalAlign: "baseline",
   whiteSpace: "inherit",
 });
 const content = css({

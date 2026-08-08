@@ -6,6 +6,7 @@ import { fileLinkLauncher } from "../../src/app/fileLinks/launch";
 import { fileLinkProbeUnits } from "../../src/app/frontend/components/FileLink/probeUnits";
 import { join } from "node:path";
 import { mkdir } from "node:fs/promises";
+import { normalizeCodeMatches } from "../../src/app/frontend/components/FileLink/lineBreaks";
 import { probeFileLinks } from "../../src/app/fileLinks/probe";
 
 describe("文件链接探测", () => {
@@ -37,6 +38,19 @@ describe("文件链接探测", () => {
     expect(fileLinkProbeUnits("", "output", true)).toEqual([
       { end: 0, key: "output", start: 0, text: "" },
     ]);
+  });
+  test("CRLF 高亮文本与路径位置使用同一套偏移", () => {
+    const code = "first\r\n./file.txt\r\nlast";
+    const start = code.indexOf("./file.txt");
+    const normalized = normalizeCodeMatches(code, [
+      {
+        kind: "file",
+        path: "F:/work/file.txt",
+        position: { end: start + "./file.txt".length, start },
+      },
+    ]);
+    expect(normalized.code).toBe("first\n./file.txt\nlast");
+    expect(normalized.matches[0]?.position).toEqual({ end: 16, start: 6 });
   });
 });
 describe("文件链接动作", () => {
