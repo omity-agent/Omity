@@ -7,7 +7,12 @@ import {
   renewHostLeaseRecord,
 } from "./hostLeases";
 import { activeQueueRows, pauseRunRecord } from "./queue/runs";
-import { consumeStepControlRecord, readControlRecord, writeControlRecord } from "./sessions";
+import {
+  consumeStepControlRecord,
+  readControlRecord,
+  touchSessionRecord,
+  writeControlRecord,
+} from "./sessions";
 import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../failures/details";
 import { pruneUnreferencedMessages } from "./messages/history";
@@ -41,12 +46,15 @@ export function recoverInterruptedSessionRecord(
     writeControlRecord(db, claim.sessionId, "running");
     action = active.length > 0 ? "canceled" : "none";
   } else if (active.length > 0) {
-    db.run(
+    const paused = db.run(
       `UPDATE queue SET status = 'paused'
        WHERE session_id = ? AND status = 'running'`,
       [claim.sessionId],
     );
-    writeControlRecord(db, claim.sessionId, "pause");
+    const controlChanged = writeControlRecord(db, claim.sessionId, "pause");
+    if (paused.changes > 0 && !controlChanged) {
+      touchSessionRecord(db, claim.sessionId);
+    }
     action = "paused";
   } else if (control === "pause_cancel") {
     writeControlRecord(db, claim.sessionId, "pause");

@@ -132,12 +132,16 @@ export function writeControlRecord(db: Database, sessionId: string, control: Con
     `UPDATE sessions
      SET control = ?, transcript_revision = transcript_revision + 1,
        updated_at = MAX(updated_at, unixepoch())
-     WHERE id = ? AND transcript_revision < ?`,
-    [control, sessionId, Number.MAX_SAFE_INTEGER],
+     WHERE id = ? AND control <> ? AND transcript_revision < ?`,
+    [control, sessionId, control, Number.MAX_SAFE_INTEGER],
   );
-  if (result.changes !== 1) {
-    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  if (result.changes === 1) {
+    return true;
   }
+  if (readControlRecord(db, sessionId) === control) {
+    return false;
+  }
+  throw new Error(`Transcript 版本已耗尽：${sessionId}`);
 }
 export function consumeStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);

@@ -33,6 +33,18 @@ test("app startup atomically pauses an orphaned run", async () => {
   ]);
   await controller.close();
 });
+test("app startup preserves the activity time of an already paused session", async () => {
+  const fixture = interruptedSession("already-paused");
+  fixture.db.setQueueStatus(fixture.queueId, "paused");
+  fixture.db.setControl("already-paused", "pause");
+  fixture.db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = 'already-paused'");
+  fixture.db.db.run("UPDATE messages SET created_at = 1 WHERE session_id = 'already-paused'");
+  fixture.db.close();
+
+  const controller = new AppController(fixture.root);
+  expect(controller.bootstrap().sessions[0]?.updatedAt).toBe(1);
+  await controller.close();
+});
 test("app startup reclaims the lease of its terminated predecessor", async () => {
   const fixture = interruptedSession("abandoned");
   const abandonedOwner = { pid: process.pid, token: randomUUID() };

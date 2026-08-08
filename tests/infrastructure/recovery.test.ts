@@ -77,6 +77,25 @@ test("recovery preserves pending work while normalizing an interrupted run", () 
   expect(db.control("123")).toBe("pause");
   db.close();
 });
+test("recovery leaves a stable paused session activity time unchanged", () => {
+  const db = makeDb();
+  db.resetSession("123", workspace);
+  const queueId = db.appendUser("123", "已经暂停");
+  db.setQueueStatus(queueId, "paused");
+  db.setControl("123", "pause");
+  db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = '123'");
+
+  expect(db.recoverInterruptedSession({ now: 1000, sessionId: "123" })).toEqual({
+    action: "paused",
+    activeItems: 1,
+    status: "recovered",
+  });
+  expect(db.db.query<{ updated_at: number }, []>("SELECT updated_at FROM sessions").get()).toEqual({
+    updated_at: 1,
+  });
+  expect(db.transcriptRevision("123")).toBe(3);
+  db.close();
+});
 test("recovery completes a persisted cancel and removes only its run data", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
