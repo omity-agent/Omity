@@ -19,7 +19,7 @@
         "@langchain/langgraph-checkpoint": "latest",
         "@langchain/mcp-adapters": "latest",
         "@lezer/highlight": "latest",
-        "@modelcontextprotocol/client": "^2.0.0",
+        "@modelcontextprotocol/client": "latest",
         "@modelcontextprotocol/sdk": "latest",
         "@optique/core": "latest",
         "@optique/run": "latest",
@@ -82,6 +82,9 @@
         "vite": "latest",
       },
     },
+  },
+  "patchedDependencies": {
+    "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch",
   },
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@4.0.46", "", { "dependencies": { "@ai-sdk/provider": "4.0.7", "@ai-sdk/provider-utils": "5.0.25", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-LIAO6kAG8fpXQb9L0iwPk1FIbXftvqnyC56v5NEAzeWTeL8fUsy/Hx86VPBTWEDFdwbVprjWifJOAqS6AOj3mA=="],

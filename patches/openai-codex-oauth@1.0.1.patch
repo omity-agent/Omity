@@ -1,0 +1,47 @@
+diff --git a/dist/index.js b/dist/index.js
+index 9e0a30f84bf3591fb7bcba18f3a5cb80f5fb3e17..ac6fecd2d47c46a48392a63e84133cc8ce0a1411 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -597,10 +597,6 @@ function createOpenAIOAuthProxy(options = {}) {
+   };
+ }
+ 
+-// src/provider.ts
+-var import_openai = require("@ai-sdk/openai");
+-var import_provider = require("@ai-sdk/provider");
+-
+ // src/stream-to-generate.ts
+ var emptyUsage = () => ({
+   inputTokens: {
+@@ -780,27 +776,10 @@ var StreamOnlyLanguageModel = class {
+ };
+ 
+ // src/provider.ts
+-function createOpenAIOAuth(settings = {}) {
+-  const providerName = settings.name ?? "openai-oauth";
+-  const oauthFetch = createCodexOAuthFetch(settings);
+-  const openai = (0, import_openai.createOpenAI)({
+-    apiKey: "oauth",
+-    baseURL: settings.baseURL ?? DEFAULT_CODEX_BASE_URL,
+-    name: providerName,
+-    fetch: oauthFetch
+-  });
+-  const createLanguageModel = (modelId) => new StreamOnlyLanguageModel(openai.responses(modelId));
+-  const provider = (modelId) => createLanguageModel(modelId);
+-  provider.specificationVersion = "v3";
+-  provider.languageModel = createLanguageModel;
+-  provider.responses = createLanguageModel;
+-  provider.embeddingModel = (modelId) => {
+-    throw new import_provider.NoSuchModelError({ modelId, modelType: "embeddingModel" });
+-  };
+-  provider.imageModel = (modelId) => {
+-    throw new import_provider.NoSuchModelError({ modelId, modelType: "imageModel" });
+-  };
+-  return provider;
++function createOpenAIOAuth() {
++  throw new Error(
++    "createOpenAIOAuth uses the AI SDK 6 provider interface; use createCodexOAuthFetch with @ai-sdk/openai instead."
++  );
+ }
+ // Annotate the CommonJS export names for ESM import in node:
+ 0 && (module.exports = {

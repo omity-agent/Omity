@@ -88,5 +88,8 @@
     "oxlint-tsgolint": "latest",
     "postcss": "latest",
     "vite": "latest"
+  },
+  "patchedDependencies": {
+    "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch"
   }
 }
