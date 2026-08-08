@@ -1429,7 +1429,7 @@
 
     "pathe": ["pathe@2.0.3", "", {}, "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w=="],
 
-    "pathprobe": ["pathprobe@0.4.2", "", { "dependencies": { "fast-glob": "latest", "globby": "latest", "p-limit": "latest" } }, "sha512-/Ds8Gzyq6WANthRa03mwJNC1c93AP7HwjfXYEf48X+ErDOWCmxEfOJqmksc1kQbE9fUJYgMlw/B7CMka3lw2uQ=="],
+    "pathprobe": ["pathprobe@0.4.3", "", { "dependencies": { "fast-glob": "latest", "globby": "latest", "p-limit": "latest" } }, "sha512-8nTd3rAR10rLObVHZsY5vXvyiMQnMy0e2Cq8h8w5avJWm2PR68BsTdD9kanRBQDMTUFiMHBK8ZpKwfblODx9PA=="],
 
     "perfect-debounce": ["perfect-debounce@1.0.0", "", {}, "sha512-xCy9V055GLEqoFaHoC1SoLIaLmWctgCUaBaWxDZ7/Zx4CTyX7cJQLJOok/orfjZAh9kEYpjJa4d0KcJmCbctZA=="],
 

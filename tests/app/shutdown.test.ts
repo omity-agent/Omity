@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
+import type { Socket } from "node:net";
 import { closeAppResources } from "../../src/app/runtime/shutdown";
+import { createServer } from "node:http";
+import { once } from "node:events";
 
 test("shutdown logs every resource phase and completes in order", async () => {
   const messages: string[] = [];
@@ -39,3 +42,39 @@ test("shutdown logs every resource phase and completes in order", async () => {
     "服务端关闭完成",
   ]);
 });
+test("shutdown closes active HTTP streams", async () => {
+  const connections = new Set<Socket>();
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "text/event-stream" });
+    response.write("data: ready\n\n");
+  });
+  server.on("connection", (socket) => {
+    connections.add(socket);
+    socket.once("close", () => {
+      connections.delete(socket);
+    });
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("测试 HTTP Server 未监听端口");
+  }
+  const { port } = address;
+  const response = await fetch(`http://127.0.0.1:${port.toString()}`);
+  const body = response.text();
+  await closeAppResources(
+    {
+      releaseLock: () => undefined,
+      server: { connections, instance: server },
+    },
+    {
+      error: () => undefined,
+      info: () => undefined,
+    },
+    "SIGTERM",
+  );
+
+  expect(server.listening).toBeFalse();
+  expect(body).rejects.toThrow();
+}, 3000);

@@ -1,15 +1,20 @@
 import { Logger } from "../../infrastructure/logging/logger";
 import type { Server } from "node:http";
+import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
 import { promisify } from "node:util";
 
 export type ShutdownSignal = "SIGINT" | "SIGTERM";
 export type ShutdownReason = ShutdownSignal | "startup-failure";
+interface ShutdownHttpServer {
+  connections: ReadonlySet<Socket>;
+  instance: Server;
+}
 interface ShutdownResources {
   access?: { close: () => void };
   controller?: { close: () => Promise<void> };
   releaseLock: () => void;
-  server?: Server;
+  server?: ShutdownHttpServer;
 }
 interface ShutdownLogger {
   error: (message: string, data?: unknown) => void;
@@ -49,12 +54,14 @@ export async function closeAppResources(
     logger,
     "HTTP 服务",
     async () => {
-      if (!resources.server?.listening) {
+      if (!resources.server?.instance.listening) {
         return;
       }
-      const close = promisify(resources.server.close.bind(resources.server));
+      const close = promisify(resources.server.instance.close.bind(resources.server.instance));
       const closed = close();
-      resources.server.closeAllConnections();
+      for (const connection of resources.server.connections) {
+        connection.destroy();
+      }
       await closed;
     },
     failures,

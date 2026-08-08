@@ -1,10 +1,10 @@
+import type { AddressInfo, Socket } from "node:net";
 import {
   closeAppResources,
   createShutdownLogger,
   listenForShutdownSignal,
 } from "./runtime/shutdown";
 import { AccessService } from "./access/service";
-import type { AddressInfo } from "node:net";
 import { AppController } from "./controller";
 import { AppInstanceLock } from "./runtime/instanceLock";
 import { appUrl } from "./launch";
@@ -34,6 +34,7 @@ export async function startAppServer(options: AppServerOptions) {
   let access: AccessService | undefined;
   let controller: AppController | undefined;
   let server: ReturnType<typeof createServer> | undefined;
+  const connections = new Set<Socket>();
   let failure: unknown;
   let signal: Awaited<typeof shutdown.signal> | undefined;
   try {
@@ -49,6 +50,12 @@ export async function startAppServer(options: AppServerOptions) {
     });
     const staticRoot = applicationAssetPath(options.root, "src/app/frontend/dist", "dist");
     server = createServer();
+    server.on("connection", (socket) => {
+      connections.add(socket);
+      socket.once("close", () => {
+        connections.delete(socket);
+      });
+    });
     const handleApi = getRequestListener(createApi(controller, access).fetch);
     const handleStatic = getRequestListener(createStaticApp(staticRoot).fetch);
     server.on(
@@ -75,7 +82,7 @@ export async function startAppServer(options: AppServerOptions) {
         access,
         controller,
         releaseLock: () => lock.release(),
-        server,
+        server: server ? { connections, instance: server } : undefined,
       },
       logger,
       signal ?? "startup-failure",
