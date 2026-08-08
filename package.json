@@ -10,7 +10,7 @@
     "build": "bun scripts/build.ts",
     "db:generate": "rm --recursive --force src/infrastructure/database/migrations && drizzle-kit generate --config=settings/session-db.ts && drizzle-kit generate --config=settings/access-db.ts",
     "omity": "bun src/cli.ts",
-    "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun --config=settings/bunfig.toml test"
+    "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun test"
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
