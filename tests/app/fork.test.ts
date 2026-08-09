@@ -28,7 +28,7 @@ test("fork copies messages before selected user message", () => {
     workspace,
   });
   expect(target.history("target").map((message) => message.text)).toEqual(["第一条", "第一条回复"]);
-  expect(target.control("target")).toBe("running");
+  expect(target.control("target")).toBe("pause");
   expect(target.profiles("target")).toEqual(["base", "work"]);
   expect(readOnlyQueue(target)).toMatchObject({
     content: "不要复制",
@@ -180,7 +180,7 @@ test("fork preserves completed takeover pairs in an editable draft", async () =>
     "tool",
     "ai",
   ]);
-  expect(target.control("target")).toBe("running");
+  expect(target.control("target")).toBe("pause");
   expect(readOnlyQueue(target)).toMatchObject({
     content: "第二条",
     status: "draft",

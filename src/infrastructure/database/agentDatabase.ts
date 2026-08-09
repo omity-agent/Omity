@@ -75,8 +75,13 @@ export class AgentDatabase extends RecoverableDatabase {
     this.storageReclaimPending = !reclaimed;
     return reclaimed;
   }
-  createSession(sessionId: string, workspace: string, profiles: readonly string[] = []) {
-    createSessionRecord(this.db, sessionId, workspace, profiles);
+  createSession(
+    sessionId: string,
+    workspace: string,
+    profiles: readonly string[] = [],
+    initialControl: Control = "running",
+  ) {
+    createSessionRecord(this.db, sessionId, workspace, profiles, initialControl);
   }
   hasSession(sessionId: string) {
     return hasSessionRecord(this.db, sessionId);

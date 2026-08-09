@@ -10,6 +10,7 @@ export function createSessionRecord(
   sessionId: string,
   workspace: string,
   profiles: readonly string[],
+  initialControl: Control = "running",
 ) {
   if (hasSessionRecord(db, sessionId)) {
     throw sessionConflict(sessionId);
@@ -19,7 +20,7 @@ export function createSessionRecord(
     sessionDatabase(db)
       .insert(sessions)
       .values({
-        control: "running",
+        control: initialControl,
         createdAt: now,
         id: sessionId,
         profiles: [...profiles],
