@@ -6,24 +6,25 @@ import { toolNotRunning } from "../../../errors";
 
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
   const orm = sessionDatabase(db);
-  const running = orm
+  const cancellable = orm
     .select({ kind: events.kind })
     .from(events)
     .innerJoin(queue, eq(queue.id, events.queueId))
     .where(
       and(
         eq(events.sessionId, sessionId),
-        inArray(events.kind, ["tool_started", "tool_finished"]),
-        eq(queue.status, "running"),
+        inArray(events.kind, ["tool_call_delta", "tool_started", "tool_finished"]),
+        inArray(queue.status, ["running", "paused"]),
         or(
           eq(events.payload, callId),
           eq(sql`json_extract(${events.payload}, '$.callId')`, callId),
+          eq(sql`json_extract(${events.payload}, '$.idDelta')`, callId),
         ),
       ),
     )
     .orderBy(desc(events.id))
     .get();
-  if (running?.kind !== "tool_started") {
+  if (cancellable?.kind === undefined || cancellable.kind === "tool_finished") {
     throw toolNotRunning(callId);
   }
   orm

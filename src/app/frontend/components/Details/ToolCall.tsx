@@ -1,6 +1,11 @@
 import { Badge, IconButton } from "../ParkUI";
 import { CircleStop, LoaderCircle, Wrench } from "lucide-react";
-import type { DisplayToolCall, DisplayToolOutput, ToolCallPhase } from "../../../timeline";
+import {
+  type DisplayToolCall,
+  type DisplayToolOutput,
+  type ToolCallPhase,
+  canCancelToolCall,
+} from "../../../timeline";
 import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { Frame } from "./Frame";
 import { HighlightedCode } from "../HighlightedCode";
@@ -70,6 +75,7 @@ export function ToolCall({
 }) {
   const { t } = useTranslation();
   const [cancelling, setCancelling] = useState(false);
+  const cancellable = canCancelToolCall(phase);
   const running = phase === "running";
   const showOutput = output !== undefined || running;
   const showOutputCode = output
@@ -95,10 +101,10 @@ export function ToolCall({
   );
   const frameAccessory = useMemo(
     () =>
-      phase === "streaming" || running ? (
+      phase === "streaming" || cancellable ? (
         <span className={accessory}>
           {phase === "streaming" ? <Badge>{t("streaming")}</Badge> : null}
-          {running ? (
+          {cancellable ? (
             <IconButton
               aria-label={t("stopTool")}
               className={stopButton}
@@ -117,7 +123,7 @@ export function ToolCall({
           ) : null}
         </span>
       ) : undefined,
-    [cancelling, handleCancel, phase, running, t],
+    [cancelling, cancellable, handleCancel, phase, t],
   );
   return (
     <Frame

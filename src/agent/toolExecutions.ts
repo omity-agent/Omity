@@ -24,7 +24,9 @@ export class ToolExecutions {
     this.now = options.now ?? Date.now;
   }
   announce(callId: string) {
-    this.executions.set(callId, this.createExecution());
+    if (!this.executions.has(callId)) {
+      this.executions.set(callId, this.createExecution());
+    }
   }
   begin(callId: string, parentSignal?: AbortSignal): ToolExecutionHandle {
     const execution = this.executions.get(callId) ?? this.createExecution();

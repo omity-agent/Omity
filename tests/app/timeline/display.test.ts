@@ -3,10 +3,11 @@ import {
   type DisplayMessage,
   type DisplayQueue,
   buildTimeline,
+  canCancelToolCall,
 } from "../../../src/app/timeline";
 import { expect, test } from "bun:test";
 
-test("streaming tool call is hidden after the final tool call is visible", () => {
+test("paused final tool call replaces its stream and remains cancellable before starting", () => {
   const messages: DisplayMessage[] = [
     {
       content: "",
@@ -28,7 +29,7 @@ test("streaming tool call is hidden after the final tool call is visible", () =>
       ],
     },
   ];
-  const queue: DisplayQueue[] = [{ content: "run", error: null, id: 1, status: "running" }];
+  const queue: DisplayQueue[] = [{ content: "run", error: null, id: 1, status: "paused" }];
   const events: DisplayEvent[] = [
     {
       id: 1,
@@ -42,7 +43,9 @@ test("streaming tool call is hidden after the final tool call is visible", () =>
   const view = buildTimeline(messages, queue, events);
   expect(view).toHaveLength(1);
   expect(toolCalls(view[0])).toHaveLength(1);
-  expect(toolParts(view[0])[0]?.phase).toBe("pending");
+  const phase = toolParts(view[0])[0]?.phase;
+  expect(phase).toBe("pending");
+  expect(phase && canCancelToolCall(phase)).toBe(true);
 });
 test("streaming tool call is grouped with previous assistant message", () => {
   const messages: DisplayMessage[] = [
@@ -139,6 +142,12 @@ test("started tool call exposes an empty output state", () => {
   const part = buildTimeline(messages, [], events)[0]?.parts.find((item) => item.type === "tool");
   expect(part?.type === "tool" ? part.phase : undefined).toBe("running");
   expect(part?.output).toBeUndefined();
+});
+test("pending tool calls remain cancellable at a pause boundary", () => {
+  expect(canCancelToolCall("pending")).toBe(true);
+  expect(canCancelToolCall("running")).toBe(true);
+  expect(canCancelToolCall("streaming")).toBe(false);
+  expect(canCancelToolCall("completed")).toBe(false);
 });
 test("grouped assistant messages retain the latest token usage", () => {
   const usage = {

@@ -22,6 +22,9 @@ export interface DisplayToolCall {
   fileLinks?: FilePathMatch[];
 }
 export type ToolCallPhase = "streaming" | "pending" | "running" | "completed";
+export function canCancelToolCall(phase: ToolCallPhase) {
+  return phase === "pending" || phase === "running";
+}
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;

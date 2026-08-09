@@ -35,6 +35,27 @@ test("tool cancellation rejects calls that are not running", () => {
     db.close();
   }
 });
+test("paused pending tool calls can be cancelled before execution starts", () => {
+  const db = makeDb();
+  try {
+    db.resetSession("session", workspace);
+    db.appendUser("session", "run tool");
+    const item = required(db.nextQueue("session"));
+    db.startQueue("session", item);
+    db.setQueueStatus(item.id, "paused");
+    insertStreamEvent(db.db, "session", {
+      kind: "tool_call_delta",
+      messageId: "message-1",
+      partId: "tool-0",
+      queueId: item.id,
+      value: { idDelta: "call-1", index: 0, nameDelta: "capture" },
+    });
+    db.requestToolCancellation("session", "call-1");
+    expect(db.takeToolCancellation("session", "call-1")).toBe(true);
+  } finally {
+    db.close();
+  }
+});
 test("tool cancellation rejects calls that already finished", () => {
   const db = makeDb();
   try {

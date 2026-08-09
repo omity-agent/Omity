@@ -5,6 +5,7 @@ test("tool cancellation survives the gap before execution begins", () => {
   const executions = new ToolExecutions();
   executions.announce("call-1");
   expect(executions.cancel("call-1")).toBe(true);
+  executions.announce("call-1");
   const execution = executions.begin("call-1");
   expect(execution.signal.aborted).toBe(false);
   markMcpRequestStarted(execution.signal);

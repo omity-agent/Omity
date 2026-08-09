@@ -32,6 +32,7 @@ export type {
   TimelinePart,
   ToolCallPhase,
 } from "./types";
+export { canCancelToolCall } from "./types";
 export { displayStreamEvent } from "./streamEvents";
 export function buildTimeline(
   messages: DisplayMessage[],
