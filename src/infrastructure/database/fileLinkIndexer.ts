@@ -133,13 +133,15 @@ async function probeUnits(
   workspace: string,
 ) {
   return Promise.all(
-    candidates.map(async (unit): Promise<StoredFileLinkUnit> => ({
-      ...unit,
-      matches: unit.text ? await probeFileLinks(unit.text, workspace) : [],
-      ownerId: owner.ownerId,
-      queueId: owner.queueId,
-      surface: owner.surface,
-    })),
+    candidates.map(
+      async (unit): Promise<StoredFileLinkUnit> => ({
+        ...unit,
+        matches: unit.text ? await probeFileLinks(unit.text, workspace) : [],
+        ownerId: owner.ownerId,
+        queueId: owner.queueId,
+        surface: owner.surface,
+      }),
+    ),
   );
 }
 function assertExistingUnits(
