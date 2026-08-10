@@ -17,8 +17,8 @@ import { readLayeredSettingsYaml } from "../../../src/infrastructure/configurati
 import { sessionModelTools } from "../../../src/infrastructure/mcp/freeformInputs";
 
 test("user MCP settings deeply override repository defaults", () => {
-  const root = createTestDirectory("mcp-layered-config");
-  const userSettings = join(root, "user-settings");
+  const root = createTestDirectory("mcp-layered-config"),
+    userSettings = join(root, "user-settings");
   try {
     mkdirSync(join(root, "settings"), { recursive: true });
     const profile = join(userSettings, "profiles", "tools");
@@ -53,8 +53,8 @@ test("user MCP settings deeply override repository defaults", () => {
   }
 });
 test("MCP config reads tool description override paths", () => {
-  const root = createTestDirectory("mcp-description-config");
-  const path = join(root, "toolbox.yaml");
+  const root = createTestDirectory("mcp-description-config"),
+    path = join(root, "toolbox.yaml");
   try {
     writeFileSync(
       path,

@@ -1,5 +1,5 @@
-const unavailableCode = "MCP_STDIO_UNAVAILABLE";
-const processExitedCode = "MCP_STDIO_PROCESS_EXITED";
+const unavailableCode = "MCP_STDIO_UNAVAILABLE",
+  processExitedCode = "MCP_STDIO_PROCESS_EXITED";
 export interface StdioRestartPolicy {
   delayMs: number;
   maxAttempts: number;
@@ -30,8 +30,8 @@ export class McpStdioUnavailableError extends Error {
   }
 }
 export function findMcpStdioUnavailable(error: unknown): McpStdioUnavailableError | undefined {
-  const pending = [error];
-  const visited = new Set<unknown>();
+  const pending = [error],
+    visited = new Set<unknown>();
   while (pending.length > 0) {
     const current = pending.pop();
     if (current !== undefined && !visited.has(current)) {

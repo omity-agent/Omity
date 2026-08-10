@@ -119,8 +119,8 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   startQueue(sessionId: string, item: QueueItem) {
     const result = runTransaction(this.db, () => {
-      const userMessageId = startQueueRecord(this.db, sessionId, item);
-      const boundary = insertUserBoundaryEvent(this.db, sessionId, item.id);
+      const userMessageId = startQueueRecord(this.db, sessionId, item),
+        boundary = insertUserBoundaryEvent(this.db, sessionId, item.id);
       touchSessionRecord(this.db, sessionId);
       return { boundary, userMessageId };
     });

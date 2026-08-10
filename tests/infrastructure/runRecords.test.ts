@@ -63,11 +63,11 @@ test("replace history rejects queue identities from another session", async () =
 test("append during active run belongs to that run", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const first = db.appendUser("123", "第一条");
-  const second = db.appendUser("123", "第二条");
-  const rows = db.db
-    .query<{ id: number; root_id: number }, []>("SELECT id, root_id FROM queue ORDER BY id")
-    .all();
+  const first = db.appendUser("123", "第一条"),
+    second = db.appendUser("123", "第二条"),
+    rows = db.db
+      .query<{ id: number; root_id: number }, []>("SELECT id, root_id FROM queue ORDER BY id")
+      .all();
   expect(rows).toEqual([
     { id: first, root_id: first },
     { id: second, root_id: first },
@@ -87,8 +87,8 @@ test("reset deletes self-referencing queue rows", () => {
 test("run activity is derived from its queue items", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const first = db.appendUser("123", "第一条");
-  const second = db.appendUser("123", "第二条");
+  const first = db.appendUser("123", "第一条"),
+    second = db.appendUser("123", "第二条");
   db.setQueueStatus(first, "done");
   const third = db.appendUser("123", "第三条");
   expect(queueRoot(db, third)).toBe(first);

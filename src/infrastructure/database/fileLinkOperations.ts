@@ -44,32 +44,32 @@ export async function appendIndexedStream(options: {
   sessionId: string;
   workspace: string;
 }): Promise<StreamEvent> {
-  const { event } = options;
-  const prepared =
-    event.kind === "assistant_text_delta" || event.kind === "assistant_reasoning_delta"
-      ? await options.fileLinks.prepareDelta({
-          delta: event.value,
-          ownerId: event.messageId,
-          queueId: event.queueId,
-          sessionId: options.sessionId,
-          surface: event.kind === "assistant_text_delta" ? "content" : "reasoning",
-          workspace: options.workspace,
-        })
-      : undefined;
-  const enriched = {
-    ...event,
-    ...(prepared && prepared.units.length > 0
-      ? { fileLinks: publicFileLinkUnits(prepared.units) }
-      : {}),
-  };
-  const inserted = runTransaction(options.db, () => {
-    if (prepared) {
-      upsertFileLinkUnits(options.db, options.sessionId, prepared.units);
-    }
-    const result = insertStreamEvent(options.db, options.sessionId, enriched);
-    touchSessionRecord(options.db, options.sessionId);
-    return result;
-  });
+  const { event } = options,
+    prepared =
+      event.kind === "assistant_text_delta" || event.kind === "assistant_reasoning_delta"
+        ? await options.fileLinks.prepareDelta({
+            delta: event.value,
+            ownerId: event.messageId,
+            queueId: event.queueId,
+            sessionId: options.sessionId,
+            surface: event.kind === "assistant_text_delta" ? "content" : "reasoning",
+            workspace: options.workspace,
+          })
+        : undefined,
+    enriched = {
+      ...event,
+      ...(prepared && prepared.units.length > 0
+        ? { fileLinks: publicFileLinkUnits(prepared.units) }
+        : {}),
+    },
+    inserted = runTransaction(options.db, () => {
+      if (prepared) {
+        upsertFileLinkUnits(options.db, options.sessionId, prepared.units);
+      }
+      const result = insertStreamEvent(options.db, options.sessionId, enriched);
+      touchSessionRecord(options.db, options.sessionId);
+      return result;
+    });
   prepared?.commit();
   return inserted;
 }

@@ -9,25 +9,25 @@ import { request } from "./request";
 import { z } from "./validation";
 
 const accessStatusSchema = z.object({
-  authenticated: z.boolean(),
-  configured: z.boolean(),
-  credentialCount: z.number().int().nonnegative(),
-  local: z.boolean(),
-  publicOrigin: z.string().nullable(),
-});
-const loginOptionsSchema = z.object({
-  options: z.custom<PublicKeyCredentialRequestOptionsJSON>(),
-});
-const registrationOptionsSchema = z.object({
-  options: z.custom<PublicKeyCredentialCreationOptionsJSON>(),
-  origin: z.string(),
-});
-const authenticatedSchema = z.object({ authenticated: z.boolean() });
-const registeredSchema = z.object({
-  credentialCount: z.number().int().positive(),
-  verified: z.boolean(),
-});
-const ticketSchema = z.object({ ticket: z.string().min(1) });
+    authenticated: z.boolean(),
+    configured: z.boolean(),
+    credentialCount: z.number().int().nonnegative(),
+    local: z.boolean(),
+    publicOrigin: z.string().nullable(),
+  }),
+  loginOptionsSchema = z.object({
+    options: z.custom<PublicKeyCredentialRequestOptionsJSON>(),
+  }),
+  registrationOptionsSchema = z.object({
+    options: z.custom<PublicKeyCredentialCreationOptionsJSON>(),
+    origin: z.string(),
+  }),
+  authenticatedSchema = z.object({ authenticated: z.boolean() }),
+  registeredSchema = z.object({
+    credentialCount: z.number().int().positive(),
+    verified: z.boolean(),
+  }),
+  ticketSchema = z.object({ ticket: z.string().min(1) });
 export type AccessStatus = z.infer<typeof accessStatusSchema>;
 export async function accessStatus() {
   return request("api/access", accessStatusSchema);
@@ -35,10 +35,10 @@ export async function accessStatus() {
 export async function login() {
   requireWebAuthn();
   const { options } = await request("api/access/login/options", loginOptionsSchema, {
-    body: "{}",
-    method: "POST",
-  });
-  const response = await startAuthentication({ optionsJSON: options });
+      body: "{}",
+      method: "POST",
+    }),
+    response = await startAuthentication({ optionsJSON: options });
   return request("api/access/login", authenticatedSchema, {
     body: JSON.stringify(response),
     method: "POST",

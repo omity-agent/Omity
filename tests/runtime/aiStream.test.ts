@@ -12,16 +12,16 @@ afterEach(cleanupDatabaseDirs);
 test("AI SDK stream groups response parts and exposes tool metadata before execution", async () => {
   const db = makeDb();
   db.resetSession("session", workspace);
-  const queueId = db.appendUser("session", "run");
-  const events: StreamEvent[] = [];
+  const queueId = db.appendUser("session", "run"),
+    events: StreamEvent[] = [];
   db.onChange((event) => events.push(event));
   const context = {
-    db,
-    logger: new Logger("error", true),
-    sessionId: "session",
-    settings: testSettings(),
-  };
-  const state = createStreamLogState();
+      db,
+      logger: new Logger("error", true),
+      sessionId: "session",
+      settings: testSettings(),
+    },
+    state = createStreamLogState();
   await recordAiStreamPart(
     context,
     queueId,
@@ -76,7 +76,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
   db.close();
 });
 function timeline(events: StreamEvent[]) {
-  const outputs = new Map();
-  const lifecycle = toolCallLifecycle(events, outputs);
+  const outputs = new Map(),
+    lifecycle = toolCallLifecycle(events, outputs);
   return streamTimelineMessages(events, outputs, lifecycle);
 }

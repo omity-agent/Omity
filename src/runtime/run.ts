@@ -20,9 +20,9 @@ export function finishRun(
   messages: BaseMessage[],
   hookPlan: unknown,
 ) {
-  const finalMessageId = requireFinalMessageId(hookPlan);
-  const last = messages.find((message) => message.type === "ai" && message.id === finalMessageId);
-  const content = contentToText(last?.content);
+  const finalMessageId = requireFinalMessageId(hookPlan),
+    last = messages.find((message) => message.type === "ai" && message.id === finalMessageId),
+    content = contentToText(last?.content);
   if (!content) {
     throw new Error("模型没有生成可记录的最终文本");
   }

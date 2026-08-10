@@ -20,11 +20,11 @@ afterEach(() => {
   rmSync(join(userDataDirectory(), "sessions"), { force: true, recursive: true });
 });
 test("app startup atomically pauses an orphaned run", async () => {
-  const fixture = interruptedSession("orphan");
-  const pending = fixture.db.appendUser("orphan", "尚未消费的追加输入");
+  const fixture = interruptedSession("orphan"),
+    pending = fixture.db.appendUser("orphan", "尚未消费的追加输入");
   fixture.db.close();
-  const controller = new AppController(fixture.root);
-  const transcript = controller.transcript("orphan");
+  const controller = new AppController(fixture.root),
+    transcript = controller.transcript("orphan");
   expect(controller.bootstrap().sessions[0]?.status).toBe("paused");
   expect(transcript.control).toBe("pause");
   expect(transcript.queue.map(({ id, status }) => ({ id, status }))).toEqual([
@@ -46,8 +46,8 @@ test("app startup preserves the activity time of an already paused session", asy
   await controller.close();
 });
 test("app startup reclaims the lease of its terminated predecessor", async () => {
-  const fixture = interruptedSession("abandoned");
-  const abandonedOwner = { pid: process.pid, token: randomUUID() };
+  const fixture = interruptedSession("abandoned"),
+    abandonedOwner = { pid: process.pid, token: randomUUID() };
   fixture.db.acquireHostLease({
     now: Date.now(),
     ownerId: hostOwnerId({
@@ -59,8 +59,8 @@ test("app startup reclaims the lease of its terminated predecessor", async () =>
     ttlMs: 30_000,
   });
   fixture.db.close();
-  const controller = new AppController(fixture.root, { abandonedOwner });
-  const reopened = openSession("abandoned");
+  const controller = new AppController(fixture.root, { abandonedOwner }),
+    reopened = openSession("abandoned");
   expect(reopened.control("abandoned")).toBe("pause");
   expect(reopened.queueStatus(fixture.queueId)).toBe("paused");
   expect(reopened.hostLease("abandoned")).toBeNull();
@@ -80,8 +80,8 @@ test("app startup never takes over a live standalone host", async () => {
     ttlMs: 30_000,
   });
   fixture.db.close();
-  const controller = new AppController(fixture.root);
-  const reopened = openSession("live");
+  const controller = new AppController(fixture.root),
+    reopened = openSession("live");
   expect(reopened.control("live")).toBe("running");
   expect(reopened.queueStatus(fixture.queueId)).toBe("running");
   expect(reopened.hostLease("live")).not.toBeNull();
@@ -109,8 +109,8 @@ test("resume stays paused when Host initialization fails", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
   writeFileSync(join(fixture.root, "settings", "toolbox.yaml"), "[]\n");
-  const controller = new AppController(fixture.root);
-  const failure = await captureFailure(controller.control("resume-failure", "running"));
+  const controller = new AppController(fixture.root),
+    failure = await captureFailure(controller.control("resume-failure", "running"));
   expect(failure.message).toContain("MCP");
   const reopened = openSession("resume-failure");
   expect(reopened.control("resume-failure")).toBe("pause");

@@ -13,32 +13,32 @@ afterEach(() => {
   }
 });
 test("normalizes MCP text content before size handling", async () => {
-  const short = "短输出";
-  const shortMessage = new ToolMessage({
-    content: JSON.stringify({ content: [{ text: short, type: "text" }] }),
-    id: "short-message",
-    metadata: { source: "mcp" },
-    response_metadata: { requestId: "request-1" },
-    tool_call_id: "call-0",
-  });
-  const original = "结构化长输出 ".repeat(100);
-  const message = new ToolMessage({
-    content: JSON.stringify({
-      content: [{ text: original, type: "text" }],
-      structuredContent: { ignored: true },
+  const short = "短输出",
+    shortMessage = new ToolMessage({
+      content: JSON.stringify({ content: [{ text: short, type: "text" }] }),
+      id: "short-message",
+      metadata: { source: "mcp" },
+      response_metadata: { requestId: "request-1" },
+      tool_call_id: "call-0",
     }),
-    name: "demo_tool",
-    tool_call_id: "call-1",
-  });
-  const normalized = await redirectLargeToolOutput(shortMessage, {
-    maxTokens: countTokens(short),
-    sessionId: "demo-session",
-  });
-  const redirected = await redirectLargeToolOutput(message, {
-    maxTokens: 1,
-    sessionId: "demo-session",
-  });
-  const outputPath = onlyOutputPath("demo-session");
+    original = "结构化长输出 ".repeat(100),
+    message = new ToolMessage({
+      content: JSON.stringify({
+        content: [{ text: original, type: "text" }],
+        structuredContent: { ignored: true },
+      }),
+      name: "demo_tool",
+      tool_call_id: "call-1",
+    }),
+    normalized = await redirectLargeToolOutput(shortMessage, {
+      maxTokens: countTokens(short),
+      sessionId: "demo-session",
+    }),
+    redirected = await redirectLargeToolOutput(message, {
+      maxTokens: 1,
+      sessionId: "demo-session",
+    }),
+    outputPath = onlyOutputPath("demo-session");
   expect(normalized.content).toBe(short);
   expect(normalized).toMatchObject({
     id: "short-message",
@@ -50,16 +50,16 @@ test("normalizes MCP text content before size handling", async () => {
   expect(redirected.name).toBe("demo_tool");
 });
 test("accepts hook call IDs when writing large output", async () => {
-  const outputId = "omity-hook:session/thread:tool";
-  const original = "long hook output";
-  const redirected = await redirectLargeToolOutput(
-    new ToolMessage({ content: original, tool_call_id: outputId }),
-    {
-      maxTokens: 1,
-      sessionId: "demo-session",
-    },
-  );
-  const outputPath = onlyOutputPath("demo-session");
+  const outputId = "omity-hook:session/thread:tool",
+    original = "long hook output",
+    redirected = await redirectLargeToolOutput(
+      new ToolMessage({ content: original, tool_call_id: outputId }),
+      {
+        maxTokens: 1,
+        sessionId: "demo-session",
+      },
+    ),
+    outputPath = onlyOutputPath("demo-session");
   expect(readFileSync(outputPath, "utf8")).toBe(original);
   expect(redirected.content).toContain(outputPath);
 });
@@ -73,58 +73,58 @@ test("uses compact URL-safe large output file names", async () => {
   expect(names[0]).toMatch(/^[0-9a-z]{8}\.txt$/);
 });
 test("keeps MCP images outside the text size limit", async () => {
-  const imageData = "A".repeat(1024 * 1024);
-  const imageMessage = new ToolMessage({
-    content: JSON.stringify({
-      content: [{ data: imageData, mimeType: "image/png", type: "image" }],
+  const imageData = "A".repeat(1024 * 1024),
+    imageMessage = new ToolMessage({
+      content: JSON.stringify({
+        content: [{ data: imageData, mimeType: "image/png", type: "image" }],
+      }),
+      tool_call_id: "call-2",
     }),
-    tool_call_id: "call-2",
-  });
-  const errorMessage = new ToolMessage({
-    content: JSON.stringify({
-      content: [{ text: "MCP 工具报错".repeat(100), type: "text" }],
-      isError: true,
+    errorMessage = new ToolMessage({
+      content: JSON.stringify({
+        content: [{ text: "MCP 工具报错".repeat(100), type: "text" }],
+        isError: true,
+      }),
+      tool_call_id: "call-3",
     }),
-    tool_call_id: "call-3",
-  });
-  const imageRedirected = await redirectLargeToolOutput(imageMessage, {
-    maxTokens: 1,
-    sessionId: "demo",
-  });
-  const errorRedirected = await redirectLargeToolOutput(errorMessage, {
-    maxTokens: 1,
-    sessionId: "demo",
-  });
+    imageRedirected = await redirectLargeToolOutput(imageMessage, {
+      maxTokens: 1,
+      sessionId: "demo",
+    }),
+    errorRedirected = await redirectLargeToolOutput(errorMessage, {
+      maxTokens: 1,
+      sessionId: "demo",
+    });
   expect(imageRedirected.content).toEqual([
     { data: imageData, mimeType: "image/png", type: "image" },
   ]);
   expect(errorRedirected).toBe(errorMessage);
 });
 test("redirects mixed output text without removing its image", async () => {
-  const text = "long text ".repeat(100);
-  const image = {
-    data: "A".repeat(1024 * 1024),
-    mime_type: "image/png",
-    source_type: "base64",
-    type: "image",
-  };
-  const redirected = await redirectLargeToolOutput(
-    new ToolMessage({
-      content: [{ text, type: "text" }, image],
-      tool_call_id: "call-4",
-    }),
-    {
-      maxTokens: 1,
-      sessionId: "demo",
+  const text = "long text ".repeat(100),
+    image = {
+      data: "A".repeat(1024 * 1024),
+      mime_type: "image/png",
+      source_type: "base64",
+      type: "image",
     },
-  );
+    redirected = await redirectLargeToolOutput(
+      new ToolMessage({
+        content: [{ text, type: "text" }, image],
+        tool_call_id: "call-4",
+      }),
+      {
+        maxTokens: 1,
+        sessionId: "demo",
+      },
+    );
   expect(redirected.content).toEqual([
     { text: expect.stringContaining("工具输出过长"), type: "text" },
     image,
   ]);
 });
 function onlyOutputPath(sessionId: string) {
-  const directory = join(userDataDirectory(), "sessions", sessionId, "large_output");
-  const [name] = readdirSync(directory);
+  const directory = join(userDataDirectory(), "sessions", sessionId, "large_output"),
+    [name] = readdirSync(directory);
   return join(directory, name ?? "");
 }

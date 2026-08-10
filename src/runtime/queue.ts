@@ -7,16 +7,16 @@ import { captureError } from "../failures/details";
 import { runGraphUntilBoundary } from "./execution/nodeBoundary";
 
 export async function processQueue(ctx: HostContext, item: QueueItem) {
-  const end = ctx.logger.child(`队列 #${item.id.toString()}`);
-  const resumed = ctx.db.consumedRunItems(ctx.sessionId, item.runId);
-  const items: [QueueItem, ...QueueItem[]] = [item, ...resumed.filter(({ id }) => id !== item.id)];
+  const end = ctx.logger.child(`队列 #${item.id.toString()}`),
+    resumed = ctx.db.consumedRunItems(ctx.sessionId, item.runId),
+    items: [QueueItem, ...QueueItem[]] = [item, ...resumed.filter(({ id }) => id !== item.id)];
   items.sort((left, right) => left.id - right.id);
-  const root = items.find(({ root: isRoot }) => isRoot) ?? item;
-  const run: QueueRun = {
-    items,
-    rootId: root.id,
-    threadId: `${ctx.sessionId}:${root.id.toString()}`,
-  };
+  const root = items.find(({ root: isRoot }) => isRoot) ?? item,
+    run: QueueRun = {
+      items,
+      rootId: root.id,
+      threadId: `${ctx.sessionId}:${root.id.toString()}`,
+    };
   try {
     ctx.assertLease?.();
     const advance = pauseForStop(ctx, run) ? false : await waitIfPaused(ctx, run);

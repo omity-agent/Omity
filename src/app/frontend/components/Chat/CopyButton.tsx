@@ -6,14 +6,14 @@ import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
 
 const button = css({
-  borderWidth: "0",
-  flexShrink: 0,
-});
-const copiedDurationMs = 1600;
+    borderWidth: "0",
+    flexShrink: 0,
+  }),
+  copiedDurationMs = 1600;
 export function CopyButton({ className, value }: { className?: string; value: string }) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { t } = useTranslation(),
+    [copied, setCopied] = useState(false),
+    resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(
     () => () => {
       if (resetTimer.current) {
@@ -22,20 +22,20 @@ export function CopyButton({ className, value }: { className?: string; value: st
     },
     [],
   );
-  const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    if (resetTimer.current) {
-      clearTimeout(resetTimer.current);
-    }
-    resetTimer.current = setTimeout(() => {
-      setCopied(false);
-    }, copiedDurationMs);
-  }, [value]);
   const handleCopy = useCallback(() => {
-    reportPromiseErrors(copy());
-  }, [copy]);
-  const label = t(copied ? "copied" : "copy");
+      const copy = async () => {
+        await navigator.clipboard.writeText(value);
+        setCopied(true);
+        if (resetTimer.current) {
+          clearTimeout(resetTimer.current);
+        }
+        resetTimer.current = setTimeout(() => {
+          setCopied(false);
+        }, copiedDurationMs);
+      };
+      reportPromiseErrors(copy());
+    }, [setCopied, value]),
+    label = t(copied ? "copied" : "copy");
   return (
     <IconButton
       aria-label={label}

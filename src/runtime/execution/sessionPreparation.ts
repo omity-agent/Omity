@@ -20,34 +20,34 @@ export function prepareHostSession(
   root: string,
   options: Pick<HostRunOptions, "cwd" | "recoverInterrupted" | "settingsContext">,
 ) {
-  const workspace = normalizeWorkspacePath(options.cwd ?? root, root);
-  const baseContext = options.settingsContext ?? createSettingsContext(root);
+  const workspace = normalizeWorkspacePath(options.cwd ?? root, root),
+    baseContext = options.settingsContext ?? createSettingsContext(root);
   if (mode.kind === "load") {
-    const paths = resolveSessionPaths(mode.sessionId);
-    const db = openLoadedDatabase(paths.dbPath, mode, options.recoverInterrupted ?? false);
+    const paths = resolveSessionPaths(mode.sessionId),
+      db = openLoadedDatabase(paths.dbPath, mode, options.recoverInterrupted ?? false);
     try {
-      const profiles = db.profiles(mode.sessionId);
-      const settingsContext = selectSettingsProfiles(baseContext, profiles);
-      const settings = loadSettings(root, {
-        cwd: workspace,
-        sessionId: mode.sessionId,
-        settingsContext,
-      });
+      const profiles = db.profiles(mode.sessionId),
+        settingsContext = selectSettingsProfiles(baseContext, profiles),
+        settings = loadSettings(root, {
+          cwd: workspace,
+          sessionId: mode.sessionId,
+          settingsContext,
+        });
       return { db, paths, profiles, settings, settingsContext };
     } catch (error) {
       db.close();
       throw error;
     }
   }
-  const settingsContext = prioritizeSettingsProfile(baseContext, mode.profile);
-  const profiles = settingsProfileNames(settingsContext);
-  const settings = loadSettings(root, {
-    cwd: workspace,
-    sessionId: mode.sessionId,
-    settingsContext,
-  });
-  const paths = prepareWritableSession(mode);
-  const db = new AgentDatabase(paths.dbPath);
+  const settingsContext = prioritizeSettingsProfile(baseContext, mode.profile),
+    profiles = settingsProfileNames(settingsContext),
+    settings = loadSettings(root, {
+      cwd: workspace,
+      sessionId: mode.sessionId,
+      settingsContext,
+    }),
+    paths = prepareWritableSession(mode),
+    db = new AgentDatabase(paths.dbPath);
   try {
     db.createSession(mode.sessionId, workspace, profiles);
     return { db, paths, profiles, settings, settingsContext };
@@ -57,8 +57,8 @@ export function prepareHostSession(
   }
 }
 function prepareWritableSession(mode: HostMode) {
-  const planned = resolveSessionPaths(mode.sessionId);
-  const exists = existsSync(planned.dir);
+  const planned = resolveSessionPaths(mode.sessionId),
+    exists = existsSync(planned.dir);
   if (mode.kind === "new" && exists) {
     throw sessionConflict(mode.sessionId);
   }

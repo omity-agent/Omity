@@ -117,13 +117,13 @@ export function MarkdownEditor({
           if (!insert) {
             return true;
           }
-          const selection = view.state.selection.main;
-          const before = view.state.doc.sliceString(0, selection.from);
-          const after = view.state.doc.sliceString(selection.to);
-          const text =
-            (before && !before.endsWith("\n") ? "\n" : "") +
-            insert +
-            (after && !after.startsWith("\n") ? "\n" : "");
+          const selection = view.state.selection.main,
+            before = view.state.doc.sliceString(0, selection.from),
+            after = view.state.doc.sliceString(selection.to),
+            text =
+              (before && !before.endsWith("\n") ? "\n" : "") +
+              insert +
+              (after && !after.startsWith("\n") ? "\n" : "");
           view.dispatch({
             changes: {
               from: selection.from,

@@ -25,10 +25,10 @@ export function appendUserQueue(db: Database, sessionId: string, content: string
     return appendToRun(db, sessionId, activeRun.root_id, content);
   }
   const result = db.run(
-    "INSERT INTO queue (session_id, content, status) VALUES (?, ?, 'pending')",
-    [sessionId, content],
-  );
-  const queueId = Number(result.lastInsertRowid);
+      "INSERT INTO queue (session_id, content, status) VALUES (?, ?, 'pending')",
+      [sessionId, content],
+    ),
+    queueId = Number(result.lastInsertRowid);
   db.run("UPDATE queue SET root_id = ? WHERE id = ?", [queueId, queueId]);
   return queueId;
 }
@@ -99,15 +99,15 @@ export function startQueueRecord(db: Database, sessionId: string, item: QueueIte
     }
     return item.userMessageId;
   }
-  const messageId = insertUserMessage(db, sessionId, item.content, item.id);
-  const result = db.run(
-    `UPDATE queue SET status = 'running', content = NULL
+  const messageId = insertUserMessage(db, sessionId, item.content, item.id),
+    result = db.run(
+      `UPDATE queue SET status = 'running', content = NULL
      WHERE id = ? AND session_id = ?
        AND status IN ('pending', 'running', 'paused')
        AND content IS NOT NULL
        AND EXISTS (SELECT 1 FROM messages WHERE id = ? AND queue_id = queue.id)`,
-    [item.id, sessionId, messageId],
-  );
+      [item.id, sessionId, messageId],
+    );
   if (result.changes !== 1) {
     throw queueClaimConflict(item.id);
   }

@@ -42,50 +42,55 @@ export function buildTimeline(
   fileLinks: FileLinkUnit[] = [],
 ): TimelineMessage[] {
   const outputs = new Map(
-    messages.flatMap((item) =>
-      item.role === "tool" && item.toolCallId
-        ? [[item.toolCallId, item as DisplayToolOutput] as const]
-        : [],
-    ),
-  );
-  const persistedToolCalls = messages.flatMap((item) => item.toolCalls);
-  const lifecycle = toolCallLifecycle(events, outputs);
-  const visible = messages
-    .filter((item) => item.role !== "tool")
-    .map((item) => withParts(item, `message-${item.id.toString()}`, outputs, lifecycle, fileLinks));
-  const persistedSourceIds = new Set(
-    messages.map((item) => item.sourceId).filter((id) => id !== undefined),
-  );
-  const knownQueue = new Set(messages.map((item) => item.queueId));
-  const pending = new Map(
-    queue
-      .filter((item) => item.status === "pending" && !knownQueue.has(item.id))
-      .map(
-        (item) =>
-          [item.id, syntheticMessage("user", item.content, `queue-${item.id.toString()}`)] as const,
+      messages.flatMap((item) =>
+        item.role === "tool" && item.toolCallId
+          ? [[item.toolCallId, item as DisplayToolOutput] as const]
+          : [],
       ),
-  );
-  const activeQueueIds = new Set(
-    queue
-      .filter((item) => item.status === "running" || item.status === "paused")
-      .filter((item) => item.userMessageId !== null)
-      .map((item) => item.id),
-  );
-  const liveEvents = events.filter(
-    (event) =>
-      (event.kind === "user_appended" && pending.has(event.queueId)) ||
-      (activeQueueIds.has(eventQueueId(event)) &&
-        (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
-  );
-  const live = timelineTail(
-    liveEvents,
-    pending,
-    optimistic,
-    outputs,
-    lifecycle,
-    persistedToolCalls,
-    fileLinks,
-  );
+    ),
+    persistedToolCalls = messages.flatMap((item) => item.toolCalls),
+    lifecycle = toolCallLifecycle(events, outputs),
+    visible = messages
+      .filter((item) => item.role !== "tool")
+      .map((item) =>
+        withParts(item, `message-${item.id.toString()}`, outputs, lifecycle, fileLinks),
+      ),
+    persistedSourceIds = new Set(
+      messages.map((item) => item.sourceId).filter((id) => id !== undefined),
+    ),
+    knownQueue = new Set(messages.map((item) => item.queueId)),
+    pending = new Map(
+      queue
+        .filter((item) => item.status === "pending" && !knownQueue.has(item.id))
+        .map(
+          (item) =>
+            [
+              item.id,
+              syntheticMessage("user", item.content, `queue-${item.id.toString()}`),
+            ] as const,
+        ),
+    ),
+    activeQueueIds = new Set(
+      queue
+        .filter((item) => item.status === "running" || item.status === "paused")
+        .filter((item) => item.userMessageId !== null)
+        .map((item) => item.id),
+    ),
+    liveEvents = events.filter(
+      (event) =>
+        (event.kind === "user_appended" && pending.has(event.queueId)) ||
+        (activeQueueIds.has(eventQueueId(event)) &&
+          (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
+    ),
+    live = timelineTail(
+      liveEvents,
+      pending,
+      optimistic,
+      outputs,
+      lifecycle,
+      persistedToolCalls,
+      fileLinks,
+    );
   return groupAssistantMessages([...visible, ...live]);
 }
 function timelineTail(
@@ -172,9 +177,9 @@ function toolPart(
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   fileLinks: FileLinkUnit[],
 ): Extract<TimelinePart, { type: "tool" }> {
-  const key = displayToolCallKey(call);
-  const withLinks = linkedCall(call, fileLinks);
-  const output = outputs.get(call.id);
+  const key = displayToolCallKey(call),
+    withLinks = linkedCall(call, fileLinks),
+    output = outputs.get(call.id);
   if (output) {
     return {
       call: withLinks,

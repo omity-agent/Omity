@@ -35,14 +35,14 @@ export function createSettingsContext(
   userDirectory = userSettingsDirectory(),
   profileNames?: readonly string[],
 ): SettingsContext {
-  const resolvedRoot = resolve(root);
-  const resolvedUserDirectory = resolve(userDirectory);
-  const selectionPath = resolve(resolvedUserDirectory, "profile.yaml");
-  const names =
-    profileNames ??
-    (existsSync(selectionPath)
-      ? settingsProfileNamesSchema.parse(readSettingsYamlValue(selectionPath))
-      : []);
+  const resolvedRoot = resolve(root),
+    resolvedUserDirectory = resolve(userDirectory),
+    selectionPath = resolve(resolvedUserDirectory, "profile.yaml"),
+    names =
+      profileNames ??
+      (existsSync(selectionPath)
+        ? settingsProfileNamesSchema.parse(readSettingsYamlValue(selectionPath))
+        : []);
   return {
     defaultsDirectory: applicationAssetPath(resolvedRoot, "settings"),
     profiles: resolveProfiles(resolvedUserDirectory, names),
@@ -66,11 +66,8 @@ export function prioritizeSettingsProfile(
   if (profileName === undefined) {
     return context;
   }
-  const name = settingsProfileNameSchema.parse(profileName);
-  const profileNames = [
-    ...settingsProfileNames(context).filter((current) => current !== name),
-    name,
-  ];
+  const name = settingsProfileNameSchema.parse(profileName),
+    profileNames = [...settingsProfileNames(context).filter((current) => current !== name), name];
   return selectSettingsProfiles(context, profileNames);
 }
 export function availableSettingsProfiles(context: SettingsContext) {

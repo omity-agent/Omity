@@ -9,8 +9,8 @@ interface Launcher {
   command: string;
 }
 export async function activateFileLink(path: string, action: FileLinkAction) {
-  const target = await existingTarget(path);
-  const launcher = fileLinkLauncher(target.path, action);
+  const target = await existingTarget(path),
+    launcher = fileLinkLauncher(target.path, action);
   await startLauncher(launcher);
   return target.path;
 }
@@ -36,8 +36,8 @@ export function fileLinkLauncher(
   return { args: [dirname(path)], command: "xdg-open" };
 }
 async function existingTarget(path: string) {
-  const resolved = await realpath(path);
-  const metadata = await stat(resolved);
+  const resolved = await realpath(path),
+    metadata = await stat(resolved);
   if (!metadata.isDirectory() && !metadata.isFile()) {
     throw new Error(`路径不是文件或目录：${resolved}`);
   }

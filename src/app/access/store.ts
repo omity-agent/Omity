@@ -111,12 +111,12 @@ export class AccessStore {
   }
   consumeRegistrationTicket(token: string) {
     return this.orm.transaction((tx) => {
-      const hash = tokenHash(token);
-      const row = tx
-        .delete(registrationTickets)
-        .where(eq(registrationTickets.tokenHash, hash))
-        .returning({ expiresAt: registrationTickets.expiresAt })
-        .get();
+      const hash = tokenHash(token),
+        row = tx
+          .delete(registrationTickets)
+          .where(eq(registrationTickets.tokenHash, hash))
+          .returning({ expiresAt: registrationTickets.expiresAt })
+          .get();
       if (!row || row.expiresAt <= Date.now()) {
         throw new Error("WebAuthn 注册链接不存在或已过期");
       }

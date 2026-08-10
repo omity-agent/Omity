@@ -20,8 +20,8 @@ export class ClientNetwork {
     this.trustedProxies = trustedProxies.map((cidr) => ipaddr.parseCIDR(cidr));
   }
   identify(request: PeerRequest): ClientIdentity {
-    const remote = parseAddress(request.socket.remoteAddress);
-    const address = this.forwardedAddress(request, remote);
+    const remote = parseAddress(request.socket.remoteAddress),
+      address = this.forwardedAddress(request, remote);
     return { address: address.toString(), local: isLocal(address) };
   }
   private forwardedAddress(request: PeerRequest, remote: Address) {

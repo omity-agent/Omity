@@ -9,44 +9,44 @@ import { z } from "zod";
 
 type McpServers = Record<string, unknown>;
 const mcpServerSchema = z.looseObject({
-  enabled: z.boolean().optional(),
-});
-const mcpServersSchema = z.record(z.string(), mcpServerSchema);
-const toolboxesSchema = z
-  .object({
-    ask_user: z
-      .object({
-        enabled: z.boolean(),
-      })
-      .strict()
-      .default({ enabled: true }),
-  })
-  .strict()
-  .default({ ask_user: { enabled: true } });
-const mcpConfigurationSchema = z
-  .object({
-    freeformToolInputs: z.unknown().optional(),
-    mcpServers: mcpServersSchema.optional(),
-    stdio: z
-      .object({
-        restart: z
-          .object({
-            delayMs: z.number().int().nonnegative().max(60_000),
-            maxAttempts: z.number().int().positive().max(100),
-          })
-          .strict(),
-      })
-      .strict()
-      .default({ restart: { delayMs: 1000, maxAttempts: 3 } }),
-    toolDescriptionOverrides: z.unknown().optional(),
-    toolNameOverrides: z.unknown().optional(),
-    toolboxes: toolboxesSchema,
-  })
-  .strict();
-const stdioServerSchema = z.looseObject({
-  args: z.array(z.string()).optional(),
-  command: z.string(),
-});
+    enabled: z.boolean().optional(),
+  }),
+  mcpServersSchema = z.record(z.string(), mcpServerSchema),
+  toolboxesSchema = z
+    .object({
+      ask_user: z
+        .object({
+          enabled: z.boolean(),
+        })
+        .strict()
+        .default({ enabled: true }),
+    })
+    .strict()
+    .default({ ask_user: { enabled: true } }),
+  mcpConfigurationSchema = z
+    .object({
+      freeformToolInputs: z.unknown().optional(),
+      mcpServers: mcpServersSchema.optional(),
+      stdio: z
+        .object({
+          restart: z
+            .object({
+              delayMs: z.number().int().nonnegative().max(60_000),
+              maxAttempts: z.number().int().positive().max(100),
+            })
+            .strict(),
+        })
+        .strict()
+        .default({ restart: { delayMs: 1000, maxAttempts: 3 } }),
+      toolDescriptionOverrides: z.unknown().optional(),
+      toolNameOverrides: z.unknown().optional(),
+      toolboxes: toolboxesSchema,
+    })
+    .strict(),
+  stdioServerSchema = z.looseObject({
+    args: z.array(z.string()).optional(),
+    command: z.string(),
+  });
 export function readMcpConfiguration(path: string) {
   const parsed = resolvePlaceholders(
     omitDisabledToolboxConfiguration(readSettingsYamlValue(path)),

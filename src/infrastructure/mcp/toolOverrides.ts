@@ -73,14 +73,14 @@ export function overrideMcpToolDescriptions(
   root: string,
   sessionPromptRoots = [resolve(root, "settings", "prompts")],
 ) {
-  const toolsByName = indexMcpTools(tools);
-  const descriptions = new Map<string, { allowSession: boolean; value: string }>();
+  const toolsByName = indexMcpTools(tools),
+    descriptions = new Map<string, { allowSession: boolean; value: string }>();
   for (const [name, configuredPath] of Object.entries(overrides)) {
     if (!toolsByName.has(name)) {
       throw new Error(`MCP 工具描述覆盖配置引用了不存在的工具：${name}`);
     }
-    const path = resolveConfiguredPath(root, configuredPath);
-    const allowSession = sessionPromptRoots.some((directory) => isWithin(directory, path));
+    const path = resolveConfiguredPath(root, configuredPath),
+      allowSession = sessionPromptRoots.some((directory) => isWithin(directory, path));
     let description: string;
     try {
       description = readSettingsText(path, { deferSession: allowSession }).trimEnd();

@@ -30,21 +30,21 @@ export function deriveChatActionState({
   queue,
   sessionStatus,
 }: ChatActionInput): ChatActionState {
-  const queueRunning = queue.some(({ status }) => status === "running");
-  const queuePaused = queue.some(({ status }) => status === "paused");
-  const sessionActive =
-    queueRunning ||
-    sessionStatus === "model" ||
-    sessionStatus === "tool" ||
-    sessionStatus === "pausing";
-  const pausePhase = resolvePausePhase({
-    paused: queuePaused || sessionStatus === "paused",
-    requested: pausing || pauseRequested(control) || sessionStatus === "pausing",
-    running: sessionActive,
-  });
-  const resumable = pausePhase === "paused";
-  const waitingForPause = pausePhase === "pausing";
-  const stepping = control === "step";
+  const queueRunning = queue.some(({ status }) => status === "running"),
+    queuePaused = queue.some(({ status }) => status === "paused"),
+    sessionActive =
+      queueRunning ||
+      sessionStatus === "model" ||
+      sessionStatus === "tool" ||
+      sessionStatus === "pausing",
+    pausePhase = resolvePausePhase({
+      paused: queuePaused || sessionStatus === "paused",
+      requested: pausing || pauseRequested(control) || sessionStatus === "pausing",
+      running: sessionActive,
+    }),
+    resumable = pausePhase === "paused",
+    waitingForPause = pausePhase === "pausing",
+    stepping = control === "step";
   return {
     controlDisabled:
       stepping || waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),

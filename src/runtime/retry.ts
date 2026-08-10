@@ -28,18 +28,18 @@ export async function waitBeforeModelRetry(
   attempt: number,
   controls: RetryControls,
 ) {
-  const delayMs = ctx.settings.model.retryDelayMs;
-  const warning: BrowserWarning = {
-    code: "model_api_unavailable",
-    details: {
-      attempt,
-      delayMs,
-      error: captureError(error),
-      queueId: run.items[0].id,
-      sessionId: ctx.sessionId,
-    },
-    message: "模型 API 暂不可用，正在重试",
-  };
+  const delayMs = ctx.settings.model.retryDelayMs,
+    warning: BrowserWarning = {
+      code: "model_api_unavailable",
+      details: {
+        attempt,
+        delayMs,
+        error: captureError(error),
+        queueId: run.items[0].id,
+        sessionId: ctx.sessionId,
+      },
+      message: "模型 API 暂不可用，正在重试",
+    };
   ctx.observer?.warning?.(ctx.sessionId, warning);
   const deadline = Date.now() + delayMs;
   while (Date.now() < deadline) {

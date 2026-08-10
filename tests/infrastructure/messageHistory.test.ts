@@ -41,18 +41,18 @@ test("persists only replay and display message fields", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const reasoning = {
-    id: "rs_1",
-    summary: [{ text: "visible summary", type: "summary_text" }],
-    type: "reasoning",
-  };
-  const output = [
-    { ...reasoning, encrypted_content: "sealed" },
-    {
-      content: [{ annotations: [], text: "答案", type: "output_text" }],
-      role: "assistant",
-      type: "message",
+      id: "rs_1",
+      summary: [{ text: "visible summary", type: "summary_text" }],
+      type: "reasoning",
     },
-  ];
+    output = [
+      { ...reasoning, encrypted_content: "sealed" },
+      {
+        content: [{ annotations: [], text: "答案", type: "output_text" }],
+        role: "assistant",
+        type: "message",
+      },
+    ];
   await db.syncHistory("123", [
     new HumanMessage("问题"),
     new AIMessage({

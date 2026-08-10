@@ -17,8 +17,8 @@ export class AskUserRuntime {
     if (this.pending.has(key)) {
       throw new Error(`ask_user 问题已在等待回答：${request.callId}`);
     }
-    const deferred = Promise.withResolvers<AskUserAnswer>();
-    const pending: PendingQuestion = { request, resolve: deferred.resolve };
+    const deferred = Promise.withResolvers<AskUserAnswer>(),
+      pending: PendingQuestion = { request, resolve: deferred.resolve };
     this.pending.set(key, pending);
     this.changed?.(sessionId);
     const abort = () => {
@@ -43,8 +43,8 @@ export class AskUserRuntime {
     }
   }
   answer(sessionId: string, callId: string, answer: unknown) {
-    const key = this.key(sessionId, callId);
-    const pending = this.pending.get(key);
+    const key = this.key(sessionId, callId),
+      pending = this.pending.get(key);
     if (!pending) {
       throw toolNotRunning(callId);
     }

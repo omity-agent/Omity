@@ -49,8 +49,8 @@ export class HookRuntime {
     if (!(await options.consume(rule.id, rule.runLimit))) {
       return null;
     }
-    const details = hookCallDetails(rule, sourceId);
-    const call = this.resolvedCall(rule, sourceId, threadId, options.toolOutputs);
+    const details = hookCallDetails(rule, sourceId),
+      call = this.resolvedCall(rule, sourceId, threadId, options.toolOutputs);
     this.logger.debug("执行 Hook 节点", {
       hookId: rule.id,
       sourceId,

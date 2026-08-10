@@ -12,20 +12,20 @@ import type { ErrorDetails } from "../../../failures/details";
 import { sql } from "drizzle-orm";
 
 const controls = [
-  "running",
-  "step",
-  "pause",
-  "cancel",
-  "pause_cancel",
-] as const satisfies readonly Control[];
-const queueStatuses = [
-  "draft",
-  "pending",
-  "running",
-  "paused",
-  "done",
-  "canceled",
-] as const satisfies readonly QueueStatus[];
+    "running",
+    "step",
+    "pause",
+    "cancel",
+    "pause_cancel",
+  ] as const satisfies readonly Control[],
+  queueStatuses = [
+    "draft",
+    "pending",
+    "running",
+    "paused",
+    "done",
+    "canceled",
+  ] as const satisfies readonly QueueStatus[];
 export const sessions = sqliteTable(
   "sessions",
   {

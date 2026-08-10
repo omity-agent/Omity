@@ -7,8 +7,8 @@ import { forkDatabaseBeforeMessage } from "../../src/app/fork";
 
 afterEach(cleanupDatabaseDirs);
 test("fork copies messages before selected user message", () => {
-  const source = makeDb();
-  const target = makeDb();
+  const source = makeDb(),
+    target = makeDb();
   source.resetSession("source", workspace, ["base", "work"]);
   const first = source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
@@ -39,8 +39,8 @@ test("fork copies messages before selected user message", () => {
   target.close();
 });
 test("fork preserves hook usage counters", () => {
-  const source = makeDb();
-  const target = makeDb();
+  const source = makeDb(),
+    target = makeDb();
   source.resetSession("source", workspace);
   const first = source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
@@ -65,8 +65,8 @@ test("fork preserves hook usage counters", () => {
   target.close();
 });
 test("first user message cannot fork", () => {
-  const source = makeDb();
-  const target = makeDb();
+  const source = makeDb(),
+    target = makeDb();
   source.resetSession("source", workspace);
   const first = source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
@@ -111,8 +111,8 @@ function readOnlyQueue(db: ReturnType<typeof makeDb>) {
   }
 }
 test("fork point must be a user message", () => {
-  const source = makeDb();
-  const target = makeDb();
+  const source = makeDb(),
+    target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "问题");
   source.startQueue("source", required(source.nextQueue("source")));
@@ -143,8 +143,8 @@ function latestMessageId(db: ReturnType<typeof makeDb>) {
   }
 }
 test("fork preserves completed takeover pairs in an editable draft", async () => {
-  const source = makeDb();
-  const target = makeDb();
+  const source = makeDb(),
+    target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "第一条");
   source.startQueue("source", required(source.nextQueue("source")));
@@ -161,8 +161,8 @@ test("fork preserves completed takeover pairs in an editable draft", async () =>
     }),
     new AIMessage("第一条回复"),
   ]);
-  const appended = source.appendUser("source", "第二条");
-  const appendItem = required(source.pendingAppends("source")[0]);
+  const appended = source.appendUser("source", "第二条"),
+    appendItem = required(source.pendingAppends("source")[0]);
   source.startQueue("source", appendItem);
   const forkPoint = { id: userMessageId(source, appended) };
   forkDatabaseBeforeMessage({

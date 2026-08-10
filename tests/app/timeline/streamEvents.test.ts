@@ -12,13 +12,13 @@ const queue: DisplayQueue[] = [
 ];
 test("preserves interleaved reasoning, text, and tool part order", () => {
   const events: DisplayEvent[] = [
-    textEvent(1, "assistant_reasoning_delta", "reasoning-1", "分析"),
-    toolEvent(2, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "inspect" }),
-    textEvent(3, "assistant_text_delta", "text-1", "阶段结论"),
-    textEvent(4, "assistant_reasoning_delta", "reasoning-2", "继续分析"),
-    toolEvent(5, "tool-1", { idDelta: "call-2", index: 1, nameDelta: "execute" }),
-  ];
-  const parts = buildTimeline([], queue, events)[0]?.parts;
+      textEvent(1, "assistant_reasoning_delta", "reasoning-1", "分析"),
+      toolEvent(2, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "inspect" }),
+      textEvent(3, "assistant_text_delta", "text-1", "阶段结论"),
+      textEvent(4, "assistant_reasoning_delta", "reasoning-2", "继续分析"),
+      toolEvent(5, "tool-1", { idDelta: "call-2", index: 1, nameDelta: "execute" }),
+    ],
+    parts = buildTimeline([], queue, events)[0]?.parts;
   expect(parts?.map((part) => part.type)).toEqual([
     "reasoning",
     "tool",
@@ -69,54 +69,59 @@ test("preserves repeated argument deltas and Freeform input", () => {
 });
 test("completed streamed tool call exposes its output and settled state", () => {
   const output: DisplayMessage = {
-    content: "done",
-    createdAt: 2,
-    id: 2,
-    images: [],
-    queueId: null,
-    reasoning: "",
-    role: "tool",
-    toolCallId: "call-1",
-    toolCalls: [],
-  };
-  const events: DisplayEvent[] = [
-    toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "capture" }),
-    {
+      content: "done",
+      createdAt: 2,
       id: 2,
-      kind: "tool_started",
-      messageId: "message-1",
-      partId: "tool-0",
-      queueId: 1,
-      value: "call-1",
+      images: [],
+      queueId: null,
+      reasoning: "",
+      role: "tool",
+      toolCallId: "call-1",
+      toolCalls: [],
     },
-  ];
-  const part = buildTimeline([output], queue, events)[0]?.parts.find(
-    (item) => item.type === "tool",
-  );
+    events: DisplayEvent[] = [
+      toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "capture" }),
+      {
+        id: 2,
+        kind: "tool_started",
+        messageId: "message-1",
+        partId: "tool-0",
+        queueId: 1,
+        value: "call-1",
+      },
+    ],
+    part = buildTimeline([output], queue, events)[0]?.parts.find((item) => item.type === "tool");
   expect(part?.output).toBe(output);
   expect(part?.type === "tool" ? part.phase : undefined).toBe("completed");
 });
 test("persisted single-call execution reconciles with its original multi-call stream", () => {
   const persisted: DisplayMessage = {
-    content: "",
-    createdAt: 1,
-    id: 1,
-    images: [],
-    queueId: 1,
-    reasoning: "",
-    role: "assistant",
-    sourceId: "message-1",
-    toolCalls: [
-      { id: "call-1", index: 0, input: {}, inputTokens: 1, messageId: "message-1", name: "first" },
+      content: "",
+      createdAt: 1,
+      id: 1,
+      images: [],
+      queueId: 1,
+      reasoning: "",
+      role: "assistant",
+      sourceId: "message-1",
+      toolCalls: [
+        {
+          id: "call-1",
+          index: 0,
+          input: {},
+          inputTokens: 1,
+          messageId: "message-1",
+          name: "first",
+        },
+      ],
+    },
+    events = [
+      toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "first" }),
+      toolEvent(2, "tool-1", { idDelta: "call-2", index: 1, nameDelta: "second" }),
     ],
-  };
-  const events = [
-    toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "first" }),
-    toolEvent(2, "tool-1", { idDelta: "call-2", index: 1, nameDelta: "second" }),
-  ];
-  const calls = buildTimeline([persisted], queue, events)[0]?.parts.flatMap((part) =>
-    part.type === "tool" ? [part.call.id] : [],
-  );
+    calls = buildTimeline([persisted], queue, events)[0]?.parts.flatMap((part) =>
+      part.type === "tool" ? [part.call.id] : [],
+    );
   expect(calls).toEqual(["call-1", "call-2"]);
 });
 function streamedCalls(events: DisplayEvent[]) {

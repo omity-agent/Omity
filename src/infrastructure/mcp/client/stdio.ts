@@ -19,13 +19,13 @@ export type StdioConnector = (
 ) => Promise<ConnectedStdioClient>;
 export const connectStdioClient: StdioConnector = async (serverName, connection, signal) => {
   const transport = new StdioClientTransport({
-    args: connection.args,
-    command: connection.command,
-    cwd: connection.cwd,
-    env: connection.env,
-    stderr: "pipe",
-  });
-  const { stderr } = transport;
+      args: connection.args,
+      command: connection.command,
+      cwd: connection.cwd,
+      env: connection.env,
+      stderr: "pipe",
+    }),
+    { stderr } = transport;
   if (stderr === null) {
     throw new Error(`MCP 服务器 ${serverName} 无法捕获 stderr`);
   }
@@ -41,13 +41,13 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
   const closed = Promise.withResolvers<void>();
   let isClosed = false;
   const closeTransport = () => {
-    isClosed = true;
-    closed.resolve();
-  };
-  const client = new Client(
-    { name: "omity-agent", version: "1.0.0" },
-    { versionNegotiation: { mode: "auto" } },
-  );
+      isClosed = true;
+      closed.resolve();
+    },
+    client = new Client(
+      { name: "omity-agent", version: "1.0.0" },
+      { versionNegotiation: { mode: "auto" } },
+    );
   Reflect.set(client, "onclose", closeTransport);
   try {
     await client.connect(transport, signal ? { signal } : undefined);
@@ -65,8 +65,8 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
     };
   } catch (error) {
     await client.close();
-    const output = diagnostics.text();
-    const message = error instanceof Error ? error.message : String(error);
+    const output = diagnostics.text(),
+      message = error instanceof Error ? error.message : String(error);
     throw new Error(
       output
         ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
@@ -88,8 +88,8 @@ class BoundedBytes {
   private truncated = false;
   constructor(private readonly maximum: number) {}
   append(value: unknown) {
-    const incoming = toBuffer(value);
-    const combined = Buffer.concat([this.bytes, incoming]);
+    const incoming = toBuffer(value),
+      combined = Buffer.concat([this.bytes, incoming]);
     if (combined.length > this.maximum) {
       this.truncated = true;
       this.bytes = combined.subarray(combined.length - this.maximum);

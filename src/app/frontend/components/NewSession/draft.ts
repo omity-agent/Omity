@@ -9,11 +9,11 @@ import { DraftSaver } from "../../services/scheduling/draftSaver";
 
 const target = { kind: "new" } as const;
 export function useNewSessionDraft(saveDelayMs?: number) {
-  const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(true);
-  const contentRef = useRef(content);
-  const revisionRef = useRef(0);
-  const saverRef = useRef<DraftSaver | undefined>(undefined);
+  const [content, setContent] = useState(""),
+    [loading, setLoading] = useState(true),
+    contentRef = useRef(content),
+    revisionRef = useRef(0),
+    saverRef = useRef<DraftSaver | undefined>(undefined);
   useEffect(() => {
     let current = true;
     const load = async () => {
@@ -51,21 +51,21 @@ export function useNewSessionDraft(saveDelayMs?: number) {
     };
   }, []);
   const update = useCallback((nextContent: string) => {
-    if (nextContent === contentRef.current) {
-      return;
-    }
-    contentRef.current = nextContent;
-    revisionRef.current += 1;
-    setContent(nextContent);
-    saverRef.current?.schedule(nextContent, revisionRef.current);
-  }, []);
-  const flush = useCallback(() => saverRef.current?.flush() ?? Promise.resolve(), []);
-  const clear = useCallback(() => {
-    saverRef.current?.discardPending();
-    clearTemporaryComposerDraft();
-    contentRef.current = "";
-    revisionRef.current = 0;
-    setContent("");
-  }, []);
+      if (nextContent === contentRef.current) {
+        return;
+      }
+      contentRef.current = nextContent;
+      revisionRef.current += 1;
+      setContent(nextContent);
+      saverRef.current?.schedule(nextContent, revisionRef.current);
+    }, []),
+    flush = useCallback(() => saverRef.current?.flush() ?? Promise.resolve(), []),
+    clear = useCallback(() => {
+      saverRef.current?.discardPending();
+      clearTemporaryComposerDraft();
+      contentRef.current = "";
+      revisionRef.current = 0;
+      setContent("");
+    }, []);
   return { clear, content, flush, loading, update };
 }

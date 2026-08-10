@@ -14,8 +14,8 @@ export async function createAppSession(
   settings: Settings,
   profiles: string[],
 ) {
-  const workspace = normalizeWorkspacePath(submission.workspace, appRoot);
-  const sessionId = reserveSessionId();
+  const workspace = normalizeWorkspacePath(submission.workspace, appRoot),
+    sessionId = reserveSessionId();
   try {
     await createSessionWithAttachments({
       attachments: submission.attachments,

@@ -27,21 +27,21 @@ export class FileLinkIndexer {
     surface: Extract<FileLinkSurface, "content" | "reasoning">;
     workspace: string;
   }): Promise<PreparedFileLinks> {
-    const key = streamKey(options.sessionId, options.ownerId, options.surface);
-    const current = this.streams.get(key) ?? this.loadStream(options);
+    const key = streamKey(options.sessionId, options.ownerId, options.surface),
+      current = this.streams.get(key) ?? this.loadStream(options);
     if (current.queueId !== options.queueId) {
       throw new Error(`文件链接流跨越多个队列：${options.ownerId}`);
     }
-    const text = current.text + options.delta;
-    const candidates = splitTextUnits(text, current.nextOffset, current.nextUnitIndex, false);
-    const units = await probeUnits(candidates, options, options.workspace);
-    const last = candidates.at(-1);
-    const next: StreamState = {
-      nextOffset: last?.nextOffset ?? current.nextOffset,
-      nextUnitIndex: current.nextUnitIndex + candidates.length,
-      queueId: current.queueId,
-      text,
-    };
+    const text = current.text + options.delta,
+      candidates = splitTextUnits(text, current.nextOffset, current.nextUnitIndex, false),
+      units = await probeUnits(candidates, options, options.workspace),
+      last = candidates.at(-1),
+      next: StreamState = {
+        nextOffset: last?.nextOffset ?? current.nextOffset,
+        nextUnitIndex: current.nextUnitIndex + candidates.length,
+        queueId: current.queueId,
+        text,
+      };
     return {
       commit: () => {
         this.streams.set(key, next);
@@ -57,10 +57,10 @@ export class FileLinkIndexer {
     const result: StoredFileLinkUnit[] = [];
     for (const source of sources) {
       const candidates =
-        source.mode === "output"
-          ? [outputUnit(source.text)]
-          : splitTextUnits(source.text, 0, 0, true);
-      const existing = loadStoredFileLinkUnits(this.db, sessionId, source.ownerId, source.surface);
+          source.mode === "output"
+            ? [outputUnit(source.text)]
+            : splitTextUnits(source.text, 0, 0, true),
+        existing = loadStoredFileLinkUnits(this.db, sessionId, source.ownerId, source.surface);
       assertExistingUnits(existing, candidates, source);
       const missing = candidates.slice(existing.length);
       result.push(
@@ -87,30 +87,30 @@ export class FileLinkIndexer {
     surface: Extract<FileLinkSurface, "content" | "reasoning">;
   }): StreamState {
     const kind =
-      options.surface === "content" ? "assistant_text_delta" : "assistant_reasoning_delta";
-    const text = queryAll<{ payload_json: string }>(
-      this.db,
-      `SELECT payload_json FROM events
+        options.surface === "content" ? "assistant_text_delta" : "assistant_reasoning_delta",
+      text = queryAll<{ payload_json: string }>(
+        this.db,
+        `SELECT payload_json FROM events
        WHERE session_id = ? AND message_id = ? AND kind = ? ORDER BY id`,
-      options.sessionId,
-      options.ownerId,
-      kind,
-    )
-      .map((row) => JSON.parse(row.payload_json) as unknown)
-      .map((value) => {
-        if (typeof value !== "string") {
-          throw new Error("文本流事件内容不是字符串");
-        }
-        return value;
-      })
-      .join("");
-    const existing = loadStoredFileLinkUnits(
-      this.db,
-      options.sessionId,
-      options.ownerId,
-      options.surface,
-    );
-    const last = existing.at(-1);
+        options.sessionId,
+        options.ownerId,
+        kind,
+      )
+        .map((row) => JSON.parse(row.payload_json) as unknown)
+        .map((value) => {
+          if (typeof value !== "string") {
+            throw new Error("文本流事件内容不是字符串");
+          }
+          return value;
+        })
+        .join(""),
+      existing = loadStoredFileLinkUnits(
+        this.db,
+        options.sessionId,
+        options.ownerId,
+        options.surface,
+      ),
+      last = existing.at(-1);
     if ((last?.nextOffset ?? 0) > text.length) {
       throw new Error(`文件链接索引超出文本范围：${options.ownerId}`);
     }

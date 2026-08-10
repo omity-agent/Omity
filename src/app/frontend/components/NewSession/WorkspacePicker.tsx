@@ -6,29 +6,29 @@ import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
 
 const row = css({
-  display: "grid",
-  gap: "2",
-  gridTemplateColumns: {
-    base: "minmax(0, 1fr)",
-    sm: "minmax(0, 1fr) auto",
-  },
-  minW: 0,
-});
-const pathInput = css({ minW: 0, textOverflow: "ellipsis" });
-const recent = css({ display: "grid", gap: "2" });
-const recentLabel = css({ color: "muted", fontSize: "xs" });
-const recentList = css({
-  "& > button": { flexGrow: { base: 1, sm: 0 } },
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "2",
-});
-const recentButton = css({ maxW: "full", minW: 0 });
-const recentPath = css({
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-});
+    display: "grid",
+    gap: "2",
+    gridTemplateColumns: {
+      base: "minmax(0, 1fr)",
+      sm: "minmax(0, 1fr) auto",
+    },
+    minW: 0,
+  }),
+  pathInput = css({ minW: 0, textOverflow: "ellipsis" }),
+  recent = css({ display: "grid", gap: "2" }),
+  recentLabel = css({ color: "muted", fontSize: "xs" }),
+  recentList = css({
+    "& > button": { flexGrow: { base: 1, sm: 0 } },
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "2",
+  }),
+  recentButton = css({ maxW: "full", minW: 0 }),
+  recentPath = css({
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  });
 async function pickWorkspace(
   onPick: () => Promise<string | null>,
   onChange: (workspace: string) => void,
@@ -55,17 +55,17 @@ export function WorkspacePicker({
   onChange: (workspace: string) => void;
   onPick: () => Promise<string | null>;
 }) {
-  const { t } = useTranslation();
-  const [picking, setPicking] = useState(false);
-  const handlePick = useCallback(() => {
-    reportPromiseErrors(pickWorkspace(onPick, onChange, setPicking));
-  }, [onChange, onPick]);
-  const handleInputChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      onChange(event.currentTarget.value);
-    },
-    [onChange],
-  );
+  const { t } = useTranslation(),
+    [picking, setPicking] = useState(false),
+    handlePick = useCallback(() => {
+      reportPromiseErrors(pickWorkspace(onPick, onChange, setPicking));
+    }, [onChange, onPick, setPicking]),
+    handleInputChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement>) => {
+        onChange(event.currentTarget.value);
+      },
+      [onChange],
+    );
   return (
     <Field.Root>
       <Field.Label>{t("workspace")}</Field.Label>

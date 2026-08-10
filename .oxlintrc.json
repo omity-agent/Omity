@@ -60,6 +60,7 @@
     "id-length": "allow",
     "jsx-max-depth": "allow",
     "init-declarations": "allow",
+    "one-var": "allow",
     "import/no-unassigned-import": [
       "warn",
       {

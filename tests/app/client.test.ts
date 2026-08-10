@@ -49,8 +49,8 @@ test("command line parser rejects removed Oclif syntax", () => {
   ).toBeFalse();
 });
 test("client cancel during pause preserves pause state", () => {
-  const { dbPath } = makeSession("123");
-  const db = new AgentDatabase(dbPath);
+  const { dbPath } = makeSession("123"),
+    db = new AgentDatabase(dbPath);
   db.setControl("123", "pause");
   db.close();
   setSessionControl("123", "cancel");

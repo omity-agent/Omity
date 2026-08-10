@@ -58,9 +58,9 @@ test("recovery refuses a live lease unless its exact owner is confirmed dead", (
 test("recovery preserves pending work while normalizing an interrupted run", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const running = db.appendUser("123", "运行中");
-  const paused = db.appendUser("123", "已经暂停");
-  const pending = db.appendUser("123", "仍在等待");
+  const running = db.appendUser("123", "运行中"),
+    paused = db.appendUser("123", "已经暂停"),
+    pending = db.appendUser("123", "仍在等待");
   db.startQueue("123", required(db.nextQueue("123")));
   db.setQueueStatus(paused, "paused");
   db.setControl("123", "pause_cancel");
@@ -99,8 +99,8 @@ test("recovery leaves a stable paused session activity time unchanged", () => {
 test("recovery completes a persisted cancel and removes only its run data", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const root = db.appendUser("123", "取消我");
-  const appended = db.appendUser("123", "也取消我");
+  const root = db.appendUser("123", "取消我"),
+    appended = db.appendUser("123", "也取消我");
   db.startQueue("123", required(db.nextQueue("123")));
   await db.appendStream("123", {
     kind: "assistant_text_delta",
@@ -130,9 +130,9 @@ test("recovery completes a persisted cancel and removes only its run data", asyn
 test("pauseRun is atomic, preserves pending work and omitted errors", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const root = db.appendUser("123", "第一条");
-  const appended = db.appendUser("123", "第二条");
-  const appendedItem = required(db.activeQueue("123")[1]);
+  const root = db.appendUser("123", "第一条"),
+    appended = db.appendUser("123", "第二条"),
+    appendedItem = required(db.activeQueue("123")[1]);
   db.startQueue("123", required(db.nextQueue("123")));
   db.startQueue("123", appendedItem);
   db.appendUser("123", "仍在等待");

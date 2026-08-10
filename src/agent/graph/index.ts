@@ -58,62 +58,62 @@ export function buildGraph(
   hooks: HookRuntime,
   options: Pick<GraphOptions, "freeformToolParameters" | "toolExecutions"> = {},
 ) {
-  const checkpointer = new BunSqliteSaver(database);
-  const graph = createAgentGraph({ checkpointer, hooks, settings, tools, ...options });
+  const checkpointer = new BunSqliteSaver(database),
+    graph = createAgentGraph({ checkpointer, hooks, settings, tools, ...options });
   return { checkpointer, graph };
 }
 export function createAgentGraph(options: GraphOptions) {
-  const freeform = options.freeformToolParameters ?? new Map();
-  const modelTools = aiModelTools(options.tools, freeform);
-  const invokeTool = createToolInvoker(options.tools, {
-    freeformToolParameters: freeform,
-    sessionId: options.hooks.sessionId,
-    settings: options.settings,
-    toolExecutions: options.toolExecutions,
-  });
-  const requestModel = task("request_model", (messages: BaseMessage[]) =>
-    streamAiModel({
-      freeformToolNames: new Set(freeform.keys()),
-      messages,
-      model: options.model,
+  const freeform = options.freeformToolParameters ?? new Map(),
+    modelTools = aiModelTools(options.tools, freeform),
+    invokeTool = createToolInvoker(options.tools, {
+      freeformToolParameters: freeform,
       sessionId: options.hooks.sessionId,
       settings: options.settings,
-      signal: getConfig().signal,
-      tools: modelTools,
-      write: getWriter(),
+      toolExecutions: options.toolExecutions,
     }),
-  );
-  const invokeToolTask = task("invoke_tool", (call: ToolCall) => invokeTool(call, getConfig())),
+    requestModel = task("request_model", (messages: BaseMessage[]) =>
+      streamAiModel({
+        freeformToolNames: new Set(freeform.keys()),
+        messages,
+        model: options.model,
+        sessionId: options.hooks.sessionId,
+        settings: options.settings,
+        signal: getConfig().signal,
+        tools: modelTools,
+        write: getWriter(),
+      }),
+    ),
+    invokeToolTask = task("invoke_tool", (call: ToolCall) => invokeTool(call, getConfig())),
     invokeToolBatchTask = task("invoke_tool_batch", (calls: ToolCall[]) => {
       const config = getConfig();
       return invokeToolBatch(calls, (call) => invokeTool(call, config));
-    });
-  const consumeHookTask = task("consume_hook_usage", (hookId: string, limit: number) => ({
-    consumed: options.hooks.consume(hookId, limit),
-  }));
-  const runHooks = createHookNode(
-    options.hooks,
-    async (hookId, limit) => {
-      const result = await consumeHookTask(hookId, limit);
-      return result.consumed;
-    },
-    (call) => Promise.resolve(invokeToolTask(call)),
-    { parallelToolCalls: options.settings.toolExecution.parallel },
-  );
-  const callModel = async (state: GraphState) => {
-    const response = await requestModel(state.messages);
-    return {
-      hookPlan: response.tool_calls?.length
-        ? toolPlan(response)
-        : agentPlan("after", [response.id!]),
-      messages: [response],
-    };
-  };
-  const callTool = async (state: GraphState) => ({
-    messages: await invokeToolBatchTask(
-      pendingToolBatch(state.messages, options.settings.toolExecution.parallel),
+    }),
+    consumeHookTask = task("consume_hook_usage", (hookId: string, limit: number) => ({
+      consumed: options.hooks.consume(hookId, limit),
+    })),
+    runHooks = createHookNode(
+      options.hooks,
+      async (hookId, limit) => {
+        const result = await consumeHookTask(hookId, limit);
+        return result.consumed;
+      },
+      (call) => Promise.resolve(invokeToolTask(call)),
+      { parallelToolCalls: options.settings.toolExecution.parallel },
     ),
-  });
+    callModel = async (state: GraphState) => {
+      const response = await requestModel(state.messages);
+      return {
+        hookPlan: response.tool_calls?.length
+          ? toolPlan(response)
+          : agentPlan("after", [response.id!]),
+        messages: [response],
+      };
+    },
+    callTool = async (state: GraphState) => ({
+      messages: await invokeToolBatchTask(
+        pendingToolBatch(state.messages, options.settings.toolExecution.parallel),
+      ),
+    });
   return new StateGraph(AgentState)
     .addNode(hookNode, runHooks, { ends: [hookNode, modelNode, toolsNode, END] })
     .addNode(modelNode, callModel)

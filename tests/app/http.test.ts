@@ -5,11 +5,11 @@ import { createApiController } from "./support/apiController";
 import { createStaticApp } from "../../src/app/http/static";
 
 test("API JSON validation rejects invalid controls and empty messages", async () => {
-  const api = createApi(createApiController());
-  const invalidControl = await api.request(
-    "/api/sessions/test/control",
-    jsonRequest({ control: "invalid" }),
-  );
+  const api = createApi(createApiController()),
+    invalidControl = await api.request(
+      "/api/sessions/test/control",
+      jsonRequest({ control: "invalid" }),
+    );
   expect(invalidControl.status).toBe(400);
   expect(await invalidControl.json()).toMatchObject({
     error: { code: "BAD_REQUEST" },
@@ -21,15 +21,15 @@ test("API JSON validation rejects invalid controls and empty messages", async ()
   expect(emptyMessage.status).toBe(400);
 });
 test("message multipart validation forwards placeholders and files", async () => {
-  const calls: Parameters<ApiController["sendMessage"]>[] = [];
-  const controller = createApiController({
-    sendMessage: (...args) => {
-      calls.push(args);
-      return Promise.resolve({ content: "attachments/file.txt", queueId: 1 });
-    },
-  });
-  const id = "a1b2c3d4";
-  const body = messageForm(`查看 {{file:${id}:notes.txt}}`, 3);
+  const calls: Parameters<ApiController["sendMessage"]>[] = [],
+    controller = createApiController({
+      sendMessage: (...args) => {
+        calls.push(args);
+        return Promise.resolve({ content: "attachments/file.txt", queueId: 1 });
+      },
+    }),
+    id = "a1b2c3d4",
+    body = messageForm(`查看 {{file:${id}:notes.txt}}`, 3);
   body.append(`file:${id}`, new File(["hello"], "notes.txt"));
   const response = await createApi(controller).request("/api/sessions/test/messages", {
     body,
@@ -47,36 +47,36 @@ test("message multipart validation forwards placeholders and files", async () =>
   ]);
 });
 test("multipart attachments without filenames are rejected", async () => {
-  const calls: Parameters<ApiController["sendMessage"]>[] = [];
-  const controller = createApiController({
-    sendMessage: (...args) => {
-      calls.push(args);
-      return Promise.resolve({ content: "unused", queueId: 1 });
-    },
-  });
-  const boundary = "attachment-test-boundary";
-  const body = [
-    `--${boundary}`,
-    'Content-Disposition: form-data; name="content"',
-    "",
-    "查看附件",
-    `--${boundary}`,
-    'Content-Disposition: form-data; name="draftRevision"',
-    "",
-    "0",
-    `--${boundary}`,
-    'Content-Disposition: form-data; name="file:a1b2c3d4"; filename=""',
-    "Content-Type: text/plain",
-    "",
-    "hello",
-    `--${boundary}--`,
-    "",
-  ].join("\r\n");
-  const response = await createApi(controller).request("/api/sessions/test/messages", {
-    body,
-    headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
-    method: "POST",
-  });
+  const calls: Parameters<ApiController["sendMessage"]>[] = [],
+    controller = createApiController({
+      sendMessage: (...args) => {
+        calls.push(args);
+        return Promise.resolve({ content: "unused", queueId: 1 });
+      },
+    }),
+    boundary = "attachment-test-boundary",
+    body = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="content"',
+      "",
+      "查看附件",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="draftRevision"',
+      "",
+      "0",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="file:a1b2c3d4"; filename=""',
+      "Content-Type: text/plain",
+      "",
+      "hello",
+      `--${boundary}--`,
+      "",
+    ].join("\r\n"),
+    response = await createApi(controller).request("/api/sessions/test/messages", {
+      body,
+      headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+      method: "POST",
+    });
   expect(response.status).toBe(400);
   expect(await response.json()).toEqual({
     error: {
@@ -87,31 +87,26 @@ test("multipart attachments without filenames are rejected", async () => {
   expect(calls).toHaveLength(0);
 });
 test("session creation validates and forwards the complete initial state", async () => {
-  const calls: Parameters<ApiController["createSession"]>[] = [];
-  const controller = createApiController({
-    createSession: (...args) => {
-      calls.push(args);
-      return Promise.resolve({
-        createdAt: 1,
-        error: null,
-        id: "new-session",
-        status: "idle",
-        updatedAt: 1,
-        workspace: "F:/workspace",
-      });
-    },
-  });
-  const api = createApi(controller);
-  const body = sessionForm(
-    "F:/workspace",
-    [{ assistant: "旧回答", user: "旧问题" }],
-    "新问题",
-    "work",
-  );
-  const response = await api.request("/api/sessions", {
-    body,
-    method: "POST",
-  });
+  const calls: Parameters<ApiController["createSession"]>[] = [],
+    controller = createApiController({
+      createSession: (...args) => {
+        calls.push(args);
+        return Promise.resolve({
+          createdAt: 1,
+          error: null,
+          id: "new-session",
+          status: "idle",
+          updatedAt: 1,
+          workspace: "F:/workspace",
+        });
+      },
+    }),
+    api = createApi(controller),
+    body = sessionForm("F:/workspace", [{ assistant: "旧回答", user: "旧问题" }], "新问题", "work"),
+    response = await api.request("/api/sessions", {
+      body,
+      method: "POST",
+    });
   expect(response.status).toBe(200);
   expect(calls).toEqual([
     [
@@ -124,19 +119,19 @@ test("session creation validates and forwards the complete initial state", async
       },
     ],
   ]);
-  const incompleteBody = sessionForm("F:/workspace", [{ assistant: "回答", user: "" }], "新问题");
-  const incomplete = await api.request("/api/sessions", {
-    body: incompleteBody,
-    method: "POST",
-  });
+  const incompleteBody = sessionForm("F:/workspace", [{ assistant: "回答", user: "" }], "新问题"),
+    incomplete = await api.request("/api/sessions", {
+      body: incompleteBody,
+      method: "POST",
+    });
   expect(incomplete.status).toBe(400);
 });
 test("API JSON reader enforces the body size limit", async () => {
-  const body = `"${"x".repeat(requestBodyLimit)}"`;
-  const response = await createApi(createApiController()).request("/api/sessions/test/control", {
-    body,
-    method: "POST",
-  });
+  const body = `"${"x".repeat(requestBodyLimit)}"`,
+    response = await createApi(createApiController()).request("/api/sessions/test/control", {
+      body,
+      method: "POST",
+    });
   expect(response.status).toBe(413);
   expect(await response.json()).toEqual({
     error: {

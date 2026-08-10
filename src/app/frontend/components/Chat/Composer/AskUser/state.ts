@@ -7,31 +7,31 @@ interface AnswerState {
 }
 const emptyAnswer: AnswerState = { note: "", options: [] };
 export function useQuestionAnswerState(callId?: string) {
-  const [stored, setStored] = useState<AnswerState>(emptyAnswer);
-  const current = stored.callId === callId ? stored : emptyAnswer;
-  const setNote = useCallback(
-    (note: string) => {
-      setStored((value) => ({
-        callId,
-        note,
-        options: value.callId === callId ? value.options : [],
-      }));
-    },
-    [callId],
-  );
-  const setOptions = useCallback(
-    (options: string[]) => {
-      setStored((value) => ({
-        callId,
-        note: value.callId === callId ? value.note : "",
-        options,
-      }));
-    },
-    [callId],
-  );
-  const clear = useCallback(() => {
-    setStored(emptyAnswer);
-  }, []);
+  const [stored, setStored] = useState<AnswerState>(emptyAnswer),
+    current = stored.callId === callId ? stored : emptyAnswer,
+    setNote = useCallback(
+      (note: string) => {
+        setStored((value) => ({
+          callId,
+          note,
+          options: value.callId === callId ? value.options : [],
+        }));
+      },
+      [callId, setStored],
+    ),
+    setOptions = useCallback(
+      (options: string[]) => {
+        setStored((value) => ({
+          callId,
+          note: value.callId === callId ? value.note : "",
+          options,
+        }));
+      },
+      [callId, setStored],
+    ),
+    clear = useCallback(() => {
+      setStored(emptyAnswer);
+    }, [setStored]);
   return {
     clear,
     handleNoteChange: setNote,

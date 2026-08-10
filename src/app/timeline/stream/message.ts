@@ -123,15 +123,15 @@ function toolTimelinePart(
   lifecycle: Map<string, { phase: "running" } | { output: DisplayToolOutput; phase: "completed" }>,
   fileLinks: FileLinkUnit[],
 ): Extract<TimelinePart, { type: "tool" }> {
-  const callId = part.id ?? streamCallKey(messageId, partId);
-  const call = displayCall(
-    part,
-    messageId,
-    partId,
-    fileLinks.filter((unit) => unit.ownerId === callId && unit.surface === "tool_input"),
-  );
-  const key = streamCallKey(messageId, partId);
-  const output = outputs.get(callId);
+  const callId = part.id ?? streamCallKey(messageId, partId),
+    call = displayCall(
+      part,
+      messageId,
+      partId,
+      fileLinks.filter((unit) => unit.ownerId === callId && unit.surface === "tool_input"),
+    ),
+    key = streamCallKey(messageId, partId),
+    output = outputs.get(callId);
   if (output) {
     return { call, key, output, phase: "completed", type: "tool" };
   }

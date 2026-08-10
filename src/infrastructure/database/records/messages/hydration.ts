@@ -76,8 +76,8 @@ function parseAiMessage(value: Record<string, unknown>): StoredAi {
   };
 }
 function parseToolMessage(value: Record<string, unknown>): StoredTool {
-  const { content } = value;
-  const { toolCallId } = value;
+  const { content } = value,
+    { toolCallId } = value;
   if (!isMessageContent(content) || typeof toolCallId !== "string") {
     throw new Error("Tool message 无效");
   }

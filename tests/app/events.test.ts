@@ -3,25 +3,25 @@ import { createApi } from "../../src/app/http/handler";
 import { createApiController } from "./support/apiController";
 
 test("state SSE starts with a versioned snapshot and sends versioned mutations", async () => {
-  const abort = new AbortController();
-  const controller = createApiController();
-  const response = await createApi(controller).request("/api/events/state", {
-    signal: abort.signal,
-  });
+  const abort = new AbortController(),
+    controller = createApiController(),
+    response = await createApi(controller).request("/api/events/state", {
+      signal: abort.signal,
+    });
   expect(response.headers.get("content-type")).toBe("text/event-stream; charset=utf-8");
-  const frames = sseFrames(response);
-  const snapshot = await frames.next();
+  const frames = sseFrames(response),
+    snapshot = await frames.next();
   expect(snapshot).toContain("event: sessions\n");
   expect(snapshot).toContain('data: {"sessions":[]}\n');
-  const snapshotId = eventId(snapshot);
-  const session = {
-    createdAt: 1,
-    error: null,
-    id: "test",
-    status: "model" as const,
-    updatedAt: 2,
-    workspace: "F:/workspace",
-  };
+  const snapshotId = eventId(snapshot),
+    session = {
+      createdAt: 1,
+      error: null,
+      id: "test",
+      status: "model" as const,
+      updatedAt: 2,
+      workspace: "F:/workspace",
+    };
   controller.events.notifySession(session);
   const changed = await frames.next();
   expect(changed).toContain(`event: session\ndata: ${JSON.stringify(session)}\n`);
@@ -48,12 +48,12 @@ test("state SSE starts with a versioned snapshot and sends versioned mutations",
   await frames.cancel();
 });
 test("content SSE uses the persisted cursor and sends ordered target deltas", async () => {
-  const abort = new AbortController();
-  const controller = createApiController();
-  const response = await createApi(controller).request("/api/sessions/test/events/content", {
-    signal: abort.signal,
-  });
-  const frames = sseFrames(response);
+  const abort = new AbortController(),
+    controller = createApiController(),
+    response = await createApi(controller).request("/api/sessions/test/events/content", {
+      signal: abort.signal,
+    }),
+    frames = sseFrames(response);
   expect(await frames.next()).toBe('event: sync\ndata: {"eventCursor":0}\nid: 0\n\n');
   controller.events.invalidateTranscript("other", 2);
   controller.events.invalidateTranscript("test", 4);

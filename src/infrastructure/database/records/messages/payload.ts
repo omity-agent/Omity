@@ -49,9 +49,9 @@ export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {
   throw new Error(`不支持持久化消息类型：${message.type}`);
 }
 function encodeAiMessage(message: AIMessage): StoredAi {
-  const reasoning = storedReasoning(message);
-  const usage = storedUsage(message);
-  const customTools = customToolMetadata(message);
+  const reasoning = storedReasoning(message),
+    usage = storedUsage(message),
+    customTools = customToolMetadata(message);
   return {
     content: message.content,
     type: "ai",
@@ -66,8 +66,8 @@ function encodeAiMessage(message: AIMessage): StoredAi {
   };
 }
 function encodeToolMessage(message: ToolMessage, mode: MessageStorageMode): StoredTool {
-  const structuredOutput = mode === "recovery" ? structuredToolOutput(message.artifact) : undefined;
-  const largeOutputTokens = readLargeOutputTokens(message);
+  const structuredOutput = mode === "recovery" ? structuredToolOutput(message.artifact) : undefined,
+    largeOutputTokens = readLargeOutputTokens(message);
   return {
     content: message.content,
     toolCallId: message.tool_call_id,
@@ -82,13 +82,13 @@ function storedToolCall(
   value: ToolCall,
   customTools: { callIds: Set<string>; itemIds: Map<string, string> },
 ): ToolCall {
-  const directItemId = Reflect.get(value, "call_id");
-  const itemId =
-    typeof directItemId === "string" && directItemId.length > 0
-      ? directItemId
-      : value.id
-        ? customTools.itemIds.get(value.id)
-        : undefined;
+  const directItemId = Reflect.get(value, "call_id"),
+    itemId =
+      typeof directItemId === "string" && directItemId.length > 0
+        ? directItemId
+        : value.id
+          ? customTools.itemIds.get(value.id)
+          : undefined;
   return {
     args: value.args,
     name: value.name,
@@ -102,9 +102,9 @@ function storedToolCall(
   };
 }
 function customToolMetadata(message: AIMessage) {
-  const callIds = new Set<string>();
-  const itemIds = new Map<string, string>();
-  const mapped = message.additional_kwargs["__openai_custom_tool_call_ids__"];
+  const callIds = new Set<string>(),
+    itemIds = new Map<string, string>(),
+    mapped = message.additional_kwargs["__openai_custom_tool_call_ids__"];
   if (isRecord(mapped)) {
     for (const [callId, itemId] of Object.entries(mapped)) {
       callIds.add(callId);
@@ -132,12 +132,12 @@ function customToolMetadata(message: AIMessage) {
 }
 function storedReasoning(message: AIMessage) {
   const direct = isRecord(message.additional_kwargs["reasoning"])
-    ? message.additional_kwargs["reasoning"]
-    : undefined;
-  const { output } = message.response_metadata;
-  const raw = Array.isArray(output)
-    ? output.find((item) => isRecord(item) && item["type"] === "reasoning")
-    : undefined;
+      ? message.additional_kwargs["reasoning"]
+      : undefined,
+    { output } = message.response_metadata,
+    raw = Array.isArray(output)
+      ? output.find((item) => isRecord(item) && item["type"] === "reasoning")
+      : undefined;
   if (!direct && !isRecord(raw)) {
     return undefined;
   }

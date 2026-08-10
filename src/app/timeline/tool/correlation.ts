@@ -32,8 +32,8 @@ export function reconcileToolStreams(
 }
 export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
   const samePosition =
-    a.messageId !== undefined && a.messageId === b.messageId && a.index === b.index;
-  const bothFormal = !a.temporary && !b.temporary;
+      a.messageId !== undefined && a.messageId === b.messageId && a.index === b.index,
+    bothFormal = !a.temporary && !b.temporary;
   if (bothFormal) {
     if (samePosition && a.id !== b.id) {
       throw new Error(`工具流身份绑定了不同的正式调用 ID：${a.id}、${b.id}`);
@@ -58,8 +58,8 @@ function validateFormalCallIds(messages: Iterable<StreamIdentityMessage>) {
   for (const message of messages) {
     for (const [partId, part] of message.parts) {
       if (part.kind === "tool_call_delta" && part.formal && part.id) {
-        const owner = streamCallKey(message.messageId, partId);
-        const existing = owners.get(part.id);
+        const owner = streamCallKey(message.messageId, partId),
+          existing = owners.get(part.id);
         if (existing && existing !== owner) {
           throw new Error(`正式工具调用 ID ${part.id} 绑定了多个流身份`);
         }

@@ -79,16 +79,16 @@ interface RuntimeGraphState extends Record<string, unknown> {
     messages: BaseMessage[];
   };
 }
-const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value));
-const graphStateSchema = z.looseObject({
-  next: z.array(z.string()),
-  tasks: z.array(z.looseObject({ name: z.string() })),
-  values: z.looseObject({
-    hookPendingUserIds: z.array(z.string()).optional(),
-    hookPlan: z.unknown().optional(),
-    messages: z.array(messageSchema),
-  }),
-});
+const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value)),
+  graphStateSchema = z.looseObject({
+    next: z.array(z.string()),
+    tasks: z.array(z.looseObject({ name: z.string() })),
+    values: z.looseObject({
+      hookPendingUserIds: z.array(z.string()).optional(),
+      hookPlan: z.unknown().optional(),
+      messages: z.array(messageSchema),
+    }),
+  });
 export function readGraphState(value: unknown): RuntimeGraphState {
   const parsed = graphStateSchema.safeParse(value);
   if (!parsed.success) {

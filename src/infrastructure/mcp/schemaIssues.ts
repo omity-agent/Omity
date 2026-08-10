@@ -25,9 +25,9 @@ function flattenBestIssues(issues: ZodIssueLike[]): ZodIssueLike[] {
       return [issue];
     }
     const candidates = issue.unionErrors
-      .map((unionError) => flattenBestIssues(unionError.issues ?? []))
-      .filter((candidate) => candidate.length > 0);
-    const [best] = candidates.toSorted((left, right) => left.length - right.length);
+        .map((unionError) => flattenBestIssues(unionError.issues ?? []))
+        .filter((candidate) => candidate.length > 0),
+      [best] = candidates.toSorted((left, right) => left.length - right.length);
     return best ?? [issue];
   });
 }

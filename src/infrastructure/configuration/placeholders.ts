@@ -3,9 +3,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 
-const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/;
-const embeddedPlaceholder = /\$\{(?<name>[^}]+)\}/g;
-const environmentName = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/,
+  embeddedPlaceholder = /\$\{(?<name>[^}]+)\}/g,
+  environmentName = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export interface SessionPlaceholders {
   cwd?: string;
   session?: string;
@@ -83,8 +83,8 @@ export function appDataRoot() {
 function resolveString(value: string, options: PlaceholderOptions) {
   const exact = exactPlaceholder.exec(value);
   if (exact) {
-    const name = requireName(exact);
-    const resolved = resolveVariable(name, options);
+    const name = requireName(exact),
+      resolved = resolveVariable(name, options);
     return resolved.matched ? resolved.value : value;
   }
   return value.replace(embeddedPlaceholder, (placeholder, name: string) => {

@@ -5,22 +5,22 @@ import { BunSqliteSaver } from "../../src/checkpointer";
 
 afterEach(cleanupDatabaseDirs);
 test("Bun saver resumes a completed task without repeating its side effect", async () => {
-  const db = makeDb();
-  const saver = new BunSqliteSaver(db.db);
+  const db = makeDb(),
+    saver = new BunSqliteSaver(db.db);
   let calls = 0;
   const effect = task("effect", () => {
-    calls += 1;
-    return Promise.resolve("completed");
-  });
-  const State = Annotation.Root({
-    result: Annotation<string>(),
-  });
-  const graph = new StateGraph(State)
-    .addNode("work", async () => ({ result: await effect() }))
-    .addEdge(START, "work")
-    .addEdge("work", END)
-    .compile({ checkpointer: saver });
-  const config = { configurable: { thread_id: "task-recovery" } };
+      calls += 1;
+      return Promise.resolve("completed");
+    }),
+    State = Annotation.Root({
+      result: Annotation<string>(),
+    }),
+    graph = new StateGraph(State)
+      .addNode("work", async () => ({ result: await effect() }))
+      .addEdge(START, "work")
+      .addEdge("work", END)
+      .compile({ checkpointer: saver }),
+    config = { configurable: { thread_id: "task-recovery" } };
   await invokeWithTaskInterrupt(graph, {}, config);
   expect(calls).toBe(1);
   const state = await graph.getState(config);

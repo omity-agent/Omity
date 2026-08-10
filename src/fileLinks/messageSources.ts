@@ -38,17 +38,17 @@ function aiSources(message: AIMessage): FileLinkSource[] {
   if (!message.id) {
     throw new Error("模型消息缺少文件链接所有者 ID");
   }
-  const ownerId = message.id;
-  const reasoning = messageReasoning(message);
-  const freeformIds = freeformCallIds(message);
+  const ownerId = message.id,
+    reasoning = messageReasoning(message),
+    freeformIds = freeformCallIds(message);
   return [
     ...(reasoning
       ? [{ mode: "lines", ownerId, surface: "reasoning", text: reasoning } as const]
       : []),
     ...(message.tool_calls ?? []).map((call, index): FileLinkSource => {
-      const callOwnerId = call.id ?? `tool-${index.toString()}`;
-      const input = call.args;
-      const freeform = Reflect.get(call, "isCustomTool") === true || freeformIds.has(callOwnerId);
+      const callOwnerId = call.id ?? `tool-${index.toString()}`,
+        input = call.args,
+        freeform = Reflect.get(call, "isCustomTool") === true || freeformIds.has(callOwnerId);
       return {
         mode: "lines",
         ownerId: callOwnerId,

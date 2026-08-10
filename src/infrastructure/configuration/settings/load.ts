@@ -19,29 +19,28 @@ export interface LoadSettingsOptions {
   userSettingsDir?: string;
 }
 export function loadSettings(root = process.cwd(), options: LoadSettingsOptions = {}): Settings {
-  const configRoot = resolve(root);
-  const cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot);
-  const context =
-    options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir);
-  const main = parseMainSettings(requireLayeredYaml(context, "global", "main.yaml").value);
-  const agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value);
-  const model = parseModelSettings(requireLayeredYaml(context, "profile", "model.yaml").value);
-  const storageDirectory = userDataDirectory();
-  const session = options.sessionId
-    ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
-    : undefined;
-  const placeholders = {
-    deferSession: true,
-    session: { cwd, session },
-  };
-  const hooks = requireLayeredYaml(context, "profile", "hooks.yaml", {
-    ...placeholders,
-    deferred: isHookOutputVariable,
-  });
-  const skills = {
-    ...agent.skills,
-    directory: resolveConfiguredPath(configRoot, agent.skills.directory),
-  };
+  const configRoot = resolve(root),
+    cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot),
+    context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
+    main = parseMainSettings(requireLayeredYaml(context, "global", "main.yaml").value),
+    agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
+    model = parseModelSettings(requireLayeredYaml(context, "profile", "model.yaml").value),
+    storageDirectory = userDataDirectory(),
+    session = options.sessionId
+      ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
+      : undefined,
+    placeholders = {
+      deferSession: true,
+      session: { cwd, session },
+    },
+    hooks = requireLayeredYaml(context, "profile", "hooks.yaml", {
+      ...placeholders,
+      deferred: isHookOutputVariable,
+    }),
+    skills = {
+      ...agent.skills,
+      directory: resolveConfiguredPath(configRoot, agent.skills.directory),
+    };
   let skillsList: string | undefined;
   const promptPlaceholders = {
     ...placeholders,

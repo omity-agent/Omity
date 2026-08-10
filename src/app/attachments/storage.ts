@@ -17,14 +17,14 @@ export async function saveMessageAttachments(
   content: string,
   attachments: PendingAttachment[],
 ) {
-  const referenced = attachmentIds(content);
-  const selected = attachments.filter(({ id }) => referenced.has(id));
+  const referenced = attachmentIds(content),
+    selected = attachments.filter(({ id }) => referenced.has(id));
   validateSelected(selected, referenced, settings);
   if (selected.length === 0) {
     return saved(content, []);
   }
-  const session = resolveSessionPaths(sessionId);
-  const directory = join(session.dir, "attachments");
+  const session = resolveSessionPaths(sessionId),
+    directory = join(session.dir, "attachments");
   await mkdir(directory, { recursive: true });
   const written: string[] = [];
   let resolved = content;

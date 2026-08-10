@@ -76,8 +76,8 @@ function readOwner(path: string) {
   if (!existsSync(path)) {
     throw new Error(`App 实例锁不存在：${path}`);
   }
-  const value: unknown = JSON.parse(readFileSync(path, "utf8"));
-  const parsed = ownerSchema.safeParse(value);
+  const value: unknown = JSON.parse(readFileSync(path, "utf8")),
+    parsed = ownerSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error(`App 实例锁内容无效：${path}`);
   }

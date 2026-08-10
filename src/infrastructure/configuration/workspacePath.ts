@@ -22,8 +22,8 @@ function stripOuterQuotes(value: string) {
   return current;
 }
 function matchingQuotes(value: string) {
-  const [first] = value;
-  const last = value.at(-1);
+  const [first] = value,
+    last = value.at(-1);
   return (
     (first === '"' && last === '"') ||
     (first === "'" && last === "'") ||

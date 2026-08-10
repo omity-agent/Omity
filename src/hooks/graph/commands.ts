@@ -18,20 +18,20 @@ export function hookCommand(
   outputs: HookToolOutput[],
 ) {
   const nextPlan =
-    rule.mode === "takeover" && plan.kind === "tools" && plan.replaceMessageId
-      ? { ...plan, replaceMessageId: undefined }
-      : plan;
-  const messages =
-    rule.mode === "takeover"
-      ? [
-          new AIMessage({
-            content: "",
-            id: plan.kind === "tools" ? plan.replaceMessageId : undefined,
-            tool_calls: [result.call],
-          }),
-          result.output,
-        ]
-      : undefined;
+      rule.mode === "takeover" && plan.kind === "tools" && plan.replaceMessageId
+        ? { ...plan, replaceMessageId: undefined }
+        : plan,
+    messages =
+      rule.mode === "takeover"
+        ? [
+            new AIMessage({
+              content: "",
+              id: plan.kind === "tools" ? plan.replaceMessageId : undefined,
+              tool_calls: [result.call],
+            }),
+            result.output,
+          ]
+        : undefined;
   return command(nextPlan, hookNode, clearPending, [...outputs, result.value], messages);
 }
 export function originalToolsCommand(

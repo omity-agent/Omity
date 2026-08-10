@@ -25,63 +25,63 @@ export interface BootstrapData {
 export { transcriptKey, useSessionTranscript, type TranscriptData } from "./transcript/query";
 export const bootstrapKey = ["bootstrap"] as const;
 export function useBootstrap() {
-  const queryClient = useQueryClient();
-  const attention = sessionAttentionStore(queryClient);
-  const reportedErrors = useRef(new Set<string>());
-  const streamedSessions = useRef<SessionInfo[] | undefined>(undefined);
-  const query = useQuery({
-    queryFn: async ({ signal }) => {
-      const data = await bootstrap(signal);
-      return streamedSessions.current ? { ...data, sessions: streamedSessions.current } : data;
-    },
-    queryKey: bootstrapKey,
-  });
+  const queryClient = useQueryClient(),
+    attention = sessionAttentionStore(queryClient),
+    reportedErrors = useRef(new Set<string>()),
+    streamedSessions = useRef<SessionInfo[] | undefined>(undefined),
+    query = useQuery({
+      queryFn: async ({ signal }) => {
+        const data = await bootstrap(signal);
+        return streamedSessions.current ? { ...data, sessions: streamedSessions.current } : data;
+      },
+      queryKey: bootstrapKey,
+    });
   useEffect(() => {
-    const events = stateEvents();
-    const replace = (event: Event) => {
-      try {
-        const sessions = readSessionsEvent(event);
-        attention.replace(sessions);
-        streamedSessions.current = sessions;
-        if (!replaceCachedSessions(queryClient, sessions)) {
+    const events = stateEvents(),
+      replace = (event: Event) => {
+        try {
+          const sessions = readSessionsEvent(event);
+          attention.replace(sessions);
           streamedSessions.current = sessions;
+          if (!replaceCachedSessions(queryClient, sessions)) {
+            streamedSessions.current = sessions;
+          }
+        } catch (error) {
+          reportError(error);
         }
-      } catch (error) {
-        reportError(error);
-      }
-    };
-    const upsert = (event: Event) => {
-      try {
-        const session = readSessionEvent(event);
-        attention.upsert(session);
-        if (streamedSessions.current) {
-          streamedSessions.current = upsertSessionList(streamedSessions.current, session);
+      },
+      upsert = (event: Event) => {
+        try {
+          const session = readSessionEvent(event);
+          attention.upsert(session);
+          if (streamedSessions.current) {
+            streamedSessions.current = upsertSessionList(streamedSessions.current, session);
+          }
+          updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
+        } catch (error) {
+          reportError(error);
         }
-        updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
-      } catch (error) {
-        reportError(error);
-      }
-    };
-    const remove = (event: Event) => {
-      try {
-        const sessionId = readDeletedEvent(event);
-        attention.remove(sessionId);
-        if (streamedSessions.current) {
-          streamedSessions.current = withoutSession(streamedSessions.current, sessionId);
+      },
+      remove = (event: Event) => {
+        try {
+          const sessionId = readDeletedEvent(event);
+          attention.remove(sessionId);
+          if (streamedSessions.current) {
+            streamedSessions.current = withoutSession(streamedSessions.current, sessionId);
+          }
+          updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
+          queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
+        } catch (error) {
+          reportError(error);
         }
-        updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
-        queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
-      } catch (error) {
-        reportError(error);
-      }
-    };
-    const warning = (event: Event) => {
-      try {
-        reportBrowserWarning(readWarningEvent(event));
-      } catch (error) {
-        reportError(error);
-      }
-    };
+      },
+      warning = (event: Event) => {
+        try {
+          reportBrowserWarning(readWarningEvent(event));
+        } catch (error) {
+          reportError(error);
+        }
+      };
     events.addEventListener("sessions", replace);
     events.addEventListener("session", upsert);
     events.addEventListener("deleted", remove);

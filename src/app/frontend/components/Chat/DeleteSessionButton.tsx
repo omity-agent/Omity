@@ -17,8 +17,8 @@ export function DeleteSessionButton({
   disabled: boolean;
   onDelete: () => Promise<void>;
 }) {
-  const { t } = useTranslation();
-  const [confirming, setConfirming] = useState(false);
+  const { t } = useTranslation(),
+    [confirming, setConfirming] = useState(false);
   useEffect(() => {
     if (!confirming) {
       return undefined;
@@ -31,14 +31,14 @@ export function DeleteSessionButton({
     };
   }, [confirming]);
   const handleDelete = useCallback(() => {
-    if (!confirming) {
-      setConfirming(true);
-      return;
-    }
-    setConfirming(false);
-    reportPromiseErrors(onDelete());
-  }, [confirming, onDelete]);
-  const label = t(confirming ? "confirmDelete" : "deleteSession");
+      if (!confirming) {
+        setConfirming(true);
+        return;
+      }
+      setConfirming(false);
+      reportPromiseErrors(onDelete());
+    }, [confirming, onDelete]),
+    label = t(confirming ? "confirmDelete" : "deleteSession");
   return (
     <IconButton
       aria-label={label}

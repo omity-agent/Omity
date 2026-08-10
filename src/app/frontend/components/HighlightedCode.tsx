@@ -50,17 +50,14 @@ function HighlightedCodeView({
   fileLinkMatches: FilePathMatch[];
   language?: string;
 }) {
-  const blockRef = useRef<HTMLPreElement>(null);
-  const onScroll = useFollowBottom({
-    enabled: autoFollow,
-    ref: blockRef,
-    version: code,
-  });
-  const highlightedHtml = useMemo(
-    () => DOMPurify.sanitize(highlight(code, language)),
-    [code, language],
-  );
-  const highlightedMarkup = useMemo(() => ({ __html: highlightedHtml }), [highlightedHtml]);
+  const blockRef = useRef<HTMLPreElement>(null),
+    onScroll = useFollowBottom({
+      enabled: autoFollow,
+      ref: blockRef,
+      version: code,
+    }),
+    highlightedHtml = DOMPurify.sanitize(highlight(code, language)),
+    highlightedMarkup = useMemo(() => ({ __html: highlightedHtml }), [highlightedHtml]);
   return (
     <div className={container}>
       <CopyButton className={copyButton} value={copyValue} />

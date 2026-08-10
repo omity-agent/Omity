@@ -64,8 +64,8 @@ test("a late save cannot restore a draft after sending", () => {
 function createSession() {
   const root = createTestDirectory("composer-drafts");
   dirs.push(root);
-  const sessionId = basename(root);
-  const paths = sessionPaths(sessionId);
+  const sessionId = basename(root),
+    paths = sessionPaths(sessionId);
   dirs.push(paths.dir);
   const database = new AgentDatabase(paths.dbPath);
   database.createSession(sessionId, root);

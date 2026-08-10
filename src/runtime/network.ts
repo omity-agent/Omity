@@ -2,14 +2,14 @@ import { APICallError } from "@ai-sdk/provider";
 import isNetworkError from "is-network-error";
 
 const retryableNames = new Set([
-  "APIConnectionError",
-  "APIConnectionTimeoutError",
-  "ModelEmptyResponseError",
-  "TimeoutError",
-]);
-const retryableApiCodes = new Set(["server_error", "server_is_overloaded"]);
-const retryableHttpStatuses = new Set([520]);
-const retryableMessages = new Set(["Received empty response from chat model call."]);
+    "APIConnectionError",
+    "APIConnectionTimeoutError",
+    "ModelEmptyResponseError",
+    "TimeoutError",
+  ]),
+  retryableApiCodes = new Set(["server_error", "server_is_overloaded"]),
+  retryableHttpStatuses = new Set([520]),
+  retryableMessages = new Set(["Received empty response from chat model call."]);
 export class ModelEmptyResponseError extends Error {
   override readonly name = "ModelEmptyResponseError";
   constructor() {
@@ -32,8 +32,8 @@ const retryableCodes = new Set([
   "stream_read_error",
 ]);
 export function isRetryableModelError(error: unknown): boolean {
-  const pending = [error];
-  const visited = new Set<unknown>();
+  const pending = [error],
+    visited = new Set<unknown>();
   while (pending.length > 0) {
     const current = pending.pop();
     if (isNetworkError(current)) {

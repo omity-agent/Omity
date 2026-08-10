@@ -20,8 +20,8 @@ skills:
   enabled: false
   directory: ~/.agents/skills
   skillEnabled: {}
-`;
-const defaultModelYaml = `adapter: completions
+`,
+  defaultModelYaml = `adapter: completions
 model: test
 apiKeyEnv: TEST_KEY
 baseURL: null
@@ -31,8 +31,8 @@ retryDelayMs: 1000
 timeoutMs: 1000
 `;
 export function writeTestConfiguration(root: string, options: TestConfigurationOptions = {}) {
-  const settingsDir = join(root, "settings");
-  const promptsDir = join(settingsDir, "prompts");
+  const settingsDir = join(root, "settings"),
+    promptsDir = join(settingsDir, "prompts");
   mkdirSync(promptsDir, { recursive: true });
   writeFileSync(
     join(settingsDir, "main.yaml"),

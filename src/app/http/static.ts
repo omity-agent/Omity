@@ -3,8 +3,8 @@ import { Hono } from "hono";
 import type { HttpBindings } from "@hono/node-server";
 
 export function createStaticApp(root: string) {
-  const app = new Hono<{ Bindings: HttpBindings }>();
-  const staticRoot = resolve(root);
+  const app = new Hono<{ Bindings: HttpBindings }>(),
+    staticRoot = resolve(root);
   app.use("*", async (c, next) => {
     c.header("content-security-policy", contentSecurityPolicy);
     c.header("cross-origin-opener-policy", "same-origin");
@@ -25,8 +25,8 @@ async function fileResponse(file: Bun.BunFile) {
   });
 }
 function resolveStaticAsset(root: string, requestPath: string) {
-  const path = normalize(decodeURIComponent(requestPath).replace(/^\/+/u, ""));
-  const resolved = resolve(root, path);
+  const path = normalize(decodeURIComponent(requestPath).replace(/^\/+/u, "")),
+    resolved = resolve(root, path);
   if (relative(root, resolved).startsWith("..")) {
     throw new Error(`静态资源路径越界：${requestPath}`);
   }

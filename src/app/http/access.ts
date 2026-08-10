@@ -45,8 +45,8 @@ export function mountAccess(
     ),
   );
   app.post("/api/access/register/options", bodyLimit, async (c) => {
-    const body = await readJson(c.req, registrationOptionsBody);
-    const result = await required(access).registrationOptions(c.get("client"), body.ticket);
+    const body = await readJson(c.req, registrationOptionsBody),
+      result = await required(access).registrationOptions(c.get("client"), body.ticket);
     setChallengeCookie(c, result.challengeId, access);
     return c.json({ options: result.options, origin: result.origin });
   });
@@ -68,12 +68,12 @@ export function mountAccess(
     return c.json({ options: result.options });
   });
   app.post("/api/access/login", bodyLimit, async (c) => {
-    const service = required(access);
-    const token = await service.authenticate(
-      c.get("client"),
-      challengeCookie(c),
-      await readJson(c.req, authenticationBody),
-    );
+    const service = required(access),
+      token = await service.authenticate(
+        c.get("client"),
+        challengeCookie(c),
+        await readJson(c.req, authenticationBody),
+      );
     setSessionCookie(c, token, access);
     clearChallengeCookie(c);
     return c.json({ authenticated: true });

@@ -9,13 +9,13 @@ import type { SessionInfo } from "../../src/app/frontend/services/client";
 describe("侧栏会话排序", () => {
   test("运行工作区和运行会话优先，同时保持工作区聚类", () => {
     const input = [
-      session("history-new", "F:/history", "idle", 900),
-      session("alpha-old", "F:/alpha", "idle", 100),
-      session("beta-tool", "F:/beta", "tool", 300),
-      session("alpha-model", "F:/alpha", "model", 200),
-      session("beta-new", "F:/beta", "idle", 800),
-    ];
-    const groups = groupSessions(input);
+        session("history-new", "F:/history", "idle", 900),
+        session("alpha-old", "F:/alpha", "idle", 100),
+        session("beta-tool", "F:/beta", "tool", 300),
+        session("alpha-model", "F:/alpha", "model", 200),
+        session("beta-new", "F:/beta", "idle", 800),
+      ],
+      groups = groupSessions(input);
     expect(groups.map(({ workspace }) => workspace)).toEqual(["F:/beta", "F:/alpha", "F:/history"]);
     expect(groups.map(({ sessions }) => sessions.map(({ id }) => id))).toEqual([
       ["beta-tool", "beta-new"],
@@ -52,8 +52,8 @@ describe("侧栏会话排序", () => {
     expect(groups[0]?.sessions.map(({ id }) => id)).toEqual(["a", "b", "z"]);
   });
   test("相对时间在显示值变化的边界刷新", () => {
-    const updatedAt = 1000;
-    const timestamp = updatedAt * 1000;
+    const updatedAt = 1000,
+      timestamp = updatedAt * 1000;
     expect(updatedAtRefreshDelay(updatedAt, timestamp)).toBe(60_000);
     expect(updatedAtRefreshDelay(updatedAt, timestamp + 59_999)).toBe(1);
     expect(updatedAtRefreshDelay(updatedAt, timestamp + 60_000)).toBe(60_000);

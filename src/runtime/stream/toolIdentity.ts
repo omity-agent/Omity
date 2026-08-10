@@ -47,13 +47,11 @@ export function resolveToolCallPart(
   if (confirmedCall) {
     return streamIdentity(state, confirmedCall.partId);
   }
-  const exact = [...state.calls.values()].filter((call) => call.candidateId === callId);
-  const unbound = [...state.calls.values()].filter((call) => call.formalId === undefined);
-  const compatible = unbound.filter(
-    (call) => !call.candidateId || callId.startsWith(call.candidateId),
-  );
-  const identified = compatible.filter((call) => call.candidateId !== undefined);
-  const candidates = exact.length > 0 ? exact : identified.length > 0 ? identified : compatible;
+  const exact = [...state.calls.values()].filter((call) => call.candidateId === callId),
+    unbound = [...state.calls.values()].filter((call) => call.formalId === undefined),
+    compatible = unbound.filter((call) => !call.candidateId || callId.startsWith(call.candidateId)),
+    identified = compatible.filter((call) => call.candidateId !== undefined),
+    candidates = exact.length > 0 ? exact : identified.length > 0 ? identified : compatible;
   if (candidates.length !== 1) {
     throw new Error(`无法确认工具调用 ${callId} 的唯一流身份`);
   }

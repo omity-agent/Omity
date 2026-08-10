@@ -2,23 +2,19 @@ export function omitDisabledToolboxConfiguration(value: unknown): unknown {
   if (!isRecord(value)) {
     return value;
   }
-  const servers = isRecord(value["mcpServers"]) ? value["mcpServers"] : {};
-  const disabledServers = new Set(
-    Object.entries(servers)
-      .filter(([, server]) => isRecord(server) && server["enabled"] === false)
-      .map(([name]) => name),
-  );
-  const disabledToolboxTools = disabledToolboxToolNames(value);
+  const servers = isRecord(value["mcpServers"]) ? value["mcpServers"] : {},
+    disabledServers = new Set(
+      Object.entries(servers)
+        .filter(([, server]) => isRecord(server) && server["enabled"] === false)
+        .map(([name]) => name),
+    ),
+    disabledToolboxTools = disabledToolboxToolNames(value);
   if (disabledServers.size === 0 && disabledToolboxTools.size === 0) {
     return value;
   }
-  const serverNames = Object.keys(servers).toSorted((left, right) => right.length - left.length);
-  const serverAliases = collectServerAliases(
-    value["toolNameOverrides"],
-    serverNames,
-    disabledServers,
-  );
-  const toolboxAliases = collectToolboxAliases(value["toolNameOverrides"], disabledToolboxTools);
+  const serverNames = Object.keys(servers).toSorted((left, right) => right.length - left.length),
+    serverAliases = collectServerAliases(value["toolNameOverrides"], serverNames, disabledServers),
+    toolboxAliases = collectToolboxAliases(value["toolNameOverrides"], disabledToolboxTools);
   return {
     ...value,
     freeformToolInputs: filterArray(
@@ -45,8 +41,8 @@ export function omitDisabledToolboxConfiguration(value: unknown): unknown {
   };
 }
 function disabledToolboxToolNames(value: Record<string, unknown>) {
-  const { toolboxes } = value;
-  const askUser = isRecord(toolboxes) ? toolboxes["ask_user"] : undefined;
+  const { toolboxes } = value,
+    askUser = isRecord(toolboxes) ? toolboxes["ask_user"] : undefined;
   return isRecord(askUser) && askUser["enabled"] === false
     ? new Set(["ask_user__choice", "ask_user__open_ended"])
     : new Set<string>();

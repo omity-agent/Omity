@@ -50,13 +50,8 @@ export class AppController {
     this.registry = new AppRegistry();
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
-    const owner = options.owner ?? appOwner();
-    const mcp = createAppMcp(
-      appRoot,
-      this.settings.logging.level,
-      this.settingsContext,
-      this.askUser,
-    );
+    const owner = options.owner ?? appOwner(),
+      mcp = createAppMcp(appRoot, this.settings.logging.level, this.settingsContext, this.askUser);
     this.hosts = new AppHosts(
       appRoot,
       controllerHostEvents(
@@ -99,25 +94,25 @@ export class AppController {
     return { path: await activateFileLink(path, action) };
   }
   async createSession(submission: SessionSubmission) {
-    const sessionContext = prioritizeSettingsProfile(this.settingsContext, submission.profile);
-    const profiles = settingsProfileNames(sessionContext);
-    const sessionSettings = loadSettings(this.appRoot, { settingsContext: sessionContext });
-    const created = await createAppSession(this.appRoot, submission, sessionSettings, profiles);
-    const session = this.registry.refresh(created.sessionId);
+    const sessionContext = prioritizeSettingsProfile(this.settingsContext, submission.profile),
+      profiles = settingsProfileNames(sessionContext),
+      sessionSettings = loadSettings(this.appRoot, { settingsContext: sessionContext }),
+      created = await createAppSession(this.appRoot, submission, sessionSettings, profiles),
+      session = this.registry.refresh(created.sessionId);
     await this.hosts.start(created.sessionId, created.workspace, "load");
     const info = this.sessionInfo(session);
     this.events.notifySession(info);
     return info;
   }
   async sendMessage(sessionId: string, submission: MessageSubmission) {
-    const session = this.registry.require(sessionId);
-    const result = await enqueueMessageWithAttachments(
-      this.settings,
-      sessionId,
-      submission.content,
-      submission.attachments,
-      () => this.ensureHost(session),
-    );
+    const session = this.registry.require(sessionId),
+      result = await enqueueMessageWithAttachments(
+        this.settings,
+        sessionId,
+        submission.content,
+        submission.attachments,
+        () => this.ensureHost(session),
+      );
     clearSessionDraft(sessionId, submission.draftRevision);
     this.hosts.clearError(sessionId);
     this.publishChange(sessionId);
@@ -151,15 +146,15 @@ export class AppController {
     return this.askUser.answer(sessionId, toolCallId, answer);
   }
   async forkSession(sessionId: string, beforeMessageId: number) {
-    const session = this.registry.require(sessionId);
-    const id = await createAppFork({
-      beforeMessageId,
-      pauseSource: () => this.control(sessionId, "pause"),
-      profiles: session.profiles,
-      sourceSessionId: sessionId,
-      workspace: session.workspace,
-    });
-    const targetSession = this.registry.refresh(id);
+    const session = this.registry.require(sessionId),
+      id = await createAppFork({
+        beforeMessageId,
+        pauseSource: () => this.control(sessionId, "pause"),
+        profiles: session.profiles,
+        sourceSessionId: sessionId,
+        workspace: session.workspace,
+      }),
+      targetSession = this.registry.refresh(id);
     this.hosts.clearError(id);
     const info = this.sessionInfo(targetSession);
     this.events.notifySession(info);

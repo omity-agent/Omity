@@ -7,21 +7,21 @@ import { queueMessageId } from "../../src/infrastructure/database/records/messag
 
 afterEach(cleanupDatabaseDirs);
 test("模型完整行实时写入索引，最终末行只补算一次并可重新读取", async () => {
-  const [writer, reader] = makeDatabases(2);
-  const db = required(writer);
-  const reopened = required(reader);
-  const sessionId = "file-link-stream";
+  const [writer, reader] = makeDatabases(2),
+    db = required(writer),
+    reopened = required(reader),
+    sessionId = "file-link-stream";
   db.resetSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "question");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
-  const prefix = "查看 ./package.json";
-  const first = await db.appendStream(sessionId, {
-    kind: "assistant_text_delta",
-    messageId: "message-1",
-    partId: "text-1",
-    queueId,
-    value: prefix,
-  });
+  const prefix = "查看 ./package.json",
+    first = await db.appendStream(sessionId, {
+      kind: "assistant_text_delta",
+      messageId: "message-1",
+      partId: "text-1",
+      queueId,
+      value: prefix,
+    });
   expect(first.fileLinks).toBeUndefined();
   expect(indexRows(db, "message-1", "content")).toEqual([]);
   const completedLine = await db.appendStream(sessionId, {
@@ -59,9 +59,9 @@ test("模型完整行实时写入索引，最终末行只补算一次并可重�
   reopened.close();
 });
 test("格式化后的工具输入与完整工具输出由后端索引并持久化", async () => {
-  const [db] = makeDatabases(1);
-  const database = required(db);
-  const sessionId = "file-link-tools";
+  const [db] = makeDatabases(1),
+    database = required(db),
+    sessionId = "file-link-tools";
   database.resetSession(sessionId, workspace);
   await database.syncHistory(sessionId, [
     new AIMessage({
@@ -75,10 +75,10 @@ test("格式化后的工具输入与完整工具输出由后端索引并持久�
       tool_call_id: "call-1",
     }),
   ]);
-  const transcript = loadTranscript(database, sessionId);
-  const surfaces = transcript.fileLinks
-    .filter((unit) => unit.ownerId === "call-1")
-    .map(({ surface }) => surface);
+  const transcript = loadTranscript(database, sessionId),
+    surfaces = transcript.fileLinks
+      .filter((unit) => unit.ownerId === "call-1")
+      .map(({ surface }) => surface);
   expect(surfaces).toContain("tool_input");
   expect(surfaces).toContain("tool_output");
   const tool = buildTimeline(

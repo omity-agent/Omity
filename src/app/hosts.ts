@@ -59,28 +59,28 @@ export class AppHosts {
       return existing.ready;
     }
     this.errors.delete(sessionId);
-    const force = new AbortController();
-    const stopping = new AbortController();
-    const ready = Promise.withResolvers<undefined>();
-    let initialized = false;
-    let cancelTool = noToolCancellation;
+    const force = new AbortController(),
+      stopping = new AbortController(),
+      ready = Promise.withResolvers<undefined>();
+    let initialized = false,
+      cancelTool = noToolCancellation;
     const hostPromise = runHostSession({ kind, sessionId }, this.appRoot, {
-      controller: force,
-      cwd: root,
-      mcp: (sessionProfiles) => this.mcp.load(sessionProfiles),
-      observer: this.observer(force),
-      onReady: (controls) => {
-        cancelTool = (callId) => controls.cancelTool(callId);
-        initialized = true;
-        ready.resolve(undefined);
-      },
-      owner: this.owner,
-      quiet: true,
-      settingsContext: this.settingsContext,
-      stoppingController: stopping,
-      wake: (delayMs) => this.events.wait(sessionId, delayMs),
-    });
-    const done = this.finishHost(hostPromise, sessionId, force, () => initialized, ready);
+        controller: force,
+        cwd: root,
+        mcp: (sessionProfiles) => this.mcp.load(sessionProfiles),
+        observer: this.observer(force),
+        onReady: (controls) => {
+          cancelTool = (callId) => controls.cancelTool(callId);
+          initialized = true;
+          ready.resolve(undefined);
+        },
+        owner: this.owner,
+        quiet: true,
+        settingsContext: this.settingsContext,
+        stoppingController: stopping,
+        wake: (delayMs) => this.events.wait(sessionId, delayMs),
+      }),
+      done = this.finishHost(hostPromise, sessionId, force, () => initialized, ready);
     this.running.set(sessionId, {
       activity: "idle",
       cancelTool: (callId) => cancelTool(callId),

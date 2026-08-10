@@ -2,10 +2,10 @@ import type { SessionInfo } from "../../services/client";
 import type { SessionStatus } from "../../../../types";
 import { isRunningStatus } from "../../services/events/attention";
 
-const minuteMs = 60_000;
-const hourMs = 3_600_000;
-const dayMs = 86_400_000;
-const weekMs = 604_800_000;
+const minuteMs = 60_000,
+  hourMs = 3_600_000,
+  dayMs = 86_400_000,
+  weekMs = 604_800_000;
 export interface SessionGroup {
   workspace: string;
   sessions: SessionInfo[];
@@ -45,8 +45,8 @@ export function sessionLabel(id: string) {
   return id.slice(-6).toUpperCase();
 }
 export function formatUpdatedAt(updatedAt: number, locale: string, now = Date.now()) {
-  const elapsedSeconds = Math.max(0, Math.floor(now / 1000) - updatedAt);
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  const elapsedSeconds = Math.max(0, Math.floor(now / 1000) - updatedAt),
+    formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   if (elapsedSeconds < 60) {
     return formatter.format(0, "second");
   }

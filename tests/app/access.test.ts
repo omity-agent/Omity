@@ -8,8 +8,8 @@ test("untrusted clients cannot supply X-Forwarded-For", () => {
   );
 });
 test("trusted proxy chains resolve from right to left", () => {
-  const network = new ClientNetwork(["127.0.0.0/8", "10.0.0.0/8"]);
-  const identity = network.identify(request("127.0.0.1", "198.51.100.7, 10.1.2.3"));
+  const network = new ClientNetwork(["127.0.0.0/8", "10.0.0.0/8"]),
+    identity = network.identify(request("127.0.0.1", "198.51.100.7, 10.1.2.3"));
   expect(identity).toEqual({ address: "198.51.100.7", local: false });
 });
 test("trusted proxies must supply a forwarded address", () => {

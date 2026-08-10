@@ -12,16 +12,16 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
-const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" });
-const sendAction = css({
-  _hover: {
-    bg: "mutedStrong",
-    borderColor: "mutedStrong",
-  },
-  bg: "text",
-  borderColor: "text",
-  color: "canvas",
-});
+const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" }),
+  sendAction = css({
+    _hover: {
+      bg: "mutedStrong",
+      borderColor: "mutedStrong",
+    },
+    bg: "text",
+    borderColor: "text",
+    color: "canvas",
+  });
 export function Actions({
   controlDisabled,
   controlState,
@@ -43,69 +43,69 @@ export function Actions({
   onControl?: (control: RequestedControl) => Promise<void>;
   onDelete?: () => Promise<void>;
 }) {
-  const { t } = useTranslation();
-  const requestControl = useCallback(
-    (control: RequestedControl) => {
-      if (onControl) {
-        reportPromiseErrors(onControl(control));
-      }
-    },
-    [onControl],
-  );
-  const pause = useCallback(() => {
-    requestControl("pause");
-  }, [requestControl]);
-  const resume = useCallback(() => {
-    requestControl("running");
-  }, [requestControl]);
-  const step = useCallback(() => {
-    requestControl("step");
-  }, [requestControl]);
-  const controlLabel = controlState ? t(controlState) : "";
-  const resumeLabel = t("resumeContinuous");
-  const stepLabel = t("step");
-  const control =
-    controlState === "resume" ? (
-      <>
-        <IconButton
-          aria-label={resumeLabel}
-          disabled={controlDisabled}
-          onClick={resume}
-          title={resumeLabel}
-          type="button"
-        >
-          <Play size={16} />
-        </IconButton>
-        {stepAvailable ? (
+  const { t } = useTranslation(),
+    requestControl = useCallback(
+      (control: RequestedControl) => {
+        if (onControl) {
+          reportPromiseErrors(onControl(control));
+        }
+      },
+      [onControl],
+    ),
+    pause = useCallback(() => {
+      requestControl("pause");
+    }, [requestControl]),
+    resume = useCallback(() => {
+      requestControl("running");
+    }, [requestControl]),
+    step = useCallback(() => {
+      requestControl("step");
+    }, [requestControl]),
+    controlLabel = controlState ? t(controlState) : "",
+    resumeLabel = t("resumeContinuous"),
+    stepLabel = t("step"),
+    control =
+      controlState === "resume" ? (
+        <>
           <IconButton
-            aria-label={stepLabel}
+            aria-label={resumeLabel}
             disabled={controlDisabled}
-            onClick={step}
-            title={stepLabel}
+            onClick={resume}
+            title={resumeLabel}
             type="button"
           >
-            <StepForward size={16} />
+            <Play size={16} />
           </IconButton>
-        ) : null}
-      </>
-    ) : controlState ? (
-      <IconButton
-        aria-label={controlLabel}
-        disabled={controlDisabled}
-        onClick={controlState === "pause" ? pause : undefined}
-        title={controlLabel}
-        type="button"
-      >
-        {controlState === "pausing" ? (
-          <LoaderCircle className={activeIcon} size={16} />
-        ) : controlState === "stepping" ? (
-          <StepForward size={16} />
-        ) : (
-          <Pause size={16} />
-        )}
-      </IconButton>
-    ) : null;
-  const sendLabel = submitLabel ?? t("send");
+          {stepAvailable ? (
+            <IconButton
+              aria-label={stepLabel}
+              disabled={controlDisabled}
+              onClick={step}
+              title={stepLabel}
+              type="button"
+            >
+              <StepForward size={16} />
+            </IconButton>
+          ) : null}
+        </>
+      ) : controlState ? (
+        <IconButton
+          aria-label={controlLabel}
+          disabled={controlDisabled}
+          onClick={controlState === "pause" ? pause : undefined}
+          title={controlLabel}
+          type="button"
+        >
+          {controlState === "pausing" ? (
+            <LoaderCircle className={activeIcon} size={16} />
+          ) : controlState === "stepping" ? (
+            <StepForward size={16} />
+          ) : (
+            <Pause size={16} />
+          )}
+        </IconButton>
+      ) : null,
+    sendLabel = submitLabel ?? t("send");
   return (
     <div className={composerActions}>
       <div className={composerControls}>

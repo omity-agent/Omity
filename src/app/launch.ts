@@ -5,12 +5,12 @@ export function appUrl(host: string, port: number) {
   return `http://${urlHost(host)}:${port.toString()}/`;
 }
 export function openBrowser(url: string) {
-  const launcher = browserLauncher(url);
-  const child = spawn(launcher.command, launcher.args, {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true,
-  });
+  const launcher = browserLauncher(url),
+    child = spawn(launcher.command, launcher.args, {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    });
   child.once("error", (error) => {
     console.warn(`无法自动打开浏览器：${error.message}`);
   });

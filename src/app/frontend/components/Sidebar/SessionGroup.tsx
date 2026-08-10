@@ -40,24 +40,24 @@ interface SessionItemProps {
   unread: boolean;
 }
 function SessionItem({ active, language, onSelect, session, unread }: SessionItemProps) {
-  const { t } = useTranslation();
-  const handleSelect = useCallback(
-    (event: MouseEvent<HTMLAnchorElement>) => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-      event.preventDefault();
-      onSelect(session.id);
-    },
-    [onSelect, session.id],
-  );
+  const { t } = useTranslation(),
+    handleSelect = useCallback(
+      (event: MouseEvent<HTMLAnchorElement>) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        event.preventDefault();
+        onSelect(session.id);
+      },
+      [onSelect, session.id],
+    );
   return (
     <div className={cx("group", item, active && selected)}>
       <LinkButton
@@ -82,26 +82,26 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
   );
 }
 export function SessionGroup({ group, activeId, unreadIds, onSelect }: Props) {
-  const { t, i18n } = useTranslation();
-  const [expanded, setExpanded] = useState(true);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
-  const toggleExpanded = useCallback(() => {
-    setExpanded((value) => !value);
-  }, []);
-  const toggleHistory = useCallback(() => {
-    setHistoryExpanded((value) => !value);
-  }, []);
-  const runningSessions = group.sessions.filter(isRunning);
-  const historySessions = group.sessions.filter((session) => !isRunning(session));
-  const selectedHistory = historySessions.find(({ id }) => id === activeId);
-  const compactHistory = historySessions.filter(
-    ({ id }) => id === selectedHistory?.id || unreadIds.has(id),
-  );
-  const visibleSessions =
-    runningSessions.length > 0
-      ? [...runningSessions, ...(historyExpanded ? historySessions : compactHistory)]
-      : group.sessions;
-  const hiddenHistoryCount = historySessions.length - compactHistory.length;
+  const { t, i18n } = useTranslation(),
+    [expanded, setExpanded] = useState(true),
+    [historyExpanded, setHistoryExpanded] = useState(false),
+    toggleExpanded = useCallback(() => {
+      setExpanded((value) => !value);
+    }, []),
+    toggleHistory = useCallback(() => {
+      setHistoryExpanded((value) => !value);
+    }, []),
+    runningSessions = group.sessions.filter(isRunning),
+    historySessions = group.sessions.filter((session) => !isRunning(session)),
+    selectedHistory = historySessions.find(({ id }) => id === activeId),
+    compactHistory = historySessions.filter(
+      ({ id }) => id === selectedHistory?.id || unreadIds.has(id),
+    ),
+    visibleSessions =
+      runningSessions.length > 0
+        ? [...runningSessions, ...(historyExpanded ? historySessions : compactHistory)]
+        : group.sessions,
+    hiddenHistoryCount = historySessions.length - compactHistory.length;
   return (
     <section className={root}>
       <button className={header} onClick={toggleExpanded} title={group.workspace} type="button">

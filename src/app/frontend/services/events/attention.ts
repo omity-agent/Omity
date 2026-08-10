@@ -77,8 +77,8 @@ export function sessionAttentionStore(queryClient: QueryClient) {
   return store;
 }
 export function useSessionAttention(queryClient: QueryClient, activeId?: string) {
-  const store = sessionAttentionStore(queryClient);
-  const unread = useSyncExternalStore(store.subscribe, store.snapshot);
+  const store = sessionAttentionStore(queryClient),
+    unread = useSyncExternalStore(store.subscribe, store.snapshot);
   useEffect(() => {
     store.view(activeId);
   }, [activeId, store]);

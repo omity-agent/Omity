@@ -15,24 +15,24 @@ export async function runGraphUntilBoundary(
   run: QueueRun,
   initialStepping: boolean,
 ) {
-  const [item] = run.items;
-  const config = {
-    configurable: { thread_id: run.threadId },
-    interruptAfter: ["request_model", "invoke_tool", "invoke_tool_batch"] as string[],
-    interruptBefore: ["model_request", "tools"] as string[],
-    recursionLimit: ctx.settings.agent.recursionLimit,
-  };
-  const checkpoint = await ctx.checkpointer.getTuple(config);
-  let state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined;
-  let input: Parameters<HostContext["graph"]["stream"]>[0] = state
-    ? recoverConsumedAppends(ctx, run, state)
-    : {
-        hookPendingUserIds: [queueMessageId(ctx.sessionId, item.id)],
-        messages: ctx.db.history(ctx.sessionId),
-      };
-  let retries = 0;
-  let steppedOperation: AgentOperation | undefined;
-  let stepping = initialStepping;
+  const [item] = run.items,
+    config = {
+      configurable: { thread_id: run.threadId },
+      interruptAfter: ["request_model", "invoke_tool", "invoke_tool_batch"] as string[],
+      interruptBefore: ["model_request", "tools"] as string[],
+      recursionLimit: ctx.settings.agent.recursionLimit,
+    },
+    checkpoint = await ctx.checkpointer.getTuple(config);
+  let state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined,
+    input: Parameters<HostContext["graph"]["stream"]>[0] = state
+      ? recoverConsumedAppends(ctx, run, state)
+      : {
+          hookPendingUserIds: [queueMessageId(ctx.sessionId, item.id)],
+          messages: ctx.db.history(ctx.sessionId),
+        },
+    retries = 0,
+    steppedOperation: AgentOperation | undefined,
+    stepping = initialStepping;
   const streamState = createStreamLogState();
   for (;;) {
     ctx.assertLease?.();

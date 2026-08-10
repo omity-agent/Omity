@@ -16,38 +16,38 @@ export class WebAuthnCeremony {
     private readonly store: AccessStore,
   ) {}
   async registrationOptions() {
-    const { origin, rpID } = this.relyingParty();
-    const options = await generateRegistrationOptions({
-      attestationType: "none",
-      authenticatorSelection: {
-        residentKey: "preferred",
-        userVerification: "required",
-      },
-      excludeCredentials: this.store.credentials().map(credentialDescriptor),
-      rpID,
-      rpName: "Omity",
-      userDisplayName: "Omity 管理员",
-      userName: "administrator",
-    });
-    const challengeId = this.store.createChallenge(
-      "registration",
-      options.challenge,
-      this.settings.access.challengeTtlMs,
-    );
+    const { origin, rpID } = this.relyingParty(),
+      options = await generateRegistrationOptions({
+        attestationType: "none",
+        authenticatorSelection: {
+          residentKey: "preferred",
+          userVerification: "required",
+        },
+        excludeCredentials: this.store.credentials().map(credentialDescriptor),
+        rpID,
+        rpName: "Omity",
+        userDisplayName: "Omity 管理员",
+        userName: "administrator",
+      }),
+      challengeId = this.store.createChallenge(
+        "registration",
+        options.challenge,
+        this.settings.access.challengeTtlMs,
+      );
     return { challengeId, options, origin };
   }
   async register(challengeId: string, response: RegistrationResponseJSON) {
-    const challenge = this.store.consumeChallenge(challengeId, "registration");
-    const { origin, rpID } = this.relyingParty();
-    const verification = await invalidAsUnauthorized(() =>
-      verifyRegistrationResponse({
-        expectedChallenge: challenge,
-        expectedOrigin: origin,
-        expectedRPID: rpID,
-        requireUserVerification: true,
-        response,
-      }),
-    );
+    const challenge = this.store.consumeChallenge(challengeId, "registration"),
+      { origin, rpID } = this.relyingParty(),
+      verification = await invalidAsUnauthorized(() =>
+        verifyRegistrationResponse({
+          expectedChallenge: challenge,
+          expectedOrigin: origin,
+          expectedRPID: rpID,
+          requireUserVerification: true,
+          response,
+        }),
+      );
     if (!verification.verified) {
       throw new HttpError(401, "WebAuthn 凭据注册验证失败", "AUTH_INVALID");
     }
@@ -64,34 +64,34 @@ export class WebAuthnCeremony {
       throw new HttpError(503, "尚未从局域网注册 WebAuthn 凭据", "AUTH_NOT_CONFIGURED");
     }
     const options = await generateAuthenticationOptions({
-      allowCredentials: credentials.map(credentialDescriptor),
-      rpID: this.relyingParty().rpID,
-      userVerification: "required",
-    });
-    const challengeId = this.store.createChallenge(
-      "authentication",
-      options.challenge,
-      this.settings.access.challengeTtlMs,
-    );
+        allowCredentials: credentials.map(credentialDescriptor),
+        rpID: this.relyingParty().rpID,
+        userVerification: "required",
+      }),
+      challengeId = this.store.createChallenge(
+        "authentication",
+        options.challenge,
+        this.settings.access.challengeTtlMs,
+      );
     return { challengeId, options };
   }
   async authenticate(challengeId: string, response: AuthenticationResponseJSON) {
-    const challenge = this.store.consumeChallenge(challengeId, "authentication");
-    const credential = this.store.credential(response.id);
+    const challenge = this.store.consumeChallenge(challengeId, "authentication"),
+      credential = this.store.credential(response.id);
     if (!credential) {
       throw new HttpError(401, "WebAuthn 凭据未知", "AUTH_INVALID");
     }
-    const { origin, rpID } = this.relyingParty();
-    const verification = await invalidAsUnauthorized(() =>
-      verifyAuthenticationResponse({
-        credential,
-        expectedChallenge: challenge,
-        expectedOrigin: origin,
-        expectedRPID: rpID,
-        requireUserVerification: true,
-        response,
-      }),
-    );
+    const { origin, rpID } = this.relyingParty(),
+      verification = await invalidAsUnauthorized(() =>
+        verifyAuthenticationResponse({
+          credential,
+          expectedChallenge: challenge,
+          expectedOrigin: origin,
+          expectedRPID: rpID,
+          requireUserVerification: true,
+          response,
+        }),
+      );
     if (!verification.verified) {
       throw new HttpError(401, "WebAuthn 身份验证失败", "AUTH_INVALID");
     }

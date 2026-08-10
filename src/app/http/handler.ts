@@ -39,20 +39,20 @@ export type ApiController = Pick<
   | "events"
 >;
 export function createApi(controller: ApiController, access?: AccessService) {
-  const app = new Hono<AccessEnvironment>();
-  const attachmentBodyLimit = requestBodyLimit + controller.bootstrap().attachments.maxSizeBytes;
-  const attachmentRequestLimit = bodyLimit({
-    maxSize: attachmentBodyLimit,
-    onError() {
-      throw new HttpError(413, `附件请求体不能超过 ${attachmentBodyLimit.toString()} 字节`);
-    },
-  });
-  const regularBodyLimit = bodyLimit({
-    maxSize: requestBodyLimit,
-    onError() {
-      throw new HttpError(413, `请求体不能超过 ${requestBodyLimit.toString()} 字节`);
-    },
-  });
+  const app = new Hono<AccessEnvironment>(),
+    attachmentBodyLimit = requestBodyLimit + controller.bootstrap().attachments.maxSizeBytes,
+    attachmentRequestLimit = bodyLimit({
+      maxSize: attachmentBodyLimit,
+      onError() {
+        throw new HttpError(413, `附件请求体不能超过 ${attachmentBodyLimit.toString()} 字节`);
+      },
+    }),
+    regularBodyLimit = bodyLimit({
+      maxSize: requestBodyLimit,
+      onError() {
+        throw new HttpError(413, `请求体不能超过 ${requestBodyLimit.toString()} 字节`);
+      },
+    });
   mountAccess(app, access, regularBodyLimit);
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.get("/api/bootstrap", (c) => c.json(controller.bootstrap()));

@@ -24,8 +24,8 @@ export function requestStepControlRecord(db: Database, sessionId: string) {
   if (result.changes === 1) {
     return;
   }
-  const control = readControlRecord(db, sessionId);
-  const ready = hasSteppableRunRecord(db, sessionId);
+  const control = readControlRecord(db, sessionId),
+    ready = hasSteppableRunRecord(db, sessionId);
   if (control === "step" && ready) {
     return;
   }

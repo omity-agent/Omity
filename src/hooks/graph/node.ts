@@ -26,9 +26,9 @@ export function createHookNode(
 ) {
   return async (state: HookState, config: LangGraphRunnableConfig) => {
     const threadId = requireThreadId(config.configurable);
-    let plan = initialPlan(state);
-    let outputs = state.hookPlan ? state.hookToolOutputs : [];
-    let clearPending = !state.hookPlan && state.hookPendingUserIds.length > 0;
+    let plan = initialPlan(state),
+      outputs = state.hookPlan ? state.hookToolOutputs : [],
+      clearPending = !state.hookPlan && state.hookPendingUserIds.length > 0;
     if (plan?.kind === "agent" && plan.when === "after" && state.hookPendingUserIds.length > 0) {
       plan = agentPlan("before", state.hookPendingUserIds);
       clearPending = true;
@@ -40,10 +40,7 @@ export function createHookNode(
       return command(plan, END, clearPending, outputs);
     }
     if (plan.kind === "tools") {
-      const { plan: advancedPlan, outputs: completedOutputs } = finishAwaited(
-        plan,
-        state.messages,
-      );
+      const { plan: advancedPlan, outputs: completedOutputs } = finishAwaited(plan, state.messages);
       plan = advancedPlan;
       if (completedOutputs) {
         outputs = [...outputs, ...completedOutputs];
@@ -74,8 +71,8 @@ export function createHookNode(
           }
         }
       } else {
-        const original = restoreOriginal(plan.original);
-        const call = original.tool_calls?.[plan.toolIndex];
+        const original = restoreOriginal(plan.original),
+          call = original.tool_calls?.[plan.toolIndex];
         if (!call) {
           return command(null, modelNode, clearPending, outputs);
         }
@@ -85,11 +82,7 @@ export function createHookNode(
         }
         const rule = hooks.matching(call.name, plan.stage)[plan.hookIndex];
         if (!rule) {
-          plan = nextToolStage(
-            plan,
-            original.tool_calls?.length ?? 0,
-            options.parallelToolCalls,
-          );
+          plan = nextToolStage(plan, original.tool_calls?.length ?? 0, options.parallelToolCalls);
         } else {
           const result = await executeRule(
             rule,

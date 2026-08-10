@@ -11,18 +11,18 @@ import { captureError } from "../../../src/failures/details";
 test("stdio client does not replay failed calls and opens a fresh round after exhaustion", async () => {
   let generation = 0;
   const connect = mock(() => {
-    generation += 1;
-    return Promise.resolve(connection(generation, generation >= 4));
-  });
-  const logger = new Logger("error", true);
-  const terminalErrors = spyOn(logger, "error");
-  const client = await RestartingStdioClient.create(
-    "terminal",
-    { args: [], command: "terminal" },
-    { delayMs: 0, maxAttempts: 2 },
-    logger,
-    connect,
-  );
+      generation += 1;
+      return Promise.resolve(connection(generation, generation >= 4));
+    }),
+    logger = new Logger("error", true),
+    terminalErrors = spyOn(logger, "error"),
+    client = await RestartingStdioClient.create(
+      "terminal",
+      { args: [], command: "terminal" },
+      { delayMs: 0, maxAttempts: 2 },
+      logger,
+      connect,
+    );
   try {
     expect(client.callTool({ arguments: {}, name: "run" })).rejects.toMatchObject({
       code: "MCP_STDIO_PROCESS_EXITED",
@@ -92,10 +92,10 @@ test("stdio client does not replay failed calls and opens a fresh round after ex
   }
 });
 test("stdio client adapts LangChain call options to the modern client signature", async () => {
-  const { signal } = new AbortController();
-  const onprogress = mock(() => undefined);
-  const callTool = mock(() => Promise.resolve({ content: [] }));
-  const connected = connection(1, true);
+  const { signal } = new AbortController(),
+    onprogress = mock(() => undefined),
+    callTool = mock(() => Promise.resolve({ content: [] })),
+    connected = connection(1, true);
   connected.client.callTool = callTool;
   const client = await RestartingStdioClient.create(
     "modern",
@@ -119,11 +119,11 @@ test("stdio client adapts LangChain call options to the modern client signature"
   }
 });
 test("late failures reuse the connection installed by the closure observer", async () => {
-  const response = Promise.withResolvers<never>();
-  const first = connection(1, true);
+  const response = Promise.withResolvers<never>(),
+    first = connection(1, true);
   first.client.callTool = () => response.promise;
-  const second = connection(2, true);
-  const recovered = Promise.withResolvers<void>();
+  const second = connection(2, true),
+    recovered = Promise.withResolvers<void>();
   let attempts = 0;
   const client = await RestartingStdioClient.create(
     "late-failure",

@@ -45,10 +45,10 @@ export async function handleStreamEvent(
   if (!isAiChunk(chunk)) {
     return;
   }
-  const messageId = acceptMessageId(state.parts, readMessageId(chunk));
-  const text = contentToText(chunk.content);
-  const reasoning = streamedMessageReasoning(chunk, state.parts.reasoning);
-  const calls = toolCallDeltas(chunk);
+  const messageId = acceptMessageId(state.parts, readMessageId(chunk)),
+    text = contentToText(chunk.content),
+    reasoning = streamedMessageReasoning(chunk, state.parts.reasoning),
+    calls = toolCallDeltas(chunk);
   if (!reasoning && !text && calls.length === 0) {
     return;
   }
@@ -110,11 +110,11 @@ export async function recordToolExecutionStarted(
   state: StreamLogState,
 ) {
   const completed = new Set(
-    messages
-      .filter((message) => ToolMessage.isInstance(message))
-      .map((message) => message.tool_call_id),
-  );
-  const request = messages.findLast((message) => AIMessage.isInstance(message));
+      messages
+        .filter((message) => ToolMessage.isInstance(message))
+        .map((message) => message.tool_call_id),
+    ),
+    request = messages.findLast((message) => AIMessage.isInstance(message));
   if (!request || !AIMessage.isInstance(request) || !request.id) {
     throw new Error("工具执行缺少稳定的请求消息 ID");
   }

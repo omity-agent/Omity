@@ -134,9 +134,9 @@ export class RestartingStdioClient {
     if (this.recovering) {
       return this.recovering;
     }
-    const task = this.restart();
-    const identity = {};
-    const recovery = this.manageRecovery(task, identity);
+    const task = this.restart(),
+      identity = {},
+      recovery = this.manageRecovery(task, identity);
     this.recoveryIdentity = identity;
     this.recovering = recovery;
     return recovery;

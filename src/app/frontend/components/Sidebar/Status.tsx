@@ -13,33 +13,33 @@ import type { SessionStatus } from "../../../../types";
 import { useTranslation } from "react-i18next";
 
 const indicator = cva({
-  base: {
-    alignItems: "center",
-    display: "inline-flex",
-    flexShrink: 0,
-    fontSize: "xs",
-    gap: "1.5",
-  },
-  variants: {
-    status: {
-      error: { color: "statusError" },
-      idle: { color: "statusIdle" },
-      model: { color: "statusModel" },
-      paused: { color: "statusPaused" },
-      pausing: { color: "statusPaused" },
-      tool: { color: "statusTool" },
+    base: {
+      alignItems: "center",
+      display: "inline-flex",
+      flexShrink: 0,
+      fontSize: "xs",
+      gap: "1.5",
     },
-  },
-});
-const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" });
-const statusMeta: Record<SessionStatus, { icon: LucideIcon; label: string; active?: boolean }> = {
-  error: { icon: CircleAlert, label: "statusError" },
-  idle: { icon: Circle, label: "statusIdle" },
-  model: { active: true, icon: Bot, label: "statusModel" },
-  paused: { icon: Pause, label: "statusPaused" },
-  pausing: { active: true, icon: LoaderCircle, label: "statusPausing" },
-  tool: { active: true, icon: Wrench, label: "statusTool" },
-};
+    variants: {
+      status: {
+        error: { color: "statusError" },
+        idle: { color: "statusIdle" },
+        model: { color: "statusModel" },
+        paused: { color: "statusPaused" },
+        pausing: { color: "statusPaused" },
+        tool: { color: "statusTool" },
+      },
+    },
+  }),
+  activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" }),
+  statusMeta: Record<SessionStatus, { icon: LucideIcon; label: string; active?: boolean }> = {
+    error: { icon: CircleAlert, label: "statusError" },
+    idle: { icon: Circle, label: "statusIdle" },
+    model: { active: true, icon: Bot, label: "statusModel" },
+    paused: { icon: Pause, label: "statusPaused" },
+    pausing: { active: true, icon: LoaderCircle, label: "statusPausing" },
+    tool: { active: true, icon: Wrench, label: "statusTool" },
+  };
 export function Status({
   compact = false,
   error,
@@ -49,11 +49,11 @@ export function Status({
   error: ErrorDetails | null;
   status: SessionStatus;
 }) {
-  const { t } = useTranslation();
-  const meta = statusMeta[status];
-  const Icon = meta.icon;
-  const label = t(meta.label);
-  const description = status === "error" && error ? `${label}: ${error.message}` : label;
+  const { t } = useTranslation(),
+    meta = statusMeta[status],
+    Icon = meta.icon,
+    label = t(meta.label),
+    description = status === "error" && error ? `${label}: ${error.message}` : label;
   return (
     <span
       aria-label={description}

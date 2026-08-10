@@ -7,9 +7,9 @@ export interface FreeformMcpTools {
   parameters: ReadonlyMap<string, string>;
 }
 const toolJsonSchema = z.looseObject({
-  properties: z.record(z.string(), z.unknown()),
-});
-const stringParameterSchema = z.looseObject({ type: z.literal("string") });
+    properties: z.record(z.string(), z.unknown()),
+  }),
+  stringParameterSchema = z.looseObject({ type: z.literal("string") });
 export function normalizeFreeformToolInputs(
   value: unknown,
   path = "settings/toolbox.yaml.freeformToolInputs",
@@ -36,8 +36,8 @@ export function configureFreeformMcpTools(
   tools: StructuredToolInterface[],
   names: string[],
 ): FreeformMcpTools {
-  const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
-  const parameters = new Map<string, string>();
+  const toolsByName = new Map(tools.map((tool) => [tool.name, tool])),
+    parameters = new Map<string, string>();
   for (const name of names) {
     const tool = toolsByName.get(name);
     if (!tool) {
@@ -65,9 +65,9 @@ export function sessionModelTools(
   });
 }
 function singleStringParameter(tool: StructuredToolInterface) {
-  const { schema } = tool;
-  const parsed = toolJsonSchema.safeParse(schema);
-  const entries = parsed.success ? Object.entries(parsed.data.properties) : [];
+  const { schema } = tool,
+    parsed = toolJsonSchema.safeParse(schema),
+    entries = parsed.success ? Object.entries(parsed.data.properties) : [];
   if (entries.length !== 1) {
     throw new Error(
       `MCP free-form 工具 ${tool.name} 必须恰好声明一个输入参数，实际为 ${entries.length.toString()} 个`,

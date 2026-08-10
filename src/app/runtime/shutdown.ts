@@ -24,17 +24,17 @@ export function createShutdownLogger() {
   return new Logger("debug");
 }
 export function listenForShutdownSignal() {
-  const waiting = Promise.withResolvers<ShutdownSignal>();
-  const onSigint = () => finish("SIGINT");
-  const onSigterm = () => finish("SIGTERM");
-  const removeListeners = () => {
-    process.removeListener("SIGINT", onSigint);
-    process.removeListener("SIGTERM", onSigterm);
-  };
-  const finish = (signal: ShutdownSignal) => {
-    removeListeners();
-    waiting.resolve(signal);
-  };
+  const waiting = Promise.withResolvers<ShutdownSignal>(),
+    onSigint = () => finish("SIGINT"),
+    onSigterm = () => finish("SIGTERM"),
+    removeListeners = () => {
+      process.removeListener("SIGINT", onSigint);
+      process.removeListener("SIGTERM", onSigterm);
+    },
+    finish = (signal: ShutdownSignal) => {
+      removeListeners();
+      waiting.resolve(signal);
+    };
   process.once("SIGINT", onSigint);
   process.once("SIGTERM", onSigterm);
   return {
@@ -47,8 +47,8 @@ export async function closeAppResources(
   logger: ShutdownLogger,
   reason: ShutdownReason,
 ) {
-  const startedAt = Date.now();
-  const failures: unknown[] = [];
+  const startedAt = Date.now(),
+    failures: unknown[] = [];
   logger.info("服务端进入关闭流程", { reason });
   await closeStep(
     logger,
@@ -57,8 +57,8 @@ export async function closeAppResources(
       if (!resources.server?.instance.listening) {
         return;
       }
-      const close = promisify(resources.server.instance.close.bind(resources.server.instance));
-      const closed = close();
+      const close = promisify(resources.server.instance.close.bind(resources.server.instance)),
+        closed = close();
       for (const connection of resources.server.connections) {
         connection.destroy();
       }

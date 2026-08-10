@@ -14,32 +14,32 @@ test("model timeout resets after each stream update", async () => {
   const settings = testSettings();
   settings.model.timeoutMs = 100;
   const model = new MockLanguageModelV4({
-    doStream: {
-      stream: simulateReadableStream({
-        chunkDelayInMs: 30,
-        chunks: [
-          {
-            id: "response-1",
-            modelId: "mock",
-            timestamp: new Date(0),
-            type: "response-metadata",
-          },
-          { id: "text-1", type: "text-start" },
-          { delta: "Hello ", id: "text-1", type: "text-delta" },
-          { delta: "world", id: "text-1", type: "text-delta" },
-          { id: "text-1", type: "text-end" },
-          { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
-        ],
-      }),
-    },
-  });
-  const response = await streamAiModel({
-    messages: [new HumanMessage("Say hello")],
-    model,
-    sessionId: "test-session",
-    settings,
-    tools: {},
-  });
+      doStream: {
+        stream: simulateReadableStream({
+          chunkDelayInMs: 30,
+          chunks: [
+            {
+              id: "response-1",
+              modelId: "mock",
+              timestamp: new Date(0),
+              type: "response-metadata",
+            },
+            { id: "text-1", type: "text-start" },
+            { delta: "Hello ", id: "text-1", type: "text-delta" },
+            { delta: "world", id: "text-1", type: "text-delta" },
+            { id: "text-1", type: "text-end" },
+            { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
+          ],
+        }),
+      },
+    }),
+    response = await streamAiModel({
+      messages: [new HumanMessage("Say hello")],
+      model,
+      sessionId: "test-session",
+      settings,
+      tools: {},
+    });
   expect(response.text).toBe("Hello world");
   expect(model.doStreamCalls[0]?.prompt[0]).toEqual({
     content: "test",
@@ -47,27 +47,27 @@ test("model timeout resets after each stream update", async () => {
   });
 });
 test("model stream errors are propagated without terminal output", async () => {
-  const log = spyOn(console, "error").mockReturnValue(undefined);
-  const providerError = new APICallError({
-    data: {
-      error: {
-        code: "server_error",
-        message: "Our servers are currently overloaded. Please try again later.",
-        type: "service_unavailable_error",
+  const log = spyOn(console, "error").mockReturnValue(undefined),
+    providerError = new APICallError({
+      data: {
+        error: {
+          code: "server_error",
+          message: "Our servers are currently overloaded. Please try again later.",
+          type: "service_unavailable_error",
+        },
       },
-    },
-    message: "Our servers are currently overloaded. Please try again later.",
-    requestBodyValues: {},
-    statusCode: 503,
-    url: "https://provider.example.test/v1/responses",
-  });
-  const model = new MockLanguageModelV4({
-    doStream: {
-      stream: simulateReadableStream({
-        chunks: [{ error: providerError, type: "error" }],
-      }),
-    },
-  });
+      message: "Our servers are currently overloaded. Please try again later.",
+      requestBodyValues: {},
+      statusCode: 503,
+      url: "https://provider.example.test/v1/responses",
+    }),
+    model = new MockLanguageModelV4({
+      doStream: {
+        stream: simulateReadableStream({
+          chunks: [{ error: providerError, type: "error" }],
+        }),
+      },
+    });
   try {
     let rejection: unknown;
     try {

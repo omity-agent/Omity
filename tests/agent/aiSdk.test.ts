@@ -13,27 +13,27 @@ const usage = {
 };
 test("ToolLoopAgent streams model text with the AI SDK protocol", async () => {
   const agent = new ToolLoopAgent({
-    model: new MockLanguageModelV4({
-      doStream: {
-        stream: simulateReadableStream({
-          chunks: [
-            {
-              id: "response-1",
-              modelId: "mock",
-              timestamp: new Date(0),
-              type: "response-metadata",
-            },
-            { id: "text-1", type: "text-start" },
-            { delta: "Hello", id: "text-1", type: "text-delta" },
-            { id: "text-1", type: "text-end" },
-            { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
-          ],
-        }),
-      },
+      model: new MockLanguageModelV4({
+        doStream: {
+          stream: simulateReadableStream({
+            chunks: [
+              {
+                id: "response-1",
+                modelId: "mock",
+                timestamp: new Date(0),
+                type: "response-metadata",
+              },
+              { id: "text-1", type: "text-start" },
+              { delta: "Hello", id: "text-1", type: "text-delta" },
+              { id: "text-1", type: "text-end" },
+              { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
+            ],
+          }),
+        },
+      }),
     }),
-  });
-  const result = await agent.stream({ prompt: "Say hello" });
-  const parts = [];
+    result = await agent.stream({ prompt: "Say hello" }),
+    parts = [];
   for await (const part of result.stream) {
     parts.push(part);
   }
@@ -41,56 +41,56 @@ test("ToolLoopAgent streams model text with the AI SDK protocol", async () => {
   expect(await result.text).toBe("Hello");
 });
 test("ToolLoopAgent executes tools and feeds their result to the next step", async () => {
-  const calls: string[] = [];
-  const completedSteps: string[][] = [];
-  const model = new MockLanguageModelV4({
-    doStream: [
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            {
-              input: '{"value":"first"}',
-              toolCallId: "call-1",
-              toolName: "echo",
-              type: "tool-call",
-            },
-            { finishReason: { raw: undefined, unified: "tool-calls" }, type: "finish", usage },
-          ],
-        }),
-      },
-      {
-        stream: simulateReadableStream({
-          chunks: [
-            { id: "text-2", type: "text-start" },
-            { delta: "done", id: "text-2", type: "text-delta" },
-            { id: "text-2", type: "text-end" },
-            { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
-          ],
-        }),
-      },
-    ],
-  });
-  const agent = new ToolLoopAgent({
-    model,
-    tools: {
-      echo: dynamicTool({
-        execute: (input) => {
-          if (!isEchoInput(input)) {
-            throw new Error("echo input invalid");
-          }
-          calls.push(input.value);
-          return "echoed";
+  const calls: string[] = [],
+    completedSteps: string[][] = [],
+    model = new MockLanguageModelV4({
+      doStream: [
+        {
+          stream: simulateReadableStream({
+            chunks: [
+              {
+                input: '{"value":"first"}',
+                toolCallId: "call-1",
+                toolName: "echo",
+                type: "tool-call",
+              },
+              { finishReason: { raw: undefined, unified: "tool-calls" }, type: "finish", usage },
+            ],
+          }),
         },
-        inputSchema: z.object({ value: z.string() }),
-      }),
-    },
-  });
-  const result = await agent.stream({
-    onStepEnd: ({ response }) => {
-      completedSteps.push(response.messages.map(({ role }) => role));
-    },
-    prompt: "run echo",
-  });
+        {
+          stream: simulateReadableStream({
+            chunks: [
+              { id: "text-2", type: "text-start" },
+              { delta: "done", id: "text-2", type: "text-delta" },
+              { id: "text-2", type: "text-end" },
+              { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
+            ],
+          }),
+        },
+      ],
+    }),
+    agent = new ToolLoopAgent({
+      model,
+      tools: {
+        echo: dynamicTool({
+          execute: (input) => {
+            if (!isEchoInput(input)) {
+              throw new Error("echo input invalid");
+            }
+            calls.push(input.value);
+            return "echoed";
+          },
+          inputSchema: z.object({ value: z.string() }),
+        }),
+      },
+    }),
+    result = await agent.stream({
+      onStepEnd: ({ response }) => {
+        completedSteps.push(response.messages.map(({ role }) => role));
+      },
+      prompt: "run echo",
+    });
   await result.consumeStream();
   expect(calls).toEqual(["first"]);
   expect(await result.text).toBe("done");
@@ -107,21 +107,21 @@ function isEchoInput(value: unknown): value is { value: string } {
 }
 test("AI SDK reasoning provider metadata survives persistence adapters", () => {
   const source = [
-    {
-      content: [
-        {
-          providerOptions: {
-            openai: { itemId: "reasoning-1", reasoningEncryptedContent: "encrypted" },
+      {
+        content: [
+          {
+            providerOptions: {
+              openai: { itemId: "reasoning-1", reasoningEncryptedContent: "encrypted" },
+            },
+            text: "summary",
+            type: "reasoning" as const,
           },
-          text: "summary",
-          type: "reasoning" as const,
-        },
-        { text: "answer", type: "text" as const },
-      ],
-      role: "assistant" as const,
-    },
-  ];
-  const [restored] = fromModelMessages(source, "response-1");
+          { text: "answer", type: "text" as const },
+        ],
+        role: "assistant" as const,
+      },
+    ],
+    [restored] = fromModelMessages(source, "response-1");
   expect(restored?.content).toBe("answer");
   expect(restored ? messageReasoning(restored) : "").toBe("summary");
   expect(restored ? toModelMessages([restored]) : []).toEqual(source);
@@ -143,15 +143,15 @@ test("AI SDK custom tool string input survives persistence adapters", () => {
   expect(toModelMessages(fromModelMessages(source, "response-1"))).toEqual(source);
 });
 test("AI SDK receives provider-native tool images for Responses API", () => {
-  const src = "data:image/webp;base64,AAAA";
-  const message = new ToolMessage({
-    content: [
-      { text: "result", type: "text" },
-      { image_url: { url: src }, type: "image_url" },
-    ],
-    name: "screenshot",
-    tool_call_id: "call-1",
-  });
+  const src = "data:image/webp;base64,AAAA",
+    message = new ToolMessage({
+      content: [
+        { text: "result", type: "text" },
+        { image_url: { url: src }, type: "image_url" },
+      ],
+      name: "screenshot",
+      tool_call_id: "call-1",
+    });
   expect(toModelMessages([message], "responses")).toEqual([
     {
       content: [

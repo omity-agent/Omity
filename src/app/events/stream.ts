@@ -10,26 +10,26 @@ export interface OutboundEvent {
 export type EventWriter = (event: OutboundEvent) => void;
 export function eventStream(c: Context, subscribe: (write: EventWriter) => () => void) {
   const response = streamSSE(c, async (stream) => {
-    const closed = Promise.withResolvers<void>();
-    const writes = new AsyncQueuer<OutboundEvent>(
-      async ({ data, event, id }) => {
-        await stream.writeSSE({
-          data: JSON.stringify(data),
-          event,
-          id,
-        });
+    const closed = Promise.withResolvers<void>(),
+      writes = new AsyncQueuer<OutboundEvent>(
+        async ({ data, event, id }) => {
+          await stream.writeSSE({
+            data: JSON.stringify(data),
+            event,
+            id,
+          });
+        },
+        {
+          concurrency: 1,
+          onError: closed.reject,
+        },
+      ),
+      write: EventWriter = (event) => {
+        if (!writes.addItem(event)) {
+          closed.reject(new Error(`SSE 写入队列拒绝事件：${event.event}`));
+        }
       },
-      {
-        concurrency: 1,
-        onError: closed.reject,
-      },
-    );
-    const write: EventWriter = (event) => {
-      if (!writes.addItem(event)) {
-        closed.reject(new Error(`SSE 写入队列拒绝事件：${event.event}`));
-      }
-    };
-    const unsubscribe = subscribe(write);
+      unsubscribe = subscribe(write);
     stream.onAbort(() => {
       closed.resolve();
     });

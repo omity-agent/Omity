@@ -23,25 +23,25 @@ export async function runHostSession(
   options: HostRunOptions = {},
 ) {
   const {
-    db,
-    paths,
-    profiles,
-    settings: loadedSettings,
-    settingsContext,
-  } = prepareHostSession(mode, root, options);
-  const settings = options.quiet
-    ? {
-        ...loadedSettings,
-        logging: { ...loadedSettings.logging, streamTokens: false },
-      }
-    : loadedSettings;
-  const logger = new Logger(settings.logging.level, options.quiet ?? false);
-  const controller = options.controller ?? new AbortController();
-  const stoppingController = options.stoppingController ?? new AbortController();
-  const toolExecutions = new ToolExecutions({
-    cancellationRequested: (callId) => db.takeToolCancellation(mode.sessionId, callId),
-    pollMs: settings.host.pollMs,
-  });
+      db,
+      paths,
+      profiles,
+      settings: loadedSettings,
+      settingsContext,
+    } = prepareHostSession(mode, root, options),
+    settings = options.quiet
+      ? {
+          ...loadedSettings,
+          logging: { ...loadedSettings.logging, streamTokens: false },
+        }
+      : loadedSettings,
+    logger = new Logger(settings.logging.level, options.quiet ?? false),
+    controller = options.controller ?? new AbortController(),
+    stoppingController = options.stoppingController ?? new AbortController(),
+    toolExecutions = new ToolExecutions({
+      cancellationRequested: (callId) => db.takeToolCancellation(mode.sessionId, callId),
+      pollMs: settings.host.pollMs,
+    });
   let lease: HostLease;
   try {
     lease = new HostLease(
@@ -77,26 +77,26 @@ export async function runHostSession(
   });
   try {
     const mcp = options.mcp
-      ? await options.mcp(profiles)
-      : (ownedMcp = await loadMcp(root, logger, settingsContext));
-    const tools = mcp.modelTools({
-      cwd: db.workspace(mode.sessionId),
-      session: paths.dir,
-    });
-    const hooks = new HookRuntime(
-      settings.hooks,
-      tools,
-      db.db,
-      logger,
-      mode.sessionId,
-      db.workspace(mode.sessionId),
-      paths.dir,
-      mcp.freeformToolParameters,
-    );
-    const { checkpointer, graph } = buildGraph(settings, tools, db.db, hooks, {
-      freeformToolParameters: mcp.freeformToolParameters,
-      toolExecutions,
-    });
+        ? await options.mcp(profiles)
+        : (ownedMcp = await loadMcp(root, logger, settingsContext)),
+      tools = mcp.modelTools({
+        cwd: db.workspace(mode.sessionId),
+        session: paths.dir,
+      }),
+      hooks = new HookRuntime(
+        settings.hooks,
+        tools,
+        db.db,
+        logger,
+        mode.sessionId,
+        db.workspace(mode.sessionId),
+        paths.dir,
+        mcp.freeformToolParameters,
+      ),
+      { checkpointer, graph } = buildGraph(settings, tools, db.db, hooks, {
+        freeformToolParameters: mcp.freeformToolParameters,
+        toolExecutions,
+      });
     options.onReady?.({
       cancelTool: (callId) => toolExecutions.cancel(callId),
     });

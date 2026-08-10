@@ -28,19 +28,19 @@ export class ContentChannel {
   stream(c: Context, sessionId: string, getEventCursor: () => number) {
     return eventStream(c, (write) => {
       const delta = (value: ContentDelta) => {
-        if (value.sessionId === sessionId) {
-          write({
-            data: value.event,
-            event: "delta",
-            id: value.event.id.toString(),
-          });
-        }
-      };
-      const sync = (value: ContentSync) => {
-        if (value.sessionId === sessionId) {
-          writeSync(write, value.eventCursor);
-        }
-      };
+          if (value.sessionId === sessionId) {
+            write({
+              data: value.event,
+              event: "delta",
+              id: value.event.id.toString(),
+            });
+          }
+        },
+        sync = (value: ContentSync) => {
+          if (value.sessionId === sessionId) {
+            writeSync(write, value.eventCursor);
+          }
+        };
       this.bus.on("delta", delta);
       this.bus.on("sync", sync);
       writeSync(write, getEventCursor());

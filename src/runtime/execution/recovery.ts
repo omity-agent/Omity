@@ -10,9 +10,9 @@ export function recoverHostSession(
   sessionId: string,
   abandonedOwner?: ProcessOwner,
 ) {
-  const now = Date.now();
-  const lease = db.hostLease(sessionId);
-  const confirmedDeadOwnerId = confirmedDeadLease(lease, now, abandonedOwner);
+  const now = Date.now(),
+    lease = db.hostLease(sessionId),
+    confirmedDeadOwnerId = confirmedDeadLease(lease, now, abandonedOwner);
   return db.recoverInterruptedSession({
     now,
     sessionId,
@@ -27,10 +27,10 @@ function confirmedDeadLease(
   if (!lease || lease.expiresAt <= now) {
     return undefined;
   }
-  const owner = parseHostOwner(lease.ownerId);
-  const abandoned =
-    owner.kind === abandonedOwner?.kind &&
-    owner.instanceId === abandonedOwner.instanceId &&
-    owner.pid === abandonedOwner.pid;
+  const owner = parseHostOwner(lease.ownerId),
+    abandoned =
+      owner.kind === abandonedOwner?.kind &&
+      owner.instanceId === abandonedOwner.instanceId &&
+      owner.pid === abandonedOwner.pid;
   return abandoned || !isProcessRunning(owner.pid) ? lease.ownerId : undefined;
 }

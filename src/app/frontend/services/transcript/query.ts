@@ -20,60 +20,60 @@ export function useSessionTranscript(
   sessionId: string | undefined,
   refreshIntervalMs: number | undefined,
 ) {
-  const queryClient = useQueryClient();
-  const query = useQuery({
-    enabled: sessionId !== undefined,
-    queryFn: async ({ signal }) => {
-      const id = requiredId(sessionId);
-      const snapshot = await loadTranscript(id, signal);
-      return reconcileTranscript(
-        snapshot,
-        queryClient.getQueryData<TranscriptData>(transcriptKey(id)),
-      );
-    },
-    queryKey: transcriptKey(sessionId ?? ""),
-  });
-  const refresh = useAsyncThrottler(
-    async (id: string) => {
-      await refreshTranscript(queryClient, id);
-    },
-    {
-      asyncRetryerOptions: {
-        backoff: "exponential",
-        baseWait: Math.max(refreshIntervalMs ?? 0, 250),
-        maxAttempts: 4,
-        maxWait: 2000,
+  const queryClient = useQueryClient(),
+    query = useQuery({
+      enabled: sessionId !== undefined,
+      queryFn: async ({ signal }) => {
+        const id = requiredId(sessionId),
+          snapshot = await loadTranscript(id, signal);
+        return reconcileTranscript(
+          snapshot,
+          queryClient.getQueryData<TranscriptData>(transcriptKey(id)),
+        );
       },
-      onError: (error) => {
-        reportError(error);
+      queryKey: transcriptKey(sessionId ?? ""),
+    }),
+    refresh = useAsyncThrottler(
+      async (id: string) => {
+        await refreshTranscript(queryClient, id);
       },
-      wait: refreshIntervalMs ?? 0,
-    },
-  );
-  const deltas = useBatcher<DisplayEvent>(
-    (batch) => {
-      if (!sessionId) {
-        return;
-      }
-      queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) =>
-        appendTranscriptEvents(current ?? emptyTranscriptData(), batch),
-      );
-    },
-    { wait: refreshIntervalMs ?? 0 },
-  );
+      {
+        asyncRetryerOptions: {
+          backoff: "exponential",
+          baseWait: Math.max(refreshIntervalMs ?? 0, 250),
+          maxAttempts: 4,
+          maxWait: 2000,
+        },
+        onError: (error) => {
+          reportError(error);
+        },
+        wait: refreshIntervalMs ?? 0,
+      },
+    ),
+    deltas = useBatcher<DisplayEvent>(
+      (batch) => {
+        if (!sessionId) {
+          return;
+        }
+        queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) =>
+          appendTranscriptEvents(current ?? emptyTranscriptData(), batch),
+        );
+      },
+      { wait: refreshIntervalMs ?? 0 },
+    );
   useEffect(() => {
     if (!sessionId || refreshIntervalMs === undefined) {
       return undefined;
     }
-    const events = contentEvents(sessionId);
-    const delta = (event: Event) => {
-      try {
-        const incoming = readTranscriptEvent(event);
-        deltas.addItem(incoming);
-      } catch (error) {
-        reportError(error);
-      }
-    };
+    const events = contentEvents(sessionId),
+      delta = (event: Event) => {
+        try {
+          const incoming = readTranscriptEvent(event);
+          deltas.addItem(incoming);
+        } catch (error) {
+          reportError(error);
+        }
+      };
     events.addEventListener("sync", (event) => {
       try {
         readContentSyncEvent(event);
@@ -97,8 +97,8 @@ async function refreshTranscript(
   queryClient: ReturnType<typeof useQueryClient>,
   sessionId: string,
 ) {
-  const queryKey = transcriptKey(sessionId);
-  const snapshot = await loadTranscript(sessionId);
+  const queryKey = transcriptKey(sessionId),
+    snapshot = await loadTranscript(sessionId);
   queryClient.setQueryData<TranscriptData>(queryKey, (current) =>
     reconcileTranscript(snapshot, current),
   );

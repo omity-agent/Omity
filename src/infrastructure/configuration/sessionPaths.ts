@@ -8,8 +8,8 @@ export function sessionPaths(sessionId: string, storageDirectory = userDataDirec
   return paths;
 }
 export function resolveSessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
-  const dir = resolve(storageDirectory, "sessions", safeId(sessionId));
-  const dbPath = resolve(dir, "agent.sqlite");
+  const dir = resolve(storageDirectory, "sessions", safeId(sessionId)),
+    dbPath = resolve(dir, "agent.sqlite");
   return { dbPath, dir };
 }
 export function safeId(value: string) {

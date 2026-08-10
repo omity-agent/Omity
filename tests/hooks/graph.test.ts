@@ -19,35 +19,35 @@ const usage = {
 };
 afterEach(cleanupDatabaseDirs);
 test("takeover hooks bracket an AI SDK tool call without recursive hooks", async () => {
-  const calls: string[] = [];
-  const hookTool = makeTool("hook", () => calls.push("hook"));
-  const originalTool = makeTool("original", () => calls.push("original"));
-  const db = makeDb();
+  const calls: string[] = [],
+    hookTool = makeTool("hook", () => calls.push("hook")),
+    originalTool = makeTool("original", () => calls.push("original")),
+    db = makeDb();
   db.resetSession("session", workspace);
   const hooks = new HookRuntime(
-    [
-      rule("silent-before", "original", "before"),
-      rule("before", "original", "before", "takeover"),
-      rule("after", "original", "after", "takeover"),
-      rule("must-not-run", "hook", "before"),
-    ],
-    [hookTool, originalTool],
-    db.db,
-    new Logger("error", true),
-    "session",
-    workspace,
-  );
-  const graph = createAgentGraph({
-    checkpointer: new MemorySaver(),
-    hooks,
-    model: modelWithToolCall(),
-    settings: testSettings(),
-    tools: [hookTool, originalTool],
-  });
-  const result = await graph.invoke(
-    { hookPendingUserIds: ["queue:1"], messages: [{ content: "run", role: "user" }] },
-    { configurable: { thread_id: "hook-order" } },
-  );
+      [
+        rule("silent-before", "original", "before"),
+        rule("before", "original", "before", "takeover"),
+        rule("after", "original", "after", "takeover"),
+        rule("must-not-run", "hook", "before"),
+      ],
+      [hookTool, originalTool],
+      db.db,
+      new Logger("error", true),
+      "session",
+      workspace,
+    ),
+    graph = createAgentGraph({
+      checkpointer: new MemorySaver(),
+      hooks,
+      model: modelWithToolCall(),
+      settings: testSettings(),
+      tools: [hookTool, originalTool],
+    }),
+    result = await graph.invoke(
+      { hookPendingUserIds: ["queue:1"], messages: [{ content: "run", role: "user" }] },
+      { configurable: { thread_id: "hook-order" } },
+    );
   expect(calls).toEqual(["hook", "hook", "original", "hook"]);
   const hookIds = result.messages
     .filter((message) => AIMessage.isInstance(message))

@@ -7,28 +7,28 @@ import {
 import { expect, test } from "bun:test";
 
 test("streamed reasoning separates summary parts and reasoning items", () => {
-  const state = createReasoningStreamState();
-  const chunks = [
-    reasoningChunk({ id: "rs_1", parts: [] }),
-    reasoningChunk({ parts: [{ index: 0, text: "**First**" }] }),
-    reasoningChunk({ parts: [{ index: 0, text: " detail" }] }),
-    reasoningChunk({ parts: [{ index: 1, text: "**Second**" }] }),
-    reasoningChunk({ id: "rs_2", parts: [] }),
-    reasoningChunk({ parts: [{ index: 0, text: "**Third**" }] }),
-    new AIMessageChunk({ content: [] }),
-  ];
+  const state = createReasoningStreamState(),
+    chunks = [
+      reasoningChunk({ id: "rs_1", parts: [] }),
+      reasoningChunk({ parts: [{ index: 0, text: "**First**" }] }),
+      reasoningChunk({ parts: [{ index: 0, text: " detail" }] }),
+      reasoningChunk({ parts: [{ index: 1, text: "**Second**" }] }),
+      reasoningChunk({ id: "rs_2", parts: [] }),
+      reasoningChunk({ parts: [{ index: 0, text: "**Third**" }] }),
+      new AIMessageChunk({ content: [] }),
+    ];
   expect(chunks.map((chunk) => streamedMessageReasoning(chunk, state)).join("")).toBe(
     "**First** detail\n**Second**\n**Third**",
   );
 });
 test("persisted reasoning is rebuilt from Responses API summary parts", () => {
-  const first = reasoningItem("rs_1", ["**First**", "**Second**"]);
-  const second = reasoningItem("rs_2", ["**Third**"]);
-  const message = new AIMessage({
-    additional_kwargs: { reasoning: second },
-    content: [{ reasoning: "concatenated", type: "reasoning" }],
-    response_metadata: { output: [first, second] },
-  });
+  const first = reasoningItem("rs_1", ["**First**", "**Second**"]),
+    second = reasoningItem("rs_2", ["**Third**"]),
+    message = new AIMessage({
+      additional_kwargs: { reasoning: second },
+      content: [{ reasoning: "concatenated", type: "reasoning" }],
+      response_metadata: { output: [first, second] },
+    });
   expect(messageReasoning(message)).toBe("**First**\n**Second**\n**Third**");
 });
 test("existing summary newlines are not duplicated", () => {
@@ -41,12 +41,12 @@ test("existing summary newlines are not duplicated", () => {
   expect(messageReasoning(message)).toBe("First\n\nSecond");
 });
 test("adjacent bold summaries in one part are separated across deltas", () => {
-  const state = createReasoningStreamState();
-  const chunks = [
-    reasoningChunk({ parts: [{ index: 0, text: "**Planning*" }] }),
-    reasoningChunk({ parts: [{ index: 0, text: "***Refining**" }] }),
-    new AIMessageChunk({ content: [] }),
-  ];
+  const state = createReasoningStreamState(),
+    chunks = [
+      reasoningChunk({ parts: [{ index: 0, text: "**Planning*" }] }),
+      reasoningChunk({ parts: [{ index: 0, text: "***Refining**" }] }),
+      new AIMessageChunk({ content: [] }),
+    ];
   expect(chunks.map((chunk) => streamedMessageReasoning(chunk, state)).join("")).toBe(
     "**Planning**\n\n**Refining**",
   );

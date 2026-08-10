@@ -1,25 +1,25 @@
 import type { LogLevel } from "../../types";
 
 const priority: Record<LogLevel, number> = {
-  debug: 10,
-  error: 40,
-  info: 20,
-  warn: 30,
-};
-const styles = {
-  blue: "\x1b[34m",
-  dim: "\x1b[2m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  reset: "\x1b[0m",
-  yellow: "\x1b[33m",
-};
-const levelMeta: Record<LogLevel, { label: string; mark: string; color: string }> = {
-  debug: { color: styles.blue, label: "DEBUG", mark: "·" },
-  error: { color: styles.red, label: "ERROR", mark: "✖" },
-  info: { color: styles.green, label: "INFO ", mark: "●" },
-  warn: { color: styles.yellow, label: "WARN ", mark: "▲" },
-};
+    debug: 10,
+    error: 40,
+    info: 20,
+    warn: 30,
+  },
+  styles = {
+    blue: "\x1b[34m",
+    dim: "\x1b[2m",
+    green: "\x1b[32m",
+    red: "\x1b[31m",
+    reset: "\x1b[0m",
+    yellow: "\x1b[33m",
+  },
+  levelMeta: Record<LogLevel, { label: string; mark: string; color: string }> = {
+    debug: { color: styles.blue, label: "DEBUG", mark: "·" },
+    error: { color: styles.red, label: "ERROR", mark: "✖" },
+    info: { color: styles.green, label: "INFO ", mark: "●" },
+    warn: { color: styles.yellow, label: "WARN ", mark: "▲" },
+  };
 export class Logger {
   private indent = 0;
   constructor(
@@ -59,17 +59,17 @@ export class Logger {
     if (priority[level] < priority[this.level]) {
       return;
     }
-    const meta = levelMeta[level];
-    const prefix = this.prefix(meta);
+    const meta = levelMeta[level],
+      prefix = this.prefix(meta);
     console.log(`${prefix}${"  ".repeat(this.indent)}${message}`);
     for (const line of formatData(data)) {
       console.log(`${this.continuationPrefix()}${"  ".repeat(this.indent)}${line}`);
     }
   }
   private prefix(meta: { label: string; mark: string; color: string }) {
-    const time = styles.dim + formatTime(new Date()) + styles.reset;
-    const level = meta.color + meta.label + styles.reset;
-    const mark = meta.color + meta.mark + styles.reset;
+    const time = styles.dim + formatTime(new Date()) + styles.reset,
+      level = meta.color + meta.label + styles.reset,
+      mark = meta.color + meta.mark + styles.reset;
     return `${time} ${level} ${mark} `;
   }
   private continuationPrefix() {

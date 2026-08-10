@@ -46,18 +46,18 @@ export function readLayeredSettingsYaml(
   placeholders: Omit<PlaceholderOptions, "source"> = {},
   transforms: LayeredSettingsTransforms = {},
 ): LayeredSettingsFile | undefined {
-  const defaultPath = resolve(context.defaultsDirectory, relativePath);
-  const overrideDirectories =
-    scope === "global"
-      ? [context.userDirectory]
-      : context.profiles.map(({ directory }) => directory);
-  const layers = [
-    { override: false, path: defaultPath },
-    ...overrideDirectories.map((directory) => ({
-      override: true,
-      path: resolve(directory, relativePath),
-    })),
-  ].filter(({ path }) => existsSync(path));
+  const defaultPath = resolve(context.defaultsDirectory, relativePath),
+    overrideDirectories =
+      scope === "global"
+        ? [context.userDirectory]
+        : context.profiles.map(({ directory }) => directory),
+    layers = [
+      { override: false, path: defaultPath },
+      ...overrideDirectories.map((directory) => ({
+        override: true,
+        path: resolve(directory, relativePath),
+      })),
+    ].filter(({ path }) => existsSync(path));
   if (layers.length === 0) {
     return undefined;
   }
@@ -97,12 +97,12 @@ export function resolveLayeredSettingsText(
   relativePath: string,
 ) {
   const directories =
-    scope === "global"
-      ? [context.defaultsDirectory, context.userDirectory]
-      : [context.defaultsDirectory, ...context.profiles.map(({ directory }) => directory)];
-  const path = directories
-    .map((directory) => resolve(directory, relativePath))
-    .findLast((candidate) => existsSync(candidate) && statSync(candidate).isFile());
+      scope === "global"
+        ? [context.defaultsDirectory, context.userDirectory]
+        : [context.defaultsDirectory, ...context.profiles.map(({ directory }) => directory)],
+    path = directories
+      .map((directory) => resolve(directory, relativePath))
+      .findLast((candidate) => existsSync(candidate) && statSync(candidate).isFile());
   if (!path) {
     throw new Error(`文本配置文件不存在：${relativePath}`);
   }

@@ -11,24 +11,22 @@ import { settingsProfileNameSchema } from "../../infrastructure/configuration/se
 import { z } from "zod";
 
 export const requestBodyLimit = 1024 * 1024;
-const nonEmptyMessage = z.string().refine((value) => value.trim().length > 0);
-const historySchema = z.array(
-  z.object({ assistant: nonEmptyMessage, user: nonEmptyMessage }).strict(),
-);
-const messageFieldsSchema = z.object({
-  content: nonEmptyMessage,
-  draftRevision: z
-    .string()
-    .regex(/^(?<revision>0|[1-9]\d*)$/u)
-    .transform(Number)
-    .pipe(z.number().int().nonnegative()),
-});
-const sessionFieldsSchema = z.object({
-  history: historySchema,
-  message: nonEmptyMessage,
-  profile: settingsProfileNameSchema.optional(),
-  workspace: z.string().trim().min(1).max(32_767),
-});
+const nonEmptyMessage = z.string().refine((value) => value.trim().length > 0),
+  historySchema = z.array(z.object({ assistant: nonEmptyMessage, user: nonEmptyMessage }).strict()),
+  messageFieldsSchema = z.object({
+    content: nonEmptyMessage,
+    draftRevision: z
+      .string()
+      .regex(/^(?<revision>0|[1-9]\d*)$/u)
+      .transform(Number)
+      .pipe(z.number().int().nonnegative()),
+  }),
+  sessionFieldsSchema = z.object({
+    history: historySchema,
+    message: nonEmptyMessage,
+    profile: settingsProfileNameSchema.optional(),
+    workspace: z.string().trim().min(1).max(32_767),
+  });
 export const composerDraftBody = z
   .object({
     content: z.string(),
@@ -52,14 +50,14 @@ export const fileLinkActionBody = z
   })
   .strict();
 export const forkBody = z.object({ beforeMessageId: z.number().int().positive() }).strict();
-const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional();
-const credentialBase = {
-  authenticatorAttachment,
-  clientExtensionResults: z.looseObject({}),
-  id: z.string().min(1),
-  rawId: z.string().min(1),
-  type: z.literal("public-key"),
-};
+const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional(),
+  credentialBase = {
+    authenticatorAttachment,
+    clientExtensionResults: z.looseObject({}),
+    id: z.string().min(1),
+    rawId: z.string().min(1),
+    type: z.literal("public-key"),
+  };
 export const registrationBody: z.ZodType<RegistrationResponseJSON> = z.object({
   ...credentialBase,
   response: z.object({
@@ -100,12 +98,12 @@ export async function readJson<T>(request: HonoRequest, schema: z.ZodType<T>): P
   return result.data;
 }
 export async function readMessageForm(request: HonoRequest): Promise<MessageSubmission> {
-  const form = await readFormData(request);
-  const fields = {
-    content: singleText(form, "content"),
-    draftRevision: singleText(form, "draftRevision"),
-  };
-  const result = messageFieldsSchema.safeParse(fields);
+  const form = await readFormData(request),
+    fields = {
+      content: singleText(form, "content"),
+      draftRevision: singleText(form, "draftRevision"),
+    },
+    result = messageFieldsSchema.safeParse(fields);
   if (!result.success) {
     throw new HttpError(400, `消息参数无效：${result.error.message}`);
   }
@@ -113,14 +111,14 @@ export async function readMessageForm(request: HonoRequest): Promise<MessageSubm
   return { ...result.data, attachments };
 }
 export async function readSessionForm(request: HonoRequest): Promise<SessionSubmission> {
-  const form = await readFormData(request);
-  const fields = {
-    message: singleText(form, "message"),
-    profile: optionalText(form, "profile"),
-    workspace: singleText(form, "workspace"),
-  };
-  const history = parseJsonField(form, "history", "初始历史消息");
-  const result = sessionFieldsSchema.safeParse({ ...fields, history });
+  const form = await readFormData(request),
+    fields = {
+      message: singleText(form, "message"),
+      profile: optionalText(form, "profile"),
+      workspace: singleText(form, "workspace"),
+    },
+    history = parseJsonField(form, "history", "初始历史消息"),
+    result = sessionFieldsSchema.safeParse({ ...fields, history });
   if (!result.success) {
     throw new HttpError(400, `新建会话参数无效：${result.error.message}`);
   }

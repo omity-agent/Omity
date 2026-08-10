@@ -43,13 +43,15 @@ export function recoverConsumedAppends(ctx: HostContext, run: QueueRun, state: B
     return null;
   }
   const messages = ctx.db
-    .history(ctx.sessionId)
-    .filter(
-      (message) =>
-        HumanMessage.isInstance(message) && message.id !== undefined && consumedIds.has(message.id),
-    );
-  const recoveredIds = new Set(messages.map((message) => message.id));
-  const absentIds = [...consumedIds].filter((id) => !recoveredIds.has(id));
+      .history(ctx.sessionId)
+      .filter(
+        (message) =>
+          HumanMessage.isInstance(message) &&
+          message.id !== undefined &&
+          consumedIds.has(message.id),
+      ),
+    recoveredIds = new Set(messages.map((message) => message.id)),
+    absentIds = [...consumedIds].filter((id) => !recoveredIds.has(id));
   if (absentIds.length > 0) {
     throw new Error(`已消费的用户消息不存在：${absentIds.join(", ")}`);
   }
@@ -86,8 +88,8 @@ function hasPendingTools(state: BoundaryState) {
   if (!Array.isArray(messages)) {
     return false;
   }
-  const toolIds = new Set(messages.filter(isToolMessage).map((message) => message.tool_call_id));
-  const lastAi = messages.findLast(isAiMessage);
+  const toolIds = new Set(messages.filter(isToolMessage).map((message) => message.tool_call_id)),
+    lastAi = messages.findLast(isAiMessage);
   return Boolean(lastAi?.tool_calls?.some((call) => !toolIds.has(call.id)));
 }
 function isToolMessage(message: unknown): message is { type: "tool"; tool_call_id: string } {

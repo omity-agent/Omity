@@ -61,12 +61,12 @@ function modelToolCall(
     throw new Error(`工具调用缺少 ID：${call.name}`);
   }
   const part: AiToolCallPart = {
-    input: customToolInput(call),
-    toolCallId: call.id,
-    toolName: call.name,
-    type: "tool-call",
-  };
-  const providerOptions = toolProviderOptions(message, call.id);
+      input: customToolInput(call),
+      toolCallId: call.id,
+      toolName: call.name,
+      type: "tool-call",
+    },
+    providerOptions = toolProviderOptions(message, call.id);
   if (providerOptions) {
     part.providerOptions = providerOptions;
   }
@@ -80,8 +80,8 @@ function toolProviderOptions(message: AIMessage, callId: string): ProviderOption
   return byCall[callId];
 }
 function toolOutput(content: BaseMessage["content"], api: ModelApi) {
-  const images = api === "responses" ? extractToolImages(content) : [];
-  const text = toolContentText(content);
+  const images = api === "responses" ? extractToolImages(content) : [],
+    text = toolContentText(content);
   if (images.length === 0) {
     return { type: "text" as const, value: text };
   }

@@ -48,8 +48,8 @@ test("stdio client falls back to the legacy MCP protocol", async () => {
   }
 });
 test("MCP loading propagates captured stderr", async () => {
-  const root = createTestDirectory("mcp-stderr");
-  const settings = join(root, "settings");
+  const root = createTestDirectory("mcp-stderr"),
+    settings = join(root, "settings");
   mkdirSync(settings);
   const output = "error: invalid argument from configured server";
   writeFileSync(
@@ -107,8 +107,8 @@ process.stdin.on("data", (chunk) => {
     else send();
   }
 });
-`;
-const legacyMcpServer = String.raw`
+`,
+  legacyMcpServer = String.raw`
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 const server = new McpServer({ name: "legacy-test", version: "1" });

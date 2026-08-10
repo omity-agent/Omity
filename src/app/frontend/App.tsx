@@ -1,5 +1,4 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
-import { type Page, readPage, resolvePage, usePageNavigation, writePage } from "./route";
 import {
   type SessionInfo,
   deleteSession,
@@ -15,6 +14,7 @@ import {
 } from "./services/transcript/optimistic";
 import { addSession, removeSession, useBootstrap, useSessionTranscript } from "./services/queries";
 import { layout, main, sidebar } from "./design";
+import { readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
 import { AccessGate } from "./components/Access/AccessGate";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { Sidebar } from "./components/Sidebar";
@@ -27,8 +27,8 @@ import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import { useSessionToolActions } from "./components/Chat/toolActions";
 
-const emptySessions: SessionInfo[] = [];
-const emptyProfiles: string[] = [];
+const emptySessions: SessionInfo[] = [],
+  emptyProfiles: string[] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
 export function App() {
   return (
@@ -38,116 +38,116 @@ export function App() {
   );
 }
 function AuthenticatedApp() {
-  const queryClient = useQueryClient();
-  const bootstrap = useBootstrap();
-  const [page, setPage] = useState(readPage);
-  const [pausingSessionId, setPausingSessionId] = useState<string>();
-  const sessions = bootstrap.data?.sessions ?? emptySessions;
-  const cwd = bootstrap.data?.cwd ?? "";
-  const currentPage = resolvePage(page, sessions, bootstrap.data !== undefined);
-  const activeSession =
-    currentPage.kind === "session"
-      ? sessions.find((session) => session.id === currentPage.id)
-      : undefined;
-  const transcript = useSessionTranscript(
-    activeSession?.id,
-    bootstrap.data?.frontend.transcriptRefreshIntervalMs,
-  );
-  const navigate = useCallback((nextPage: Page, replace = false) => {
-    writePage(nextPage, replace);
-    setPage(nextPage);
-  }, []);
-  const {
-    create: createNewSession,
-    open: openNewSessionFrom,
-    profile: newProfile,
-    setProfile: setNewProfile,
-    setWorkspace: setNewWorkspace,
-    workspace: newWorkspace,
-  } = useNewSession({
-    cwd,
-    navigate,
-    queryClient,
-  });
-  const openNewSession = useCallback(() => {
-    openNewSessionFrom(activeSession?.workspace);
-  }, [activeSession?.workspace, openNewSessionFrom]);
+  const queryClient = useQueryClient(),
+    bootstrap = useBootstrap(),
+    [page, setPage] = useState(readPage),
+    [pausingSessionId, setPausingSessionId] = useState<string>(),
+    sessions = bootstrap.data?.sessions ?? emptySessions,
+    cwd = bootstrap.data?.cwd ?? "",
+    currentPage = resolvePage(page, sessions, bootstrap.data !== undefined),
+    activeSession =
+      currentPage.kind === "session"
+        ? sessions.find((session) => session.id === currentPage.id)
+        : undefined,
+    transcript = useSessionTranscript(
+      activeSession?.id,
+      bootstrap.data?.frontend.transcriptRefreshIntervalMs,
+    ),
+    navigate = usePageNavigator(setPage),
+    {
+      create: createNewSession,
+      open: openNewSessionFrom,
+      profile: newProfile,
+      setProfile: setNewProfile,
+      setWorkspace: setNewWorkspace,
+      workspace: newWorkspace,
+    } = useNewSession({
+      cwd,
+      navigate,
+      queryClient,
+    }),
+    openNewSession = useCallback(() => {
+      openNewSessionFrom(activeSession?.workspace);
+    }, [activeSession, openNewSessionFrom]);
   usePageNavigation(page, currentPage, setPage);
-  const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue);
-  const { activeSession: displayedActiveSession, sessions: displayedSessions } =
-    useSessionPresentation(sessions, activeSession?.id, pausing);
-  const unreadSessionIds = useSessionAttention(queryClient, activeSession?.id);
-  const workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]);
-  const selectSession = useCallback(
-    (id: string) => {
-      navigate({ id, kind: "session" });
-    },
-    [navigate],
-  );
-  const toolActions = useSessionToolActions(activeSession);
-  const changeControl = useCallback<ChatPageProps["onControl"]>(
-    async (control) => {
-      if (!activeSession) {
-        return;
-      }
-      if (control === "pause") {
-        setPausingSessionId(activeSession.id);
-      }
-      try {
-        await setControl(activeSession.id, control);
-      } catch (error) {
+  const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue),
+    { activeSession: displayedActiveSession, sessions: displayedSessions } = useSessionPresentation(
+      sessions,
+      activeSession?.id,
+      pausing,
+    ),
+    unreadSessionIds = useSessionAttention(queryClient, activeSession?.id),
+    workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
+    selectSession = useCallback(
+      (id: string) => {
+        navigate({ id, kind: "session" });
+      },
+      [navigate],
+    ),
+    toolActions = useSessionToolActions(activeSession),
+    changeControl = useCallback<ChatPageProps["onControl"]>(
+      async (control) => {
+        if (!activeSession) {
+          return;
+        }
         if (control === "pause") {
+          setPausingSessionId(activeSession.id);
+        }
+        try {
+          await setControl(activeSession.id, control);
+        } catch (error) {
+          if (control === "pause") {
+            setPausingSessionId(undefined);
+          }
+          throw error;
+        }
+        if (control !== "pause") {
           setPausingSessionId(undefined);
         }
-        throw error;
+      },
+      [activeSession, setPausingSessionId],
+    ),
+    deleteActiveSession = useCallback(async () => {
+      if (!activeSession) {
+        return;
       }
-      if (control !== "pause") {
+      await deleteSession(activeSession.id);
+      removeSession(queryClient, activeSession.id);
+      navigate({ kind: "new" });
+    }, [activeSession, navigate, queryClient]),
+    forkActiveSession = useCallback<ChatPageProps["onFork"]>(
+      async (messageId) => {
+        if (!activeSession) {
+          return;
+        }
+        const { session } = await forkSession(activeSession.id, messageId);
+        addSession(queryClient, session);
         setPausingSessionId(undefined);
-      }
-    },
-    [activeSession],
-  );
-  const deleteActiveSession = useCallback(async () => {
-    if (!activeSession) {
-      return;
-    }
-    await deleteSession(activeSession.id);
-    removeSession(queryClient, activeSession.id);
-    navigate({ kind: "new" });
-  }, [activeSession, navigate, queryClient]);
-  const forkActiveSession = useCallback<ChatPageProps["onFork"]>(
-    async (messageId) => {
-      if (!activeSession) {
-        return;
-      }
-      const { session } = await forkSession(activeSession.id, messageId);
-      addSession(queryClient, session);
-      setPausingSessionId(undefined);
-      navigate({ id: session.id, kind: "session" });
-    },
-    [activeSession, navigate, queryClient],
-  );
-  const sendSessionMessage = useCallback<ChatPageProps["onSend"]>(
-    async (content, draftRevision, attachments) => {
-      if (!activeSession) {
-        return;
-      }
-      const optimisticKey = addOptimisticUser(queryClient, activeSession.id, content);
-      try {
-        const { content: sentContent, queueId } = await sendMessage(
-          activeSession.id,
-          content,
-          draftRevision,
-          attachments,
-        );
-        confirmOptimisticUser(queryClient, activeSession.id, optimisticKey, queueId, sentContent);
-      } catch (error) {
-        removeOptimisticUser(queryClient, activeSession.id, optimisticKey);
-        throw error;
-      }
-    },
-    [activeSession, queryClient],
-  );
+        navigate({ id: session.id, kind: "session" });
+      },
+      [activeSession, navigate, queryClient, setPausingSessionId],
+    ),
+    sendSessionMessage = useCallback<ChatPageProps["onSend"]>(
+      async (content, draftRevision, attachments) => {
+        if (!activeSession) {
+          return;
+        }
+        const optimisticKey = addOptimisticUser(queryClient, activeSession.id, content);
+        try {
+          const { content: sentContent, queueId } = await sendMessage(
+            activeSession.id,
+            content,
+            draftRevision,
+            attachments,
+          );
+          confirmOptimisticUser(queryClient, activeSession.id, optimisticKey, queueId, sentContent);
+        } catch (error) {
+          removeOptimisticUser(queryClient, activeSession.id, optimisticKey);
+          throw error;
+        }
+      },
+      [activeSession, queryClient],
+    );
   return (
     <div className={cx("dark", layout)}>
       <aside className={sidebar}>

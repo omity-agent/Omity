@@ -13,9 +13,9 @@ import type { SessionInfo } from "../../src/app/frontend/services/client";
 import { reportError } from "../../src/app/frontend/services/errors";
 
 test("session errors are logged once until they clear", () => {
-  const log = spyOn(console, "error").mockReturnValue(undefined);
-  const reported = new Set<string>();
-  const failed = session(captureError(new Error("failed")));
+  const log = spyOn(console, "error").mockReturnValue(undefined),
+    reported = new Set<string>(),
+    failed = session(captureError(new Error("failed")));
   reportSessionErrors([failed], reported);
   reportSessionErrors([failed], reported);
   expect(log).toHaveBeenCalledTimes(1);
@@ -29,10 +29,10 @@ test("session errors are logged once until they clear", () => {
   log.mockRestore();
 });
 test("session error reports omit unstable runtime metadata and recursive stacks", () => {
-  const log = spyOn(console, "error").mockReturnValue(undefined);
-  const reported = new Set<string>();
-  const first = mcpError("task-1", "outer stack 1", "cause stack 1");
-  const second = mcpError("task-2", "outer stack 2", "cause stack 2");
+  const log = spyOn(console, "error").mockReturnValue(undefined),
+    reported = new Set<string>(),
+    first = mcpError("task-1", "outer stack 1", "cause stack 1"),
+    second = mcpError("task-2", "outer stack 2", "cause stack 2");
   reportSessionErrors([session(first)], reported);
   reportSessionErrors([session(second)], reported);
   expect(log).toHaveBeenCalledTimes(1);
@@ -61,8 +61,8 @@ test("session error reports omit unstable runtime metadata and recursive stacks"
   log.mockRestore();
 });
 test("the same error object is printed only once across reporting boundaries", () => {
-  const log = spyOn(console, "error").mockReturnValue(undefined);
-  const error = new Error("failed");
+  const log = spyOn(console, "error").mockReturnValue(undefined),
+    error = new Error("failed");
   reportError(error, { path: "/api/test" });
   reportError(error);
   expect(log).toHaveBeenCalledTimes(1);
@@ -93,17 +93,17 @@ test("browser warnings use the warning console level", () => {
 });
 test("structured errors retain SDK fields, response headers, body and cause", () => {
   const cause = Object.assign(new Error("socket closed"), {
-    code: "ECONNRESET",
-  });
-  const error = Object.assign(new Error("502 Upstream request failed", { cause }), {
-    code: "upstream_error",
-    error: { provider: "upstream", type: "gateway_error" },
-    headers: new Headers({ "x-request-id": "req-123" }),
-    pregelTaskId: "internal-task-id",
-    requestID: "req-123",
-    status: 502,
-  });
-  const persisted = parseError(stringifyError(captureError(error)));
+      code: "ECONNRESET",
+    }),
+    error = Object.assign(new Error("502 Upstream request failed", { cause }), {
+      code: "upstream_error",
+      error: { provider: "upstream", type: "gateway_error" },
+      headers: new Headers({ "x-request-id": "req-123" }),
+      pregelTaskId: "internal-task-id",
+      requestID: "req-123",
+      status: 502,
+    }),
+    persisted = parseError(stringifyError(captureError(error)));
   expect(persisted).toMatchObject({
     cause: {
       details: { code: "ECONNRESET" },

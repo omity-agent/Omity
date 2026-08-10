@@ -12,8 +12,8 @@ export function createSessionStorage(
   history: InitialMessagePair[],
   message: string,
 ) {
-  const paths = sessionPaths(sessionId);
-  const db = new AgentDatabase(paths.dbPath);
+  const paths = sessionPaths(sessionId),
+    db = new AgentDatabase(paths.dbPath);
   let initialized = false;
   try {
     db.createSession(sessionId, workspace, profiles);
@@ -39,11 +39,11 @@ export function forkSessionStorage({
   profiles: string[];
   beforeMessageId: number;
 }) {
-  const sourcePaths = resolveSessionPaths(sourceSessionId);
-  const targetPaths = sessionPaths(targetSessionId);
-  let created = false;
-  let source: AgentDatabase | undefined;
-  let target: AgentDatabase | undefined;
+  const sourcePaths = resolveSessionPaths(sourceSessionId),
+    targetPaths = sessionPaths(targetSessionId);
+  let created = false,
+    source: AgentDatabase | undefined,
+    target: AgentDatabase | undefined;
   try {
     source = new AgentDatabase(sourcePaths.dbPath);
     target = new AgentDatabase(targetPaths.dbPath);

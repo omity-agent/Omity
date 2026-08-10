@@ -43,9 +43,9 @@ test("transcript exposes Responses API token and cache usage", async () => {
   db.close();
 });
 test("transcript counts raw tool input and output text", async () => {
-  const db = makeDb();
-  const args = { command: "echo 你好" };
-  const output = "执行完成";
+  const db = makeDb(),
+    args = { command: "echo 你好" },
+    output = "执行完成";
   db.resetSession("tool-token-session", workspace);
   await db.syncHistory("tool-token-session", [
     new HumanMessage("运行命令"),
@@ -55,10 +55,10 @@ test("transcript counts raw tool input and output text", async () => {
     }),
     new ToolMessage({ content: output, tool_call_id: "call-1" }),
   ]);
-  const transcript = loadTranscript(db, "tool-token-session");
-  const part = view(transcript)
-    .flatMap((message) => message.parts)
-    .find((item) => item.type === "tool");
+  const transcript = loadTranscript(db, "tool-token-session"),
+    part = view(transcript)
+      .flatMap((message) => message.parts)
+      .find((item) => item.type === "tool");
   expect(part?.type).toBe("tool");
   if (part?.type !== "tool") {
     throw new Error("工具调用未显示");
@@ -68,8 +68,8 @@ test("transcript counts raw tool input and output text", async () => {
   db.close();
 });
 test("transcript exposes original Freeform tool input", async () => {
-  const db = makeDb();
-  const input = "*** Begin Patch\n*** End Patch";
+  const db = makeDb(),
+    input = "*** Begin Patch\n*** End Patch";
   db.resetSession("freeform-session", workspace);
   await db.syncHistory("freeform-session", [
     new AIMessage({
@@ -114,13 +114,13 @@ test("live stream events match persisted snapshots and keep their cursor", async
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
   const event = await db.appendStream("stream-session", {
-    kind: "assistant_text_delta",
-    messageId: "message-1",
-    partId: "text-1",
-    queueId,
-    value: "hello",
-  });
-  const streaming = loadTranscript(db, "stream-session");
+      kind: "assistant_text_delta",
+      messageId: "message-1",
+      partId: "text-1",
+      queueId,
+      value: "hello",
+    }),
+    streaming = loadTranscript(db, "stream-session");
   expect(emitted).toEqual([event]);
   expect(streaming.events.map(({ kind }) => kind)).toEqual([
     "user_appended",
@@ -136,42 +136,42 @@ test("live stream events match persisted snapshots and keep their cursor", async
   db.close();
 });
 test("snapshot refresh does not discard a tool event committed after its events were read", () => {
-  const databases = makeDatabases(2);
-  const reader = required(databases[0]);
-  const writer = required(databases[1]);
-  const sessionId = "stream-race-session";
+  const databases = makeDatabases(2),
+    reader = required(databases[0]),
+    writer = required(databases[1]),
+    sessionId = "stream-race-session";
   reader.resetSession(sessionId, workspace);
   const queueId = reader.appendUser(sessionId, "run command");
   reader.startQueue(sessionId, required(reader.nextQueue(sessionId)));
   const emitted: StreamEvent[] = [];
   writer.onChange((event) => emitted.push(event));
   const racingReader = afterQuery(reader, "FROM events WHERE session_id", () => {
-    void writer.appendStream(sessionId, {
-      kind: "tool_call_delta",
-      messageId: "assistant-race",
-      partId: "tool-0",
-      queueId,
-      value: {
-        argumentsDelta: '{"command":"pwd"}',
-        idDelta: "call-race",
-        index: 0,
-        nameDelta: "terminal_send_command",
-      },
-    });
-  });
-  const snapshot = (() => {
-    try {
-      return loadTranscript(racingReader, sessionId);
-    } finally {
-      reader.close();
-      writer.close();
-    }
-  })();
-  const current = appendTranscriptEvents(emptyTranscriptData(), emitted.map(displayStreamEvent));
-  const reconciled = reconcileTranscript(snapshot, current);
-  const toolPart = reconciled.view
-    .flatMap((message) => message.parts)
-    .find((part) => part.type === "tool");
+      void writer.appendStream(sessionId, {
+        kind: "tool_call_delta",
+        messageId: "assistant-race",
+        partId: "tool-0",
+        queueId,
+        value: {
+          argumentsDelta: '{"command":"pwd"}',
+          idDelta: "call-race",
+          index: 0,
+          nameDelta: "terminal_send_command",
+        },
+      });
+    }),
+    snapshot = (() => {
+      try {
+        return loadTranscript(racingReader, sessionId);
+      } finally {
+        reader.close();
+        writer.close();
+      }
+    })(),
+    current = appendTranscriptEvents(emptyTranscriptData(), emitted.map(displayStreamEvent)),
+    reconciled = reconcileTranscript(snapshot, current),
+    toolPart = reconciled.view
+      .flatMap((message) => message.parts)
+      .find((part) => part.type === "tool");
   expect(emitted).toHaveLength(1);
   expect(toolPart).toMatchObject({
     call: { id: "call-race", name: "terminal_send_command" },

@@ -5,26 +5,26 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 
 test("shutdown logs every resource phase and completes in order", async () => {
-  const messages: string[] = [];
-  const logger = {
-    error: (message: string) => messages.push(`error:${message}`),
-    info: (message: string) => messages.push(message),
-  };
-  const resources = {
-    access: {
-      close: () => {
-        messages.push("access");
+  const messages: string[] = [],
+    logger = {
+      error: (message: string) => messages.push(`error:${message}`),
+      info: (message: string) => messages.push(message),
+    },
+    resources = {
+      access: {
+        close: () => {
+          messages.push("access");
+        },
       },
-    },
-    controller: {
-      close: async () => {
-        messages.push("controller");
+      controller: {
+        close: async () => {
+          messages.push("controller");
+        },
       },
-    },
-    releaseLock: () => {
-      messages.push("lock");
-    },
-  };
+      releaseLock: () => {
+        messages.push("lock");
+      },
+    };
   await closeAppResources(resources, logger, "SIGTERM");
   expect(messages).toEqual([
     "服务端进入关闭流程",
@@ -43,11 +43,11 @@ test("shutdown logs every resource phase and completes in order", async () => {
   ]);
 });
 test("shutdown closes active HTTP streams", async () => {
-  const connections = new Set<Socket>();
-  const server = createServer((_request, response) => {
-    response.writeHead(200, { "content-type": "text/event-stream" });
-    response.write("data: ready\n\n");
-  });
+  const connections = new Set<Socket>(),
+    server = createServer((_request, response) => {
+      response.writeHead(200, { "content-type": "text/event-stream" });
+      response.write("data: ready\n\n");
+    });
   server.on("connection", (socket) => {
     connections.add(socket);
     socket.once("close", () => {
@@ -60,9 +60,9 @@ test("shutdown closes active HTTP streams", async () => {
   if (!address || typeof address === "string") {
     throw new Error("测试 HTTP Server 未监听端口");
   }
-  const { port } = address;
-  const response = await fetch(`http://127.0.0.1:${port.toString()}`);
-  const body = response.text();
+  const { port } = address,
+    response = await fetch(`http://127.0.0.1:${port.toString()}`),
+    body = response.text();
   await closeAppResources(
     {
       releaseLock: () => undefined,

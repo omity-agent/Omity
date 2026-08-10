@@ -22,26 +22,26 @@ test("a paused run resumes from the model boundary without repeating the model c
   const db = makeDb();
   db.resetSession("session", workspace);
   db.appendUser("session", "run tool");
-  const calls: string[] = [];
-  const echo = tool(
-    () => {
-      calls.push("tool");
-      return Promise.resolve("echoed");
-    },
-    { description: "echo", name: "echo", schema: z.object({}) },
-  );
-  const model = modelWithToolCalls();
-  const saver = new BunSqliteSaver(db.db);
-  const hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace);
-  const graph = createAgentGraph({
-    checkpointer: saver,
-    hooks,
-    model,
-    settings: testSettings(),
-    tools: [echo],
-  });
-  const stopping = new AbortController();
-  const pausedContext = context(db, saver, graph, stopping.signal);
+  const calls: string[] = [],
+    echo = tool(
+      () => {
+        calls.push("tool");
+        return Promise.resolve("echoed");
+      },
+      { description: "echo", name: "echo", schema: z.object({}) },
+    ),
+    model = modelWithToolCalls(),
+    saver = new BunSqliteSaver(db.db),
+    hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace),
+    graph = createAgentGraph({
+      checkpointer: saver,
+      hooks,
+      model,
+      settings: testSettings(),
+      tools: [echo],
+    }),
+    stopping = new AbortController(),
+    pausedContext = context(db, saver, graph, stopping.signal);
   pausedContext.observer = {
     changed: () => {
       if (model.doStreamCalls.length === 1) {
@@ -65,28 +65,28 @@ test("a paused run steps through one model request or a complete tool batch", as
   const db = makeDb();
   db.resetSession("session", workspace);
   db.appendUser("session", "run tool");
-  const calls: string[] = [];
-  const invoked = Promise.withResolvers<string>();
-  const release = Promise.withResolvers<string>();
-  const echo = tool(
-    (_, config) => {
-      const callId = config.toolCall?.id;
-      calls.push(callId ?? "missing");
-      invoked.resolve(callId ?? "missing");
-      return release.promise;
-    },
-    { description: "echo", name: "echo", schema: z.object({}) },
-  );
-  const model = modelWithToolCalls();
-  const saver = new BunSqliteSaver(db.db);
-  const hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace);
-  const graph = createAgentGraph({
-    checkpointer: saver,
-    hooks,
-    model,
-    settings: testSettings(),
-    tools: [echo],
-  });
+  const calls: string[] = [],
+    invoked = Promise.withResolvers<string>(),
+    release = Promise.withResolvers<string>(),
+    echo = tool(
+      (_, config) => {
+        const callId = config.toolCall?.id;
+        calls.push(callId ?? "missing");
+        invoked.resolve(callId ?? "missing");
+        return release.promise;
+      },
+      { description: "echo", name: "echo", schema: z.object({}) },
+    ),
+    model = modelWithToolCalls(),
+    saver = new BunSqliteSaver(db.db),
+    hooks = new HookRuntime([], [echo], db.db, new Logger("error", true), "session", workspace),
+    graph = createAgentGraph({
+      checkpointer: saver,
+      hooks,
+      model,
+      settings: testSettings(),
+      tools: [echo],
+    });
   db.setControl("session", "step");
   await processQueue(stepContext(db, saver, graph), required(db.nextQueue("session")));
   expect(db.nextQueue("session")?.status).toBe("paused");
@@ -143,8 +143,8 @@ function stepContext(
   checkpointer: BunSqliteSaver,
   graph: ReturnType<typeof createAgentGraph>,
 ) {
-  const stopping = new AbortController();
-  const ctx = context(db, checkpointer, graph, stopping.signal);
+  const stopping = new AbortController(),
+    ctx = context(db, checkpointer, graph, stopping.signal);
   ctx.observer = {
     changed: () => {
       if (db.nextQueue("session")?.status === "paused") {

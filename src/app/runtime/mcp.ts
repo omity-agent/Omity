@@ -28,8 +28,8 @@ export class AppMcp {
     if (this.closing) {
       return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
     }
-    const key = JSON.stringify(profiles);
-    const existing = this.loading.get(key);
+    const key = JSON.stringify(profiles),
+      existing = this.loading.get(key);
     if (existing) {
       return existing;
     }
@@ -43,14 +43,14 @@ export class AppMcp {
   }
   private async closeLoaded() {
     this.closing = true;
-    const loaded = await Promise.allSettled(this.loading.values());
-    const closed = await Promise.allSettled(
-      loaded.flatMap((result) => (result.status === "fulfilled" ? [result.value.close()] : [])),
-    );
-    const failures = [
-      ...loaded.flatMap((result) => (result.status === "rejected" ? [result.reason] : [])),
-      ...closed.flatMap((result) => (result.status === "rejected" ? [result.reason] : [])),
-    ];
+    const loaded = await Promise.allSettled(this.loading.values()),
+      closed = await Promise.allSettled(
+        loaded.flatMap((result) => (result.status === "fulfilled" ? [result.value.close()] : [])),
+      ),
+      failures = [
+        ...loaded.flatMap((result) => (result.status === "rejected" ? [result.reason] : [])),
+        ...closed.flatMap((result) => (result.status === "rejected" ? [result.reason] : [])),
+      ];
     if (failures.length > 0) {
       throw new AggregateError(failures, "关闭 App MCP 资源失败");
     }

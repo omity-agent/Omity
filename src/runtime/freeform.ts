@@ -1,11 +1,11 @@
 import type { BaseMessage } from "@langchain/core/messages";
 
 export function freeformCallIds(message: BaseMessage) {
-  const ids = new Set<string>();
-  const idMap = message.additional_kwargs["__openai_custom_tool_call_ids__"];
-  const responseOutput = isRecord(message.response_metadata)
-    ? message.response_metadata["output"]
-    : undefined;
+  const ids = new Set<string>(),
+    idMap = message.additional_kwargs["__openai_custom_tool_call_ids__"],
+    responseOutput = isRecord(message.response_metadata)
+      ? message.response_metadata["output"]
+      : undefined;
   if (isRecord(idMap)) {
     for (const id of Object.keys(idMap)) {
       ids.add(id);

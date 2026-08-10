@@ -20,8 +20,8 @@ export function createToolInvoker(
 ): ToolInvoker {
   const byName = new Map(tools.map((tool) => [tool.name, tool]));
   return async (call, config) => {
-    const callId = requireCallId(call);
-    const tool = byName.get(call.name);
+    const callId = requireCallId(call),
+      tool = byName.get(call.name);
     if (!tool) {
       throw new Error(`工具不存在：${call.name}`);
     }
@@ -65,8 +65,8 @@ export function createToolInvoker(
   };
 }
 function materializeFreeformInput(call: ToolCall, parameters: ReadonlyMap<string, string>) {
-  const parameter = parameters.get(call.name);
-  const input = isRecord(call.args) ? call.args["input"] : undefined;
+  const parameter = parameters.get(call.name),
+    input = isRecord(call.args) ? call.args["input"] : undefined;
   return parameter && typeof input === "string" ? { [parameter]: input } : call.args;
 }
 async function normalizeOutput(

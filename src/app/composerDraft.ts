@@ -58,8 +58,8 @@ export function clearSessionDraft(sessionId: string, revision: number) {
   });
 }
 function withSessionDatabase<T>(sessionId: string, operation: (db: Database) => T) {
-  const { dbPath } = resolveSessionPaths(sessionId);
-  const database = new AgentDatabase(dbPath);
+  const { dbPath } = resolveSessionPaths(sessionId),
+    database = new AgentDatabase(dbPath);
   try {
     return operation(database.db);
   } finally {

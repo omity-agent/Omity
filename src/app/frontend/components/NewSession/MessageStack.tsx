@@ -60,20 +60,20 @@ function MessagePairEditor({
   onSubmit: () => void;
 }) {
   const changeUser = useCallback(
-    (user: string) => {
-      onPairChange(item.id, { ...item, user });
-    },
-    [item, onPairChange],
-  );
-  const changeAssistant = useCallback(
-    (assistant: string) => {
-      onPairChange(item.id, { ...item, assistant });
-    },
-    [item, onPairChange],
-  );
-  const remove = useCallback(() => {
-    onRemove(item.id);
-  }, [item.id, onRemove]);
+      (user: string) => {
+        onPairChange(item.id, { ...item, user });
+      },
+      [item, onPairChange],
+    ),
+    changeAssistant = useCallback(
+      (assistant: string) => {
+        onPairChange(item.id, { ...item, assistant });
+      },
+      [item, onPairChange],
+    ),
+    remove = useCallback(() => {
+      onRemove(item.id);
+    }, [item.id, onRemove]);
   return (
     <section>
       <MessageEditor
@@ -109,8 +109,8 @@ function MessageEditor({
   onRemove?: () => void;
   onSubmit: () => void;
 }) {
-  const { t } = useTranslation();
-  const RoleIcon = role === "user" ? UserRound : Bot;
+  const { t } = useTranslation(),
+    RoleIcon = role === "user" ? UserRound : Bot;
   return (
     <div className={composerFrame}>
       <MarkdownEditor

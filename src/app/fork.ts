@@ -26,11 +26,11 @@ interface ForkOptions {
 }
 export function forkDatabaseBeforeMessage(options: ForkOptions) {
   const forkPoint = assertForkPoint(
-    options.source.db,
-    options.sourceSessionId,
-    options.beforeMessageId,
-  );
-  const messages = forkMessages(options.source.db, options.sourceSessionId, forkPoint.position);
+      options.source.db,
+      options.sourceSessionId,
+      options.beforeMessageId,
+    ),
+    messages = forkMessages(options.source.db, options.sourceSessionId, forkPoint.position);
   if (!messages.some((message) => storedMessageType(message.message_json) === "human")) {
     throw new Error("每个 session 的第一条用户消息不能 Fork");
   }

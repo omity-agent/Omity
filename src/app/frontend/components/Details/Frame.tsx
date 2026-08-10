@@ -90,11 +90,11 @@ export function Frame({
   title?: ReactNode;
   tone: "model" | "tool";
 }) {
-  const [expanded, setExpanded] = useState(expandedInitially);
-  const classes = frame({ tone });
-  const handleToggle = useCallback(() => {
-    setExpanded((current) => !current);
-  }, []);
+  const [expanded, setExpanded] = useState(expandedInitially),
+    classes = frame({ tone }),
+    handleToggle = useCallback(() => {
+      setExpanded((current) => !current);
+    }, [setExpanded]);
   return (
     <div className={classes.root}>
       <div className={classes.header}>

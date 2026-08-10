@@ -56,9 +56,9 @@ export async function loadMcp(
     logger.info("MCP 配置不存在，跳过工具加载");
     return emptyMcp();
   }
-  const configuration = parseMcpConfiguration(file.value, file.path);
-  const names = Object.keys(configuration.mcpServers);
-  const builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
+  const configuration = parseMcpConfiguration(file.value, file.path),
+    names = Object.keys(configuration.mcpServers),
+    builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
   validateConfiguredServers(
     configuration,
     names,
@@ -88,18 +88,18 @@ async function connectMcp(
     );
     pool = connectedPool;
     const tools = overrideMcpToolDescriptions(
-      renameMcpTools(
-        [...builtInTools, ...(await loadServerTools(connectedPool, names))],
-        configuration.toolNameOverrides,
+        renameMcpTools(
+          [...builtInTools, ...(await loadServerTools(connectedPool, names))],
+          configuration.toolNameOverrides,
+        ),
+        configuration.toolDescriptionOverrides,
+        context.root,
+        [
+          resolve(context.defaultsDirectory, "prompts"),
+          ...context.profiles.map(({ directory }) => resolve(directory, "prompts")),
+        ],
       ),
-      configuration.toolDescriptionOverrides,
-      context.root,
-      [
-        resolve(context.defaultsDirectory, "prompts"),
-        ...context.profiles.map(({ directory }) => resolve(directory, "prompts")),
-      ],
-    );
-    const configured = configureFreeformMcpTools(tools, configuration.freeformToolInputs);
+      configured = configureFreeformMcpTools(tools, configuration.freeformToolInputs);
     logger.info("已加载 MCP 工具", {
       servers: names,
       tools: tools.map((tool) => tool.name),

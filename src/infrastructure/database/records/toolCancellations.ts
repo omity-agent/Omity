@@ -5,25 +5,25 @@ import { sessionDatabase } from "../connection";
 import { toolNotRunning } from "../../../errors";
 
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
-  const orm = sessionDatabase(db);
-  const cancellable = orm
-    .select({ kind: events.kind })
-    .from(events)
-    .innerJoin(queue, eq(queue.id, events.queueId))
-    .where(
-      and(
-        eq(events.sessionId, sessionId),
-        inArray(events.kind, ["tool_call_delta", "tool_started", "tool_finished"]),
-        inArray(queue.status, ["running", "paused"]),
-        or(
-          eq(events.payload, callId),
-          eq(sql`json_extract(${events.payload}, '$.callId')`, callId),
-          eq(sql`json_extract(${events.payload}, '$.idDelta')`, callId),
+  const orm = sessionDatabase(db),
+    cancellable = orm
+      .select({ kind: events.kind })
+      .from(events)
+      .innerJoin(queue, eq(queue.id, events.queueId))
+      .where(
+        and(
+          eq(events.sessionId, sessionId),
+          inArray(events.kind, ["tool_call_delta", "tool_started", "tool_finished"]),
+          inArray(queue.status, ["running", "paused"]),
+          or(
+            eq(events.payload, callId),
+            eq(sql`json_extract(${events.payload}, '$.callId')`, callId),
+            eq(sql`json_extract(${events.payload}, '$.idDelta')`, callId),
+          ),
         ),
-      ),
-    )
-    .orderBy(desc(events.id))
-    .get();
+      )
+      .orderBy(desc(events.id))
+      .get();
   if (cancellable?.kind === undefined || cancellable.kind === "tool_finished") {
     throw toolNotRunning(callId);
   }

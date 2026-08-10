@@ -19,10 +19,10 @@ export function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
     throw new Error(`Skills 目录不存在：${skillsDir}`);
   }
   const skills = readdirSync(skillsDir)
-    .map((entry) => join(skillsDir, entry))
-    .filter((entry) => statSync(entry).isDirectory())
-    .map(readSkill);
-  const names = new Set<string>();
+      .map((entry) => join(skillsDir, entry))
+      .filter((entry) => statSync(entry).isDirectory())
+      .map(readSkill),
+    names = new Set<string>();
   for (const skill of skills) {
     if (names.has(skill.name)) {
       throw new Error(`Skill 名称重复：${skill.name}`);
@@ -41,14 +41,14 @@ export function buildSkillsList(settings: Pick<Settings, "skills">) {
   if (!settings.skills.enabled) {
     return "";
   }
-  const skillsDir = resolveUserPath(settings.skills.directory);
-  const lines = [
-    skillsDir,
-    ...skills.map(
-      (skill, index) =>
-        `${index === skills.length - 1 ? "└──" : "├──"} ${skill.name}/SKILL.md # ${skill.description}`,
-    ),
-  ];
+  const skillsDir = resolveUserPath(settings.skills.directory),
+    lines = [
+      skillsDir,
+      ...skills.map(
+        (skill, index) =>
+          `${index === skills.length - 1 ? "└──" : "├──"} ${skill.name}/SKILL.md # ${skill.description}`,
+      ),
+    ];
   if (skills.length === 0) {
     lines.push("└── 当前没有启用的 Skill。");
   }

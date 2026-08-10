@@ -20,8 +20,8 @@ export function inspectToolTextContent(content: MessageContent): ToolTextContent
       text: value,
     };
   }
-  const text = value.map(blockText).join("");
-  const hasNonText = value.some((block) => blockText(block) === null);
+  const text = value.map(blockText).join(""),
+    hasNonText = value.some((block) => blockText(block) === null);
   return {
     isError: parsed.isError,
     normalized: hasNonText ? asContentBlocks(value) : text,

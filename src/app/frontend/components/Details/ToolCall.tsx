@@ -1,65 +1,55 @@
-import { Badge, IconButton } from "../ParkUI";
-import { CircleStop, LoaderCircle, Wrench } from "lucide-react";
 import {
   type DisplayToolCall,
   type DisplayToolOutput,
   type ToolCallPhase,
   canCancelToolCall,
 } from "../../../timeline";
-import { type MouseEvent, useCallback, useMemo, useState } from "react";
 import { Frame } from "./Frame";
 import { HighlightedCode } from "../HighlightedCode";
+import { Wrench } from "lucide-react";
 import { css } from "styled-system/css";
 import { formatTokens } from "../../tokenUnits";
 import { formatToolInput } from "../../../../fileLinks/toolInput";
-import { reportPromiseErrors } from "../../services/errors";
+import { useToolAccessory } from "./ToolAccessory";
 import { useTranslation } from "react-i18next";
 
 const ioGrid = css({
-  borderTopColor: "line",
-  borderTopWidth: "1px",
-  display: "grid",
-  gap: "3",
-  gridTemplateColumns: {
-    base: "minmax(0, 1fr)",
-    xl: "repeat(2, minmax(0, 1fr))",
-  },
-  m: "3",
-  minW: 0,
-  mt: 0,
-  pt: "3",
-});
-const ioPanel = css({
-  alignContent: "start",
-  display: "grid",
-  gap: "2",
-  minW: 0,
-});
-const panelTitle = css({
-  alignItems: "center",
-  color: "mutedStrong",
-  display: "flex",
-  fontSize: "xs",
-  justifyContent: "space-between",
-  m: 0,
-});
-const tokenCount = css({ color: "muted", fontFamily: "mono" });
-const codeBlock = css({
-  maxH: "toolOutput",
-  minH: "3rem",
-  whiteSpace: "pre-wrap",
-  wordBreak: "break-word",
-});
-const imageList = css({ display: "grid", gap: "2" });
-const outputImage = css({ display: "block", h: "auto", maxW: "full" });
-const accessory = css({ alignItems: "center", display: "flex", gap: "2" });
-const stopButton = css({
-  borderWidth: "0",
-  color: "statusTool",
-  h: "6",
-  minW: "6",
-  p: 0,
-});
+    borderTopColor: "line",
+    borderTopWidth: "1px",
+    display: "grid",
+    gap: "3",
+    gridTemplateColumns: {
+      base: "minmax(0, 1fr)",
+      xl: "repeat(2, minmax(0, 1fr))",
+    },
+    m: "3",
+    minW: 0,
+    mt: 0,
+    pt: "3",
+  }),
+  ioPanel = css({
+    alignContent: "start",
+    display: "grid",
+    gap: "2",
+    minW: 0,
+  }),
+  panelTitle = css({
+    alignItems: "center",
+    color: "mutedStrong",
+    display: "flex",
+    fontSize: "xs",
+    justifyContent: "space-between",
+    m: 0,
+  }),
+  tokenCount = css({ color: "muted", fontFamily: "mono" }),
+  codeBlock = css({
+    maxH: "toolOutput",
+    minH: "3rem",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+  }),
+  imageList = css({ display: "grid", gap: "2" }),
+  outputImage = css({ display: "block", h: "auto", maxW: "full" });
 export function ToolCall({
   call,
   latest,
@@ -73,58 +63,20 @@ export function ToolCall({
   output?: DisplayToolOutput;
   phase: ToolCallPhase;
 }) {
-  const { t } = useTranslation();
-  const [cancelling, setCancelling] = useState(false);
-  const cancellable = canCancelToolCall(phase);
-  const running = phase === "running";
-  const showOutput = output !== undefined || running;
-  const showOutputCode = output
-    ? output.content.trim().length > 0 || output.images.length === 0
-    : showOutput;
-  const inputCode = formatToolInput(call);
-  const handleCancel = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setCancelling(true);
-      const cancel = async () => {
-        try {
-          await onCancel(call.id);
-        } catch (error: unknown) {
-          setCancelling(false);
-          throw error;
-        }
-      };
-      reportPromiseErrors(cancel());
-    },
-    [call.id, onCancel],
-  );
-  const frameAccessory = useMemo(
-    () =>
-      phase === "streaming" || cancellable ? (
-        <span className={accessory}>
-          {phase === "streaming" ? <Badge>{t("streaming")}</Badge> : null}
-          {cancellable ? (
-            <IconButton
-              aria-label={t("stopTool")}
-              className={stopButton}
-              disabled={cancelling}
-              onClick={handleCancel}
-              title={t("stopTool")}
-              type="button"
-              variant="ghost"
-            >
-              {cancelling ? (
-                <LoaderCircle aria-hidden size={14} />
-              ) : (
-                <CircleStop aria-hidden size={14} />
-              )}
-            </IconButton>
-          ) : null}
-        </span>
-      ) : undefined,
-    [cancelling, cancellable, handleCancel, phase, t],
-  );
+  const { t } = useTranslation(),
+    cancellable = canCancelToolCall(phase),
+    running = phase === "running",
+    showOutput = output !== undefined || running,
+    showOutputCode = output
+      ? output.content.trim().length > 0 || output.images.length === 0
+      : showOutput,
+    inputCode = formatToolInput(call),
+    frameAccessory = useToolAccessory({
+      callId: call.id,
+      cancellable,
+      onCancel,
+      phase,
+    });
   return (
     <Frame
       accessory={frameAccessory}

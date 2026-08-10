@@ -14,9 +14,9 @@ interface ToolOutputReference {
   ordinal: number;
   path: string[];
 }
-const outputVariablePrefix = "toolOutputs.";
-const outputVariablePattern =
-  /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/;
+const outputVariablePrefix = "toolOutputs.",
+  outputVariablePattern =
+    /^toolOutputs\.(?<order>fromEnd|fromStart)\.(?<ordinalText>[1-9]\d*)\.(?<field>output|structuredOutput)(?:\.(?<path>[^.]+(?:\.[^.]+)*))?$/;
 export function resolveHookArgs(args: Record<string, unknown>, variables: HookVariables) {
   const resolved = resolvePlaceholders(args, {
     dynamic: (name) => hookVariableValue(name, variables),
@@ -56,8 +56,8 @@ function parseOutputReference(name: string): ToolOutputReference | undefined {
       `Hook 工具输出变量格式无效：\${${name}}；应使用 \${toolOutputs.fromStart.N.output} 或 \${toolOutputs.fromEnd.N.structuredOutput}`,
     );
   }
-  const { field, order, ordinalText, path } = match.groups ?? {};
-  const ordinal = Number(ordinalText);
+  const { field, order, ordinalText, path } = match.groups ?? {},
+    ordinal = Number(ordinalText);
   if (
     (order !== "fromEnd" && order !== "fromStart") ||
     (field !== "output" && field !== "structuredOutput") ||
@@ -73,8 +73,8 @@ function selectOutput(
   outputs: readonly HookToolOutput[],
 ) {
   const index =
-    reference.order === "fromStart" ? reference.ordinal - 1 : outputs.length - reference.ordinal;
-  const output = outputs[index];
+      reference.order === "fromStart" ? reference.ordinal - 1 : outputs.length - reference.ordinal,
+    output = outputs[index];
   if (!output) {
     throw new Error(
       `Hook 变量 \${${name}} 超出工具输出范围：请求第 ${reference.ordinal.toString()} 个，当前共有 ${outputs.length.toString()} 个`,

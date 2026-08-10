@@ -48,8 +48,8 @@ test("MCP config rejects non-boolean enabled flags", () => {
   ).toThrow();
 });
 test("profile toolbox settings can disable a repository server", () => {
-  const root = createTestDirectory("mcp-disabled-override");
-  const userSettings = join(root, "user-settings");
+  const root = createTestDirectory("mcp-disabled-override"),
+    userSettings = join(root, "user-settings");
   try {
     mkdirSync(join(root, "settings"), { recursive: true });
     const profile = join(userSettings, "profiles", "tools");
@@ -73,11 +73,11 @@ freeformToolInputs: [open, search]
     );
     writeFileSync(join(profile, "toolbox.yaml"), "mcpServers:\n  terminal:\n    enabled: false\n");
     const file = readLayeredSettingsYaml(
-      createSettingsContext(root, userSettings),
-      "profile",
-      "toolbox.yaml",
-    );
-    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "toolbox.yaml");
+        createSettingsContext(root, userSettings),
+        "profile",
+        "toolbox.yaml",
+      ),
+      configuration = parseMcpConfiguration(file?.value, file?.path ?? "toolbox.yaml");
     expect(configuration).toEqual({
       freeformToolInputs: ["search"],
       mcpServers: {
@@ -110,8 +110,8 @@ freeformToolInputs: [open, search]
   }
 });
 test("disabled MCP servers are not started", async () => {
-  const root = createTestDirectory("mcp-disabled");
-  const settings = join(root, "settings");
+  const root = createTestDirectory("mcp-disabled"),
+    settings = join(root, "settings");
   mkdirSync(settings);
   writeFileSync(
     join(settings, "toolbox.yaml"),

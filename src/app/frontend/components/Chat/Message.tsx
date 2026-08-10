@@ -11,79 +11,79 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 const row = css({
-  alignItems: "start",
-  display: "flex",
-  gap: "2",
-  mb: "4",
-  minW: 0,
-  w: "full",
-});
-const userRow = css({ justifyContent: "flex-end" });
-const forkButton = css({
-  borderWidth: "0",
-  flexShrink: 0,
-});
-const message = cva({
-  base: {
-    bg: "surface",
-    borderColor: "line",
-    borderWidth: "1px",
-    display: "grid",
-    gap: "3",
-    justifyItems: "start",
-    maxW: "content",
+    alignItems: "start",
+    display: "flex",
+    gap: "2",
+    mb: "4",
     minW: 0,
-    p: "4",
-    textAlign: "left",
-    w: "fit-content",
-  },
-  variants: {
-    role: {
-      assistant: { maxW: { base: "full", sm: "2/3" } },
-      tool: {},
-      user: {
-        bg: "surfaceRaised",
-        borderColor: "lineStrong",
-        maxW: { base: "full", sm: "2/3" },
+    w: "full",
+  }),
+  userRow = css({ justifyContent: "flex-end" }),
+  forkButton = css({
+    borderWidth: "0",
+    flexShrink: 0,
+  }),
+  message = cva({
+    base: {
+      bg: "surface",
+      borderColor: "line",
+      borderWidth: "1px",
+      display: "grid",
+      gap: "3",
+      justifyItems: "start",
+      maxW: "content",
+      minW: 0,
+      p: "4",
+      textAlign: "left",
+      w: "fit-content",
+    },
+    variants: {
+      role: {
+        assistant: { maxW: { base: "full", sm: "2/3" } },
+        tool: {},
+        user: {
+          bg: "surfaceRaised",
+          borderColor: "lineStrong",
+          maxW: { base: "full", sm: "2/3" },
+        },
       },
     },
-  },
-});
-const roleTone = cva({
-  variants: {
-    role: {
-      assistant: { color: "statusModel" },
-      tool: { color: "statusTool" },
-      user: { color: "statusPaused" },
+  }),
+  roleTone = cva({
+    variants: {
+      role: {
+        assistant: { color: "statusModel" },
+        tool: { color: "statusTool" },
+        user: { color: "statusPaused" },
+      },
     },
-  },
-});
-const header = css({
-  alignItems: "center",
-  display: "flex",
-  justifyContent: "flex-end",
-  minH: "8",
-  pointerEvents: "none",
-  position: "sticky",
-  top: "0",
-  w: "full",
-  zIndex: "1",
-});
-const actions = cva({
-  base: {
+  }),
+  header = css({
     alignItems: "center",
     display: "flex",
-    gap: "1",
-    pointerEvents: "auto",
-  },
-  variants: {
-    role: {
-      assistant: { bg: "surface" },
-      tool: { bg: "surface" },
-      user: { bg: "surfaceRaised" },
+    justifyContent: "flex-end",
+    minH: "8",
+    pointerEvents: "none",
+    position: "sticky",
+    top: "0",
+    w: "full",
+    zIndex: "1",
+  }),
+  actions = cva({
+    base: {
+      alignItems: "center",
+      display: "flex",
+      gap: "1",
+      pointerEvents: "auto",
     },
-  },
-});
+    variants: {
+      role: {
+        assistant: { bg: "surface" },
+        tool: { bg: "surface" },
+        user: { bg: "surfaceRaised" },
+      },
+    },
+  });
 export function Message({
   canFork,
   forkDisabled,
@@ -99,12 +99,12 @@ export function Message({
   onCancelTool: (toolCallId: string) => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
 }) {
-  const { t } = useTranslation();
-  const tone = roleTone({ role: item.role });
-  const forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork");
-  const handleFork = useCallback(() => {
-    reportPromiseErrors(onFork(item.id));
-  }, [item.id, onFork]);
+  const { t } = useTranslation(),
+    tone = roleTone({ role: item.role }),
+    forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork"),
+    handleFork = useCallback(() => {
+      reportPromiseErrors(onFork(item.id));
+    }, [item.id, onFork]);
   return (
     <div className={cx(row, item.role === "user" && userRow)}>
       <article className={message({ role: item.role })}>

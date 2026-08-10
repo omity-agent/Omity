@@ -11,11 +11,11 @@ export function splitTextUnits(
   startIndex: number,
   complete: boolean,
 ): TextUnit[] {
-  const units: TextUnit[] = [];
-  const newline = /\r\n|\r|\n/gu;
+  const units: TextUnit[] = [],
+    newline = /\r\n|\r|\n/gu;
   newline.lastIndex = startOffset;
-  let start = startOffset;
-  let unitIndex = startIndex;
+  let start = startOffset,
+    unitIndex = startIndex;
   for (;;) {
     const match = newline.exec(text);
     if (!match) {

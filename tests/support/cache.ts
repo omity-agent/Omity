@@ -2,8 +2,8 @@ import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 
-const servers: ReturnType<typeof Bun.serve>[] = [];
-const databases: AgentDatabase[] = [];
+const servers: ReturnType<typeof Bun.serve>[] = [],
+  databases: AgentDatabase[] = [];
 export async function cleanupCacheTests() {
   for (const database of databases.splice(0)) {
     database.close();

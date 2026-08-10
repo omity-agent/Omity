@@ -43,9 +43,9 @@ export async function streamAiModel(options: AiModelOptions) {
       part,
     });
   }
-  const step = await result.finalStep;
-  const messages = fromModelMessages(step.response.messages, step.response.id, step.usage);
-  const response = messages.findLast((message) => AIMessage.isInstance(message));
+  const step = await result.finalStep,
+    messages = fromModelMessages(step.response.messages, step.response.id, step.usage),
+    response = messages.findLast((message) => AIMessage.isInstance(message));
   if (!response || (!response.tool_calls?.length && !response.text)) {
     throw new ModelEmptyResponseError();
   }

@@ -16,8 +16,8 @@ afterEach(cleanupDatabaseDirs);
 test("queue append and transcript lifecycle", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "你好");
-  const item = db.nextQueue("123");
+  const queueId = db.appendUser("123", "你好"),
+    item = db.nextQueue("123");
   expect(item?.id).toBe(queueId);
   db.startQueue("123", required(item));
   expect(db.history("123").map((message) => message.text)).toEqual(["你好"]);
@@ -27,8 +27,8 @@ test("queue append and transcript lifecycle", () => {
   db.close();
 });
 test("database waits for transient writer contention", () => {
-  const db = makeDb();
-  const row = db.db.query<{ timeout: number }, []>("PRAGMA busy_timeout").get();
+  const db = makeDb(),
+    row = db.db.query<{ timeout: number }, []>("PRAGMA busy_timeout").get();
   expect(row?.timeout).toBe(sqliteBusyTimeoutMs);
   expect(db.db.query<{ auto_vacuum: number }, []>("PRAGMA auto_vacuum").get()?.auto_vacuum).toBe(2);
   db.close();
@@ -72,9 +72,9 @@ test("nested database transactions roll back to their own boundary", () => {
   db.close();
 });
 test("host lease excludes concurrent owners and permits takeover after expiry", () => {
-  const databases = makeDatabases(2);
-  const first = required(databases[0]);
-  const second = required(databases[1]);
+  const databases = makeDatabases(2),
+    first = required(databases[0]),
+    second = required(databases[1]);
   first.resetSession("123", workspace);
   expect(
     first.acquireHostLease({
@@ -147,12 +147,12 @@ test("conversation and queue changes advance the session activity time", async (
 });
 test("persists custom tool markers in tool metadata", () => {
   const message = new ToolMessage({
-    content: "工具结果",
-    metadata: { customTool: true },
-    tool_call_id: "call-1",
-  });
-  const stored = encodeMessage(message, "history");
-  const restored = decodeMessage(JSON.stringify(stored));
+      content: "工具结果",
+      metadata: { customTool: true },
+      tool_call_id: "call-1",
+    }),
+    stored = encodeMessage(message, "history"),
+    restored = decodeMessage(JSON.stringify(stored));
   expect(stored).toMatchObject({ custom: true });
   expect(restored).toMatchObject({ metadata: { customTool: true } });
 });

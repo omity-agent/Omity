@@ -49,12 +49,12 @@ export function TranscriptScroll({
   children: ReactNode;
   view: TimelineMessage[];
 }) {
-  const scrollRef = useRef<HTMLElement>(null);
-  const onScroll = useFollowBottom({
-    ref: scrollRef,
-    resetKey: activeId,
-    version: view,
-  });
+  const scrollRef = useRef<HTMLElement>(null),
+    onScroll = useFollowBottom({
+      ref: scrollRef,
+      resetKey: activeId,
+      version: view,
+    });
   return (
     <section className={scroll} ref={scrollRef} onScroll={onScroll}>
       {children}

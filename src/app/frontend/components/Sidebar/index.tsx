@@ -7,46 +7,46 @@ import { groupSessions } from "./sessions";
 import { useTranslation } from "react-i18next";
 
 const panel = css({
-  alignItems: "center",
-  bg: "sidebar",
-  borderBottomColor: "line",
-  borderBottomWidth: "1px",
-  display: "grid",
-  gap: "2",
-  gridTemplateColumns: "minmax(0, 1fr) auto",
-  minH: { _coarse: "14", base: "12" },
-  px: "3",
-});
-const brand = css({
-  color: "text",
-  fontSize: "sm",
-  fontWeight: "medium",
-  letterSpacing: "0.08em",
-  m: 0,
-});
-const total = css({
-  color: "muted",
-  fontSize: "xs",
-  fontWeight: "normal",
-  letterSpacing: 0,
-});
-const newButton = css({
-  borderColor: "line",
-  h: { _coarse: "11", base: "7" },
-  px: "2.5",
-});
-const list = css({
-  alignContent: "start",
-  bg: "sidebar",
-  display: "grid",
-  minH: 0,
-  overflowX: "hidden",
-  overflowY: "auto",
-  overscrollBehavior: "contain",
-  px: "2",
-  scrollbarGutter: "stable",
-  touchAction: "pan-y",
-});
+    alignItems: "center",
+    bg: "sidebar",
+    borderBottomColor: "line",
+    borderBottomWidth: "1px",
+    display: "grid",
+    gap: "2",
+    gridTemplateColumns: "minmax(0, 1fr) auto",
+    minH: { _coarse: "14", base: "12" },
+    px: "3",
+  }),
+  brand = css({
+    color: "text",
+    fontSize: "sm",
+    fontWeight: "medium",
+    letterSpacing: "0.08em",
+    m: 0,
+  }),
+  total = css({
+    color: "muted",
+    fontSize: "xs",
+    fontWeight: "normal",
+    letterSpacing: 0,
+  }),
+  newButton = css({
+    borderColor: "line",
+    h: { _coarse: "11", base: "7" },
+    px: "2.5",
+  }),
+  list = css({
+    alignContent: "start",
+    bg: "sidebar",
+    display: "grid",
+    minH: 0,
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollBehavior: "contain",
+    px: "2",
+    scrollbarGutter: "stable",
+    touchAction: "pan-y",
+  });
 interface SidebarProps {
   sessions: SessionInfo[];
   activeId?: string;

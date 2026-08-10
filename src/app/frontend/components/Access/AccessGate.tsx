@@ -23,20 +23,20 @@ const accessButton = css({
   zIndex: "overlay",
 });
 export function AccessGate({ children }: { children: ReactNode }) {
-  const { t } = useTranslation();
-  const queryClient = useQueryClient();
-  const [status, setStatus] = useState<AccessStatus>();
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState<string>();
-  const [continueLocal, setContinueLocal] = useState(false);
-  const [ticketUrl, setTicketUrl] = useState<string>();
-  const setupValue = new URLSearchParams(globalThis.location.search).get("setup") ?? undefined;
-  const setupTicket = setupValue === "manage" ? undefined : setupValue;
-  const publicOrigin = status?.publicOrigin;
-  const load = useCallback(async () => {
-    const next = await accessStatus();
-    setStatus(next);
-  }, []);
+  const { t } = useTranslation(),
+    queryClient = useQueryClient(),
+    [status, setStatus] = useState<AccessStatus>(),
+    [busy, setBusy] = useState(true),
+    [error, setError] = useState<string>(),
+    [continueLocal, setContinueLocal] = useState(false),
+    [ticketUrl, setTicketUrl] = useState<string>(),
+    setupValue = new URLSearchParams(globalThis.location.search).get("setup") ?? undefined,
+    setupTicket = setupValue === "manage" ? undefined : setupValue,
+    publicOrigin = status?.publicOrigin,
+    load = useCallback(async () => {
+      const next = await accessStatus();
+      setStatus(next);
+    }, [setStatus]);
   useEffect(() => {
     void run(setBusy, setError, load);
   }, [load]);
@@ -51,51 +51,50 @@ export function AccessGate({ children }: { children: ReactNode }) {
     };
   }, [load]);
   const authenticate = useCallback(
-    () =>
-      run(setBusy, setError, async () => {
-        const result = await login();
-        if (result.authenticated) {
+      () =>
+        run(setBusy, setError, async () => {
+          const result = await login();
+          if (result.authenticated) {
+            await load();
+          }
+        }),
+      [load],
+    ),
+    enroll = useCallback(
+      () =>
+        run(setBusy, setError, async () => {
+          await register(setupTicket);
+          globalThis.history.replaceState(null, "", "./#/new");
           await load();
-        }
-      }),
-    [load],
-  );
-  const enroll = useCallback(
-    () =>
-      run(setBusy, setError, async () => {
-        await register(setupTicket);
-        globalThis.history.replaceState(null, "", "./#/new");
-        await load();
-      }),
-    [load, setupTicket],
-  );
-  const createTicket = useCallback(
-    () =>
-      run(setBusy, setError, async () => {
-        const result = await registrationTicket();
-        if (!publicOrigin) {
-          throw new Error("公网 Origin 尚未配置");
-        }
-        const url = new URL(globalThis.location.pathname, publicOrigin);
-        url.searchParams.set("setup", result.ticket);
-        setTicketUrl(url.href);
-      }),
-    [publicOrigin],
-  );
-  const continueWithoutSetup = useCallback(() => {
-    setContinueLocal(true);
-  }, []);
-  const endSession = useCallback(
-    () =>
-      run(setBusy, setError, async () => {
-        await logout();
-        queryClient.clear();
-        setStatus(await accessStatus());
-      }),
-    [queryClient],
-  );
-  const setup =
-    setupValue !== undefined || (status?.local === true && status.credentialCount === 0);
+        }),
+      [load, setupTicket],
+    ),
+    createTicket = useCallback(
+      () =>
+        run(setBusy, setError, async () => {
+          const result = await registrationTicket();
+          if (!publicOrigin) {
+            throw new Error("公网 Origin 尚未配置");
+          }
+          const url = new URL(globalThis.location.pathname, publicOrigin);
+          url.searchParams.set("setup", result.ticket);
+          setTicketUrl(url.href);
+        }),
+      [publicOrigin],
+    ),
+    continueWithoutSetup = useCallback(() => {
+      setContinueLocal(true);
+    }, []),
+    endSession = useCallback(
+      () =>
+        run(setBusy, setError, async () => {
+          await logout();
+          queryClient.clear();
+          setStatus(await accessStatus());
+        }),
+      [queryClient, setStatus],
+    ),
+    setup = setupValue !== undefined || (status?.local === true && status.credentialCount === 0);
   if (status?.authenticated && (!setup || continueLocal)) {
     return (
       <>

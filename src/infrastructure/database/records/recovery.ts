@@ -38,8 +38,8 @@ export function recoverInterruptedSessionRecord(
   if (lease && lease.expiresAt > claim.now && lease.ownerId !== claim.confirmedDeadOwnerId) {
     return { lease, status: "blocked" };
   }
-  const active = activeQueueRows(db, claim.sessionId);
-  const control = readControlRecord(db, claim.sessionId);
+  const active = activeQueueRows(db, claim.sessionId),
+    control = readControlRecord(db, claim.sessionId);
   let action: "paused" | "canceled" | "none" = "none";
   if (control === "cancel") {
     cancelActiveRuns(db, claim.sessionId, active);
@@ -47,11 +47,11 @@ export function recoverInterruptedSessionRecord(
     action = active.length > 0 ? "canceled" : "none";
   } else if (active.length > 0) {
     const paused = db.run(
-      `UPDATE queue SET status = 'paused'
+        `UPDATE queue SET status = 'paused'
        WHERE session_id = ? AND status = 'running'`,
-      [claim.sessionId],
-    );
-    const controlChanged = writeControlRecord(db, claim.sessionId, "pause");
+        [claim.sessionId],
+      ),
+      controlChanged = writeControlRecord(db, claim.sessionId, "pause");
     if (paused.changes > 0 && !controlChanged) {
       touchSessionRecord(db, claim.sessionId);
     }

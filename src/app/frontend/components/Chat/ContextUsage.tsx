@@ -5,40 +5,40 @@ import { formatTokens } from "../../tokenUnits";
 import { useTranslation } from "react-i18next";
 
 const panel = css({
-  alignItems: "end",
-  borderTopColor: "line",
-  borderTopWidth: "1px",
-  color: "muted",
-  display: "grid",
-  fontFamily: "mono",
-  fontSize: "xs",
-  gap: "2",
-  gridTemplateColumns: { smDown: "repeat(2, auto)" },
-  justifyContent: { smDown: "space-between" },
-  justifyItems: "end",
-  mt: { base: "auto", smDown: 0 },
-  pt: { base: "3", smDown: "2" },
-  w: "full",
-  whiteSpace: "nowrap",
-});
-const row = css({
-  alignItems: "center",
-  display: "flex",
-  gap: "1.5",
-});
-const value = css({ color: "mutedStrong" });
+    alignItems: "end",
+    borderTopColor: "line",
+    borderTopWidth: "1px",
+    color: "muted",
+    display: "grid",
+    fontFamily: "mono",
+    fontSize: "xs",
+    gap: "2",
+    gridTemplateColumns: { smDown: "repeat(2, auto)" },
+    justifyContent: { smDown: "space-between" },
+    justifyItems: "end",
+    mt: { base: "auto", smDown: 0 },
+    pt: { base: "3", smDown: "2" },
+    w: "full",
+    whiteSpace: "nowrap",
+  }),
+  row = css({
+    alignItems: "center",
+    display: "flex",
+    gap: "1.5",
+  }),
+  value = css({ color: "mutedStrong" });
 export function ContextUsage({ usage }: { usage: TokenUsage | null }) {
-  const { t } = useTranslation();
-  const totalTokens = usage
-    ? formatTokens(usage.inputTokens + usage.outputTokens)
-    : t("unavailableTokens");
-  const cacheRate =
-    usage && usage.inputTokens > 0
-      ? `${((usage.cacheReadTokens / usage.inputTokens) * 100).toFixed(2)}%`
-      : usage
-        ? "0.00%"
-        : "—";
-  const description = `${t("contextUsage")}: ${totalTokens}; ${t("kvCache")}: ${cacheRate}`;
+  const { t } = useTranslation(),
+    totalTokens = usage
+      ? formatTokens(usage.inputTokens + usage.outputTokens)
+      : t("unavailableTokens"),
+    cacheRate =
+      usage && usage.inputTokens > 0
+        ? `${((usage.cacheReadTokens / usage.inputTokens) * 100).toFixed(2)}%`
+        : usage
+          ? "0.00%"
+          : "—",
+    description = `${t("contextUsage")}: ${totalTokens}; ${t("kvCache")}: ${cacheRate}`;
   return (
     <div aria-label={description} className={panel} title={description}>
       <span className={row}>

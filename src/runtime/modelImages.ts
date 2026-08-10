@@ -74,15 +74,15 @@ function prepareResponsesMessages(messages: BaseMessage[]) {
     if (images.length === 0) {
       return message;
     }
-    const text = toolContentText(message.content);
-    const content: ContentBlock[] = [
-      ...(text ? [{ text, type: "input_text" }] : []),
-      ...images.map(({ src }) => ({
-        detail: "auto",
-        image_url: src,
-        type: "input_image",
-      })),
-    ];
+    const text = toolContentText(message.content),
+      content: ContentBlock[] = [
+        ...(text ? [{ text, type: "input_text" }] : []),
+        ...images.map(({ src }) => ({
+          detail: "auto",
+          image_url: src,
+          type: "input_image",
+        })),
+      ];
     return copyToolMessage(message, content);
   });
 }
@@ -95,8 +95,8 @@ function prepareCompletionsMessages(messages: BaseMessage[]) {
     if (imageCount === 0) {
       return message;
     }
-    const text = toolContentText(message.content);
-    const notice = `工具返回了 ${imageCount.toString()} 张图片，但 Completions API 不支持工具返回图片给模型。`;
+    const text = toolContentText(message.content),
+      notice = `工具返回了 ${imageCount.toString()} 张图片，但 Completions API 不支持工具返回图片给模型。`;
     return copyToolMessage(message, [text, notice].filter((part) => part.length > 0).join("\n\n"));
   });
 }
@@ -116,8 +116,8 @@ function copyToolMessage(message: ToolMessage, content: ContentBlock[] | string)
 }
 function readImage(value: Record<string, unknown>): ToolImage | null {
   if (value["type"] === "image") {
-    const { data } = value;
-    const mimeType = value["mimeType"] ?? value["mime_type"];
+    const { data } = value,
+      mimeType = value["mimeType"] ?? value["mime_type"];
     if (typeof data === "string" && typeof mimeType === "string") {
       return { mimeType, src: `data:${mimeType};base64,${data}` };
     }
@@ -125,8 +125,8 @@ function readImage(value: Record<string, unknown>): ToolImage | null {
   if (value["type"] !== "image_url" && value["type"] !== "input_image") {
     return null;
   }
-  const raw = value["image_url"];
-  const src = typeof raw === "string" ? raw : isRecord(raw) ? raw["url"] : null;
+  const raw = value["image_url"],
+    src = typeof raw === "string" ? raw : isRecord(raw) ? raw["url"] : null;
   return typeof src === "string" ? parseImageDataUrl(src) : null;
 }
 function parseImageDataUrl(src: string): ToolImage | null {

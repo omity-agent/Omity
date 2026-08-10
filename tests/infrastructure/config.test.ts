@@ -19,8 +19,8 @@ test("settings use the unified user data directory", () => {
   const root = createTestDirectory("configuration");
   dirs.push(root);
   writeTestConfiguration(root);
-  const settings = loadSettings(root);
-  const directory = resolve(testArtifactsRoot, "user-data");
+  const settings = loadSettings(root),
+    directory = resolve(testArtifactsRoot, "user-data");
   expect(userDataDirectory()).toBe(directory);
   expect(settings).not.toHaveProperty("paths");
   expect(settings.model.reasoning_effort).toBe("medium");
@@ -37,29 +37,29 @@ test("settings use the unified user data directory", () => {
   expect(() => sessionPaths("abc:def")).toThrow("路径 ID 无效");
 });
 test("prompt files expand current working directory placeholder", () => {
-  const root = createTestDirectory("configuration");
-  const workspace = join(root, "workspace");
+  const root = createTestDirectory("configuration"),
+    workspace = join(root, "workspace");
   dirs.push(root);
   mkdirSync(workspace);
   writeTestConfiguration(root, {
     skillsPrompt: `skills from \${cwd}`,
     systemPrompt: `workspace: \${cwd}`,
   });
-  const settings = loadSettings(root, { cwd: workspace });
-  const displayedWorkspace = workspace.replaceAll("\\", "/");
+  const settings = loadSettings(root, { cwd: workspace }),
+    displayedWorkspace = workspace.replaceAll("\\", "/");
   expect(settings.agent.systemPrompt).toBe(
     `workspace: ${displayedWorkspace}\n\nskills from ${displayedWorkspace}`,
   );
 });
 test("user settings deeply override defaults and preserve relative path semantics", () => {
-  const root = createTestDirectory("layered-configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("layered-configuration"),
+    userSettingsDir = join(root, "user-settings");
   dirs.push(root);
   writeTestConfiguration(root, {
     hooksYaml: `hooks:\n  - { id: default, target: agent, when: before, runLimit: 1, mode: silent, tool: default, args: {} }\n`,
   });
-  const baseProfileDir = join(userSettingsDir, "profiles", "base");
-  const profileDir = join(userSettingsDir, "profiles", "work");
+  const baseProfileDir = join(userSettingsDir, "profiles", "base"),
+    profileDir = join(userSettingsDir, "profiles", "work");
   mkdirSync(baseProfileDir, { recursive: true });
   mkdirSync(join(profileDir, "prompts"), { recursive: true });
   writeFileSync(join(userSettingsDir, "profile.yaml"), "- base\n- work\n");
@@ -110,8 +110,8 @@ timeoutMs: 2000
   });
 });
 test("hook config parses targets, timing, and modes", () => {
-  const root = createTestDirectory("hook-configuration");
-  const path = join(root, "hooks.yaml");
+  const root = createTestDirectory("hook-configuration"),
+    path = join(root, "hooks.yaml");
   dirs.push(root);
   writeFileSync(
     path,

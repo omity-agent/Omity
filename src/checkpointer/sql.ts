@@ -54,10 +54,10 @@ export function selectCheckpoint() {
     FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?`;
 }
 export function listQuery(config: RunnableConfig, options?: CheckpointListOptions) {
-  const clauses: string[] = [];
-  const args: SQLQueryBindings[] = [];
-  const threadId = optionalString(config.configurable?.["thread_id"], "thread_id");
-  const checkpointNs = optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns");
+  const clauses: string[] = [],
+    args: SQLQueryBindings[] = [],
+    threadId = optionalString(config.configurable?.["thread_id"], "thread_id"),
+    checkpointNs = optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns");
   if (threadId) {
     clauses.push("thread_id = ?");
     args.push(threadId);

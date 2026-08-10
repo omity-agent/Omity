@@ -35,12 +35,12 @@ export async function recordAiStreamPart(
     return;
   }
   if (chunk?.type === "text-delta" || chunk?.type === "reasoning-delta") {
-    const kind = chunk.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta";
-    const messageId = streamMessageId(state, chunk.id);
-    const value =
-      chunk.type === "reasoning-delta"
-        ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
-        : chunk.delta;
+    const kind = chunk.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta",
+      messageId = streamMessageId(state, chunk.id),
+      value =
+        chunk.type === "reasoning-delta"
+          ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
+          : chunk.delta;
     await ctx.db.appendStream(ctx.sessionId, {
       kind,
       messageId,
@@ -56,8 +56,8 @@ export async function recordAiStreamPart(
     }
   } else if (chunk?.type === "tool-input-start") {
     ctx.toolExecutions?.announce(chunk.toolCallId);
-    const messageId = streamMessageId(state, chunk.toolCallId);
-    const index = toolIndex(state, chunk.toolCallId);
+    const messageId = streamMessageId(state, chunk.toolCallId),
+      index = toolIndex(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,
@@ -71,8 +71,8 @@ export async function recordAiStreamPart(
       },
     });
   } else if (chunk?.type === "tool-input-delta") {
-    const messageId = streamMessageId(state, chunk.toolCallId);
-    const index = toolIndex(state, chunk.toolCallId);
+    const messageId = streamMessageId(state, chunk.toolCallId),
+      index = toolIndex(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
       kind: "tool_call_delta",
       messageId,

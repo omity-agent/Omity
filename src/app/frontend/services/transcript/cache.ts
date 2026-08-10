@@ -45,9 +45,9 @@ export function reconcileTranscript(
   ) {
     return current;
   }
-  const replay = current?.events.filter((event) => event.id > snapshot.eventCursor) ?? [];
-  const events = mergeEvents(snapshot.events, replay);
-  const replayLinks = replay.flatMap((event) => event.fileLinks ?? []);
+  const replay = current?.events.filter((event) => event.id > snapshot.eventCursor) ?? [],
+    events = mergeEvents(snapshot.events, replay),
+    replayLinks = replay.flatMap((event) => event.fileLinks ?? []);
   return buildTranscript(
     {
       ...snapshot,
@@ -60,8 +60,8 @@ export function reconcileTranscript(
   );
 }
 export function appendTranscriptEvents(current: TranscriptData, incoming: DisplayEvent[]) {
-  const accepted = incoming.filter((event) => event.id > current.snapshotCursor);
-  const events = mergeEvents(current.events, accepted);
+  const accepted = incoming.filter((event) => event.id > current.snapshotCursor),
+    events = mergeEvents(current.events, accepted);
   if (events.length === current.events.length) {
     return current;
   }

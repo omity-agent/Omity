@@ -17,8 +17,8 @@ export function hostOwnerId(owner: ProcessOwner) {
   return JSON.stringify({ ...owner, hostId: randomUUID() });
 }
 export function parseHostOwner(value: string): HostOwner {
-  const parsed: unknown = JSON.parse(value);
-  const result = ownerSchema.safeParse(parsed);
+  const parsed: unknown = JSON.parse(value),
+    result = ownerSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error("Host Lease owner_id 无效");
   }

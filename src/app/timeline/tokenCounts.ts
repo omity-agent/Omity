@@ -23,11 +23,11 @@ export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
     return undefined;
   }
   const {
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    input_token_details: inputDetails,
-  } = message.usage_metadata;
-  const cacheReadTokens = inputDetails?.cache_read ?? 0;
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      input_token_details: inputDetails,
+    } = message.usage_metadata,
+    cacheReadTokens = inputDetails?.cache_read ?? 0;
   for (const [name, value] of Object.entries({
     cacheReadTokens,
     inputTokens,

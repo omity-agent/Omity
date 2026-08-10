@@ -11,13 +11,13 @@ export function ProfilePicker({
   selected?: string;
   onChange: (profile?: string) => void;
 }) {
-  const { t } = useTranslation();
-  const change = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      onChange(event.target.value || undefined);
-    },
-    [onChange],
-  );
+  const { t } = useTranslation(),
+    change = useCallback(
+      (event: ChangeEvent<HTMLSelectElement>) => {
+        onChange(event.target.value || undefined);
+      },
+      [onChange],
+    );
   return (
     <Field.Root>
       <Field.Label>{t("profile")}</Field.Label>

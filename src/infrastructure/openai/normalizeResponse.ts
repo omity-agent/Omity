@@ -21,8 +21,8 @@ export function normalizeResponsesPayload<T>(payload: T): T {
   if (!isRecord(payload) || !Array.isArray(payload["output"])) {
     return payload;
   }
-  const original = payload["output"];
-  const output = original.map(normalizeOutputItem);
+  const original = payload["output"],
+    output = original.map(normalizeOutputItem);
   return output.every((item, index) => item === original[index]) ? payload : { ...payload, output };
 }
 export async function* normalizeResponsesStream(
@@ -36,8 +36,8 @@ function normalizeOutputItem(item: unknown) {
   if (!isRecord(item) || !Array.isArray(item["content"])) {
     return item;
   }
-  const original = item["content"];
-  const content = original.map(normalizeOutputPart);
+  const original = item["content"],
+    content = original.map(normalizeOutputPart);
   return content.every((part, index) => part === original[index]) ? item : { ...item, content };
 }
 function normalizeOutputPart(part: unknown) {

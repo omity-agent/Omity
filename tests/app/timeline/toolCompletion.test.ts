@@ -7,8 +7,8 @@ import { loadTranscript } from "../../../src/app/transcript";
 
 afterEach(cleanupDatabaseDirs);
 test("syncing tool output emits a versioned completion event", async () => {
-  const db = makeDb();
-  const sessionId = "tool-finished-session";
+  const db = makeDb(),
+    sessionId = "tool-finished-session";
   db.resetSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "run command");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
@@ -62,11 +62,11 @@ test("syncing tool output emits a versioned completion event", async () => {
     .find((part) => part.type === "tool");
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
   expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
-  const appendedQueueId = db.appendUser(sessionId, "next");
-  const appended = required(db.pendingAppends(sessionId).find(({ id }) => id === appendedQueueId));
+  const appendedQueueId = db.appendUser(sessionId, "next"),
+    appended = required(db.pendingAppends(sessionId).find(({ id }) => id === appendedQueueId));
   db.startQueue(sessionId, appended);
-  const withAppend = loadTranscript(db, sessionId);
-  const timeline = buildTimeline(withAppend.messages, withAppend.queue, withAppend.events);
+  const withAppend = loadTranscript(db, sessionId),
+    timeline = buildTimeline(withAppend.messages, withAppend.queue, withAppend.events);
   expect(timeline.map(({ role }) => role)).toEqual(["user", "assistant", "user"]);
   expect(
     timeline.flatMap((message) =>
@@ -76,8 +76,8 @@ test("syncing tool output emits a versioned completion event", async () => {
   db.close();
 });
 test("syncing one tool does not drop the remaining parallel tool calls", async () => {
-  const db = makeDb();
-  const sessionId = "partial-tool-finished-session";
+  const db = makeDb(),
+    sessionId = "partial-tool-finished-session";
   db.resetSession(sessionId, workspace);
   const queueId = db.appendUser(sessionId, "run commands");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
@@ -131,10 +131,10 @@ test("syncing one tool does not drop the remaining parallel tool calls", async (
       }),
       new ToolMessage({ content: "done", id: "tool-1", tool_call_id: "call-1" }),
     ]);
-    const transcript = loadTranscript(db, sessionId);
-    const callIds = buildTimeline(transcript.messages, transcript.queue, transcript.events).flatMap(
-      (message) => message.parts.flatMap((part) => (part.type === "tool" ? [part.call.id] : [])),
-    );
+    const transcript = loadTranscript(db, sessionId),
+      callIds = buildTimeline(transcript.messages, transcript.queue, transcript.events).flatMap(
+        (message) => message.parts.flatMap((part) => (part.type === "tool" ? [part.call.id] : [])),
+      );
     expect(transcript.events.map(({ kind }) => kind)).toEqual([
       "user_appended",
       "tool_call_delta",

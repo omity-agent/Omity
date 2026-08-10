@@ -15,12 +15,12 @@ export function waitForSignal<T>(promise: Promise<T>, signal?: AbortSignal): Pro
 }
 export async function interruptibleDelay(milliseconds: number, signal: AbortSignal) {
   signal.throwIfAborted();
-  const delayed = Promise.withResolvers<void>();
-  const timer = setTimeout(() => delayed.resolve(), milliseconds);
-  const abort = () => {
-    clearTimeout(timer);
-    delayed.reject(signal.reason);
-  };
+  const delayed = Promise.withResolvers<void>(),
+    timer = setTimeout(() => delayed.resolve(), milliseconds),
+    abort = () => {
+      clearTimeout(timer);
+      delayed.reject(signal.reason);
+    };
   signal.addEventListener("abort", abort, { once: true });
   try {
     await delayed.promise;
@@ -30,8 +30,8 @@ export async function interruptibleDelay(milliseconds: number, signal: AbortSign
   }
 }
 async function raceWithAbort<T>(promise: Promise<T>, signal: AbortSignal) {
-  const aborted = Promise.withResolvers<never>();
-  const abort = () => aborted.reject(signal.reason);
+  const aborted = Promise.withResolvers<never>(),
+    abort = () => aborted.reject(signal.reason);
   signal.addEventListener("abort", abort, { once: true });
   try {
     return await Promise.race([promise, aborted.promise]);

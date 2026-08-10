@@ -7,27 +7,27 @@ import { testSettings } from "../support/settings";
 test("Responses API sends developer instructions in the top-level field", async () => {
   let requestBody: Record<string, unknown> | undefined;
   const captureFetch = Object.assign(
-    async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
-      if (typeof init?.body !== "string") {
-        throw new Error("Responses API 请求体必须是 JSON 字符串");
-      }
-      const parsed: unknown = JSON.parse(init.body);
-      if (!isRecord(parsed)) {
-        throw new Error("Responses API 请求体必须是 JSON 对象");
-      }
-      requestBody = parsed;
-      return Response.json(
-        { error: { message: "request captured", type: "invalid_request_error" } },
-        { status: 400 },
-      );
-    },
-    { preconnect: fetch.preconnect },
-  );
-  const model = createOpenAI({
-    apiKey: "test",
-    fetch: captureFetch,
-  }).responses("gpt-5");
-  const settings = testSettings();
+      async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
+        if (typeof init?.body !== "string") {
+          throw new Error("Responses API 请求体必须是 JSON 字符串");
+        }
+        const parsed: unknown = JSON.parse(init.body);
+        if (!isRecord(parsed)) {
+          throw new Error("Responses API 请求体必须是 JSON 对象");
+        }
+        requestBody = parsed;
+        return Response.json(
+          { error: { message: "request captured", type: "invalid_request_error" } },
+          { status: 400 },
+        );
+      },
+      { preconnect: fetch.preconnect },
+    ),
+    model = createOpenAI({
+      apiKey: "test",
+      fetch: captureFetch,
+    }).responses("gpt-5"),
+    settings = testSettings();
   settings.agent.systemPrompt = "developer instructions";
   settings.model = {
     adapter: "responses",

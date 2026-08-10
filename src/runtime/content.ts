@@ -37,11 +37,11 @@ export function contentToText(content: unknown): string {
   return "";
 }
 export function messageReasoning(message: BaseMessage) {
-  const metadata: unknown = message.response_metadata;
-  const output = isRecord(metadata) ? metadata["output"] : undefined;
-  const outputParts = Array.isArray(output)
-    ? output.flatMap((item) => readReasoningSummary(item)?.parts ?? [])
-    : [];
+  const metadata: unknown = message.response_metadata,
+    output = isRecord(metadata) ? metadata["output"] : undefined,
+    outputParts = Array.isArray(output)
+      ? output.flatMap((item) => readReasoningSummary(item)?.parts ?? [])
+      : [];
   if (outputParts.length > 0) {
     return joinReasoningParts(outputParts);
   }
@@ -110,8 +110,8 @@ function aiSdkContentReasoning(content: unknown): ReasoningPart[] {
 }
 function appendReasoningPart(part: ReasoningPart, state: ReasoningStreamState) {
   const changedPart =
-    part.index !== undefined && state.partIndex !== undefined && part.index !== state.partIndex;
-  const needsBreak = state.hasText && (state.breakBeforeNext || changedPart);
+      part.index !== undefined && state.partIndex !== undefined && part.index !== state.partIndex,
+    needsBreak = state.hasText && (state.breakBeforeNext || changedPart);
   let output = needsBreak ? flushReasoning(state) : "";
   const prefix = needsBreak
     ? missingNewlines(state.trailingNewlines, leadingNewlines(part.text))
@@ -125,26 +125,26 @@ function appendReasoningPart(part: ReasoningPart, state: ReasoningStreamState) {
   return output + appendReasoningText(part.text, state);
 }
 function joinReasoningParts(parts: ReasoningPart[]) {
-  const state = createReasoningStreamState();
-  const text = parts
-    .map((part, index) => {
-      if (index > 0) {
-        state.breakBeforeNext = true;
-      }
-      return appendReasoningPart(part, state);
-    })
-    .join("");
+  const state = createReasoningStreamState(),
+    text = parts
+      .map((part, index) => {
+        if (index > 0) {
+          state.breakBeforeNext = true;
+        }
+        return appendReasoningPart(part, state);
+      })
+      .join("");
   return text + flushReasoning(state);
 }
 function appendReasoningText(text: string, state: ReasoningStreamState) {
-  const combined = state.pendingAsterisks + text;
-  const pending = /\**$/.exec(combined)?.[0] ?? "";
-  const complete = combined.slice(0, combined.length - pending.length);
+  const combined = state.pendingAsterisks + text,
+    pending = /\**$/.exec(combined)?.[0] ?? "",
+    complete = combined.slice(0, combined.length - pending.length);
   state.pendingAsterisks = pending;
-  const context = state.lastCharacter + complete;
-  const normalized = context
-    .replace(/(?<character>\S)\*{4}(?=\S)/g, "$<character>**\n\n**")
-    .slice(state.lastCharacter.length);
+  const context = state.lastCharacter + complete,
+    normalized = context
+      .replace(/(?<character>\S)\*{4}(?=\S)/g, "$<character>**\n\n**")
+      .slice(state.lastCharacter.length);
   updateStreamTail(state, normalized);
   return normalized;
 }

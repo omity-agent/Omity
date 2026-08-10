@@ -15,22 +15,22 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 const page = css({
-  display: "grid",
-  gridTemplateRows: "minmax(0, 1fr) auto",
-  h: "full",
-  maxW: { _largeCanvas: "chatCanvas" },
-  minH: 0,
-  minW: 0,
-  mx: "auto",
-  overflow: "hidden",
-  w: "full",
-});
-const empty = css({
-  color: "muted",
-  display: "grid",
-  h: "full",
-  placeItems: "center",
-});
+    display: "grid",
+    gridTemplateRows: "minmax(0, 1fr) auto",
+    h: "full",
+    maxW: { _largeCanvas: "chatCanvas" },
+    minH: 0,
+    minW: 0,
+    mx: "auto",
+    overflow: "hidden",
+    w: "full",
+  }),
+  empty = css({
+    color: "muted",
+    display: "grid",
+    h: "full",
+    placeItems: "center",
+  });
 export function ChatPage({
   activeId,
   attachmentSettings,
@@ -86,26 +86,26 @@ export function ChatPage({
   onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
-  const { t } = useTranslation();
-  const actionState = deriveChatActionState({
-    control,
-    pausing,
-    queue,
-    sessionStatus,
-  });
-  const firstUserMessageId = view.find((item) => item.role === "user")?.id;
-  const forkDraft = queue.find((item) => item.status === "draft")?.content;
-  const latestDetail = findLatestDetail(view);
-  const latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null;
-  const draftTarget = useMemo(
-    () =>
-      activeId ? ({ kind: "session", sessionId: activeId } as const) : ({ kind: "new" } as const),
-    [activeId],
-  );
-  const userMessages = useMemo(
-    () => view.filter((item) => item.role === "user").map((item) => item.content),
-    [view],
-  );
+  const { t } = useTranslation(),
+    actionState = deriveChatActionState({
+      control,
+      pausing,
+      queue,
+      sessionStatus,
+    }),
+    firstUserMessageId = view.find((item) => item.role === "user")?.id,
+    forkDraft = queue.find((item) => item.status === "draft")?.content,
+    latestDetail = findLatestDetail(view),
+    latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
+    draftTarget = useMemo(
+      () =>
+        activeId ? ({ kind: "session", sessionId: activeId } as const) : ({ kind: "new" } as const),
+      [activeId],
+    ),
+    userMessages = useMemo(
+      () => view.filter((item) => item.role === "user").map((item) => item.content),
+      [view],
+    );
   if (!activeId) {
     if (newSession) {
       return (

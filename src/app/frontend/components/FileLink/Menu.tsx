@@ -10,65 +10,65 @@ import { reportPromiseErrors } from "../../services/errors";
 import { useFileLinkSession } from "./context";
 import { useTranslation } from "react-i18next";
 
-const classes = menu({ size: "sm" });
-const positioning = { gutter: 4, placement: "bottom-start" as const };
-const trigger = css({
-  _focusVisible: {
-    outlineColor: "mutedStrong",
-    outlineOffset: "2px",
-    outlineStyle: "solid",
-    outlineWidth: "1px",
-  },
-  bg: "transparent",
-  borderWidth: "0",
-  color: "current",
-  cursor: "pointer",
-  display: "inline",
-  font: "inherit",
-  lineHeight: "inherit",
-  p: 0,
-  textAlign: "inherit",
-  verticalAlign: "baseline",
-  whiteSpace: "inherit",
-});
-const label = css({
-  "& > *": {
+const classes = menu({ size: "sm" }),
+  positioning = { gutter: 4, placement: "bottom-start" as const },
+  trigger = css({
+    _focusVisible: {
+      outlineColor: "mutedStrong",
+      outlineOffset: "2px",
+      outlineStyle: "solid",
+      outlineWidth: "1px",
+    },
+    bg: "transparent",
+    borderWidth: "0",
+    color: "current",
+    cursor: "pointer",
+    display: "inline",
+    font: "inherit",
+    lineHeight: "inherit",
+    p: 0,
+    textAlign: "inherit",
+    verticalAlign: "baseline",
+    whiteSpace: "inherit",
+  }),
+  label = css({
+    "& > *": {
+      textDecoration: "underline",
+      textDecorationColor: "current",
+      textUnderlineOffset: "0.15em",
+    },
+    "&:has(> *)": { textDecoration: "none" },
     textDecoration: "underline",
     textDecorationColor: "current",
     textUnderlineOffset: "0.15em",
-  },
-  "&:has(> *)": { textDecoration: "none" },
-  textDecoration: "underline",
-  textDecorationColor: "current",
-  textUnderlineOffset: "0.15em",
-});
-const content = css({
-  bg: "surfaceRaised",
-  borderColor: "lineStrong",
-  borderRadius: "0",
-  borderWidth: "1px",
-  p: "1",
-  shadow: "lg",
-  w: "max-content",
-  zIndex: "dropdown",
-});
-const item = css({
-  _highlighted: { bg: "controlHover" },
-  alignItems: "center",
-  bg: "transparent",
-  borderWidth: "0",
-  color: "text",
-  cursor: "pointer",
-  display: "flex",
-  fontFamily: "body",
-  gap: "2",
-  minH: "8",
-  px: "2",
-  py: "1.5",
-  textAlign: "left",
-  w: "full",
-  whiteSpace: "nowrap",
-});
+  }),
+  content = css({
+    bg: "surfaceRaised",
+    borderColor: "lineStrong",
+    borderRadius: "0",
+    borderWidth: "1px",
+    p: "1",
+    shadow: "lg",
+    w: "max-content",
+    zIndex: "dropdown",
+  }),
+  item = css({
+    _highlighted: { bg: "controlHover" },
+    alignItems: "center",
+    bg: "transparent",
+    borderWidth: "0",
+    color: "text",
+    cursor: "pointer",
+    display: "flex",
+    fontFamily: "body",
+    gap: "2",
+    minH: "8",
+    px: "2",
+    py: "1.5",
+    textAlign: "left",
+    w: "full",
+    whiteSpace: "nowrap",
+  });
 export function FileLinkMenu({
   children,
   kind,
@@ -78,20 +78,14 @@ export function FileLinkMenu({
   kind: FilePathKind;
   path: string;
 }) {
-  const { t } = useTranslation();
-  const sessionId = useFileLinkSession();
-  const run = useCallback(
-    (action: "open" | "reveal") => {
-      reportPromiseErrors(activateFileLink(sessionId, path, action));
-    },
-    [path, sessionId],
-  );
-  const open = useCallback(() => {
-    run("open");
-  }, [run]);
-  const reveal = useCallback(() => {
-    run("reveal");
-  }, [run]);
+  const { t } = useTranslation(),
+    sessionId = useFileLinkSession(),
+    open = useCallback(() => {
+      reportPromiseErrors(activateFileLink(sessionId, path, "open"));
+    }, [path, sessionId]),
+    reveal = useCallback(() => {
+      reportPromiseErrors(activateFileLink(sessionId, path, "reveal"));
+    }, [path, sessionId]);
   return (
     <Menu.Root positioning={positioning}>
       <Menu.Trigger className={trigger} title={path} type="button">

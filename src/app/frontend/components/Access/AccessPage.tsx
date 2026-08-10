@@ -5,36 +5,36 @@ import { css } from "styled-system/css";
 import { useTranslation } from "react-i18next";
 
 const page = css({
-  alignItems: "center",
-  bg: "canvas",
-  color: "text",
-  display: "grid",
-  fontFamily: "body",
-  minH: "100dvh",
-  overflowY: "auto",
-  p: { _short: "3", base: "4", sm: "6" },
-});
-const card = css({
-  bg: "surface",
-  borderColor: "lineStrong",
-  borderWidth: "1px",
-  display: "grid",
-  gap: "5",
-  maxW: "32rem",
-  mx: "auto",
-  p: { _short: "5", base: "5", sm: "8" },
-  w: "full",
-});
-const icon = css({ color: "mutedStrong" });
-const heading = css({ fontSize: "xl", fontWeight: "medium", m: 0 });
-const description = css({ color: "mutedStrong", lineHeight: "1.7", m: 0 });
-const errorText = css({ color: "statusError", fontSize: "sm", m: 0 });
-const actions = css({
-  "& > *": { flexGrow: { base: 1, sm: 0 } },
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "3",
-});
+    alignItems: "center",
+    bg: "canvas",
+    color: "text",
+    display: "grid",
+    fontFamily: "body",
+    minH: "100dvh",
+    overflowY: "auto",
+    p: { _short: "3", base: "4", sm: "6" },
+  }),
+  card = css({
+    bg: "surface",
+    borderColor: "lineStrong",
+    borderWidth: "1px",
+    display: "grid",
+    gap: "5",
+    maxW: "32rem",
+    mx: "auto",
+    p: { _short: "5", base: "5", sm: "8" },
+    w: "full",
+  }),
+  icon = css({ color: "mutedStrong" }),
+  heading = css({ fontSize: "xl", fontWeight: "medium", m: 0 }),
+  description = css({ color: "mutedStrong", lineHeight: "1.7", m: 0 }),
+  errorText = css({ color: "statusError", fontSize: "sm", m: 0 }),
+  actions = css({
+    "& > *": { flexGrow: { base: 1, sm: 0 } },
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "3",
+  });
 interface AccessPageProps {
   busy: boolean;
   error?: string;
@@ -47,19 +47,18 @@ interface AccessPageProps {
   setup: boolean;
 }
 export function AccessPage(props: AccessPageProps) {
-  const { t } = useTranslation();
-  const { busy, error, status, ticketUrl, onContinue, onLogin, onRegister, onTicket, setup } =
-    props;
-  const localSetup =
-    setup &&
-    status?.local === true &&
-    globalThis.location.origin !== status.publicOrigin &&
-    [null, "manage"].includes(new URLSearchParams(globalThis.location.search).get("setup"));
-  const setupLink =
-    ticketUrl ??
-    (status?.publicOrigin
-      ? new URL(globalThis.location.pathname, status.publicOrigin).href
-      : undefined);
+  const { t } = useTranslation(),
+    { busy, error, status, ticketUrl, onContinue, onLogin, onRegister, onTicket, setup } = props,
+    localSetup =
+      setup &&
+      status?.local === true &&
+      globalThis.location.origin !== status.publicOrigin &&
+      [null, "manage"].includes(new URLSearchParams(globalThis.location.search).get("setup")),
+    setupLink =
+      ticketUrl ??
+      (status?.publicOrigin
+        ? new URL(globalThis.location.pathname, status.publicOrigin).href
+        : undefined);
   return (
     <main className={page}>
       <section className={card}>

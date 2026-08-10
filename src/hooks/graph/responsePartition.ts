@@ -38,8 +38,8 @@ function partitionResponseMetadata(
   selectedCallIds: Set<string>,
   includeResponse: boolean,
 ) {
-  const metadata = includeResponse ? { ...original.response_metadata } : {};
-  const { output } = original.response_metadata;
+  const metadata = includeResponse ? { ...original.response_metadata } : {},
+    { output } = original.response_metadata;
   if (Array.isArray(output)) {
     const partition = partitionCallItems(
       output,
@@ -62,13 +62,13 @@ function partitionCallItems(
   includeResponse: boolean,
 ) {
   const scoped = items.filter((item) => {
-    const callId = itemCallId(item, allCallIds);
-    return callId !== undefined && selectedCallIds.has(callId);
-  });
-  const response = includeResponse
-    ? items.filter((item) => itemCallId(item, allCallIds) === undefined)
-    : [];
-  const partition = [...response, ...scoped];
+      const callId = itemCallId(item, allCallIds);
+      return callId !== undefined && selectedCallIds.has(callId);
+    }),
+    response = includeResponse
+      ? items.filter((item) => itemCallId(item, allCallIds) === undefined)
+      : [],
+    partition = [...response, ...scoped];
   return partition.length > 0 ? partition : undefined;
 }
 function partitionCallRecord(

@@ -1,19 +1,22 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { AttachmentSettings } from "../../../../../attachments/contract";
 import { PendingAttachments } from "../attachments";
 
 export function usePendingAttachments(settings?: AttachmentSettings) {
-  const attachments = useMemo(() => new PendingAttachments(settings), [settings]);
+  const attachmentsRef = useRef(new PendingAttachments(settings));
+  useEffect(() => {
+    attachmentsRef.current.configure(settings);
+  }, [settings]);
   const attachmentValues = useCallback(
-    (submittedContent: string) => attachments.values(submittedContent),
-    [attachments],
-  );
-  const clearAttachments = useCallback(() => {
-    attachments.clear();
-  }, [attachments]);
-  const handlePasteFiles = useCallback(
-    (files: File[], content: string) => attachments.paste(files, content),
-    [attachments],
-  );
+      (submittedContent: string) => attachmentsRef.current.values(submittedContent),
+      [attachmentsRef],
+    ),
+    clearAttachments = useCallback(() => {
+      attachmentsRef.current.clear();
+    }, [attachmentsRef]),
+    handlePasteFiles = useCallback(
+      (files: File[], content: string) => attachmentsRef.current.paste(files, content),
+      [attachmentsRef],
+    );
   return { attachmentValues, clearAttachments, handlePasteFiles };
 }

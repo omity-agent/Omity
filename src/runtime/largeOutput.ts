@@ -22,17 +22,17 @@ export async function redirectLargeToolOutput(
   if (normalized === null || normalized.isError) {
     return message;
   }
-  const original = normalized.text;
-  const tokens = countTokens(original);
-  const normalizedMessage =
-    normalized.normalized === message.content
-      ? message
-      : copyToolMessage(message, normalized.normalized);
+  const original = normalized.text,
+    tokens = countTokens(original),
+    normalizedMessage =
+      normalized.normalized === message.content
+        ? message
+        : copyToolMessage(message, normalized.normalized);
   if (tokens <= options.maxTokens) {
     return normalizedMessage;
   }
-  const outputPath = await writeLargeToolOutput(original, options.sessionId);
-  const content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n输出原文已完整保存于：\n${outputPath}\n如有需要请检索其中片段。`;
+  const outputPath = await writeLargeToolOutput(original, options.sessionId),
+    content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n输出原文已完整保存于：\n${outputPath}\n如有需要请检索其中片段。`;
   return copyToolMessage(message, normalized.replaceText(content), {
     path: outputPath,
     tokens,

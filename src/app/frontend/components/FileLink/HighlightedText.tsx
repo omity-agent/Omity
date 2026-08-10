@@ -14,8 +14,8 @@ export function HighlightedText({ html, matches }: { html: string; matches: File
   return <>{groupPieces(pieces)}</>;
 }
 function readTokens(html: string) {
-  const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
-  const tokens: HighlightToken[] = [];
+  const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html"),
+    tokens: HighlightToken[] = [];
   walk(document.body, [], tokens);
   return tokens;
 }
@@ -29,19 +29,19 @@ function walk(node: Node, inherited: string[], tokens: HighlightToken[]) {
     }
     return;
   }
-  const own = node instanceof Element ? [...node.classList] : [];
-  const classes = [...inherited, ...own];
+  const own = node instanceof Element ? [...node.classList] : [],
+    classes = [...inherited, ...own];
   for (const child of node.childNodes) {
     walk(child, classes, tokens);
   }
 }
 function splitTokens(tokens: HighlightToken[], matches: FilePathMatch[]) {
-  const normalized = nonOverlapping(matches);
-  const pieces: HighlightPiece[] = [];
+  const normalized = nonOverlapping(matches),
+    pieces: HighlightPiece[] = [];
   let offset = 0;
   for (const token of tokens) {
-    const tokenEnd = offset + token.text.length;
-    const boundaries = new Set([offset, tokenEnd]);
+    const tokenEnd = offset + token.text.length,
+      boundaries = new Set([offset, tokenEnd]);
     for (const match of normalized) {
       if (match.position.start > offset && match.position.start < tokenEnd) {
         boundaries.add(match.position.start);
@@ -52,11 +52,11 @@ function splitTokens(tokens: HighlightToken[], matches: FilePathMatch[]) {
     }
     const points = [...boundaries].toSorted((left, right) => left - right);
     for (let index = 0; index < points.length - 1; index += 1) {
-      const start = points[index] ?? offset;
-      const end = points[index + 1] ?? tokenEnd;
-      const match = normalized.find(
-        (candidate) => candidate.position.start <= start && candidate.position.end >= end,
-      );
+      const start = points[index] ?? offset,
+        end = points[index + 1] ?? tokenEnd,
+        match = normalized.find(
+          (candidate) => candidate.position.start <= start && candidate.position.end >= end,
+        );
       pieces.push({
         ...token,
         ...(match ? { link: { kind: match.kind, path: match.path } } : {}),

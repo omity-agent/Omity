@@ -22,15 +22,15 @@ function parseInputText(text?: string) {
     return JSON.parse(text) as unknown;
   } catch {
     const document = parseDocument(`${text}\n`, {
-      logLevel: "silent",
-      schema: "json",
-      strict: false,
-    });
-    const recoverable =
-      document.errors.length > 0 &&
-      document.errors.every(
-        (error) => recoverableEndErrors.has(error.code) && error.pos[0] >= text.length,
-      );
+        logLevel: "silent",
+        schema: "json",
+        strict: false,
+      }),
+      recoverable =
+        document.errors.length > 0 &&
+        document.errors.every(
+          (error) => recoverableEndErrors.has(error.code) && error.pos[0] >= text.length,
+        );
     return recoverable ? (document.toJS() as unknown) : text;
   }
 }

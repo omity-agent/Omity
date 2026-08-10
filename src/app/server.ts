@@ -25,18 +25,17 @@ export interface AppServerOptions {
   onReady?: (url: string) => void;
 }
 export async function startAppServer(options: AppServerOptions) {
-  const settingsContext = createSettingsContext(options.root);
-  const settings = loadSettings(options.root, { settingsContext });
-  const host = options.host ?? settings.server.host;
-  const port = options.port ?? settings.server.port;
-  const lock = AppInstanceLock.acquire(userDataDirectory());
-  const shutdown = listenForShutdownSignal();
-  let access: AccessService | undefined;
-  let controller: AppController | undefined;
-  let server: ReturnType<typeof createServer> | undefined;
+  const settingsContext = createSettingsContext(options.root),
+    settings = loadSettings(options.root, { settingsContext }),
+    host = options.host ?? settings.server.host,
+    port = options.port ?? settings.server.port,
+    lock = AppInstanceLock.acquire(userDataDirectory()),
+    shutdown = listenForShutdownSignal();
+  let access: AccessService | undefined,
+    controller: AppController | undefined,
+    server: ReturnType<typeof createServer> | undefined;
   const connections = new Set<Socket>();
-  let failure: unknown;
-  let signal: Awaited<typeof shutdown.signal> | undefined;
+  let failure: unknown, signal: Awaited<typeof shutdown.signal> | undefined;
   try {
     access = new AccessService(settings);
     controller = new AppController(options.root, {
@@ -56,8 +55,8 @@ export async function startAppServer(options: AppServerOptions) {
         connections.delete(socket);
       });
     });
-    const handleApi = getRequestListener(createApi(controller, access).fetch);
-    const handleStatic = getRequestListener(createStaticApp(staticRoot).fetch);
+    const handleApi = getRequestListener(createApi(controller, access).fetch),
+      handleStatic = getRequestListener(createStaticApp(staticRoot).fetch);
     server.on(
       "request",
       (req, res) =>

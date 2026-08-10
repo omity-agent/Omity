@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 export type Page = { kind: "new" } | { kind: "session"; id: string };
 const sessionPrefix = "/sessions/";
@@ -31,6 +31,16 @@ export function writePage(page: Page, replace = false) {
   }
   const method = replace ? "replaceState" : "pushState";
   globalThis.history[method](null, "", path);
+}
+export function usePageNavigator(setPage: (page: Page) => void) {
+  "use no memo";
+  return useCallback(
+    (nextPage: Page, replace = false) => {
+      writePage(nextPage, replace);
+      setPage(nextPage);
+    },
+    [setPage],
+  );
 }
 export function sessionPage(id: string): Page {
   return { id, kind: "session" };

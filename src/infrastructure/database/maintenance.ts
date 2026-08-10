@@ -19,13 +19,13 @@ export function resetSessionStorage(
   workspace: string,
   profiles: readonly string[],
 ) {
-  const orm = sessionDatabase(db);
-  const previousRevision =
-    orm
-      .select({ revision: sessions.transcriptRevision })
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .get()?.revision ?? -1;
+  const orm = sessionDatabase(db),
+    previousRevision =
+      orm
+        .select({ revision: sessions.transcriptRevision })
+        .from(sessions)
+        .where(eq(sessions.id, sessionId))
+        .get()?.revision ?? -1;
   if (!Number.isSafeInteger(previousRevision) || previousRevision >= Number.MAX_SAFE_INTEGER) {
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }

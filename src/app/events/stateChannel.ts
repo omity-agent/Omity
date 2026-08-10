@@ -32,14 +32,14 @@ export class StateChannel {
   stream(c: Context, getSessions: () => SessionInfo[]) {
     return eventStream(c, (write) => {
       const session = (item: Versioned<SessionInfo>) => {
-        writeState(write, "session", item, item.value);
-      };
-      const deleted = (item: Versioned<string>) => {
-        writeState(write, "deleted", item, { sessionId: item.value });
-      };
-      const warning = (item: Versioned<BrowserWarning>) => {
-        writeState(write, "warning", item, item.value);
-      };
+          writeState(write, "session", item, item.value);
+        },
+        deleted = (item: Versioned<string>) => {
+          writeState(write, "deleted", item, { sessionId: item.value });
+        },
+        warning = (item: Versioned<BrowserWarning>) => {
+          writeState(write, "warning", item, item.value);
+        };
       this.bus.on("session", session);
       this.bus.on("deleted", deleted);
       this.bus.on("warning", warning);

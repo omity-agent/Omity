@@ -8,19 +8,19 @@ export function useSessionPresentation(
   activeId: string | undefined,
   pausing: boolean,
 ) {
-  const { t } = useTranslation();
-  const displayedSessions = useMemo(
-    () =>
-      sessions.map((session) =>
-        pausing &&
-        session.id === activeId &&
-        (session.status === "model" || session.status === "tool")
-          ? { ...session, status: "pausing" as const }
-          : session,
-      ),
-    [activeId, pausing, sessions],
-  );
-  const activeSession = displayedSessions.find(({ id }) => id === activeId);
+  const { t } = useTranslation(),
+    displayedSessions = useMemo(
+      () =>
+        sessions.map((session) =>
+          pausing &&
+          session.id === activeId &&
+          (session.status === "model" || session.status === "tool")
+            ? { ...session, status: "pausing" as const }
+            : session,
+        ),
+      [activeId, pausing, sessions],
+    ),
+    activeSession = displayedSessions.find(({ id }) => id === activeId);
   useEffect(() => {
     const brand = t("brand");
     document.title = activeSession

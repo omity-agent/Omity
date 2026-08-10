@@ -5,15 +5,17 @@ import { claimShortId } from "../../../../infrastructure/randomId";
 
 export function addOptimisticUser(queryClient: QueryClient, sessionId: string, content: string) {
   const keys = new Set(
-    queryClient.getQueryData<TranscriptData>(transcriptKey(sessionId))?.view.map(({ key }) => key),
-  );
-  const key = claimShortId((candidate) => {
-    if (keys.has(candidate)) {
-      return false;
-    }
-    keys.add(candidate);
-    return true;
-  });
+      queryClient
+        .getQueryData<TranscriptData>(transcriptKey(sessionId))
+        ?.view.map(({ key }) => key),
+    ),
+    key = claimShortId((candidate) => {
+      if (keys.has(candidate)) {
+        return false;
+      }
+      keys.add(candidate);
+      return true;
+    });
   queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) => {
     const transcript = current ?? emptyTranscriptData();
     return {
@@ -45,19 +47,19 @@ export function confirmOptimisticUser(
     if (!current) {
       return current;
     }
-    const queueItem = current.queue.find(({ id }) => id === queueId);
-    const queue: TranscriptData["queue"] = queueItem
-      ? current.queue
-      : [
-          ...current.queue,
-          {
-            content,
-            error: null,
-            id: queueId,
-            status: "pending",
-            userMessageId: null,
-          },
-        ];
+    const queueItem = current.queue.find(({ id }) => id === queueId),
+      queue: TranscriptData["queue"] = queueItem
+        ? current.queue
+        : [
+            ...current.queue,
+            {
+              content,
+              error: null,
+              id: queueId,
+              status: "pending",
+              userMessageId: null,
+            },
+          ];
     return rebuildTranscript(withoutOptimistic(current, key), { queue });
   });
 }

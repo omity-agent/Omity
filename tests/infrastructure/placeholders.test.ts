@@ -11,13 +11,13 @@ import { loadSettings } from "../../src/infrastructure/configuration/settings/lo
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { writeTestConfiguration } from "../support/configuration";
 
-const directories: string[] = [];
-const environmentName = "OMITY_TEST_PLACEHOLDER";
-const loadedEnvironmentName = "OMITY_TEST_ENV_LOADED";
-const presetEnvironmentName = "OMITY_TEST_ENV_PRESET";
-const environmentNames = [environmentName, loadedEnvironmentName, presetEnvironmentName] as const;
-const previousEnvironment = new Map(environmentNames.map((name) => [name, process.env[name]]));
-const forwardSlashPath = (path: string) => path.replaceAll("\\", "/");
+const directories: string[] = [],
+  environmentName = "OMITY_TEST_PLACEHOLDER",
+  loadedEnvironmentName = "OMITY_TEST_ENV_LOADED",
+  presetEnvironmentName = "OMITY_TEST_ENV_PRESET",
+  environmentNames = [environmentName, loadedEnvironmentName, presetEnvironmentName] as const,
+  previousEnvironment = new Map(environmentNames.map((name) => [name, process.env[name]])),
+  forwardSlashPath = (path: string) => path.replaceAll("\\", "/");
 afterEach(() => {
   for (const directory of directories.splice(0)) {
     rmSync(directory, { force: true, recursive: true });
@@ -31,8 +31,8 @@ afterEach(() => {
   }
 });
 test("user environment file fills missing variables without overriding the process", () => {
-  const root = createTestDirectory("user-environment");
-  const path = join(root, ".env");
+  const root = createTestDirectory("user-environment"),
+    path = join(root, ".env");
   directories.push(root);
   Reflect.deleteProperty(process.env, loadedEnvironmentName);
   process.env[presetEnvironmentName] = "process";
@@ -42,9 +42,9 @@ test("user environment file fills missing variables without overriding the proce
   expect(process.env[presetEnvironmentName]).toBe("process");
 });
 test("settings resolve global and session placeholders in their allowed scopes", () => {
-  const root = createTestDirectory("placeholders");
-  const workspace = join(root, "workspace");
-  const environment = "placeholder-value";
+  const root = createTestDirectory("placeholders"),
+    workspace = join(root, "workspace"),
+    environment = "placeholder-value";
   directories.push(root);
   process.env[environmentName] = environment;
   mkdirSync(workspace);
@@ -72,8 +72,8 @@ timeoutMs: 1000
   });
   const settings = loadSettings(root, { cwd: workspace, sessionId: "session-id" });
   expect(settings.model.model).toBe(environment);
-  const session = forwardSlashPath(resolve(userDataDirectory(), "sessions", "session-id"));
-  const expanded = `${session}|${forwardSlashPath(workspace)}|${appDataRoot()}|${environment}`;
+  const session = forwardSlashPath(resolve(userDataDirectory(), "sessions", "session-id")),
+    expanded = `${session}|${forwardSlashPath(workspace)}|${appDataRoot()}|${environment}`;
   expect(settings.agent.systemPrompt).toBe(`system: ${expanded}\n\nskills: ${expanded}`);
   expect(settings.hooks[0]?.id).toBe(session);
   expect(settings.hooks[0]?.args).toEqual({

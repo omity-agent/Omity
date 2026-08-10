@@ -4,9 +4,9 @@ import type { SessionInfo } from "../../../src/app/sessionState";
 import { stateEvents } from "../../../src/app/frontend/services/client";
 
 test("session upserts are idempotent across SSE and HTTP responses", () => {
-  const idle = session("idle", 1);
-  const running = session("model", 2);
-  const sessions = upsertSessionList(upsertSessionList([idle], running), running);
+  const idle = session("idle", 1),
+    running = session("model", 2),
+    sessions = upsertSessionList(upsertSessionList([idle], running), running);
   expect(sessions).toEqual([running]);
 });
 test("session deletion is idempotent", () => {
@@ -14,8 +14,8 @@ test("session deletion is idempotent", () => {
   expect(withoutSession(once, "session")).toEqual([]);
 });
 test("SSE keeps the native reconnect behavior after a network error", () => {
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "EventSource");
-  const created: TestEventSource[] = [];
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "EventSource"),
+    created: TestEventSource[] = [];
   class TestEventSource extends EventTarget {
     close = mock(() => undefined);
     constructor(readonly url: string) {

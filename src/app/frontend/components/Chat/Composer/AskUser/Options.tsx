@@ -6,38 +6,38 @@ import { Check } from "lucide-react";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
-const checkboxClasses = checkbox();
-const radioClasses = radioGroup();
-const optionList = css({ display: "grid", gap: "2" });
-const optionRoot = css({
-  _hover: { bg: "controlHover" },
-  alignItems: "center",
-  cursor: "pointer",
-  display: "flex",
-  gap: "2",
-  minH: "10",
-  p: "2",
-});
-const optionControl = css({
-  alignItems: "center",
-  borderColor: "lineStrong",
-  borderWidth: "1px",
-  color: "text",
-  display: "inline-flex",
-  flex: "0 0 auto",
-  h: "5",
-  justifyContent: "center",
-  w: "5",
-});
-const optionIndicator = css({ display: "inline-flex" });
-const optionLabel = css({ color: "mutedStrong", fontSize: "xs", m: 0 });
-const radioControl = cx(optionControl, css({ borderRadius: "full" }));
-const radioIndicator = css({
-  bg: "text",
-  borderRadius: "full",
-  h: "2.5",
-  w: "2.5",
-});
+const checkboxClasses = checkbox(),
+  radioClasses = radioGroup(),
+  optionList = css({ display: "grid", gap: "2" }),
+  optionRoot = css({
+    _hover: { bg: "controlHover" },
+    alignItems: "center",
+    cursor: "pointer",
+    display: "flex",
+    gap: "2",
+    minH: "10",
+    p: "2",
+  }),
+  optionControl = css({
+    alignItems: "center",
+    borderColor: "lineStrong",
+    borderWidth: "1px",
+    color: "text",
+    display: "inline-flex",
+    flex: "0 0 auto",
+    h: "5",
+    justifyContent: "center",
+    w: "5",
+  }),
+  optionIndicator = css({ display: "inline-flex" }),
+  optionLabel = css({ color: "mutedStrong", fontSize: "xs", m: 0 }),
+  radioControl = cx(optionControl, css({ borderRadius: "full" })),
+  radioIndicator = css({
+    bg: "text",
+    borderRadius: "full",
+    h: "2.5",
+    w: "2.5",
+  });
 type ChoiceQuestion = Extract<AskUserQuestion, { kind: "choice" }>;
 
 export function ChoiceOptions({
@@ -49,11 +49,11 @@ export function ChoiceOptions({
   selectedOptions: string[];
   onOptionsChange: (options: string[]) => void;
 }) {
-  const { t } = useTranslation();
-  const handleRadioChange = useCallback(
-    ({ value }: { value: string | null }) => onOptionsChange(value ? [value] : []),
-    [onOptionsChange],
-  );
+  const { t } = useTranslation(),
+    handleRadioChange = useCallback(
+      ({ value }: { value: string | null }) => onOptionsChange(value ? [value] : []),
+      [onOptionsChange],
+    );
   if (question.multiple) {
     return (
       <div className={optionList}>

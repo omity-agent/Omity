@@ -10,29 +10,29 @@ afterEach(() => {
   rmSync(resolveSessionPaths("session").dir, { force: true, recursive: true });
 });
 test("referenced pasted files are saved and placeholders become absolute paths", async () => {
-  const settings = testSettings();
-  const sessionId = "session";
-  const id = "a1b2c3d4";
-  const placeholder = attachmentPlaceholder(id, "../notes.txt");
-  const saved = await saveMessageAttachments(
-    settings,
-    sessionId,
-    `读取 ${placeholder} 和 ${placeholder.toUpperCase()}`,
-    [{ file: new File(["hello"], "../notes.txt"), id }],
-  );
-  const [path, repeated] = saved.content.slice("读取 ".length).split(" 和 ");
-  const savedPath = required(path);
+  const settings = testSettings(),
+    sessionId = "session",
+    id = "a1b2c3d4",
+    placeholder = attachmentPlaceholder(id, "../notes.txt"),
+    saved = await saveMessageAttachments(
+      settings,
+      sessionId,
+      `读取 ${placeholder} 和 ${placeholder.toUpperCase()}`,
+      [{ file: new File(["hello"], "../notes.txt"), id }],
+    ),
+    [path, repeated] = saved.content.slice("读取 ".length).split(" 和 "),
+    savedPath = required(path);
   expect(savedPath).toContain("/sessions/session/attachments/");
   expect(savedPath).toMatch(/\/attachments\/[0-9a-z]{8}\.txt$/);
   expect(repeated).toBe(savedPath);
   expect(readFileSync(savedPath, "utf8")).toBe("hello");
 });
 test("unreferenced files are ignored and missing references are rejected", async () => {
-  const settings = testSettings();
-  const id = "a1b2c3d4";
-  const ignored = await saveMessageAttachments(settings, "session", "hello", [
-    { file: new File(["hello"], "notes.txt"), id },
-  ]);
+  const settings = testSettings(),
+    id = "a1b2c3d4",
+    ignored = await saveMessageAttachments(settings, "session", "hello", [
+      { file: new File(["hello"], "notes.txt"), id },
+    ]);
   expect(ignored.content).toBe("hello");
   expect(() =>
     saveMessageAttachments(settings, "session", attachmentPlaceholder(id, "notes.txt"), []),

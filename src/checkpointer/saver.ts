@@ -26,8 +26,8 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     super();
   }
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
-    const { checkpointId, checkpointNs, threadId } = configIdentity(config);
-    const row = queryGet<CheckpointRow>(this.db, selectCheckpoint(), threadId, checkpointNs);
+    const { checkpointId, checkpointNs, threadId } = configIdentity(config),
+      row = queryGet<CheckpointRow>(this.db, selectCheckpoint(), threadId, checkpointNs);
     if (!row) {
       return undefined;
     }
@@ -50,11 +50,11 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     checkpoint: Checkpoint,
     metadata: CheckpointMetadata,
   ): Promise<RunnableConfig> {
-    const identity = configIdentity(config);
-    const [[type, value], [metadataType, metadataValue]] = await Promise.all([
-      this.serde.dumpsTyped(copyCheckpoint(checkpoint)),
-      this.serde.dumpsTyped(metadata),
-    ]);
+    const identity = configIdentity(config),
+      [[type, value], [metadataType, metadataValue]] = await Promise.all([
+        this.serde.dumpsTyped(copyCheckpoint(checkpoint)),
+        this.serde.dumpsTyped(metadata),
+      ]);
     if (type !== metadataType) {
       throw new Error("checkpoint 与 metadata 的序列化类型不一致");
     }
@@ -96,26 +96,26 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     if (!identity.checkpointId) {
       throw new Error("缺少 checkpoint_id");
     }
-    const { checkpointId } = identity;
-    const rows = await Promise.all(
-      writes.map(async ([channel, value], index) => {
-        const [type, serialized] = await this.serde.dumpsTyped(value);
-        const bindings: SQLQueryBindings[] = [
-          identity.threadId,
-          identity.checkpointNs,
-          checkpointId,
-          taskId,
-          WRITES_IDX_MAP[channel] ?? index,
-          channel,
-          type,
-          serialized,
-        ];
-        return {
-          bindings,
-          replace: channel in WRITES_IDX_MAP,
-        };
-      }),
-    );
+    const { checkpointId } = identity,
+      rows = await Promise.all(
+        writes.map(async ([channel, value], index) => {
+          const [type, serialized] = await this.serde.dumpsTyped(value),
+            bindings: SQLQueryBindings[] = [
+              identity.threadId,
+              identity.checkpointNs,
+              checkpointId,
+              taskId,
+              WRITES_IDX_MAP[channel] ?? index,
+              channel,
+              type,
+              serialized,
+            ];
+          return {
+            bindings,
+            replace: channel in WRITES_IDX_MAP,
+          };
+        }),
+      );
     runTransaction(this.db, () => {
       const current = queryGet<{ checkpoint_id: string }>(
         this.db,
@@ -140,15 +140,15 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     runTransaction(this.db, () => deleteThreadData(this.db, threadId));
   }
   private async decode(row: CheckpointRow): Promise<CheckpointTuple> {
-    const pending = writeRowsSchema.parse(JSON.parse(row.pending_writes));
-    const checkpoint = await this.serde.loadsTyped(row.type, row.checkpoint);
-    const metadata = await this.serde.loadsTyped(row.type, row.metadata);
-    const pendingWrites = await Promise.all(
-      pending.map(async (write) => {
-        const value = await this.serde.loadsTyped(write.type, write.value);
-        return [write.task_id, write.channel, value] as [string, string, unknown];
-      }),
-    );
+    const pending = writeRowsSchema.parse(JSON.parse(row.pending_writes)),
+      checkpoint = await this.serde.loadsTyped(row.type, row.checkpoint),
+      metadata = await this.serde.loadsTyped(row.type, row.metadata),
+      pendingWrites = await Promise.all(
+        pending.map(async (write) => {
+          const value = await this.serde.loadsTyped(write.type, write.value);
+          return [write.task_id, write.channel, value] as [string, string, unknown];
+        }),
+      );
     return {
       checkpoint: requireCheckpoint(checkpoint),
       config: {
@@ -169,26 +169,26 @@ function requireCheckpoint(value: unknown): Checkpoint {
 function requireMetadata(value: unknown): CheckpointMetadata {
   return metadataSchema.parse(value);
 }
-const channelVersionSchema = z.union([z.number(), z.string()]);
-const channelVersionsSchema = z.record(z.string(), channelVersionSchema);
-const checkpointSchema: z.ZodType<Checkpoint> = z.looseObject({
-  channel_values: z.record(z.string(), z.unknown()),
-  channel_versions: channelVersionsSchema,
-  id: z.string(),
-  ts: z.string(),
-  v: z.number(),
-  versions_seen: z.record(z.string(), channelVersionsSchema),
-});
-const metadataSchema: z.ZodType<CheckpointMetadata> = z.looseObject({
-  parents: z.record(z.string(), z.string()),
-  source: z.enum(["input", "loop", "update", "fork"]),
-  step: z.number(),
-});
-const writeRowsSchema: z.ZodType<WriteRow[]> = z.array(
-  z.object({
-    channel: z.string(),
-    task_id: z.string(),
-    type: z.string(),
-    value: z.string(),
+const channelVersionSchema = z.union([z.number(), z.string()]),
+  channelVersionsSchema = z.record(z.string(), channelVersionSchema),
+  checkpointSchema: z.ZodType<Checkpoint> = z.looseObject({
+    channel_values: z.record(z.string(), z.unknown()),
+    channel_versions: channelVersionsSchema,
+    id: z.string(),
+    ts: z.string(),
+    v: z.number(),
+    versions_seen: z.record(z.string(), channelVersionsSchema),
   }),
-);
+  metadataSchema: z.ZodType<CheckpointMetadata> = z.looseObject({
+    parents: z.record(z.string(), z.string()),
+    source: z.enum(["input", "loop", "update", "fork"]),
+    step: z.number(),
+  }),
+  writeRowsSchema: z.ZodType<WriteRow[]> = z.array(
+    z.object({
+      channel: z.string(),
+      task_id: z.string(),
+      type: z.string(),
+      value: z.string(),
+    }),
+  );

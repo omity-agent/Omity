@@ -4,20 +4,20 @@ import { AppMcp } from "../../../src/app/runtime/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
 test("MCP adapter clients initialize sequentially", async () => {
-  const firstReady = Promise.withResolvers<void>();
-  const requested: string[] = [];
-  const loading = loadServerTools(
-    {
-      async getClient(name) {
-        requested.push(name);
-        if (name === "first") {
-          await firstReady.promise;
-        }
-        return toolClient(name);
+  const firstReady = Promise.withResolvers<void>(),
+    requested: string[] = [],
+    loading = loadServerTools(
+      {
+        async getClient(name) {
+          requested.push(name);
+          if (name === "first") {
+            await firstReady.promise;
+          }
+          return toolClient(name);
+        },
       },
-    },
-    ["first", "second"],
-  );
+      ["first", "second"],
+    );
   await Bun.sleep(0);
   expect(requested).toEqual(["first"]);
   firstReady.resolve();
@@ -25,13 +25,13 @@ test("MCP adapter clients initialize sequentially", async () => {
   expect(requested).toEqual(["first", "second"]);
 });
 test("all App consumers share one MCP lifecycle", async () => {
-  const initialized = Promise.withResolvers<LoadedMcp>();
-  const close = mock(() => Promise.resolve());
-  const initialize = mock(() => initialized.promise);
-  const mcp = new AppMcp(initialize);
-  const first = mcp.load([]);
-  const second = mcp.load([]);
-  const closing = mcp.close();
+  const initialized = Promise.withResolvers<LoadedMcp>(),
+    close = mock(() => Promise.resolve()),
+    initialize = mock(() => initialized.promise),
+    mcp = new AppMcp(initialize),
+    first = mcp.load([]),
+    second = mcp.load([]),
+    closing = mcp.close();
   expect(first).toBe(second);
   expect(initialize).toHaveBeenCalledTimes(1);
   expect(close).not.toHaveBeenCalled();
@@ -56,12 +56,12 @@ test("a failed App MCP initialization can be retried", async () => {
   await mcp.close();
 });
 test("App MCP lifecycles are isolated by ordered Profile selection", async () => {
-  const close = mock(() => Promise.resolve());
-  const initialize = mock((_profiles: string[]) => Promise.resolve(loadedMcp(close)));
-  const mcp = new AppMcp(initialize);
-  const first = await mcp.load(["base", "work"]);
-  const shared = await mcp.load(["base", "work"]);
-  const reordered = await mcp.load(["work", "base"]);
+  const close = mock(() => Promise.resolve()),
+    initialize = mock((_profiles: string[]) => Promise.resolve(loadedMcp(close))),
+    mcp = new AppMcp(initialize),
+    first = await mcp.load(["base", "work"]),
+    shared = await mcp.load(["base", "work"]),
+    reordered = await mcp.load(["work", "base"]);
   expect(first).toBe(shared);
   expect(reordered).not.toBe(first);
   expect(initialize).toHaveBeenCalledTimes(2);
@@ -69,12 +69,12 @@ test("App MCP lifecycles are isolated by ordered Profile selection", async () =>
   expect(close).toHaveBeenCalledTimes(2);
 });
 test("App MCP closes successful lifecycles after another initialization fails", async () => {
-  const close = mock(() => Promise.resolve());
-  const mcp = new AppMcp((profiles) =>
-    profiles[0] === "broken"
-      ? Promise.reject(new Error("initialization failed"))
-      : Promise.resolve(loadedMcp(close)),
-  );
+  const close = mock(() => Promise.resolve()),
+    mcp = new AppMcp((profiles) =>
+      profiles[0] === "broken"
+        ? Promise.reject(new Error("initialization failed"))
+        : Promise.resolve(loadedMcp(close)),
+    );
   await mcp.load(["ready"]);
   expect(mcp.load(["broken"])).rejects.toThrow("initialization failed");
   await mcp.close();

@@ -21,10 +21,11 @@ export async function request<T>(
 ): Promise<T> {
   try {
     const response = await fetch(path, {
-      headers: init?.body instanceof FormData ? undefined : { "content-type": "application/json" },
-      ...init,
-    });
-    const json: unknown = await response.json();
+        headers:
+          init?.body instanceof FormData ? undefined : { "content-type": "application/json" },
+        ...init,
+      }),
+      json: unknown = await response.json();
     if (!response.ok) {
       const parsed = errorResponse.safeParse(json);
       if (!parsed.success) {

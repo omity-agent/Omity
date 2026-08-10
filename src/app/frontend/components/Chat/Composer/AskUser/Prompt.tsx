@@ -5,38 +5,38 @@ import { MarkdownEditor } from "../../MarkdownEditor";
 import { useTranslation } from "react-i18next";
 
 const choiceLayout = css({
-  borderColor: "lineStrong",
-  borderWidth: "1px",
-  display: "grid",
-  gridTemplateColumns: { base: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
-  minH: "composerEditor",
-  minW: 0,
-});
-const choicePane = css({
-  alignContent: "start",
-  display: "grid",
-  gap: "3",
-  minW: 0,
-  p: "3",
-});
-const promptLabel = css({
-  color: "text",
-  fontSize: "sm",
-  fontWeight: "medium",
-  lineHeight: "1.5",
-  m: 0,
-  whiteSpace: "pre-wrap",
-});
-const noteLabel = css({ color: "mutedStrong", fontSize: "xs", m: 0 });
-const notePane = css({
-  alignContent: "stretch",
-  borderLeftColor: { md: "lineStrong" },
-  borderLeftWidth: { md: "1px" },
-  borderTopColor: { base: "lineStrong", md: "transparent" },
-  borderTopWidth: { base: "1px", md: "0" },
-  gridTemplateRows: "auto minmax(0, 1fr)",
-  minH: 0,
-});
+    borderColor: "lineStrong",
+    borderWidth: "1px",
+    display: "grid",
+    gridTemplateColumns: { base: "minmax(0, 1fr)", md: "repeat(2, minmax(0, 1fr))" },
+    minH: "composerEditor",
+    minW: 0,
+  }),
+  choicePane = css({
+    alignContent: "start",
+    display: "grid",
+    gap: "3",
+    minW: 0,
+    p: "3",
+  }),
+  promptLabel = css({
+    color: "text",
+    fontSize: "sm",
+    fontWeight: "medium",
+    lineHeight: "1.5",
+    m: 0,
+    whiteSpace: "pre-wrap",
+  }),
+  noteLabel = css({ color: "mutedStrong", fontSize: "xs", m: 0 }),
+  notePane = css({
+    alignContent: "stretch",
+    borderLeftColor: { md: "lineStrong" },
+    borderLeftWidth: { md: "1px" },
+    borderTopColor: { base: "lineStrong", md: "transparent" },
+    borderTopWidth: { base: "1px", md: "0" },
+    gridTemplateRows: "auto minmax(0, 1fr)",
+    minH: 0,
+  });
 
 export function AskUserPrompt({
   note,

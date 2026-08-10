@@ -7,75 +7,75 @@ import {
 import { expect, test } from "bun:test";
 
 test("keeps live output before a user append across persistence", () => {
-  const rootUser = message(1, "user", "开始", 1);
-  const firstOutput = message(2, "assistant", "第一段");
-  const queue: DisplayQueue[] = [
-    {
-      content: "",
-      error: null,
-      id: 1,
-      root: true,
-      status: "running",
-      userMessageId: 1,
-    },
-    {
-      content: "追加问题",
-      error: null,
-      id: 2,
-      root: false,
-      status: "pending",
-      userMessageId: null,
-    },
-  ];
-  const events: DisplayEvent[] = [
-    {
-      id: 1,
-      kind: "assistant_text_delta",
-      messageId: "live-output",
-      partId: "text-1",
-      queueId: 1,
-      value: "第二段",
-    },
-  ];
-  const streaming = buildTimeline([rootUser, firstOutput], queue, events);
-  const persisted = buildTimeline(
-    [rootUser, firstOutput, message(3, "assistant", "第二段"), message(4, "user", "追加问题", 2)],
-    [],
-    [],
-  );
+  const rootUser = message(1, "user", "开始", 1),
+    firstOutput = message(2, "assistant", "第一段"),
+    queue: DisplayQueue[] = [
+      {
+        content: "",
+        error: null,
+        id: 1,
+        root: true,
+        status: "running",
+        userMessageId: 1,
+      },
+      {
+        content: "追加问题",
+        error: null,
+        id: 2,
+        root: false,
+        status: "pending",
+        userMessageId: null,
+      },
+    ],
+    events: DisplayEvent[] = [
+      {
+        id: 1,
+        kind: "assistant_text_delta",
+        messageId: "live-output",
+        partId: "text-1",
+        queueId: 1,
+        value: "第二段",
+      },
+    ],
+    streaming = buildTimeline([rootUser, firstOutput], queue, events),
+    persisted = buildTimeline(
+      [rootUser, firstOutput, message(3, "assistant", "第二段"), message(4, "user", "追加问题", 2)],
+      [],
+      [],
+    );
   expect(summary(streaming)).toEqual(["user:开始", "assistant:第一段\n\n第二段", "user:追加问题"]);
   expect(summary(streaming)).toEqual(summary(persisted));
 });
 test("keeps a streaming tool call before a pending user append", () => {
   const queue: DisplayQueue[] = [
-    {
-      content: "",
-      error: null,
-      id: 1,
-      root: true,
-      status: "running",
-      userMessageId: 1,
-    },
-    {
-      content: "追加问题",
-      error: null,
-      id: 2,
-      root: false,
-      status: "pending",
-      userMessageId: null,
-    },
-  ];
-  const events: DisplayEvent[] = [
-    {
-      id: 1,
-      kind: "tool_call_delta",
-      messageId: "live-tool",
-      partId: "tool-0",
-      queueId: 1,
-      value: { idDelta: "call-1", index: 0, nameDelta: "inspect" },
-    },
-  ];
-  const view = buildTimeline([message(1, "user", "开始", 1)], queue, events);
+      {
+        content: "",
+        error: null,
+        id: 1,
+        root: true,
+        status: "running",
+        userMessageId: 1,
+      },
+      {
+        content: "追加问题",
+        error: null,
+        id: 2,
+        root: false,
+        status: "pending",
+        userMessageId: null,
+      },
+    ],
+    events: DisplayEvent[] = [
+      {
+        id: 1,
+        kind: "tool_call_delta",
+        messageId: "live-tool",
+        partId: "tool-0",
+        queueId: 1,
+        value: { idDelta: "call-1", index: 0, nameDelta: "inspect" },
+      },
+    ],
+    view = buildTimeline([message(1, "user", "开始", 1)], queue, events);
   expect(view.map(({ role }) => role)).toEqual(["user", "assistant", "user"]);
   expect(view[1]?.parts.some((part) => part.type === "tool" && part.call.id === "call-1")).toBe(
     true,
@@ -84,50 +84,50 @@ test("keeps a streaming tool call before a pending user append", () => {
 });
 test("places output generated after the consumed boundary behind the user message", () => {
   const queue: DisplayQueue[] = [
-    {
-      content: "",
-      error: null,
-      id: 1,
-      root: true,
-      status: "running",
-      userMessageId: 1,
-    },
-    {
-      content: "追加问题",
-      error: null,
-      id: 2,
-      root: false,
-      status: "pending",
-      userMessageId: null,
-    },
-  ];
-  const events: DisplayEvent[] = [
-    {
-      id: 1,
-      kind: "assistant_text_delta",
-      messageId: "before",
-      partId: "text-1",
-      queueId: 1,
-      value: "插入前",
-    },
-    {
-      id: 2,
-      kind: "user_appended",
-      messageId: "queue:session:2",
-      partId: "user",
-      queueId: 2,
-      value: null,
-    },
-    {
-      id: 3,
-      kind: "assistant_text_delta",
-      messageId: "after",
-      partId: "text-1",
-      queueId: 1,
-      value: "插入后",
-    },
-  ];
-  const view = buildTimeline([message(1, "user", "开始", 1)], queue, events);
+      {
+        content: "",
+        error: null,
+        id: 1,
+        root: true,
+        status: "running",
+        userMessageId: 1,
+      },
+      {
+        content: "追加问题",
+        error: null,
+        id: 2,
+        root: false,
+        status: "pending",
+        userMessageId: null,
+      },
+    ],
+    events: DisplayEvent[] = [
+      {
+        id: 1,
+        kind: "assistant_text_delta",
+        messageId: "before",
+        partId: "text-1",
+        queueId: 1,
+        value: "插入前",
+      },
+      {
+        id: 2,
+        kind: "user_appended",
+        messageId: "queue:session:2",
+        partId: "user",
+        queueId: 2,
+        value: null,
+      },
+      {
+        id: 3,
+        kind: "assistant_text_delta",
+        messageId: "after",
+        partId: "text-1",
+        queueId: 1,
+        value: "插入后",
+      },
+    ],
+    view = buildTimeline([message(1, "user", "开始", 1)], queue, events);
   expect(summary(view)).toEqual([
     "user:开始",
     "assistant:插入前",

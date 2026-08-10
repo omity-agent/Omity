@@ -11,19 +11,19 @@ interface StoredRow {
 }
 export function syncMessages(db: Database, sessionId: string, messages: BaseMessage[]) {
   const items = messages.map((message) => {
-    message.id ??= randomUUID();
-    return { message, stored: messageInsert(message) };
-  });
-  const existing = queryAll<StoredRow>(
-    db,
-    `SELECT source_id, message_json FROM messages
+      message.id ??= randomUUID();
+      return { message, stored: messageInsert(message) };
+    }),
+    existing = queryAll<StoredRow>(
+      db,
+      `SELECT source_id, message_json FROM messages
      WHERE session_id = ? AND position IS NOT NULL ORDER BY position`,
-    sessionId,
-  );
-  const changedAt = firstChangedIndex(
-    existing,
-    items.map((item) => item.stored),
-  );
+      sessionId,
+    ),
+    changedAt = firstChangedIndex(
+      existing,
+      items.map((item) => item.stored),
+    );
   if (changedAt === items.length && changedAt === existing.length) {
     return false;
   }
@@ -51,8 +51,8 @@ export function syncMessages(db: Database, sessionId: string, messages: BaseMess
 function firstChangedIndex(existing: StoredRow[], incoming: MessageInsert[]) {
   const length = Math.min(existing.length, incoming.length);
   for (let index = 0; index < length; index += 1) {
-    const before = existing[index];
-    const after = incoming[index];
+    const before = existing[index],
+      after = incoming[index];
     if (
       !before ||
       !after ||

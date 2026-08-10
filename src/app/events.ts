@@ -38,19 +38,19 @@ export class AppEvents {
     const waiting = Promise.withResolvers<void>();
     let settled = false;
     const handler = (changedSessionId: string) => {
-      if (changedSessionId !== sessionId) {
-        return;
-      }
-      done();
-    };
-    const done = () => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      this.bus.off("wake", handler);
-      waiting.resolve();
-    };
+        if (changedSessionId !== sessionId) {
+          return;
+        }
+        done();
+      },
+      done = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.bus.off("wake", handler);
+        waiting.resolve();
+      };
     this.bus.on("wake", handler);
     void (async () => {
       await sleep(delayMs);

@@ -36,11 +36,11 @@ export function MarkdownView({
   fileLinks?: FilePathMatch[];
   preserveLineBreaks?: boolean;
 }) {
-  const components = useMemo(() => markdownComponents(content, fileLinks), [content, fileLinks]);
-  const remarkPlugins = useMemo(
-    () => [remarkGfm, fileLinkRemark(fileLinks), ...(preserveLineBreaks ? [remarkBreaks] : [])],
-    [fileLinks, preserveLineBreaks],
-  );
+  const components = useMemo(() => markdownComponents(content, fileLinks), [content, fileLinks]),
+    remarkPlugins = useMemo(
+      () => [remarkGfm, fileLinkRemark(fileLinks), ...(preserveLineBreaks ? [remarkBreaks] : [])],
+      [fileLinks, preserveLineBreaks],
+    );
   return (
     <div className={markdown}>
       <ReactMarkdown components={components} remarkPlugins={remarkPlugins}>
@@ -52,10 +52,10 @@ export function MarkdownView({
 function markdownComponents(source: string, fileLinks: FilePathMatch[]): Components {
   return {
     a: ({ children, href, node, ...props }) => {
-      const linkedPath = pathFromFileLinkHref(href);
-      const match =
-        matchInsideNode(node, fileLinks) ??
-        fileLinks.find((candidate) => candidate.path === linkedPath);
+      const linkedPath = pathFromFileLinkHref(href),
+        match =
+          matchInsideNode(node, fileLinks) ??
+          fileLinks.find((candidate) => candidate.path === linkedPath);
       if (match !== undefined) {
         return (
           <FileLinkMenu kind={match.kind} path={match.path}>
@@ -70,21 +70,19 @@ function markdownComponents(source: string, fileLinks: FilePathMatch[]): Compone
       );
     },
     code: ({ children, className, node }) => {
-      const raw = codeText(children);
-      const code = raw.replace(/\n$/, "");
-      const matches = localizeMatches(code, source, node, fileLinks);
-      const language = className?.match(/(?:^|\s)language-(?<language>[^\s]+)/)?.groups?.[
-        "language"
-      ];
+      const raw = codeText(children),
+        code = raw.replace(/\n$/, ""),
+        matches = localizeMatches(code, source, node, fileLinks),
+        language = className?.match(/(?:^|\s)language-(?<language>[^\s]+)/)?.groups?.["language"];
       if (className || raw.includes("\n")) {
         return <HighlightedCode code={code} fileLinkMatches={matches} language={language} />;
       }
       const rendered = (
-        <Code className={inlineCode} size="md" variant="ghost">
-          {children}
-        </Code>
-      );
-      const [match] = matches;
+          <Code className={inlineCode} size="md" variant="ghost">
+            {children}
+          </Code>
+        ),
+        [match] = matches;
       return match ? (
         <FileLinkMenu kind={match.kind} path={match.path}>
           {rendered}

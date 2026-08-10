@@ -18,29 +18,29 @@ export function useNewSession({
   navigate: (page: Page) => void;
   queryClient: QueryClient;
 }) {
-  const [workspace, setWorkspace] = useState<string>();
-  const [profile, setProfile] = useState<string>();
-  const open = useCallback(
-    (sourceWorkspace?: string) => {
-      setWorkspace(sourceWorkspace);
-      setProfile(undefined);
-      navigate({ kind: "new" });
-    },
-    [navigate],
-  );
-  const create = useCallback(
-    async (initialState: InitialSessionState, attachments: PendingAttachment[]) => {
-      const result = await createSession(
-        resolveNewSessionWorkspace(workspace, cwd),
-        profile,
-        initialState,
-        attachments,
-      );
-      addSession(queryClient, result.session);
-      navigate(sessionPage(result.session.id));
-    },
-    [cwd, navigate, profile, queryClient, workspace],
-  );
+  const [workspace, setWorkspace] = useState<string>(),
+    [profile, setProfile] = useState<string>(),
+    open = useCallback(
+      (sourceWorkspace?: string) => {
+        setWorkspace(sourceWorkspace);
+        setProfile(undefined);
+        navigate({ kind: "new" });
+      },
+      [navigate, setProfile, setWorkspace],
+    ),
+    create = useCallback(
+      async (initialState: InitialSessionState, attachments: PendingAttachment[]) => {
+        const result = await createSession(
+          resolveNewSessionWorkspace(workspace, cwd),
+          profile,
+          initialState,
+          attachments,
+        );
+        addSession(queryClient, result.session);
+        navigate(sessionPage(result.session.id));
+      },
+      [cwd, navigate, profile, queryClient, workspace],
+    );
   return {
     create,
     open,

@@ -10,8 +10,8 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createTestDirectory } from "../../support/artifacts";
 
 test("profile selection rejects a missing profile directory", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     mkdirSync(userSettingsDir);
     writeFileSync(join(userSettingsDir, "profile.yaml"), "- missing\n");
@@ -23,8 +23,8 @@ test("profile selection rejects a missing profile directory", () => {
   }
 });
 test("profile selection rejects unsafe names", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     mkdirSync(userSettingsDir);
     writeFileSync(join(userSettingsDir, "profile.yaml"), "- ../outside\n");
@@ -34,8 +34,8 @@ test("profile selection rejects unsafe names", () => {
   }
 });
 test("profile selection rejects duplicate layers", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     mkdirSync(join(userSettingsDir, "profiles", "same"), { recursive: true });
     writeFileSync(join(userSettingsDir, "profile.yaml"), "- same\n- same\n");
@@ -47,8 +47,8 @@ test("profile selection rejects duplicate layers", () => {
   }
 });
 test("empty profile selection uses only repository defaults", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     mkdirSync(userSettingsDir);
     writeFileSync(join(userSettingsDir, "profile.yaml"), "[]\n");
@@ -58,8 +58,8 @@ test("empty profile selection uses only repository defaults", () => {
   }
 });
 test("available profiles are sorted and can be selected per context", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     mkdirSync(join(userSettingsDir, "profiles", "work"), { recursive: true });
     mkdirSync(join(userSettingsDir, "profiles", "base"), { recursive: true });
@@ -74,8 +74,8 @@ test("available profiles are sorted and can be selected per context", () => {
   }
 });
 test("selected profile is applied after every profile from profile.yaml", () => {
-  const root = createTestDirectory("configuration");
-  const userSettingsDir = join(root, "user-settings");
+  const root = createTestDirectory("configuration"),
+    userSettingsDir = join(root, "user-settings");
   try {
     for (const name of ["base", "work", "urgent"]) {
       mkdirSync(join(userSettingsDir, "profiles", name), { recursive: true });
