@@ -1,4 +1,3 @@
-import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
 import {
   Annotation,
   type BaseCheckpointSaver,
@@ -10,8 +9,10 @@ import {
   getWriter,
   task,
 } from "@langchain/langgraph";
+import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
 import { type HookPlan, agentPlan, toolPlan } from "../../hooks/plan";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
+import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
 import { BunSqliteSaver } from "../../checkpointer";
 import type { Database } from "bun:sqlite";
 import type { HookRuntime } from "../../hooks/runtime";
@@ -82,7 +83,11 @@ export function createAgentGraph(options: GraphOptions) {
       write: getWriter(),
     }),
   );
-  const invokeToolTask = task("invoke_tool", (call: ToolCall) => invokeTool(call, getConfig()));
+  const invokeToolTask = task("invoke_tool", (call: ToolCall) => invokeTool(call, getConfig())),
+    invokeToolBatchTask = task("invoke_tool_batch", (calls: ToolCall[]) => {
+      const config = getConfig();
+      return invokeToolBatch(calls, (call) => invokeTool(call, config));
+    });
   const consumeHookTask = task("consume_hook_usage", (hookId: string, limit: number) => ({
     consumed: options.hooks.consume(hookId, limit),
   }));
@@ -93,6 +98,7 @@ export function createAgentGraph(options: GraphOptions) {
       return result.consumed;
     },
     (call) => Promise.resolve(invokeToolTask(call)),
+    { parallelToolCalls: options.settings.toolExecution.parallel },
   );
   const callModel = async (state: GraphState) => {
     const response = await requestModel(state.messages);
@@ -104,7 +110,9 @@ export function createAgentGraph(options: GraphOptions) {
     };
   };
   const callTool = async (state: GraphState) => ({
-    messages: [await invokeToolTask(pendingToolCall(state.messages))],
+    messages: await invokeToolBatchTask(
+      pendingToolBatch(state.messages, options.settings.toolExecution.parallel),
+    ),
   });
   return new StateGraph(AgentState)
     .addNode(hookNode, runHooks, { ends: [hookNode, modelNode, toolsNode, END] })
@@ -114,18 +122,4 @@ export function createAgentGraph(options: GraphOptions) {
     .addEdge(modelNode, hookNode)
     .addEdge(toolsNode, hookNode)
     .compile({ checkpointer: options.checkpointer });
-}
-function pendingToolCall(messages: BaseMessage[]): ToolCall {
-  const completed = new Set(
-    messages
-      .filter((message) => ToolMessage.isInstance(message))
-      .map((message) => message.tool_call_id),
-  );
-  const call = messages
-    .findLast((message) => AIMessage.isInstance(message))
-    ?.tool_calls?.find((candidate) => !candidate.id || !completed.has(candidate.id));
-  if (!call) {
-    throw new Error("工具节点没有待执行的工具调用");
-  }
-  return call;
 }

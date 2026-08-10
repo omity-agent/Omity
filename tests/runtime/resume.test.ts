@@ -103,7 +103,8 @@ test("a paused run steps through one model request or a complete tool batch", as
        WHERE kind IN ('tool_started', 'tool_finished')
        ORDER BY id`,
     ).map(({ kind }) => kind),
-  ).toEqual(["tool_started"]);
+  ).toEqual(["tool_started", "tool_started"]);
+  expect(calls).toEqual(["echo-call-1", "echo-call-2"]);
   release.resolve("echoed");
   await toolStep;
   expect(db.nextQueue("session")?.status).toBe("paused");
@@ -117,7 +118,7 @@ test("a paused run steps through one model request or a complete tool batch", as
        WHERE kind IN ('tool_started', 'tool_finished')
        ORDER BY id`,
     ).map(({ kind }) => kind),
-  ).toEqual(["tool_started", "tool_finished", "tool_started", "tool_finished"]);
+  ).toEqual(["tool_started", "tool_started", "tool_finished", "tool_finished"]);
   db.close();
 });
 function context(

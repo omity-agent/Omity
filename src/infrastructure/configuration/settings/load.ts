@@ -70,6 +70,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     hooks: parseHookRules(hooks.value),
     model,
     skills,
+    toolExecution: agent.toolExecution,
     toolOutput: agent.toolOutput,
   };
 }

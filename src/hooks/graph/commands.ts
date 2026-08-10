@@ -34,21 +34,30 @@ export function hookCommand(
       : undefined;
   return command(nextPlan, hookNode, clearPending, [...outputs, result.value], messages);
 }
-export function originalToolCommand(
+export function originalToolsCommand(
   plan: ToolHookPlan,
   original: AIMessage,
-  call: ToolCall,
+  calls: ToolCall[],
   outputs: HookToolOutput[],
 ) {
-  if (!call.id) {
-    throw new Error(`工具调用缺少 ID：${call.name}`);
+  const callIds = calls.map((call) => {
+    if (!call.id) {
+      throw new Error(`工具调用缺少 ID：${call.name}`);
+    }
+    return call.id;
+  });
+  if (callIds.length === 0) {
+    throw new Error("原始工具批次不能为空");
+  }
+  if (new Set(callIds).size !== callIds.length) {
+    throw new Error("原始工具批次包含重复的调用 ID");
   }
   return new Command({
     goto: toolsNode,
     update: {
       hookPlan: {
         ...plan,
-        awaiting: { callId: call.id },
+        awaiting: { callIds },
         replaceMessageId: undefined,
         responseEmitted: true,
       },
@@ -56,8 +65,8 @@ export function originalToolCommand(
       messages: [
         new AIMessage({
           id: plan.replaceMessageId,
-          tool_calls: [call],
-          ...partitionToolResponse(original, call.id, !plan.responseEmitted),
+          tool_calls: calls,
+          ...partitionToolResponse(original, callIds, !plan.responseEmitted),
         }),
       ],
     },

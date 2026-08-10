@@ -58,6 +58,11 @@ const agentSettingsSchema = z
         skillEnabled: z.record(z.string(), z.boolean()),
       })
       .strict(),
+    toolExecution: z
+      .object({
+        parallel: z.boolean(),
+      })
+      .strict(),
     toolOutput: z
       .object({
         maxTokens: z.number().int().positive(),

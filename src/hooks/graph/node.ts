@@ -9,16 +9,20 @@ import {
   restoreOriginal,
 } from "../plan";
 import type { ToolCall, ToolMessage } from "@langchain/core/messages";
-import { command, finishAgent, hookCommand, modelNode, originalToolCommand } from "./commands";
+import { command, finishAgent, hookCommand, modelNode, originalToolsCommand } from "./commands";
 import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
 
 type ConsumeHook = (hookId: string, limit: number) => Promise<boolean>;
 type InvokeTool = (call: ToolCall) => Promise<ToolMessage>;
+interface HookNodeOptions {
+  parallelToolCalls: boolean;
+}
 export function createHookNode(
   hooks: HookRuntime,
   consumeHook: ConsumeHook,
   invokeTool: InvokeTool,
+  options: HookNodeOptions,
 ) {
   return async (state: HookState, config: LangGraphRunnableConfig) => {
     const threadId = requireThreadId(config.configurable);
@@ -36,10 +40,13 @@ export function createHookNode(
       return command(plan, END, clearPending, outputs);
     }
     if (plan.kind === "tools") {
-      const { plan: advancedPlan, output } = finishAwaited(plan, state.messages);
+      const { plan: advancedPlan, outputs: completedOutputs } = finishAwaited(
+        plan,
+        state.messages,
+      );
       plan = advancedPlan;
-      if (output) {
-        outputs = [...outputs, output];
+      if (completedOutputs) {
+        outputs = [...outputs, ...completedOutputs];
       }
     }
     for (;;) {
@@ -73,11 +80,16 @@ export function createHookNode(
           return command(null, modelNode, clearPending, outputs);
         }
         if (plan.stage === "original") {
-          return originalToolCommand(plan, original, call, outputs);
+          const calls = options.parallelToolCalls ? (original.tool_calls ?? []) : [call];
+          return originalToolsCommand(plan, original, calls, outputs);
         }
         const rule = hooks.matching(call.name, plan.stage)[plan.hookIndex];
         if (!rule) {
-          plan = nextToolStage(plan);
+          plan = nextToolStage(
+            plan,
+            original.tool_calls?.length ?? 0,
+            options.parallelToolCalls,
+          );
         } else {
           const result = await executeRule(
             rule,

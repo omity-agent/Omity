@@ -94,6 +94,9 @@ export interface Settings {
   toolOutput: {
     maxTokens: number;
   };
+  toolExecution: {
+    parallel: boolean;
+  };
   hooks: HookRule[];
   agent: {
     recursionLimit: number;

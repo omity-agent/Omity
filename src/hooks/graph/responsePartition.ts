@@ -2,37 +2,51 @@ import type { AIMessage } from "@langchain/core/messages";
 
 export function partitionToolResponse(
   original: AIMessage,
-  callId: string,
+  callIds: readonly string[],
   includeResponse: boolean,
 ) {
+  const selectedCallIds = new Set(callIds);
   return {
-    additional_kwargs: partitionAdditionalKwargs(original, callId, includeResponse),
+    additional_kwargs: partitionAdditionalKwargs(original, selectedCallIds, includeResponse),
     content: includeResponse ? original.content : "",
-    response_metadata: partitionResponseMetadata(original, callId, includeResponse),
+    response_metadata: partitionResponseMetadata(original, selectedCallIds, includeResponse),
     usage_metadata: includeResponse ? original.usage_metadata : undefined,
   };
 }
-function partitionAdditionalKwargs(original: AIMessage, callId: string, includeResponse: boolean) {
+function partitionAdditionalKwargs(
+  original: AIMessage,
+  selectedCallIds: Set<string>,
+  includeResponse: boolean,
+) {
   const allCallIds = toolCallIds(original);
   return Object.fromEntries(
     Object.entries(original.additional_kwargs).flatMap(([key, value]) => {
       if (Array.isArray(value)) {
-        const partition = partitionCallItems(value, allCallIds, callId, includeResponse);
+        const partition = partitionCallItems(value, allCallIds, selectedCallIds, includeResponse);
         return partition ? [[key, partition]] : [];
       }
       if (!isRecord(value)) {
         return includeResponse ? [[key, value]] : [];
       }
-      const partition = partitionCallRecord(value, allCallIds, callId, includeResponse);
+      const partition = partitionCallRecord(value, allCallIds, selectedCallIds, includeResponse);
       return partition ? [[key, partition]] : [];
     }),
   );
 }
-function partitionResponseMetadata(original: AIMessage, callId: string, includeResponse: boolean) {
+function partitionResponseMetadata(
+  original: AIMessage,
+  selectedCallIds: Set<string>,
+  includeResponse: boolean,
+) {
   const metadata = includeResponse ? { ...original.response_metadata } : {};
   const { output } = original.response_metadata;
   if (Array.isArray(output)) {
-    const partition = partitionCallItems(output, toolCallIds(original), callId, includeResponse);
+    const partition = partitionCallItems(
+      output,
+      toolCallIds(original),
+      selectedCallIds,
+      includeResponse,
+    );
     if (partition) {
       metadata["output"] = partition;
     } else {
@@ -44,10 +58,13 @@ function partitionResponseMetadata(original: AIMessage, callId: string, includeR
 function partitionCallItems(
   items: unknown[],
   allCallIds: Set<string>,
-  callId: string,
+  selectedCallIds: Set<string>,
   includeResponse: boolean,
 ) {
-  const scoped = items.filter((item) => itemCallId(item, allCallIds) === callId);
+  const scoped = items.filter((item) => {
+    const callId = itemCallId(item, allCallIds);
+    return callId !== undefined && selectedCallIds.has(callId);
+  });
   const response = includeResponse
     ? items.filter((item) => itemCallId(item, allCallIds) === undefined)
     : [];
@@ -57,7 +74,7 @@ function partitionCallItems(
 function partitionCallRecord(
   value: Record<string, unknown>,
   allCallIds: Set<string>,
-  callId: string,
+  selectedCallIds: Set<string>,
   includeResponse: boolean,
 ) {
   if (!Object.keys(value).some((id) => allCallIds.has(id))) {
@@ -65,7 +82,7 @@ function partitionCallRecord(
   }
   const partition = Object.fromEntries(
     Object.entries(value).filter(
-      ([key]) => key === callId || (includeResponse && !allCallIds.has(key)),
+      ([key]) => selectedCallIds.has(key) || (includeResponse && !allCallIds.has(key)),
     ),
   );
   return Object.keys(partition).length > 0 ? partition : undefined;

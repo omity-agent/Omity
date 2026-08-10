@@ -18,7 +18,7 @@ export interface AgentHookPlan {
   when: HookWhen;
 }
 export interface ToolHookPlan {
-  awaiting?: { callId: string };
+  awaiting?: { callIds: string[] };
   hookIndex: number;
   kind: "tools";
   original: StoredMessage;
@@ -62,21 +62,38 @@ export function finishAwaited(plan: ToolHookPlan, messages: BaseMessage[]) {
   if (!plan.awaiting) {
     return { plan };
   }
-  const output = messages.findLast(
-    (message): message is ToolMessage =>
-      ToolMessage.isInstance(message) && message.tool_call_id === plan.awaiting?.callId,
-  );
-  if (!output) {
-    return { plan };
+  const outputs: HookToolOutput[] = [];
+  for (const callId of plan.awaiting.callIds) {
+    const message = messages.findLast(
+      (candidate): candidate is ToolMessage =>
+        ToolMessage.isInstance(candidate) && candidate.tool_call_id === callId,
+    );
+    if (!message) {
+      return { plan };
+    }
+    outputs.push(readToolOutput(message));
   }
   return {
-    output: readToolOutput(output),
+    outputs,
     plan: { ...plan, awaiting: undefined, hookIndex: 0, stage: "after" as const },
   };
 }
-export function nextToolStage(plan: ToolHookPlan): ToolHookPlan {
-  return plan.stage === "before"
-    ? { ...plan, hookIndex: 0, stage: "original" }
+export function nextToolStage(
+  plan: ToolHookPlan,
+  toolCount: number,
+  parallel: boolean,
+): ToolHookPlan {
+  if (plan.stage === "before") {
+    const nextIndex = plan.toolIndex + 1;
+    return parallel && nextIndex < toolCount
+      ? { ...plan, hookIndex: 0, toolIndex: nextIndex }
+      : { ...plan, hookIndex: 0, stage: "original", toolIndex: parallel ? 0 : plan.toolIndex };
+  }
+  if (plan.stage !== "after") {
+    throw new Error("不能跳过原始工具执行阶段");
+  }
+  return parallel
+    ? { ...plan, hookIndex: 0, toolIndex: plan.toolIndex + 1 }
     : { ...plan, hookIndex: 0, stage: "before", toolIndex: plan.toolIndex + 1 };
 }
 export function requireCallId(call: ToolCall) {

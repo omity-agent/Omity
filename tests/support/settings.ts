@@ -42,6 +42,7 @@ export function testSettings(): Settings {
       enabled: false,
       skillEnabled: {},
     },
+    toolExecution: { parallel: true },
     toolOutput: { maxTokens: 8192 },
   };
 }

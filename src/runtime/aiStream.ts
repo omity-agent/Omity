@@ -1,10 +1,11 @@
-import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { acceptMessageId, sequentialPart, toolPart } from "./stream/parts";
 import { appendReasoningDelta, flushReasoning } from "./content";
 import type { AiStreamEvent } from "../agent/aiAgent";
+import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
 import { findToolStreamIdentity } from "../infrastructure/database/records/toolStreamIdentity";
+import { pendingToolBatch } from "../agent/graph/toolBatch";
 import { toUIMessageChunk } from "ai";
 
 type AiStreamContext = Pick<
@@ -86,29 +87,22 @@ export async function recordToolStarted(
   messages: BaseMessage[],
   queueId: number,
 ) {
-  const completed = new Set(
-    messages
-      .filter((message) => ToolMessage.isInstance(message))
-      .map((message) => message.tool_call_id),
-  );
-  const call = messages
-    .findLast((message) => AIMessage.isInstance(message))
-    ?.tool_calls?.find((candidate) => !candidate.id || !completed.has(candidate.id));
-  if (!call?.id) {
-    throw new Error("工具执行缺少稳定的调用 ID");
+  const calls = pendingToolBatch(messages, ctx.settings.toolExecution.parallel);
+  for (const call of calls) {
+    const callId = call.id,
+      identity = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId) ?? {
+        messageId: callId,
+        partId: callId,
+      };
+    ctx.toolExecutions?.announce(callId);
+    await ctx.db.appendStream(ctx.sessionId, {
+      kind: "tool_started",
+      messageId: identity.messageId,
+      partId: identity.partId,
+      queueId,
+      value: callId,
+    });
   }
-  ctx.toolExecutions?.announce(call.id);
-  const identity = findToolStreamIdentity(ctx.db.db, ctx.sessionId, call.id) ?? {
-    messageId: call.id,
-    partId: call.id,
-  };
-  await ctx.db.appendStream(ctx.sessionId, {
-    kind: "tool_started",
-    messageId: identity.messageId,
-    partId: identity.partId,
-    queueId,
-    value: call.id,
-  });
 }
 function streamMessageId(state: StreamLogState, partId: string) {
   const messageId = acceptMessageId(state.parts, state.parts.messageId ?? partId);

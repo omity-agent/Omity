@@ -25,6 +25,7 @@ test("settings use the unified user data directory", () => {
   expect(settings).not.toHaveProperty("paths");
   expect(settings.model.reasoning_effort).toBe("medium");
   expect(settings.server).toEqual({ host: "127.0.0.1", port: 3030 });
+  expect(settings.toolExecution.parallel).toBeTrue();
   expect(settings.toolOutput.maxTokens).toBe(8192);
   expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
   const paths = sessionPaths("abc-def");
@@ -70,7 +71,7 @@ test("user settings deeply override defaults and preserve relative path semantic
   writeFileSync(join(profileDir, "model.yaml"), "model: user-model\n");
   writeFileSync(
     join(profileDir, "agent.yaml"),
-    "recursionLimit: 7\nprompts:\n  - profile.md\n  - skills.md\n  - system.md\n",
+    "recursionLimit: 7\nprompts:\n  - profile.md\n  - skills.md\n  - system.md\ntoolExecution: { parallel: false }\n",
   );
   writeFileSync(join(profileDir, "main.yaml"), "server: { port: 5050 }\n");
   writeFileSync(
@@ -85,6 +86,7 @@ test("user settings deeply override defaults and preserve relative path semantic
   expect([settings.model.adapter, settings.model.model]).toEqual(["completions", "user-model"]);
   expect(settings.model.timeoutMs).toBe(2000);
   expect(settings.agent.recursionLimit).toBe(7);
+  expect(settings.toolExecution.parallel).toBeFalse();
   expect(settings.toolOutput.maxTokens).toBe(8192);
   expect(settings.skills.enabled).toBe(false);
   expect(settings.hooks.map(({ id }) => id)).toEqual(["user"]);

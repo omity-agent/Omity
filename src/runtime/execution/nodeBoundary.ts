@@ -18,7 +18,7 @@ export async function runGraphUntilBoundary(
   const [item] = run.items;
   const config = {
     configurable: { thread_id: run.threadId },
-    interruptAfter: ["request_model", "invoke_tool"] as string[],
+    interruptAfter: ["request_model", "invoke_tool", "invoke_tool_batch"] as string[],
     interruptBefore: ["model_request", "tools"] as string[],
     recursionLimit: ctx.settings.agent.recursionLimit,
   };

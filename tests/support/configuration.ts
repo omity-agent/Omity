@@ -14,6 +14,8 @@ prompts:
   - skills.md
 toolOutput:
   maxTokens: 8192
+toolExecution:
+  parallel: true
 skills:
   enabled: false
   directory: ~/.agents/skills
