@@ -39,6 +39,12 @@ export const controlBody = z
   .object({ control: z.enum(["running", "step", "pause", "cancel"]) })
   .strict();
 export const cancelToolBody = z.object({ toolCallId: z.string().min(1).max(1024) }).strict();
+export const answerToolBody = z
+  .object({
+    answer: z.unknown(),
+    toolCallId: z.string().min(1).max(1024),
+  })
+  .strict();
 export const fileLinkActionBody = z
   .object({
     action: z.enum(["open", "reveal"]),

@@ -15,6 +15,7 @@ export type ApiErrorCode =
   | "RATE_LIMITED"
   | "INTERNAL_ERROR";
 const domainStatuses: Record<DomainErrorCode, ContentfulStatusCode> = {
+  ASK_USER_ANSWER_INVALID: 400,
   ATTACHMENT_INVALID: 400,
   ATTACHMENT_TOO_LARGE: 413,
   CONTROL_NOT_READY: 409,

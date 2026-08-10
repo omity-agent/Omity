@@ -12,7 +12,7 @@ const toolJsonSchema = z.looseObject({
 const stringParameterSchema = z.looseObject({ type: z.literal("string") });
 export function normalizeFreeformToolInputs(
   value: unknown,
-  path = "settings/mcp.yaml.freeformToolInputs",
+  path = "settings/toolbox.yaml.freeformToolInputs",
 ): string[] {
   if (value == null) {
     return [];

@@ -1,5 +1,24 @@
-import type { LoadedMcp } from "../../infrastructure/mcp/loadTools";
+import { type LoadedMcp, loadMcp } from "../../infrastructure/mcp/loadTools";
+import {
+  type SettingsContext,
+  selectSettingsProfiles,
+} from "../../infrastructure/configuration/settings/context";
+import type { AskUserRuntime } from "../../infrastructure/toolbox/runtime";
+import type { LogLevel } from "../../types";
+import { Logger } from "../../infrastructure/logging/logger";
 
+export function createAppMcp(
+  root: string,
+  level: LogLevel,
+  context: SettingsContext,
+  askUser: AskUserRuntime,
+) {
+  return new AppMcp((profiles) =>
+    loadMcp(root, new Logger(level, true), selectSettingsProfiles(context, profiles), {
+      askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
+    }),
+  );
+}
 export class AppMcp {
   private closing = false;
   private closePromise?: Promise<void>;

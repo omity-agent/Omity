@@ -8,7 +8,7 @@ type McpToolDescriptionOverrides = Record<string, string>;
 const sessionDescriptions = new WeakSet<StructuredToolInterface>();
 export function normalizeMcpToolNameOverrides(
   value: unknown,
-  path = "settings/mcp.yaml.toolNameOverrides",
+  path = "settings/toolbox.yaml.toolNameOverrides",
 ): McpToolNameOverrides {
   if (value == null) {
     return {};
@@ -30,7 +30,7 @@ export function normalizeMcpToolNameOverrides(
 }
 export function normalizeMcpToolDescriptionOverrides(
   value: unknown,
-  path = "settings/mcp.yaml.toolDescriptionOverrides",
+  path = "settings/toolbox.yaml.toolDescriptionOverrides",
 ): McpToolDescriptionOverrides {
   if (value == null) {
     return {};

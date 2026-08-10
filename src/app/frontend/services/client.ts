@@ -1,5 +1,6 @@
 import { type PendingAttachment, appendAttachments } from "../../attachments/contract";
 import {
+  answerResponseSchema,
   bootstrapResponseSchema,
   cancellationResponseSchema,
   controlResponseSchema,
@@ -135,6 +136,16 @@ export async function cancelTool(sessionId: string, toolCallId: string) {
     cancellationResponseSchema,
     {
       body: JSON.stringify({ toolCallId }),
+      method: "POST",
+    },
+  );
+}
+export async function answerTool(sessionId: string, toolCallId: string, answer: unknown) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/tools/answer`,
+    answerResponseSchema,
+    {
+      body: JSON.stringify({ answer, toolCallId }),
       method: "POST",
     },
   );

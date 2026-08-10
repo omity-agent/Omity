@@ -1,10 +1,12 @@
 import type { BrowserWarning } from "../../../../types";
 import type { DisplayEvent } from "../../../timeline";
 import type { SessionInfo } from "../../../sessionState";
+import { askUserQuestionSchema } from "../validation/responses";
 import { errorDetailsSchema } from "../validation/errors";
 import { z } from "../validation";
 
 const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
+  askUser: askUserQuestionSchema.nullable().optional(),
   createdAt: z.number().int(),
   error: errorDetailsSchema.nullable(),
   id: z.string(),

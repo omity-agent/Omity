@@ -34,7 +34,7 @@ test("mcp config expands env placeholders recursively", () => {
   setEnv("MCP_API_KEY", "secret");
   setEnv("MCP_TOKEN", "token");
   const directory = createTestDirectory("mcp");
-  const path = join(directory, "mcp.yaml");
+  const path = join(directory, "toolbox.yaml");
   try {
     writeFileSync(
       path,
@@ -67,7 +67,7 @@ test("mcp config expands env placeholders recursively", () => {
 });
 test("mcp config reports missing env placeholders", () => {
   const directory = createTestDirectory("mcp");
-  const path = join(directory, "mcp.yaml");
+  const path = join(directory, "toolbox.yaml");
   try {
     writeFileSync(path, `mcpServers: { test: { command: "\${MISSING_MCP_KEY}" } }\n`);
     expect(() => readMcpConfiguration(path)).toThrow(
@@ -79,7 +79,7 @@ test("mcp config reports missing env placeholders", () => {
 });
 test("mcp config rejects session placeholders", () => {
   const directory = createTestDirectory("mcp");
-  const path = join(directory, "mcp.yaml");
+  const path = join(directory, "toolbox.yaml");
   try {
     writeFileSync(path, `mcpServers: { test: { command: "\${session}" } }\n`);
     expect(() => readMcpConfiguration(path)).toThrow(`会话占位符 \${session} 没有可用值`);
@@ -89,7 +89,7 @@ test("mcp config rejects session placeholders", () => {
 });
 test("mcp config rejects unknown top-level fields", () => {
   const directory = createTestDirectory("mcp");
-  const path = join(directory, "mcp.yaml");
+  const path = join(directory, "toolbox.yaml");
   try {
     writeFileSync(path, "mcpServers: {}\nunknown: true\n");
     expect(() => readMcpConfiguration(path)).toThrow("Unrecognized key");
@@ -137,12 +137,15 @@ test("mcp stdio config rejects non-array args", () => {
 });
 test("mcp stdio config validates its restart policy", () => {
   expect(() =>
-    parseMcpConfiguration({ stdio: { restart: { delayMs: 1000, maxAttempts: 0 } } }, "mcp.yaml"),
+    parseMcpConfiguration(
+      { stdio: { restart: { delayMs: 1000, maxAttempts: 0 } } },
+      "toolbox.yaml",
+    ),
   ).toThrow();
 });
 test("mcp config rejects renaming a tool to agent", () => {
   expect(() => normalizeMcpToolNameOverrides({ web__search: "agent" })).toThrow(
-    "MCP 工具重命名配置 settings/mcp.yaml.toolNameOverrides.web__search 不能命名为 agent",
+    "MCP 工具重命名配置 settings/toolbox.yaml.toolNameOverrides.web__search 不能命名为 agent",
   );
 });
 test("mcp tool name overrides rename loaded tools", () => {

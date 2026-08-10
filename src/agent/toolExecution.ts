@@ -30,6 +30,7 @@ export function createToolInvoker(
       const raw = await tool.invoke(
         materializeFreeformInput(call, options.freeformToolParameters),
         {
+          configurable: { ...config.configurable, sessionId: options.sessionId },
           signal: execution?.signal ?? config.signal,
           toolCall: call,
         },

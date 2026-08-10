@@ -5,6 +5,7 @@ import {
   codeMirror,
   disabledRoot,
   editorTheme,
+  fillRoot,
   fixedCodeMirror,
   fixedRoot,
   fixedTheme,
@@ -63,6 +64,7 @@ const emptyEditorArrowBindings: KeyBinding[] = ["ArrowLeft", "ArrowRight"].map((
 export function MarkdownEditor({
   bare = false,
   disabled,
+  fill = false,
   fluid = false,
   label,
   onChange,
@@ -74,6 +76,7 @@ export function MarkdownEditor({
 }: {
   bare?: boolean;
   disabled: boolean;
+  fill?: boolean;
   fluid?: boolean;
   label?: string;
   onChange: (value: string) => void;
@@ -153,14 +156,22 @@ export function MarkdownEditor({
     [disabled, fluid, onHistoryNavigate, onPasteFiles, onSubmit],
   );
   return (
-    <div className={cx(root, !fluid && fixedRoot, bare && bareRoot, disabled && disabledRoot)}>
+    <div
+      className={cx(
+        root,
+        !fluid && !fill && fixedRoot,
+        bare && bareRoot,
+        fill && fillRoot,
+        disabled && disabledRoot,
+      )}
+    >
       <CodeMirror
         aria-label={label ?? placeholder}
         basicSetup={basicSetup}
         className={cx(codeMirror, !fluid && fixedCodeMirror)}
         editable={!disabled}
         extensions={extensions}
-        height={fluid ? "auto" : "100%"}
+        height={fluid && !fill ? "auto" : "100%"}
         indentWithTab
         onChange={onChange}
         placeholder={placeholder}

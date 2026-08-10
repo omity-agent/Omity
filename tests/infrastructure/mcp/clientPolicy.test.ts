@@ -53,7 +53,7 @@ test("MCP loading propagates captured stderr", async () => {
   mkdirSync(settings);
   const output = "error: invalid argument from configured server";
   writeFileSync(
-    join(settings, "mcp.yaml"),
+    join(settings, "toolbox.yaml"),
     `mcpServers:
   diff:
     command: ${JSON.stringify(process.execPath)}

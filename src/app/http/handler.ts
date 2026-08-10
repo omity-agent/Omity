@@ -2,6 +2,7 @@ import { type AccessEnvironment, mountAccess } from "./access";
 import { type Context, Hono } from "hono";
 import { HttpError, errorResponse } from "./errors";
 import {
+  answerToolBody,
   cancelToolBody,
   composerDraftBody,
   controlBody,
@@ -32,6 +33,7 @@ export type ApiController = Pick<
   | "sendMessage"
   | "control"
   | "cancelTool"
+  | "answerTool"
   | "forkSession"
   | "assertSession"
   | "events"
@@ -100,6 +102,10 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.post("/api/sessions/:sessionId/tools/cancel", regularBodyLimit, async (c) => {
     const body = await readJson(c.req, cancelToolBody);
     return c.json(controller.cancelTool(sessionId(c), body.toolCallId));
+  });
+  app.post("/api/sessions/:sessionId/tools/answer", regularBodyLimit, async (c) => {
+    const body = await readJson(c.req, answerToolBody);
+    return c.json(controller.answerTool(sessionId(c), body.toolCallId, body.answer));
   });
   app.post("/api/sessions/:sessionId/fork", regularBodyLimit, async (c) => {
     const body = await readJson(c.req, forkBody);

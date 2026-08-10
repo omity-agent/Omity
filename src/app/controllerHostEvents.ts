@@ -1,7 +1,9 @@
+import type { AppHostEvents, AppHosts } from "./hosts";
+import { type SessionInfo, projectSession } from "./sessionState";
 import type { AppEvents } from "./events";
-import type { AppHostEvents } from "./hosts";
+import type { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import type { BrowserWarning } from "../types";
-import type { SessionInfo } from "./sessionState";
+import type { RegisteredSession } from "./registry";
 import { displayStreamEvent } from "./timeline";
 
 export function controllerHostEvents(
@@ -22,4 +24,16 @@ export function controllerHostEvents(
       events.notifyWarning({ ...warning, details: { ...warning.details, sessionId } });
     },
   };
+}
+export function controllerSessionInfo(
+  session: RegisteredSession,
+  hosts: AppHosts,
+  askUser: AskUserRuntime,
+) {
+  return projectSession(
+    session,
+    hosts.activity(session.id),
+    hosts.error(session.id),
+    askUser.question(session.id),
+  );
 }

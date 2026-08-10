@@ -2,32 +2,29 @@ import { AppRegistry, type RegisteredSession } from "./registry";
 import type { Control, Settings } from "../types";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { type ProcessOwner, appOwner } from "../infrastructure/process/ownership";
-import { type SessionInfo, projectSession } from "./sessionState";
 import {
   type SettingsContext,
   availableSettingsProfiles,
   createSettingsContext,
   prioritizeSettingsProfile,
-  selectSettingsProfiles,
   settingsProfileNames,
 } from "../infrastructure/configuration/settings/context";
 import { clearSessionDraft, readSessionDraft, writeSessionDraft } from "./composerDraft";
+import { controllerHostEvents, controllerSessionInfo } from "./controllerHostEvents";
 import { createAppFork, createAppSession } from "./runtime/sessionActions";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { AppEvents } from "./events";
 import { AppHosts } from "./hosts";
 import type { AppInstanceOwner } from "./runtime/instanceLock";
-import { AppMcp } from "./runtime/mcp";
+import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
-import { Logger } from "../infrastructure/logging/logger";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
-import { controllerHostEvents } from "./controllerHostEvents";
+import { createAppMcp } from "./runtime/mcp";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
-import { loadMcp } from "../infrastructure/mcp/loadTools";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { setSessionControl } from "../client";
 
@@ -36,6 +33,7 @@ export class AppController {
   private readonly settings: Settings;
   private readonly registry: AppRegistry;
   private readonly hosts: AppHosts;
+  private readonly askUser: AskUserRuntime;
   private readonly settingsContext: SettingsContext;
   constructor(
     private readonly appRoot: string,
@@ -51,13 +49,13 @@ export class AppController {
     recoverAppSessions(discovered.list(), options.abandonedOwner);
     this.registry = new AppRegistry();
     this.events = new AppEvents();
+    this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
     const owner = options.owner ?? appOwner();
-    const mcp = new AppMcp((profiles) =>
-      loadMcp(
-        appRoot,
-        new Logger(this.settings.logging.level, true),
-        selectSettingsProfiles(this.settingsContext, profiles),
-      ),
+    const mcp = createAppMcp(
+      appRoot,
+      this.settings.logging.level,
+      this.settingsContext,
+      this.askUser,
     );
     this.hosts = new AppHosts(
       appRoot,
@@ -148,6 +146,10 @@ export class AppController {
     this.publishChange(sessionId);
     return result;
   }
+  answerTool(sessionId: string, toolCallId: string, answer: unknown) {
+    this.registry.require(sessionId);
+    return this.askUser.answer(sessionId, toolCallId, answer);
+  }
   async forkSession(sessionId: string, beforeMessageId: number) {
     const session = this.registry.require(sessionId);
     const id = await createAppFork({
@@ -192,7 +194,7 @@ export class AppController {
     this.events.notifySession(info);
     this.events.invalidateTranscript(sessionId, this.eventCursor(sessionId));
   }
-  private sessionInfo(session: RegisteredSession): SessionInfo {
-    return projectSession(session, this.hosts.activity(session.id), this.hosts.error(session.id));
+  private sessionInfo(session: RegisteredSession) {
+    return controllerSessionInfo(session, this.hosts, this.askUser);
   }
 }

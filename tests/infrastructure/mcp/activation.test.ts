@@ -47,7 +47,7 @@ test("MCP config rejects non-boolean enabled flags", () => {
     }),
   ).toThrow();
 });
-test("profile MCP settings can disable a repository server", () => {
+test("profile toolbox settings can disable a repository server", () => {
   const root = createTestDirectory("mcp-disabled-override");
   const userSettings = join(root, "user-settings");
   try {
@@ -56,7 +56,7 @@ test("profile MCP settings can disable a repository server", () => {
     mkdirSync(profile, { recursive: true });
     writeFileSync(join(userSettings, "profile.yaml"), "- tools\n");
     writeFileSync(
-      join(root, "settings", "mcp.yaml"),
+      join(root, "settings", "toolbox.yaml"),
       `mcpServers:
   terminal:
     command: terminal
@@ -71,13 +71,13 @@ toolDescriptionOverrides:
 freeformToolInputs: [open, search]
 `,
     );
-    writeFileSync(join(profile, "mcp.yaml"), "mcpServers:\n  terminal:\n    enabled: false\n");
+    writeFileSync(join(profile, "toolbox.yaml"), "mcpServers:\n  terminal:\n    enabled: false\n");
     const file = readLayeredSettingsYaml(
       createSettingsContext(root, userSettings),
       "profile",
-      "mcp.yaml",
+      "toolbox.yaml",
     );
-    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "mcp.yaml");
+    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "toolbox.yaml");
     expect(configuration).toEqual({
       freeformToolInputs: ["search"],
       mcpServers: {
@@ -99,6 +99,11 @@ freeformToolInputs: [open, search]
       toolNameOverrides: {
         web__search: "search",
       },
+      toolboxes: {
+        ask_user: {
+          enabled: true,
+        },
+      },
     });
   } finally {
     rmSync(root, { recursive: true });
@@ -109,8 +114,11 @@ test("disabled MCP servers are not started", async () => {
   const settings = join(root, "settings");
   mkdirSync(settings);
   writeFileSync(
-    join(settings, "mcp.yaml"),
-    `mcpServers:
+    join(settings, "toolbox.yaml"),
+    `toolboxes:
+  ask_user:
+    enabled: false
+mcpServers:
   disabled:
     enabled: false
     command: \${MISSING_DISABLED_MCP_COMMAND}
@@ -127,4 +135,23 @@ test("disabled MCP servers are not started", async () => {
   } finally {
     rmSync(root, { force: true, recursive: true });
   }
+});
+test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
+  expect(
+    parseMcpConfiguration(
+      {
+        toolDescriptionOverrides: { ask_user__open_ended: "open.md" },
+        toolNameOverrides: { ask_user__choice: "pick" },
+        toolboxes: { ask_user: { enabled: false } },
+      },
+      "toolbox.yaml",
+    ),
+  ).toEqual({
+    freeformToolInputs: [],
+    mcpServers: {},
+    stdio: { restart: { delayMs: 1000, maxAttempts: 3 } },
+    toolDescriptionOverrides: {},
+    toolNameOverrides: {},
+    toolboxes: { ask_user: { enabled: false } },
+  });
 });

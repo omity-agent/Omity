@@ -27,6 +27,7 @@ export function Actions({
   controlState,
   deleteDisabled,
   submitDisabled,
+  submitLabel,
   stepAvailable = false,
   usage,
   onControl,
@@ -36,6 +37,7 @@ export function Actions({
   controlState?: ChatControlState;
   deleteDisabled: boolean;
   submitDisabled: boolean;
+  submitLabel?: string;
   stepAvailable?: boolean;
   usage?: TokenUsage | null;
   onControl?: (control: RequestedControl) => Promise<void>;
@@ -103,7 +105,7 @@ export function Actions({
         )}
       </IconButton>
     ) : null;
-  const sendLabel = t("send");
+  const sendLabel = submitLabel ?? t("send");
   return (
     <div className={composerActions}>
       <div className={composerControls}>

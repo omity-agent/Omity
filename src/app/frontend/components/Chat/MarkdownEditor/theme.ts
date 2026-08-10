@@ -20,6 +20,11 @@ export const fixedRoot = css({
   h: { _short: "6rem", base: "composerEditor", smDown: "8rem" },
   minH: { _coarse: "7rem" },
 });
+export const fillRoot = css({
+  alignSelf: "stretch",
+  h: "full",
+  minH: 0,
+});
 export const disabledRoot = css({
   borderColor: "line",
   opacity: 0.65,

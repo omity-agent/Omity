@@ -4,6 +4,7 @@ import { AppEvents } from "../../../src/app/events";
 export function createApiController(overrides: Partial<ApiController> = {}): ApiController {
   const controller: ApiController = {
     activateFileLink: notConfigured,
+    answerTool: notConfigured,
     assertSession: () => undefined,
     bootstrap: () => ({
       attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },

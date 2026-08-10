@@ -23,7 +23,22 @@ const fileLinkUnitSchema: z.ZodType<FileLinkUnit> = z.object({
   surface: z.enum(["content", "reasoning", "tool_input", "tool_output"]),
   unitIndex: integer.nonnegative(),
 });
+export const askUserQuestionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    callId: z.string(),
+    kind: z.literal("choice"),
+    multiple: z.boolean(),
+    options: z.array(z.string()),
+    question: z.string(),
+  }),
+  z.object({
+    callId: z.string(),
+    kind: z.literal("open_ended"),
+    question: z.string(),
+  }),
+]);
 const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
+  askUser: askUserQuestionSchema.nullable().optional(),
   createdAt: integer,
   error: errorDetailsSchema.nullable(),
   id: z.string(),
@@ -168,3 +183,4 @@ export const controlResponseSchema = z.object({
   control: z.enum(["running", "step", "pause", "cancel"]),
 });
 export const cancellationResponseSchema = z.object({ toolCallId: z.string() });
+export const answerResponseSchema = z.object({ toolCallId: z.string() });

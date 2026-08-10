@@ -108,7 +108,7 @@ test("standalone Host uses the shared interrupted-session recovery", () => {
 test("resume stays paused when Host initialization fails", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
-  writeFileSync(join(fixture.root, "settings", "mcp.yaml"), "[]\n");
+  writeFileSync(join(fixture.root, "settings", "toolbox.yaml"), "[]\n");
   const controller = new AppController(fixture.root);
   const failure = await captureFailure(controller.control("resume-failure", "running"));
   expect(failure.message).toContain("MCP");

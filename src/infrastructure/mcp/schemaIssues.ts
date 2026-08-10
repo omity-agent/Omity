@@ -46,9 +46,9 @@ function formatZodIssue(issue: ZodIssueLike): string {
 }
 function formatIssuePath(path: (string | number)[] | undefined): string {
   if (path === undefined || path.length === 0) {
-    return "settings/mcp.yaml";
+    return "settings/toolbox.yaml";
   }
-  return `settings/mcp.yaml.${path.join(".")}`;
+  return `settings/toolbox.yaml.${path.join(".")}`;
 }
 function formatValue(value: unknown): string {
   if (value === undefined) {

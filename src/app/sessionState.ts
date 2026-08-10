@@ -1,4 +1,5 @@
 import { pauseRequested, resolvePausePhase } from "./pauseState";
+import type { AskUserRequest } from "../infrastructure/toolbox/askUser";
 import type { ErrorDetails } from "../failures/details";
 import type { RegisteredSession } from "./registry";
 import type { SessionStatus } from "../types";
@@ -10,13 +11,16 @@ export interface SessionInfo {
   updatedAt: number;
   status: SessionStatus;
   error: ErrorDetails | null;
+  askUser?: AskUserRequest | null;
 }
 export function projectSession(
   session: RegisteredSession,
   activity: Extract<SessionStatus, "tool" | "model" | "idle">,
   hostError: ErrorDetails | null,
+  askUser: AskUserRequest | null = null,
 ): SessionInfo {
   return {
+    askUser,
     createdAt: session.createdAt,
     id: session.id,
     updatedAt: session.updatedAt,

@@ -1,3 +1,4 @@
+import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
@@ -47,6 +48,8 @@ export function ChatPage({
   onCreate,
   onCancelTool,
   onSend,
+  askUser,
+  onAnswer,
   onControl,
   onDelete,
   onFork,
@@ -74,6 +77,8 @@ export function ChatPage({
     draftRevision: number,
     attachments: PendingAttachment[],
   ) => Promise<void>;
+  askUser: AskUserQuestion | null;
+  onAnswer: (callId: string, answer: AskUserAnswer) => Promise<void>;
   onControl: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
   onDelete: () => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
@@ -147,6 +152,7 @@ export function ChatPage({
       </FileLinkProvider>
       <Composer
         attachmentSettings={attachmentSettings}
+        askUser={askUser}
         controlDisabled={actionState.controlDisabled}
         controlState={actionState.controlState}
         deleteDisabled={actionState.sessionActionDisabled}
@@ -160,6 +166,7 @@ export function ChatPage({
         stepAvailable={actionState.stepAvailable}
         onControl={onControl}
         onDelete={onDelete}
+        onAnswer={onAnswer}
         onSend={onSend}
       />
     </div>

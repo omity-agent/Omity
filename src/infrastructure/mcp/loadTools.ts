@@ -1,6 +1,6 @@
+import { type BuiltInToolOptions, loadBuiltInTools } from "../toolbox/loadBuiltIns";
 import { type SettingsContext, createSettingsContext } from "../configuration/settings/context";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
-import { omitDisabledMcpConfiguration, parseMcpConfiguration } from "./config";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
 import type { Logger } from "../logging/logger";
 import { McpClientPool } from "./client/pool";
@@ -10,6 +10,8 @@ import { collectReadableZodIssues } from "./schemaIssues";
 import { createMcpToolFailureClient } from "./toolFailures";
 import { disableAdapterRequestTimeout } from "./client/timeout";
 import { loadMcpTools } from "@langchain/mcp-adapters";
+import { omitDisabledToolboxConfiguration } from "./activation";
+import { parseMcpConfiguration } from "./config";
 import { readLayeredSettingsYaml } from "../configuration/settings/files";
 import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../configuration/configuredPath";
@@ -21,6 +23,7 @@ export interface LoadedMcp {
   modelTools: (session: Required<SessionPlaceholders>) => ReturnType<typeof sessionModelTools>;
   close: () => Promise<void>;
 }
+export type LoadMcpOptions = BuiltInToolOptions;
 export function createMcpLoadError(error: unknown): Error {
   const details = collectReadableZodIssues(error);
   if (details.length === 0) {
@@ -37,14 +40,15 @@ export async function loadMcp(
   root: string,
   logger: Logger,
   context = createSettingsContext(root),
+  options: LoadMcpOptions = {},
 ): Promise<LoadedMcp> {
   const file = readLayeredSettingsYaml(
     context,
     "profile",
-    "mcp.yaml",
+    "toolbox.yaml",
     {},
     {
-      beforePlaceholders: omitDisabledMcpConfiguration,
+      beforePlaceholders: omitDisabledToolboxConfiguration,
       override: resolveProfilePaths,
     },
   );
@@ -54,18 +58,24 @@ export async function loadMcp(
   }
   const configuration = parseMcpConfiguration(file.value, file.path);
   const names = Object.keys(configuration.mcpServers);
-  validateConfiguredServers(configuration, names);
-  if (names.length === 0) {
+  const builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
+  validateConfiguredServers(
+    configuration,
+    names,
+    builtInTools.map((tool) => tool.name),
+  );
+  if (names.length === 0 && builtInTools.length === 0) {
     logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
     return emptyMcp();
   }
-  return connectMcp(configuration, names, context, logger);
+  return connectMcp(configuration, names, context, logger, builtInTools);
 }
 async function connectMcp(
   configuration: ReturnType<typeof parseMcpConfiguration>,
   names: string[],
   context: SettingsContext,
   logger: Logger,
+  builtInTools: StructuredToolInterface[],
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
   let pool: McpClientPool | undefined;
@@ -78,7 +88,10 @@ async function connectMcp(
     );
     pool = connectedPool;
     const tools = overrideMcpToolDescriptions(
-      renameMcpTools(await loadServerTools(connectedPool, names), configuration.toolNameOverrides),
+      renameMcpTools(
+        [...builtInTools, ...(await loadServerTools(connectedPool, names))],
+        configuration.toolNameOverrides,
+      ),
       configuration.toolDescriptionOverrides,
       context.root,
       [
@@ -153,8 +166,9 @@ export async function loadServerTools(
 function validateConfiguredServers(
   configuration: ReturnType<typeof parseMcpConfiguration>,
   names: string[],
+  builtInToolNames: string[],
 ) {
-  if (names.length > 0) {
+  if (names.length > 0 || builtInToolNames.length > 0) {
     return;
   }
   if (Object.keys(configuration.toolNameOverrides).length > 0) {

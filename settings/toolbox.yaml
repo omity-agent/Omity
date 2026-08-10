@@ -1,3 +1,6 @@
+toolboxes:
+  ask_user:
+    enabled: true
 stdio:
   restart:
     delayMs: 1000

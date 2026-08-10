@@ -25,20 +25,20 @@ test("user MCP settings deeply override repository defaults", () => {
     mkdirSync(profile, { recursive: true });
     writeFileSync(join(userSettings, "profile.yaml"), "- tools\n");
     writeFileSync(
-      join(root, "settings", "mcp.yaml"),
+      join(root, "settings", "toolbox.yaml"),
       `mcpServers:\n  terminal:\n    transport: stdio\n    command: terminal\n    args: [default]\ntoolNameOverrides:\n  terminal__open: open\nfreeformToolInputs: [open]\n`,
     );
     writeFileSync(
-      join(profile, "mcp.yaml"),
+      join(profile, "toolbox.yaml"),
       `mcpServers:\n  terminal:\n    args: [user]\ntoolNameOverrides:\n  terminal__close: close\nfreeformToolInputs: [close]\n`,
     );
     const file = readLayeredSettingsYaml(
       createSettingsContext(root, userSettings),
       "profile",
-      "mcp.yaml",
+      "toolbox.yaml",
     );
     expect(file).toBeDefined();
-    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "mcp.yaml");
+    const configuration = parseMcpConfiguration(file?.value, file?.path ?? "toolbox.yaml");
     expect(configuration.mcpServers["terminal"]).toMatchObject({
       args: ["user"],
       command: "terminal",
@@ -54,7 +54,7 @@ test("user MCP settings deeply override repository defaults", () => {
 });
 test("MCP config reads tool description override paths", () => {
   const root = createTestDirectory("mcp-description-config");
-  const path = join(root, "mcp.yaml");
+  const path = join(root, "toolbox.yaml");
   try {
     writeFileSync(
       path,
@@ -146,7 +146,7 @@ test("MCP tool descriptions reject session placeholders outside settings prompts
 });
 test("MCP tool description override paths must be non-empty strings", () => {
   expect(() => normalizeMcpToolDescriptionOverrides({ search: "" })).toThrow(
-    "MCP 工具描述覆盖配置 settings/mcp.yaml.toolDescriptionOverrides.search 必须是非空路径",
+    "MCP 工具描述覆盖配置 settings/toolbox.yaml.toolDescriptionOverrides.search 必须是非空路径",
   );
 });
 function tool(name: string) {

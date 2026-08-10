@@ -2,7 +2,6 @@ import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import { type Page, readPage, resolvePage, usePageNavigation, writePage } from "./route";
 import {
   type SessionInfo,
-  cancelTool,
   deleteSession,
   forkSession,
   pickWorkspacePath,
@@ -26,6 +25,7 @@ import { useNewSession } from "./services/newSession";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
+import { useSessionToolActions } from "./components/Chat/toolActions";
 
 const emptySessions: SessionInfo[] = [];
 const emptyProfiles: string[] = [];
@@ -84,14 +84,7 @@ function AuthenticatedApp() {
     },
     [navigate],
   );
-  const cancelSessionTool = useCallback<ChatPageProps["onCancelTool"]>(
-    async (toolCallId) => {
-      if (activeSession) {
-        await cancelTool(activeSession.id, toolCallId);
-      }
-    },
-    [activeSession],
-  );
+  const toolActions = useSessionToolActions(activeSession);
   const changeControl = useCallback<ChatPageProps["onControl"]>(
     async (control) => {
       if (!activeSession) {
@@ -183,7 +176,9 @@ function AuthenticatedApp() {
           view={transcript.view}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}
-          onCancelTool={cancelSessionTool}
+          onCancelTool={toolActions.handleCancel}
+          askUser={activeSession?.askUser ?? null}
+          onAnswer={toolActions.handleAnswer}
           onControl={changeControl}
           onDelete={deleteActiveSession}
           onFork={forkActiveSession}
