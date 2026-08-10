@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
+import { APICallError } from "@ai-sdk/provider";
 import { HumanMessage } from "@langchain/core/messages";
 import { MockLanguageModelV4 } from "ai/test";
 import { simulateReadableStream } from "ai";
@@ -40,4 +41,49 @@ test("model timeout resets after each stream update", async () => {
     tools: {},
   });
   expect(response.text).toBe("Hello world");
+  expect(model.doStreamCalls[0]?.prompt[0]).toEqual({
+    content: "test",
+    role: "system",
+  });
+});
+test("model stream errors are propagated without terminal output", async () => {
+  const log = spyOn(console, "error").mockReturnValue(undefined);
+  const providerError = new APICallError({
+    data: {
+      error: {
+        code: "server_error",
+        message: "Our servers are currently overloaded. Please try again later.",
+        type: "service_unavailable_error",
+      },
+    },
+    message: "Our servers are currently overloaded. Please try again later.",
+    requestBodyValues: {},
+    statusCode: 503,
+    url: "https://provider.example.test/v1/responses",
+  });
+  const model = new MockLanguageModelV4({
+    doStream: {
+      stream: simulateReadableStream({
+        chunks: [{ error: providerError, type: "error" }],
+      }),
+    },
+  });
+  try {
+    let rejection: unknown;
+    try {
+      await streamAiModel({
+        messages: [new HumanMessage("Say hello")],
+        model,
+        sessionId: "test-session",
+        settings: testSettings(),
+        tools: {},
+      });
+    } catch (error) {
+      rejection = error;
+    }
+    expect(rejection).toMatchObject({ message: providerError.message });
+    expect(log).not.toHaveBeenCalled();
+  } finally {
+    log.mockRestore();
+  }
 });

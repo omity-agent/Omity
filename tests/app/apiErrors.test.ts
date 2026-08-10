@@ -22,11 +22,11 @@ test("API maps domain errors to explicit status codes", () => {
     normalizeError(new DomainError("ATTACHMENT_TOO_LARGE", "附件总大小超过上限")),
   ).toMatchObject({ code: "ATTACHMENT_TOO_LARGE", status: 413 });
 });
-test("retryable model API errors do not write raw provider responses to the terminal", () => {
+test("HTTP retryable model errors do not write raw provider responses to the terminal", () => {
   const log = spyOn(console, "error").mockReturnValue(undefined);
   errorResponse({
     error: {
-      code: "server_is_overloaded",
+      code: "server_error",
       message: "Our servers are currently overloaded. Please try again later.",
       type: "service_unavailable_error",
     },

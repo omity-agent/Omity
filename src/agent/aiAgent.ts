@@ -1,6 +1,6 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import { type LanguageModel, type TextStreamPart, type ToolSet, streamText } from "ai";
-import { aiProviderOptions, buildAiModel } from "./aiModel";
+import { aiRequestOptions, buildAiModel, modelApi } from "./aiModel";
 import { ModelEmptyResponseError } from "../runtime/network";
 import type { Settings } from "../types";
 import { fromModelMessages } from "./fromAiMessages";
@@ -19,14 +19,12 @@ export interface AiModelOptions {
 export async function streamAiModel(options: AiModelOptions) {
   const result = streamText({
     abortSignal: options.signal,
-    instructions: options.settings.agent.systemPrompt,
+    ...aiRequestOptions(options.settings, options.sessionId),
     maxRetries: 0,
-    messages: toModelMessages(
-      options.messages,
-      options.settings.model.adapter === "codex" ? "responses" : options.settings.model.adapter,
-    ),
+    messages: toModelMessages(options.messages, modelApi(options.settings)),
     model: options.model ?? buildAiModel(options.settings),
-    providerOptions: aiProviderOptions(options.settings, options.sessionId),
+    // Runtime catches stream errors and reports retryable ones through browser events.
+    onError: () => undefined,
     temperature: options.settings.model.temperature,
     timeout: {
       chunkMs: options.settings.model.timeoutMs,
