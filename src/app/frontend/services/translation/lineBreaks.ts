@@ -1,14 +1,22 @@
-const markerName = "LNBRK";
+const markerPattern =
+  /(?:[{[<(@%]+[\t\p{Zs}]*)?lnbrk[\t\p{Zs}]*[-_:./\\]*[\t\p{Zs}]*(?<index>\d+)(?:[\t\p{Zs}]*[}\]>)@%]+)?/giu;
 interface LineBreakMarker {
-  lineBreak: string;
+  index: number;
   token: string;
 }
+interface MarkerMatch {
+  end: number;
+  index: number;
+  start: number;
+}
 export function encodeTranslationLineBreaks(source: string) {
-  const nonce = availableNonce(source),
+  const lineBreakCount = source.match(/\r\n|\n|\r/g)?.length ?? 0,
+    firstIndex = availableMarkerIndex(source, lineBreakCount),
     markers: LineBreakMarker[] = [],
-    encoded = source.replaceAll(/\r\n|\n|\r/g, (lineBreak) => {
-      const token = `[[${markerName}_${nonce.toString()}_${markers.length.toString()}_${lineBreakKind(lineBreak)}]]`;
-      markers.push({ lineBreak, token });
+    encoded = source.replaceAll(/\r\n|\n|\r/g, () => {
+      const index = firstIndex + markers.length,
+        token = ` {{lnbrk_${index.toString()}}} `;
+      markers.push({ index, token });
       return token;
     });
   return {
@@ -16,39 +24,58 @@ export function encodeTranslationLineBreaks(source: string) {
     restore: (translated: string) => restoreLineBreaks(translated, markers),
   };
 }
-function availableNonce(source: string) {
-  for (let nonce = 0; Number.isSafeInteger(nonce); nonce += 1) {
-    if (!source.includes(`[[${markerName}_${nonce.toString()}_`)) {
-      return nonce;
+function availableMarkerIndex(source: string, markerCount: number) {
+  const occupied = new Set(markerMatches(source).map((marker) => marker.index));
+  for (let firstIndex = 0; Number.isSafeInteger(firstIndex + markerCount - 1); firstIndex += 1) {
+    let available = true;
+    for (let offset = 0; offset < markerCount; offset += 1) {
+      if (occupied.has(firstIndex + offset)) {
+        available = false;
+        break;
+      }
+    }
+    if (available) {
+      return firstIndex;
     }
   }
   throw new Error("无法生成思维链翻译换行标记");
 }
-function lineBreakKind(value: string) {
-  if (value === "\n") {
-    return "LF";
-  }
-  if (value === "\r\n") {
-    return "CRLF";
-  }
-  if (value === "\r") {
-    return "CR";
-  }
-  throw new Error("思维链翻译包含未知换行符");
+function markerMatches(value: string): MarkerMatch[] {
+  return [...value.matchAll(markerPattern)].flatMap((match) => {
+    const index = Number(match.groups?.["index"]);
+    if (!Number.isSafeInteger(index)) {
+      return [];
+    }
+    return [{ end: match.index + match[0].length, index, start: match.index }];
+  });
 }
 function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
-  let cursor = 0,
-    restored = translated;
-  for (const marker of markers) {
-    const position = translated.indexOf(marker.token, cursor);
-    if (position === -1) {
-      throw new Error(`思维链翻译丢失换行标记：${marker.token}`);
+  const matchesByIndex = Map.groupBy(markerMatches(translated), (match) => match.index),
+    matches = markers.map((marker) => {
+      const found = matchesByIndex.get(marker.index) ?? [];
+      if (found.length === 0) {
+        throw new Error(`思维链翻译丢失换行标记：${marker.token}`);
+      }
+      if (found.length > 1) {
+        throw new Error(`思维链翻译重复换行标记：${marker.token}`);
+      }
+      return { marker, match: found[0]! };
+    });
+  for (let index = 1; index < matches.length; index += 1) {
+    if (matches[index]!.match.start < matches[index - 1]!.match.end) {
+      throw new Error(`思维链翻译换行标记顺序错误：${matches[index]!.marker.token}`);
     }
-    if (translated.includes(marker.token, position + marker.token.length)) {
-      throw new Error(`思维链翻译重复换行标记：${marker.token}`);
-    }
-    cursor = position + marker.token.length;
-    restored = restored.replace(marker.token, marker.lineBreak);
   }
-  return restored;
+  let cursor = 0,
+    restored = "";
+  for (const { match } of matches) {
+    const start = isHorizontalSpace(translated[match.start - 1]) ? match.start - 1 : match.start,
+      end = isHorizontalSpace(translated[match.end]) ? match.end + 1 : match.end;
+    restored += `${translated.slice(cursor, Math.max(cursor, start))}\n`;
+    cursor = end;
+  }
+  return restored + translated.slice(cursor);
+}
+function isHorizontalSpace(value: string | undefined) {
+  return value !== undefined && /[\t\p{Zs}]/u.test(value);
 }
