@@ -19,7 +19,9 @@ const databases = [
   executableOutput = resolve(root, "dist/omity.exe");
 try {
   await generateMigrations();
-  const command = process.argv[2];
+  const [node, script, command] = process.argv;
+  void node;
+  void script;
   if (command !== undefined && command !== "--test") {
     throw new Error(`未知构建参数：${command}`);
   }
