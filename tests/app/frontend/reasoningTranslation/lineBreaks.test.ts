@@ -23,8 +23,7 @@ test("translation line markers avoid source marker collisions", () => {
 });
 test("translation line markers reject missing, duplicated, and reordered markers", () => {
   const protectedInput = encodeTranslationLineBreaks("first\nsecond\r\nthird"),
-    [first, second] =
-      protectedInput.encoded.match(/\[\[LNBRK_[^\]]+]]/g) ?? [];
+    [first, second] = protectedInput.encoded.match(/\[\[LNBRK_[^\]]+]]/g) ?? [];
   expect(first).toBeDefined();
   expect(second).toBeDefined();
   expect(() => protectedInput.restore("translated")).toThrow("丢失换行标记");

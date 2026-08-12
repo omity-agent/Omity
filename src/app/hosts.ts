@@ -161,13 +161,18 @@ export class AppHosts {
     }
   }
   private async stopAtDeadline(host: RunningHost) {
-    const stopped = await Promise.race([
-      host.done.then(() => true),
-      Bun.sleep(this.shutdownTimeoutMs).then(() => false),
-    ]);
-    if (!stopped) {
-      host.force.abort(new Error("Host 未在关闭期限内到达恢复边界"));
+    const deadline = Promise.withResolvers<false>(),
+      timer = setTimeout(() => {
+        deadline.resolve(false);
+      }, this.shutdownTimeoutMs);
+    try {
+      const stopped = await Promise.race([host.done.then(() => true), deadline.promise]);
+      if (!stopped) {
+        host.force.abort(new Error("Host 未在关闭期限内到达恢复边界"));
+      }
+      await host.done;
+    } finally {
+      clearTimeout(timer);
     }
-    await host.done;
   }
 }

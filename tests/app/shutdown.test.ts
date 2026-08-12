@@ -3,6 +3,7 @@ import type { Socket } from "node:net";
 import { closeAppResources } from "../../src/app/runtime/shutdown";
 import { createServer } from "node:http";
 import { once } from "node:events";
+import { resolve } from "node:path";
 
 test("shutdown logs every resource phase and completes in order", async () => {
   const messages: string[] = [],
@@ -78,3 +79,64 @@ test("shutdown closes active HTTP streams", async () => {
   expect(server.listening).toBeFalse();
   expect(body).rejects.toThrow();
 }, 3000);
+test("waking an app host does not retain its polling timer", async () => {
+  await expectChildExit(`
+    import { AppEvents } from "./src/app/events.ts";
+    const events = new AppEvents();
+    const waiting = events.wait("test", 60_000);
+    events.wake("test");
+    await waiting;
+  `);
+});
+test("closing app hosts does not retain the graceful shutdown deadline", async () => {
+  await expectChildExit(`
+    import { AppHosts } from "./src/app/hosts.ts";
+    const hosts = new AppHosts(
+      "",
+      {
+        activity: () => undefined,
+        changed: () => undefined,
+        transcript: () => undefined,
+        warning: () => undefined,
+        wait: () => Promise.resolve(),
+      },
+      { instanceId: "test", kind: "app", pid: process.pid },
+      60_000,
+      { close: () => Promise.resolve(), load: () => Promise.reject(new Error("unused")) },
+      {},
+    );
+    hosts.running.set("test", {
+      activity: "idle",
+      cancelTool: () => false,
+      done: Promise.resolve(),
+      force: new AbortController(),
+      ready: Promise.resolve(),
+      stopping: new AbortController(),
+    });
+    await hosts.close();
+  `);
+});
+async function expectChildExit(script: string) {
+  const child = Bun.spawn([process.execPath, "--eval", script], {
+      cwd: resolve(import.meta.dir, "../.."),
+      stderr: "pipe",
+      stdout: "ignore",
+    }),
+    timedOut = Promise.withResolvers<true>(),
+    timer = setTimeout(() => {
+      timedOut.resolve(true);
+    }, 5000);
+  timer.unref();
+  const result = await Promise.race([
+    child.exited.then((exitCode) => ({ exitCode, timedOut: false as const })),
+    timedOut.promise.then(() => ({ exitCode: null, timedOut: true as const })),
+  ]);
+  clearTimeout(timer);
+  if (result.timedOut) {
+    child.kill();
+    await child.exited;
+  }
+  const stderr = await new Response(child.stderr).text();
+  expect(result).toEqual({ exitCode: 0, timedOut: false });
+  expect(stderr).toBe("");
+}

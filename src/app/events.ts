@@ -5,7 +5,6 @@ import type { DisplayEvent } from "./timeline";
 import type { SessionInfo } from "./sessionState";
 import { StateChannel } from "./events/stateChannel";
 import mitt from "mitt";
-import { setTimeout as sleep } from "node:timers/promises";
 
 interface Events {
   [key: string]: unknown;
@@ -48,14 +47,12 @@ export class AppEvents {
           return;
         }
         settled = true;
+        clearTimeout(timer);
         this.bus.off("wake", handler);
         waiting.resolve();
       };
     this.bus.on("wake", handler);
-    void (async () => {
-      await sleep(delayMs);
-      done();
-    })();
+    const timer = setTimeout(done, delayMs);
     return waiting.promise;
   }
   streamState(c: Context, getSessions: () => SessionInfo[]) {
