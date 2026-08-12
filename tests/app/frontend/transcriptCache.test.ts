@@ -113,6 +113,7 @@ function snapshot(
         userMessageId: 1,
       },
     ],
+    reasoningTranslations: [],
     transcriptRevision,
   };
 }

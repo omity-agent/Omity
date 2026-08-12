@@ -44,6 +44,12 @@ export interface DisplayMessage {
   usage?: TokenUsage;
   createdAt: number;
 }
+export interface ReasoningTranslation {
+  messageId: string;
+  source: string;
+  targetLanguage: string;
+  translated: string;
+}
 export interface DisplayQueue {
   id: number;
   content: string;
@@ -66,7 +72,14 @@ export interface TimelineMessage {
 }
 export type TimelinePart =
   | { type: "content"; content: string; fileLinks?: FilePathMatch[] }
-  | { type: "reasoning"; content: string; fileLinks?: FilePathMatch[] }
+  | {
+      type: "reasoning";
+      content: string;
+      fileLinks?: FilePathMatch[];
+      messageId?: string;
+      streaming?: true;
+      translations?: ReasoningTranslation[];
+    }
   | {
       type: "tool";
       call: DisplayToolCall;

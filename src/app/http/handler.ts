@@ -12,11 +12,13 @@ import {
   readJson,
   readMessageForm,
   readSessionForm,
+  reasoningTranslationBody,
   requestBodyLimit,
 } from "./request";
 import type { AccessService } from "../access/service";
 import type { AppController } from "../controller";
 import { bodyLimit } from "hono/body-limit";
+import { writeReasoningTranslation } from "../reasoningTranslation";
 
 export type ApiController = Pick<
   AppController,
@@ -90,6 +92,14 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.put("/api/sessions/:sessionId/composer-draft", regularBodyLimit, async (c) => {
     const body = await readJson(c.req, composerDraftBody);
     return c.json(controller.saveComposerDraft(sessionId(c), body.content, body.revision));
+  });
+  app.put("/api/sessions/:sessionId/reasoning-translation", regularBodyLimit, async (c) => {
+    const body = await readJson(c.req, reasoningTranslationBody);
+    const id = sessionId(c);
+    controller.assertSession(id);
+    const result = writeReasoningTranslation(id, body);
+    controller.events.invalidateTranscript(id, controller.eventCursor(id));
+    return c.json(result);
   });
   app.post("/api/sessions/:sessionId/messages", async (c) => {
     const submission = await readMessageForm(c.req);

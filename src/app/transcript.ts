@@ -10,6 +10,7 @@ import type { QueueStatus } from "../types";
 import { existsSync } from "node:fs";
 import { extractToolImages } from "../runtime/modelImages";
 import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks";
+import { loadReasoningTranslations } from "../infrastructure/database/records/reasoningTranslations";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { parseError } from "../failures/details";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
@@ -84,8 +85,18 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
         sessionId,
       ).map(persistedDisplayEvent),
       fileLinks = loadFileLinkUnits(db.db, sessionId),
+      reasoningTranslations = loadReasoningTranslations(db.db, sessionId),
       eventCursor = db.eventCursor();
-    return { control, eventCursor, events, fileLinks, messages, queue, transcriptRevision };
+    return {
+      control,
+      eventCursor,
+      events,
+      fileLinks,
+      messages,
+      queue,
+      reasoningTranslations,
+      transcriptRevision,
+    };
   });
 }
 function toDisplayMessage(row: MessageRow): DisplayMessage {

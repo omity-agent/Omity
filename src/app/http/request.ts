@@ -50,6 +50,14 @@ export const fileLinkActionBody = z
   })
   .strict();
 export const forkBody = z.object({ beforeMessageId: z.number().int().positive() }).strict();
+export const reasoningTranslationBody = z
+  .object({
+    messageId: z.string().min(1).max(1024),
+    source: z.string().min(1).max(requestBodyLimit),
+    targetLanguage: z.string().min(1).max(255),
+    translated: z.string().min(1).max(requestBodyLimit),
+  })
+  .strict();
 const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional(),
   credentialBase = {
     authenticatorAttachment,

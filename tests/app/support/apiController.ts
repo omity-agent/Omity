@@ -9,7 +9,11 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
     bootstrap: () => ({
       attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
       cwd: "F:/workspace",
-      frontend: { draftSaveDelayMs: 0, transcriptRefreshIntervalMs: 0 },
+      frontend: {
+        draftSaveDelayMs: 0,
+        reasoningTranslation: { enabled: false, minimumIntervalMs: 0 },
+        transcriptRefreshIntervalMs: 0,
+      },
       profiles: { available: [] },
       sessions: [],
     }),
@@ -32,6 +36,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       fileLinks: [],
       messages: [],
       queue: [],
+      reasoningTranslations: [],
       transcriptRevision: 0,
     }),
   };

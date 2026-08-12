@@ -173,6 +173,7 @@ function AuthenticatedApp() {
           availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
           selectedProfile={newProfile}
           sessionStatus={displayedActiveSession?.status}
+          translationSettings={bootstrap.data?.frontend.reasoningTranslation}
           view={transcript.view}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}

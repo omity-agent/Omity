@@ -75,6 +75,10 @@ export interface Settings {
   };
   frontend: {
     draftSaveDelayMs: number;
+    reasoningTranslation: {
+      enabled: boolean;
+      minimumIntervalMs: number;
+    };
     transcriptRefreshIntervalMs: number;
   };
   model: ModelSettings;

@@ -32,6 +32,26 @@ export const messages = sqliteTable(
     uniqueIndex("messages_queue").on(table.queueId),
   ],
 );
+export const reasoningTranslations = sqliteTable(
+  "reasoning_translations",
+  {
+    messageId: text("message_id").notNull(),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    source: text().notNull(),
+    targetLanguage: text("target_language").notNull(),
+    translated: text().notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("reasoning_translations_identity").on(
+      table.sessionId,
+      table.messageId,
+      table.targetLanguage,
+    ),
+  ],
+);
 export const events = sqliteTable(
   "events",
   {

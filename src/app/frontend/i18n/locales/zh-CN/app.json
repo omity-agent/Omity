@@ -34,6 +34,7 @@
   "toolCall": "工具调用",
   "stopTool": "终止工具",
   "reasoning": "思维链",
+  "reasoningTranslationUnsupported": "思维链翻译已开启，但浏览器不支持 Translator API 和 Language Detector API",
   "streaming": "生成中",
   "input": "输入",
   "output": "输出",

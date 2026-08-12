@@ -77,6 +77,12 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
     toolCalls: z.array(toolCallSchema),
     usage: tokenUsageSchema.optional(),
   }),
+  reasoningTranslationSchema = z.object({
+    messageId: z.string().min(1),
+    source: z.string(),
+    targetLanguage: z.string().min(1),
+    translated: z.string(),
+  }),
   queueSchema = z.object({
     content: z.string(),
     error: errorDetailsSchema.nullable(),
@@ -152,6 +158,7 @@ export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object(
   fileLinks: z.array(fileLinkUnitSchema),
   messages: z.array(messageSchema),
   queue: z.array(queueSchema),
+  reasoningTranslations: z.array(reasoningTranslationSchema),
   transcriptRevision: integer.nonnegative(),
 });
 const attachmentSettingsSchema: z.ZodType<AttachmentSettings> = z.object({
@@ -163,6 +170,10 @@ export const bootstrapResponseSchema = z.object({
   cwd: z.string(),
   frontend: z.object({
     draftSaveDelayMs: integer.nonnegative(),
+    reasoningTranslation: z.object({
+      enabled: z.boolean(),
+      minimumIntervalMs: integer.nonnegative(),
+    }),
     transcriptRefreshIntervalMs: integer.nonnegative(),
   }),
   profiles: z.object({
@@ -184,3 +195,4 @@ export const controlResponseSchema = z.object({
 });
 export const cancellationResponseSchema = z.object({ toolCallId: z.string() });
 export const answerResponseSchema = z.object({ toolCallId: z.string() });
+export const reasoningTranslationResponseSchema = reasoningTranslationSchema;

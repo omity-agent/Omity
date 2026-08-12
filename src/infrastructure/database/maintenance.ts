@@ -5,6 +5,7 @@ import {
   hostLeases,
   messages,
   queue,
+  reasoningTranslations,
   sessions,
 } from "./schema";
 import type { Database } from "bun:sqlite";
@@ -34,6 +35,7 @@ export function resetSessionStorage(
   orm.delete(hookUsage).run();
   orm.delete(hostLeases).run();
   deleteSessionStream(db, sessionId);
+  orm.delete(reasoningTranslations).where(eq(reasoningTranslations.sessionId, sessionId)).run();
   orm.delete(messages).where(eq(messages.sessionId, sessionId)).run();
   orm.delete(queue).where(eq(queue.sessionId, sessionId)).run();
   orm.delete(sessions).where(eq(sessions.id, sessionId)).run();

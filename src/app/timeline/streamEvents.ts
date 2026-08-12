@@ -1,4 +1,9 @@
-import type { DisplayEvent, DisplayToolOutput, TimelineMessage } from "./types";
+import type {
+  DisplayEvent,
+  DisplayToolOutput,
+  ReasoningTranslation,
+  TimelineMessage,
+} from "./types";
 import {
   type StreamMessage,
   createStreamPart,
@@ -42,6 +47,7 @@ export function streamTimelineMessages(
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   fileLinks: FileLinkUnit[] = [],
+  reasoningTranslations: ReasoningTranslation[] = [],
 ): TimelineMessage[] {
   const messages = new Map<string, StreamMessage>();
   for (const event of events) {
@@ -69,7 +75,7 @@ export function streamTimelineMessages(
   }
   reconcileToolStreams(messages.values(), events);
   return [...messages.values()].map((message) =>
-    projectStreamMessage(message, outputs, lifecycle, fileLinks),
+    projectStreamMessage(message, outputs, lifecycle, fileLinks, reasoningTranslations),
   );
 }
 function isPartEvent(

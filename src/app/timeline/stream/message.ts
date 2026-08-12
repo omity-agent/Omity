@@ -2,6 +2,7 @@ import type {
   DisplayEvent,
   DisplayToolCall,
   DisplayToolOutput,
+  ReasoningTranslation,
   TimelineMessage,
   TimelinePart,
 } from "../types";
@@ -80,6 +81,7 @@ export function projectStreamMessage(
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: Map<string, { phase: "running" } | { output: DisplayToolOutput; phase: "completed" }>,
   fileLinks: FileLinkUnit[],
+  reasoningTranslations: ReasoningTranslation[],
 ): TimelineMessage {
   const parts = message.order.flatMap((partId): TimelinePart[] => {
     const part = message.parts.get(partId);
@@ -87,10 +89,16 @@ export function projectStreamMessage(
       throw new Error(`流消息缺少片段：${partId}`);
     }
     if (part.kind === "assistant_reasoning_delta") {
-      return textTimelinePart(part, message.messageId, "reasoning", fileLinks);
+      return textTimelinePart(
+        part,
+        message.messageId,
+        "reasoning",
+        fileLinks,
+        reasoningTranslations,
+      );
     }
     if (part.kind === "assistant_text_delta") {
-      return textTimelinePart(part, message.messageId, "content", fileLinks);
+      return textTimelinePart(part, message.messageId, "content", fileLinks, reasoningTranslations);
     }
     return [toolTimelinePart(part, partId, message.messageId, outputs, lifecycle, fileLinks)];
   });
@@ -108,12 +116,26 @@ function textTimelinePart(
   ownerId: string,
   surface: "content" | "reasoning",
   fileLinks: FileLinkUnit[],
+  reasoningTranslations: ReasoningTranslation[],
 ): TimelinePart[] {
   if (!part.content.trim()) {
     return [];
   }
   const links = localStreamLinks(fileLinks, ownerId, surface, part);
-  return [{ content: part.content, ...optionalStreamLinks(links), type: surface }];
+  return surface === "reasoning"
+    ? [
+        {
+          content: part.content,
+          messageId: ownerId,
+          ...optionalStreamLinks(links),
+          streaming: true,
+          translations: reasoningTranslations.filter(
+            (translation) => translation.source === part.content,
+          ),
+          type: surface,
+        },
+      ]
+    : [{ content: part.content, ...optionalStreamLinks(links), type: surface }];
 }
 function toolTimelinePart(
   part: ToolPart,

@@ -29,6 +29,9 @@ attachments:
 
 frontend:
   draftSaveDelayMs: 500
+  reasoningTranslation:
+    enabled: true
+    minimumIntervalMs: 1000
   transcriptRefreshIntervalMs: 25
 
 host:

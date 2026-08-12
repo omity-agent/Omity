@@ -20,7 +20,9 @@ test("persisted reasoning hides its identified stream", () => {
     ],
     events = [event("assistant_reasoning_delta", "已思考", { messageId: "message-1" })],
     view = buildTimeline(messages, queue, events);
-  expect(view[0]?.parts).toEqual([{ content: "已思考", type: "reasoning" }]);
+  expect(view[0]?.parts).toEqual([
+    { content: "已思考", messageId: "message-1", translations: [], type: "reasoning" },
+  ]);
 });
 test("streamed reasoning is shown before answer text", () => {
   const events = [
@@ -29,7 +31,13 @@ test("streamed reasoning is shown before answer text", () => {
     ],
     view = buildTimeline([], queue, events);
   expect(view[0]?.parts).toEqual([
-    { content: "分析", type: "reasoning" },
+    {
+      content: "分析",
+      messageId: "message-live",
+      streaming: true,
+      translations: [],
+      type: "reasoning",
+    },
     { content: "答案", type: "content" },
   ]);
 });

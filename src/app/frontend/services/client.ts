@@ -7,6 +7,7 @@ import {
   deletedResponseSchema,
   draftResponseSchema,
   messageResponseSchema,
+  reasoningTranslationResponseSchema,
   revisionResponseSchema,
   sessionResponseSchema,
   transcriptResponseSchema,
@@ -23,6 +24,10 @@ export type { SessionInfo } from "../../sessionState";
 const fileLinkActionSchema = z.object({ path: z.string() });
 export interface FrontendSettings {
   draftSaveDelayMs: number;
+  reasoningTranslation: {
+    enabled: boolean;
+    minimumIntervalMs: number;
+  };
   transcriptRefreshIntervalMs: number;
 }
 export async function bootstrap(signal?: AbortSignal) {
@@ -96,6 +101,24 @@ export async function saveComposerDraft(sessionId: string, content: string, revi
     revisionResponseSchema,
     {
       body: JSON.stringify({ content, revision }),
+      method: "PUT",
+    },
+  );
+}
+export async function saveReasoningTranslation(
+  sessionId: string,
+  translation: {
+    messageId: string;
+    source: string;
+    targetLanguage: string;
+    translated: string;
+  },
+) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/reasoning-translation`,
+    reasoningTranslationResponseSchema,
+    {
+      body: JSON.stringify(translation),
       method: "PUT",
     },
   );

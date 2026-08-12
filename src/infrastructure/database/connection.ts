@@ -10,7 +10,7 @@ import {
   sessions,
   toolCancellations,
 } from "./schema/session";
-import { events, messages } from "./schema/conversation";
+import { events, messages, reasoningTranslations } from "./schema/conversation";
 import { parse, resolve } from "node:path";
 import { fileLinkUnits } from "./schema/fileLinks";
 import { migrateSessionDatabase } from "./migrations";
@@ -26,6 +26,7 @@ const sessionSchema = {
   hostLeases,
   messages,
   queue,
+  reasoningTranslations,
   sessions,
   toolCancellations,
 };

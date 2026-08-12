@@ -4,6 +4,7 @@ import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
 import { Composer } from "./Composer/index";
 import { FileLinkProvider } from "../FileLink/context";
+import type { FrontendSettings } from "../../services/client";
 import type { InitialSessionState } from "../../../initialState";
 import { Message } from "./Message";
 import { NewSessionPage } from "../NewSession";
@@ -12,6 +13,7 @@ import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
 import { findLatestDetail } from "./detailFocus";
 import { useMemo } from "react";
+import { useReasoningTranslation } from "../../services/translation/useReasoningTranslation";
 import { useTranslation } from "react-i18next";
 
 const page = css({
@@ -43,6 +45,7 @@ export function ChatPage({
   availableProfiles,
   selectedProfile,
   sessionStatus,
+  translationSettings,
   view,
   workspace,
   onCreate,
@@ -68,6 +71,7 @@ export function ChatPage({
   availableProfiles: string[];
   selectedProfile?: string;
   sessionStatus?: SessionStatus;
+  translationSettings?: FrontendSettings["reasoningTranslation"];
   view: TimelineMessage[];
   workspace?: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
@@ -106,6 +110,7 @@ export function ChatPage({
       () => view.filter((item) => item.role === "user").map((item) => item.content),
       [view],
     );
+  useReasoningTranslation(activeId ?? "", view, translationSettings);
   if (!activeId) {
     if (newSession) {
       return (

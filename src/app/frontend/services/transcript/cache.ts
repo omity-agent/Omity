@@ -2,6 +2,7 @@ import {
   type DisplayEvent,
   type DisplayMessage,
   type DisplayQueue,
+  type ReasoningTranslation,
   type TimelineMessage,
   buildTimeline,
 } from "../../../timeline";
@@ -15,6 +16,7 @@ export interface TranscriptSnapshot {
   events: DisplayEvent[];
   eventCursor: number;
   fileLinks: FileLinkUnit[];
+  reasoningTranslations: ReasoningTranslation[];
   transcriptRevision: number;
 }
 export interface TranscriptData extends TranscriptSnapshot {
@@ -29,6 +31,7 @@ export function emptyTranscriptData(): TranscriptData {
     fileLinks: [],
     messages: [],
     queue: [],
+    reasoningTranslations: [],
     snapshotCursor: 0,
     transcriptRevision: 0,
     view: [],
@@ -81,7 +84,7 @@ export function appendTranscriptEvents(current: TranscriptData, incoming: Displa
 }
 export function rebuildTranscript(
   current: TranscriptData,
-  changes: Partial<Pick<TranscriptData, "queue" | "messages" | "events">>,
+  changes: Partial<Pick<TranscriptData, "queue" | "messages" | "events" | "reasoningTranslations">>,
 ) {
   return buildTranscript(
     { ...current, ...changes },
@@ -106,6 +109,7 @@ function buildTranscript(
       snapshot.events,
       optimistic,
       snapshot.fileLinks,
+      snapshot.reasoningTranslations,
     ),
   };
 }

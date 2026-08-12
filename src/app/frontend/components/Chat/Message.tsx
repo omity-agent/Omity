@@ -142,10 +142,10 @@ export function Message({
           if (part.type === "reasoning") {
             return (
               <Reasoning
-                content={part.content}
                 fileLinks={part.fileLinks}
                 key={`reasoning-${index.toString()}-${index === latestDetailIndex ? "latest" : "settled"}`}
                 latest={index === latestDetailIndex}
+                part={part}
               />
             );
           }

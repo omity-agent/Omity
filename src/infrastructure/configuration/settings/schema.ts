@@ -128,10 +128,18 @@ const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high"
             .max(Number.MAX_SAFE_INTEGER - 1024 * 1024),
         })
         .strict(),
-      frontend: z.object({
-        draftSaveDelayMs: z.number().int().positive(),
-        transcriptRefreshIntervalMs: z.number().int().positive(),
-      }),
+      frontend: z
+        .object({
+          draftSaveDelayMs: z.number().int().positive(),
+          reasoningTranslation: z
+            .object({
+              enabled: z.boolean(),
+              minimumIntervalMs: z.number().int().nonnegative(),
+            })
+            .strict(),
+          transcriptRefreshIntervalMs: z.number().int().positive(),
+        })
+        .strict(),
       host: z.object({
         idleLogMs: z.number().int().positive(),
         pausePollMs: z.number().int().positive(),

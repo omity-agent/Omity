@@ -55,6 +55,9 @@ attachments:
   maxSizeBytes: 1024
 frontend:
   draftSaveDelayMs: 1
+  reasoningTranslation:
+    enabled: false
+    minimumIntervalMs: 1000
   transcriptRefreshIntervalMs: 1
 host:
   pollMs: 1

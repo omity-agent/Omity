@@ -4,19 +4,19 @@ import type {
   DisplayQueue,
   DisplayToolCall,
   DisplayToolOutput,
+  ReasoningTranslation,
   TimelineMessage,
-  TimelinePart,
 } from "./types";
-import { displayToolCallKey, sameToolCall } from "./tool/correlation";
 import {
   eventMessageId,
   eventQueueId,
   streamTimelineMessages,
   toolCallLifecycle,
 } from "./streamEvents";
-import { linkedCall, linkedOutput, matchesFor, optionalLinks } from "./build/fileLinks";
 import type { FileLinkUnit } from "../../fileLinks/types";
 import { groupAssistantMessages } from "./grouping";
+import { persistedTimelineMessage } from "./build/message";
+import { sameToolCall } from "./tool/correlation";
 import { syntheticMessage } from "./build/synthetic";
 
 export type {
@@ -30,6 +30,7 @@ export type {
   TokenUsage,
   TimelineMessage,
   TimelinePart,
+  ReasoningTranslation,
   ToolCallPhase,
 } from "./types";
 export { canCancelToolCall } from "./types";
@@ -40,6 +41,7 @@ export function buildTimeline(
   events: DisplayEvent[],
   optimistic: TimelineMessage[] = [],
   fileLinks: FileLinkUnit[] = [],
+  reasoningTranslations: ReasoningTranslation[] = [],
 ): TimelineMessage[] {
   const outputs = new Map(
       messages.flatMap((item) =>
@@ -53,7 +55,7 @@ export function buildTimeline(
     visible = messages
       .filter((item) => item.role !== "tool")
       .map((item) =>
-        withParts(item, `message-${item.id.toString()}`, outputs, lifecycle, fileLinks),
+        persistedTimelineMessage(item, outputs, lifecycle, fileLinks, reasoningTranslations),
       ),
     persistedSourceIds = new Set(
       messages.map((item) => item.sourceId).filter((id) => id !== undefined),
@@ -90,6 +92,7 @@ export function buildTimeline(
       lifecycle,
       persistedToolCalls,
       fileLinks,
+      reasoningTranslations,
     );
   return groupAssistantMessages([...visible, ...live]);
 }
@@ -101,12 +104,19 @@ function timelineTail(
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   persistedToolCalls: DisplayToolCall[],
   fileLinks: FileLinkUnit[],
+  reasoningTranslations: ReasoningTranslation[],
 ) {
   const result: TimelineMessage[] = [];
   let stream: DisplayEvent[] = [];
   const flushStream = () => {
     result.push(
-      ...streamTimelineMessages(stream, outputs, lifecycle, fileLinks).flatMap((message) => {
+      ...streamTimelineMessages(
+        stream,
+        outputs,
+        lifecycle,
+        fileLinks,
+        reasoningTranslations,
+      ).flatMap((message) => {
         const parts = message.parts.filter(
           (part) =>
             part.type !== "tool" ||
@@ -133,71 +143,4 @@ function timelineTail(
   result.push(...pending.values());
   result.push(...optimistic);
   return result;
-}
-function withParts(
-  message: DisplayMessage,
-  key: string,
-  outputs: Map<string, DisplayToolOutput>,
-  lifecycle: ReturnType<typeof toolCallLifecycle>,
-  fileLinks: FileLinkUnit[],
-): TimelineMessage {
-  return {
-    content: message.content,
-    createdAt: message.createdAt,
-    id: message.id,
-    key,
-    role: message.role,
-    ...(message.usage ? { usage: message.usage } : {}),
-    parts: [
-      ...(message.reasoning.trim()
-        ? [
-            {
-              content: message.reasoning,
-              ...optionalLinks(matchesFor(fileLinks, message.sourceId, "reasoning")),
-              type: "reasoning",
-            } as const,
-          ]
-        : []),
-      ...(message.content.trim()
-        ? [
-            {
-              content: message.content,
-              ...optionalLinks(matchesFor(fileLinks, message.sourceId, "content")),
-              type: "content",
-            } as const,
-          ]
-        : []),
-      ...message.toolCalls.map((call) => toolPart(call, outputs, lifecycle, fileLinks)),
-    ],
-  };
-}
-function toolPart(
-  call: DisplayToolCall,
-  outputs: Map<string, DisplayToolOutput>,
-  lifecycle: ReturnType<typeof toolCallLifecycle>,
-  fileLinks: FileLinkUnit[],
-): Extract<TimelinePart, { type: "tool" }> {
-  const key = displayToolCallKey(call),
-    withLinks = linkedCall(call, fileLinks),
-    output = outputs.get(call.id);
-  if (output) {
-    return {
-      call: withLinks,
-      key,
-      output: linkedOutput(output, call.id, fileLinks),
-      phase: "completed",
-      type: "tool",
-    };
-  }
-  const state = lifecycle.get(call.id);
-  if (state?.phase === "completed") {
-    return {
-      call: withLinks,
-      key,
-      output: linkedOutput(state.output, call.id, fileLinks),
-      phase: "completed",
-      type: "tool",
-    };
-  }
-  return { call: withLinks, key, phase: state?.phase ?? "pending", type: "tool" };
 }
