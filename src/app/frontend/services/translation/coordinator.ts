@@ -4,6 +4,7 @@ import { createBrowserTranslator } from "./browser";
 interface TranslationCandidate {
   content: string;
   messageId: string;
+  streaming?: true;
   translations?: ReasoningTranslation[];
 }
 type PendingTranslationCandidate = Omit<TranslationCandidate, "messageId"> & {
@@ -13,6 +14,7 @@ interface TranslationCoordinatorOptions {
   createTranslator?: typeof createBrowserTranslator;
   minimumIntervalMs: number;
   now?: () => number;
+  onTranslation?: (translation: ReasoningTranslation) => void;
   persist: (translation: ReasoningTranslation) => Promise<unknown>;
   reportError?: (error: unknown) => void;
   targetLanguage: string;
@@ -94,12 +96,16 @@ export class ReasoningTranslationCoordinator {
     if (translated === null || signal.aborted) {
       return;
     }
-    await this.options.persist({
+    const result = {
       messageId: candidate.messageId,
       source: candidate.content,
       targetLanguage: this.options.targetLanguage,
       translated,
-    });
+    };
+    this.options.onTranslation?.(result);
+    if (!candidate.streaming) {
+      await this.options.persist(result);
+    }
   }
 }
 function isPersisted(

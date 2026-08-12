@@ -1,3 +1,5 @@
+import { encodeTranslationLineBreaks } from "./lineBreaks";
+
 export interface BrowserTranslator {
   translate: (text: string, signal?: AbortSignal) => Promise<string | null>;
 }
@@ -33,7 +35,11 @@ export async function createBrowserTranslator(
   const translator = await Translator.create({ signal, sourceLanguage, targetLanguage });
   return {
     async translate(input, translationSignal) {
-      return translator.translate(input, { signal: translationSignal });
+      const protectedInput = encodeTranslationLineBreaks(input),
+        translated = await translator.translate(protectedInput.encoded, {
+          signal: translationSignal,
+        });
+      return protectedInput.restore(translated);
     },
   };
 }

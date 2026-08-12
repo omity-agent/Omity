@@ -28,7 +28,7 @@ export function storeReasoningTranslation(
   sessionId: string,
   translation: ReasoningTranslation,
 ) {
-  const source = currentReasoningSource(db, sessionId, translation.messageId);
+  const source = persistedReasoningSource(db, sessionId, translation.messageId);
   if (source !== translation.source) {
     throw new Error(`思维链原文已发生变化：${translation.messageId}`);
   }
@@ -53,26 +53,7 @@ export function storeReasoningTranslation(
     })
     .run();
 }
-function currentReasoningSource(db: Database, sessionId: string, messageId: string) {
-  const events = db
-    .query<{ payload_json: string }, [string, string]>(
-      `SELECT payload_json FROM events
-       WHERE session_id = ? AND message_id = ?
-         AND kind = 'assistant_reasoning_delta'
-       ORDER BY id`,
-    )
-    .all(sessionId, messageId);
-  if (events.length > 0) {
-    return events
-      .map(({ payload_json: payload }) => {
-        const value = JSON.parse(payload) as unknown;
-        if (typeof value !== "string") {
-          throw new Error(`思维链流事件无效：${messageId}`);
-        }
-        return value;
-      })
-      .join("");
-  }
+function persistedReasoningSource(db: Database, sessionId: string, messageId: string) {
   const message = db
     .query<{ message_json: string }, [string, string]>(
       `SELECT message_json FROM messages

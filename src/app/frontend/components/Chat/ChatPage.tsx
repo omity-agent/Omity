@@ -109,8 +109,8 @@ export function ChatPage({
     userMessages = useMemo(
       () => view.filter((item) => item.role === "user").map((item) => item.content),
       [view],
-    );
-  useReasoningTranslation(activeId ?? "", view, translationSettings);
+    ),
+    liveTranslation = useReasoningTranslation(activeId ?? "", view, translationSettings);
   if (!activeId) {
     if (newSession) {
       return (
@@ -146,6 +146,7 @@ export function ChatPage({
               forkDisabled={actionState.sessionActionDisabled}
               item={item}
               key={item.key}
+              liveTranslation={liveTranslation}
               latestDetailIndex={
                 item.key === latestDetail?.messageKey ? latestDetail.partIndex : undefined
               }

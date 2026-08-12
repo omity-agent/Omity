@@ -1,9 +1,10 @@
 import { expect, mock, test } from "bun:test";
 import { ReasoningTranslationCoordinator } from "../../../../src/app/frontend/services/translation/coordinator";
 
-test("translation coordinator persists the leading and latest trailing reasoning", async () => {
+test("translation coordinator only persists the final reasoning", async () => {
   let now = 0;
-  const persisted: string[] = [],
+  const displayed: string[] = [],
+    persisted: string[] = [],
     createTranslator = mock(() =>
       Promise.resolve({
         translate: (text: string) => Promise.resolve(`translated:${text}`),
@@ -13,20 +14,29 @@ test("translation coordinator persists the leading and latest trailing reasoning
       createTranslator,
       minimumIntervalMs: 20,
       now: () => now,
+      onTranslation: (translation) => {
+        displayed.push(translation.source);
+      },
       persist: (translation) => {
         persisted.push(translation.source);
         return Promise.resolve();
       },
       targetLanguage: "zh-CN",
     });
-  coordinator.update({ content: "first", messageId: "message", translations: [] });
+  coordinator.update({ content: "first", messageId: "message", streaming: true, translations: [] });
   await Bun.sleep(0);
   now = 5;
-  coordinator.update({ content: "second", messageId: "message", translations: [] });
+  coordinator.update({
+    content: "first second",
+    messageId: "message",
+    streaming: true,
+    translations: [],
+  });
   now = 10;
-  coordinator.update({ content: "final", messageId: "message", translations: [] });
+  coordinator.update({ content: "first second final", messageId: "message", translations: [] });
   await Bun.sleep(25);
-  expect(persisted).toEqual(["first", "final"]);
+  expect(displayed).toEqual(["first", "first second final"]);
+  expect(persisted).toEqual(["first second final"]);
   coordinator.close();
 });
 test("translation coordinator reuses a matching persisted translation", async () => {

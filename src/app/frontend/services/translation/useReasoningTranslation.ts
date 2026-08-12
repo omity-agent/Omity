@@ -1,6 +1,6 @@
-import type { TimelineMessage, TimelinePart } from "../../../timeline";
+import type { ReasoningTranslation, TimelineMessage, TimelinePart } from "../../../timeline";
 import { browserTranslationSupported, preferredTranslationLanguage } from "./browser";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ReasoningTranslationCoordinator } from "./coordinator";
 import { reportError } from "../errors";
 import { saveReasoningTranslation } from "../client";
@@ -10,6 +10,10 @@ interface TranslationSettings {
   enabled: boolean;
   minimumIntervalMs: number;
 }
+interface LiveTranslation {
+  sessionId: string;
+  value: ReasoningTranslation;
+}
 let unsupportedWarningPrinted = false;
 export function useReasoningTranslation(
   sessionId: string,
@@ -18,7 +22,8 @@ export function useReasoningTranslation(
 ) {
   const { t } = useTranslation(),
     coordinator = useRef<ReasoningTranslationCoordinator | undefined>(undefined),
-    part = useMemo(() => translationCandidate(view), [view]);
+    part = useMemo(() => translationCandidate(view), [view]),
+    [liveTranslation, setLiveTranslation] = useState<LiveTranslation | undefined>();
   useEffect(() => {
     coordinator.current?.close();
     coordinator.current = undefined;
@@ -32,6 +37,9 @@ export function useReasoningTranslation(
     const targetLanguage = preferredTranslationLanguage(),
       translation = new ReasoningTranslationCoordinator({
         minimumIntervalMs: settings.minimumIntervalMs,
+        onTranslation: (result) => {
+          setLiveTranslation({ sessionId, value: result });
+        },
         persist: (result) => saveReasoningTranslation(sessionId, result),
         reportError,
         targetLanguage,
@@ -49,6 +57,12 @@ export function useReasoningTranslation(
       coordinator.current?.update(part);
     }
   }, [part]);
+  return settings?.enabled &&
+    liveTranslation?.sessionId === sessionId &&
+    part &&
+    isUsableLiveTranslation(liveTranslation.value, part)
+    ? liveTranslation.value
+    : undefined;
 }
 function warnUnsupportedBrowser(message: string) {
   if (unsupportedWarningPrinted) {
@@ -67,4 +81,14 @@ function translationCandidate(
     ),
     streaming = parts.findLast((part) => part.streaming && part.messageId !== undefined);
   return streaming ?? parts.at(-1);
+}
+function isUsableLiveTranslation(
+  translation: ReasoningTranslation,
+  part: Extract<TimelinePart, { type: "reasoning" }>,
+) {
+  return (
+    translation.messageId === part.messageId &&
+    (translation.source === part.content ||
+      (part.streaming === true && part.content.startsWith(translation.source)))
+  );
 }

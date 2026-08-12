@@ -1,10 +1,10 @@
+import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
 import { css, cva, cx } from "styled-system/css";
 import { CopyButton } from "./CopyButton";
 import { GitFork } from "lucide-react";
 import { IconButton } from "../ParkUI";
 import { MarkdownView } from "../MarkdownView";
 import { Reasoning } from "../Details/Reasoning";
-import type { TimelineMessage } from "../../../timeline";
 import { ToolCall } from "../Details/ToolCall";
 import { reportPromiseErrors } from "../../services/errors";
 import { useCallback } from "react";
@@ -88,6 +88,7 @@ export function Message({
   canFork,
   forkDisabled,
   item,
+  liveTranslation,
   latestDetailIndex,
   onCancelTool,
   onFork,
@@ -95,6 +96,7 @@ export function Message({
   canFork: boolean;
   forkDisabled: boolean;
   item: TimelineMessage;
+  liveTranslation?: ReasoningTranslation;
   latestDetailIndex?: number;
   onCancelTool: (toolCallId: string) => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
@@ -145,6 +147,7 @@ export function Message({
                 fileLinks={part.fileLinks}
                 key={`reasoning-${index.toString()}-${index === latestDetailIndex ? "latest" : "settled"}`}
                 latest={index === latestDetailIndex}
+                liveTranslation={liveTranslation}
                 part={part}
               />
             );
