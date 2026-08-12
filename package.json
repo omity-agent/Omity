@@ -7,8 +7,7 @@
   "type": "module",
   "module": "src/cli.ts",
   "scripts": {
-    "build": "bun scripts/build.ts",
-    "db:generate": "rm --recursive --force src/infrastructure/database/migrations && drizzle-kit generate --config=settings/session-db.ts && drizzle-kit generate --config=settings/access-db.ts",
+    "build": "bun scripts/generateMigrations.ts && bun scripts/build.ts",
     "omity": "bun src/cli.ts",
     "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun test"
   },
