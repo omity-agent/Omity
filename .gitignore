@@ -1,5 +1,6 @@
-node_modules/
 dist/
+migrations/
+node_modules/
 src/app/frontend/dist/
 styled-system/
 *.bun-build

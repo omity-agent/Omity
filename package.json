@@ -7,9 +7,9 @@
   "type": "module",
   "module": "src/cli.ts",
   "scripts": {
-    "build": "bun scripts/generateMigrations.ts && bun scripts/build.ts",
+    "build": "bun scripts/build.ts",
     "omity": "bun src/cli.ts",
-    "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun test"
+    "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun scripts/build.ts --test"
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",

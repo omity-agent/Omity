@@ -37,6 +37,5 @@ function migrateDatabase<TSchema extends Record<string, unknown>, TRelations ext
   });
 }
 function migrationFile(root: string, database: MigrationDatabase) {
-  const source = join("src", "infrastructure", "database", "migrations", database, "migration.sql");
-  return applicationAssetPath(root, source, join("migrations", database, "migration.sql"));
+  return applicationAssetPath(root, join("migrations", database, "migration.sql"));
 }
