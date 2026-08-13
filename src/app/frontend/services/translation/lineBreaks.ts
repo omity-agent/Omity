@@ -51,16 +51,23 @@ function markerMatches(value: string): MarkerMatch[] {
 }
 function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
   const matchesByIndex = Map.groupBy(markerMatches(translated), (match) => match.index),
-    matches = markers.map((marker) => {
+    missing: LineBreakMarker[] = [],
+    matches = markers.flatMap((marker) => {
       const found = matchesByIndex.get(marker.index) ?? [];
       if (found.length === 0) {
-        throw new Error(`思维链翻译丢失换行标记：${marker.token}`);
+        missing.push(marker);
+        return [];
       }
       if (found.length > 1) {
         throw new Error(`思维链翻译重复换行标记：${marker.token}`);
       }
       return { marker, match: found[0]! };
     });
+  if (missing.length > 0) {
+    console.warn("思维链翻译丢失换行标记", {
+      markers: missing.map((marker) => marker.token),
+    });
+  }
   for (let index = 1; index < matches.length; index += 1) {
     if (matches[index]!.match.start < matches[index - 1]!.match.end) {
       throw new Error(`思维链翻译换行标记顺序错误：${matches[index]!.marker.token}`);

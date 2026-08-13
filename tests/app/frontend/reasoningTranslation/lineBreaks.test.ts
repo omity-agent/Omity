@@ -33,12 +33,11 @@ test("translation line markers preserve source spaces beside line breaks", () =>
   const protectedInput = encodeTranslationLineBreaks("first \n second");
   expect(protectedInput.restore(protectedInput.encoded)).toBe("first \n second");
 });
-test("translation line markers reject missing, duplicated, and reordered markers", () => {
+test("translation line markers reject duplicated and reordered markers", () => {
   const protectedInput = encodeTranslationLineBreaks("first\nsecond\nthird"),
     [first, second] = protectedInput.encoded.match(/\{\{lnbrk_\d+}}/g) ?? [];
   expect(first).toBeDefined();
   expect(second).toBeDefined();
-  expect(() => protectedInput.restore("translated")).toThrow("丢失换行标记");
   expect(() => protectedInput.restore(`${first}${first}${second}`)).toThrow("重复换行标记");
   expect(() => protectedInput.restore(`${second}${first}`)).toThrow("顺序错误");
 });
