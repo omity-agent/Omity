@@ -10,6 +10,7 @@ export function buildAiModel(settings: Settings) {
 }
 export function aiRequestOptions(settings: Settings, sessionId: string) {
   const openai = {
+    forceReasoning: settings.model.reasoning_effort !== undefined,
     include: ["reasoning.encrypted_content"],
     promptCacheKey: sessionId,
     reasoningEffort: settings.model.reasoning_effort,
