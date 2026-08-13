@@ -43,6 +43,7 @@ test("message multipart validation forwards placeholders and files", async () =>
       attachments: [{ file: { name: "notes.txt", size: 5 }, id }],
       content: `查看 {{file:${id}:notes.txt}}`,
       draftRevision: 3,
+      submissionId: "a1b2c3d4",
     },
   ]);
 });
@@ -64,6 +65,10 @@ test("multipart attachments without filenames are rejected", async () => {
       'Content-Disposition: form-data; name="draftRevision"',
       "",
       "0",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="submissionId"',
+      "",
+      "a1b2c3d4",
       `--${boundary}`,
       'Content-Disposition: form-data; name="file:a1b2c3d4"; filename=""',
       "Content-Type: text/plain",
@@ -165,6 +170,7 @@ function messageForm(content: string, draftRevision: number) {
   const body = new FormData();
   body.set("content", content);
   body.set("draftRevision", draftRevision.toString());
+  body.set("submissionId", "a1b2c3d4");
   return body;
 }
 function sessionForm(

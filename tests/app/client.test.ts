@@ -1,11 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
+import { readSessionDraft, writeSessionDraft } from "../../src/app/composerDraft";
+import { setSessionControl, submitSessionMessage } from "../../src/client";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { cliParser } from "../../src/commandLine/parser";
 import { createTestDirectory } from "../support/artifacts";
 import { parseSync } from "@optique/core/parser";
 import { rmSync } from "node:fs";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import { setSessionControl } from "../../src/client";
 import { writeTestConfiguration } from "../support/configuration";
 
 const dirs: string[] = [];
@@ -75,6 +76,20 @@ test("single step is accepted only after a queue has reached pause", () => {
   expect(setSessionControl("step", "step")).toEqual({ control: "step" });
   const reopened = new AgentDatabase(dbPath);
   expect(reopened.control("step")).toBe("step");
+  reopened.close();
+});
+test("message enqueue and submitted draft clear commit together", () => {
+  const { dbPath } = makeSession("submit");
+  writeSessionDraft("submit", "消息", 1);
+  const result = submitSessionMessage("submit", "消息", 1, "abc12345"),
+    reopened = new AgentDatabase(dbPath);
+  expect(result.queueId).toBePositive();
+  expect(reopened.nextQueue("submit")).toMatchObject({
+    content: "消息",
+    id: result.queueId,
+    status: "pending",
+  });
+  expect(readSessionDraft("submit")).toEqual({ content: null, revision: 1 });
   reopened.close();
 });
 function parseValue(args: string[]) {

@@ -29,7 +29,9 @@ test("paused final tool call replaces its stream and remains cancellable before 
         ],
       },
     ],
-    queue: DisplayQueue[] = [{ content: "run", error: null, id: 1, status: "paused" }],
+    queue: DisplayQueue[] = [
+      { content: "", error: null, id: 1, status: "paused", userMessageId: 1 },
+    ],
     events: DisplayEvent[] = [
       {
         id: 1,
@@ -69,7 +71,9 @@ test("streaming tool call is grouped with previous assistant message", () => {
         ],
       },
     ],
-    queue: DisplayQueue[] = [{ content: "run", error: null, id: 1, status: "running" }],
+    queue: DisplayQueue[] = [
+      { content: "", error: null, id: 1, status: "running", userMessageId: 1 },
+    ],
     events: DisplayEvent[] = [
       {
         id: 1,

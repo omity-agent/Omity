@@ -135,6 +135,41 @@ test("places output generated after the consumed boundary behind the user messag
     "assistant:插入后",
   ]);
 });
+test.each(["paused", "running", "canceled"] as const)(
+  "shows accepted %s queue content before its persisted user message",
+  (status) => {
+    const view = buildTimeline(
+      [],
+      [
+        {
+          content: "已接受",
+          error: null,
+          id: 1,
+          status,
+          userMessageId: null,
+        },
+      ],
+      [],
+    );
+    expect(summary(view)).toEqual(["user:已接受"]);
+  },
+);
+test("does not show fork drafts as sent messages", () => {
+  const view = buildTimeline(
+    [],
+    [
+      {
+        content: "可编辑草稿",
+        error: null,
+        id: 1,
+        status: "draft",
+        userMessageId: null,
+      },
+    ],
+    [],
+  );
+  expect(view).toEqual([]);
+});
 function message(
   id: number,
   role: DisplayMessage["role"],

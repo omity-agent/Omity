@@ -1,36 +1,15 @@
-import {
-  type ComposerDraftTarget,
-  clearTemporaryComposerDraft,
-} from "../../../../services/composerDrafts";
-import type { PendingAttachment } from "../../../../../attachments/contract";
-
 export async function submitMessage({
-  attachments,
   clearPending,
-  draftTarget,
-  onSend,
   restore,
-  submittedContent,
-  submittedRevision,
+  sending,
 }: {
-  attachments: PendingAttachment[];
   clearPending: () => void;
-  draftTarget: ComposerDraftTarget;
-  onSend: (
-    content: string,
-    draftRevision: number,
-    attachments: PendingAttachment[],
-  ) => Promise<void>;
   restore: () => void;
-  submittedContent: string;
-  submittedRevision: number;
+  sending: Promise<void>;
 }) {
   clearPending();
-  if (draftTarget.kind === "new") {
-    clearTemporaryComposerDraft();
-  }
   try {
-    await onSend(submittedContent, submittedRevision, attachments);
+    await sending;
   } catch (error) {
     restore();
     throw error;

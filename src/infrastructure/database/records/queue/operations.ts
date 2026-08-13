@@ -11,7 +11,12 @@ const queueSelect = `
     q.status, m.id AS user_message_id
   FROM queue q
   LEFT JOIN messages m ON m.queue_id = q.id`;
-export function appendUserQueue(db: Database, sessionId: string, content: string) {
+export function appendUserQueue(
+  db: Database,
+  sessionId: string,
+  content: string,
+  submissionId?: string,
+) {
   db.run("DELETE FROM queue WHERE session_id = ? AND status = 'draft'", [sessionId]);
   const activeRun = queryGet<{ root_id: number }>(
     db,
@@ -22,11 +27,12 @@ export function appendUserQueue(db: Database, sessionId: string, content: string
     sessionId,
   );
   if (activeRun) {
-    return appendToRun(db, sessionId, activeRun.root_id, content);
+    return appendToRun(db, sessionId, activeRun.root_id, content, submissionId);
   }
   const result = db.run(
-      "INSERT INTO queue (session_id, content, status) VALUES (?, ?, 'pending')",
-      [sessionId, content],
+      `INSERT INTO queue (session_id, content, status, submission_id)
+       VALUES (?, ?, 'pending', ?)`,
+      [sessionId, content, submissionId ?? null],
     ),
     queueId = Number(result.lastInsertRowid);
   db.run("UPDATE queue SET root_id = ? WHERE id = ?", [queueId, queueId]);
@@ -143,10 +149,17 @@ export function queueStatusRecord(db: Database, queueId: number) {
   }
   return row.status;
 }
-function appendToRun(db: Database, sessionId: string, rootId: number, content: string) {
+function appendToRun(
+  db: Database,
+  sessionId: string,
+  rootId: number,
+  content: string,
+  submissionId?: string,
+) {
   const result = db.run(
-    "INSERT INTO queue (session_id, root_id, content, status) VALUES (?, ?, ?, 'pending')",
-    [sessionId, rootId, content],
+    `INSERT INTO queue (session_id, root_id, content, status, submission_id)
+     VALUES (?, ?, ?, 'pending', ?)`,
+    [sessionId, rootId, content, submissionId ?? null],
   );
   return Number(result.lastInsertRowid);
 }

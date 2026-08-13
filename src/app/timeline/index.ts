@@ -61,9 +61,22 @@ export function buildTimeline(
       messages.map((item) => item.sourceId).filter((id) => id !== undefined),
     ),
     knownQueue = new Set(messages.map((item) => item.queueId)),
-    pending = new Map(
+    persistedUserQueue = new Set(
+      messages
+        .filter((item) => item.role === "user")
+        .map((item) => item.queueId)
+        .filter((queueId): queueId is number => queueId !== null),
+    ),
+    queuedUsers = new Map(
       queue
-        .filter((item) => item.status === "pending" && !knownQueue.has(item.id))
+        .filter(
+          (item) =>
+            item.status !== "draft" &&
+            item.content.length > 0 &&
+            item.userMessageId == null &&
+            !persistedUserQueue.has(item.id) &&
+            !knownQueue.has(item.id),
+        )
         .map(
           (item) =>
             [
@@ -80,13 +93,13 @@ export function buildTimeline(
     ),
     liveEvents = events.filter(
       (event) =>
-        (event.kind === "user_appended" && pending.has(event.queueId)) ||
+        (event.kind === "user_appended" && queuedUsers.has(event.queueId)) ||
         (activeQueueIds.has(eventQueueId(event)) &&
           (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
     ),
     live = timelineTail(
       liveEvents,
-      pending,
+      queuedUsers,
       optimistic,
       outputs,
       lifecycle,

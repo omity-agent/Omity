@@ -8,6 +8,7 @@ import type { FrontendSettings } from "../../services/client";
 import type { InitialSessionState } from "../../../initialState";
 import { Message } from "./Message";
 import { NewSessionPage } from "../NewSession";
+import type { OptimisticUser } from "../../services/transcript/optimistic";
 import { TranscriptScroll } from "../TranscriptScroll";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
@@ -77,7 +78,7 @@ export function ChatPage({
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onCancelTool: (toolCallId: string) => Promise<void>;
   onSend: (
-    content: string,
+    optimistic: OptimisticUser,
     draftRevision: number,
     attachments: PendingAttachment[],
   ) => Promise<void>;

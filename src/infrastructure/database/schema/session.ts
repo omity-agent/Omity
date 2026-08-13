@@ -55,12 +55,14 @@ export const queue = sqliteTable(
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
     status: text({ enum: queueStatuses }).notNull(),
+    submissionId: text("submission_id"),
   },
   (table) => [
     check(
       "queue_status",
       sql`${table.status} in ('draft', 'pending', 'running', 'paused', 'done', 'canceled')`,
     ),
+    uniqueIndex("queue_submission").on(table.sessionId, table.submissionId),
   ],
 );
 export const composerDrafts = sqliteTable("composer_drafts", {

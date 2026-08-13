@@ -31,6 +31,7 @@ interface QueueRow {
   error: string | null;
   user_message_id: number | null;
   root_id: number | null;
+  submission_id: string | null;
 }
 export function loadSessionTranscript(sessionId: string) {
   return withSessionDatabase(sessionId, (db) => loadTranscript(db, sessionId));
@@ -65,7 +66,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
       queue = queryAll<QueueRow>(
         db.db,
         `SELECT q.id, COALESCE(q.content, '') AS content, q.status, q.error,
-         m.id AS user_message_id, q.root_id
+	         m.id AS user_message_id, q.root_id, q.submission_id
        FROM queue q
        LEFT JOIN messages m ON m.queue_id = q.id
        WHERE q.session_id = ? ORDER BY q.id`,
@@ -76,6 +77,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
         id: row.id,
         root: row.root_id === row.id,
         status: row.status,
+        submissionId: row.submission_id,
         userMessageId: row.user_message_id,
       })),
       events = queryAll<PersistedEventRow>(

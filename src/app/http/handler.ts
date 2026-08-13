@@ -94,8 +94,8 @@ export function createApi(controller: ApiController, access?: AccessService) {
     return c.json(controller.saveComposerDraft(sessionId(c), body.content, body.revision));
   });
   app.put("/api/sessions/:sessionId/reasoning-translation", regularBodyLimit, async (c) => {
-    const body = await readJson(c.req, reasoningTranslationBody);
-    const id = sessionId(c);
+    const body = await readJson(c.req, reasoningTranslationBody),
+      id = sessionId(c);
     controller.assertSession(id);
     const result = writeReasoningTranslation(id, body);
     controller.events.invalidateTranscript(id, controller.eventCursor(id));

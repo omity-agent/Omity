@@ -57,6 +57,7 @@ export interface DisplayQueue {
   error: ErrorDetails | null;
   userMessageId?: number | null;
   root?: boolean;
+  submissionId?: string | null;
 }
 export type DisplayEvent = StreamEvent;
 export type DisplayToolOutput = ToolOutputSnapshot & { fileLinks?: FilePathMatch[] };

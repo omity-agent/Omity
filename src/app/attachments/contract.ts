@@ -9,6 +9,7 @@ export interface MessageSubmission {
   content: string;
   draftRevision: number;
   attachments: PendingAttachment[];
+  submissionId: string;
 }
 export interface SessionSubmission {
   workspace: string;

@@ -89,6 +89,7 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
     id: integer.positive(),
     root: z.boolean().optional(),
     status: z.enum(["draft", "pending", "running", "paused", "done", "canceled"]),
+    submissionId: z.string().nullable().optional(),
     userMessageId: integer.positive().nullable().optional(),
   }),
   eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [

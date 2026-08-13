@@ -20,6 +20,7 @@ const nonEmptyMessage = z.string().refine((value) => value.trim().length > 0),
       .regex(/^(?<revision>0|[1-9]\d*)$/u)
       .transform(Number)
       .pipe(z.number().int().nonnegative()),
+    submissionId: z.string().regex(/^[0-9a-z]{8}$/u),
   }),
   sessionFieldsSchema = z.object({
     history: historySchema,
@@ -110,6 +111,7 @@ export async function readMessageForm(request: HonoRequest): Promise<MessageSubm
     fields = {
       content: singleText(form, "content"),
       draftRevision: singleText(form, "draftRevision"),
+      submissionId: singleText(form, "submissionId"),
     },
     result = messageFieldsSchema.safeParse(fields);
   if (!result.success) {

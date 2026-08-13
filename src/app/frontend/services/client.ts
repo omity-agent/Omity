@@ -133,11 +133,13 @@ export async function sendMessage(
   sessionId: string,
   content: string,
   draftRevision: number,
+  submissionId: string,
   attachments: PendingAttachment[],
 ) {
   const body = new FormData();
   body.set("content", content);
   body.set("draftRevision", draftRevision.toString());
+  body.set("submissionId", submissionId);
   appendAttachments(body, attachments);
   return request(`api/sessions/${encodeURIComponent(sessionId)}/messages`, messageResponseSchema, {
     body,

@@ -4,6 +4,7 @@ import type { ComposerDraftTarget } from "../../../../services/composerDrafts";
 import type { ComposerProps } from "../props";
 import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
 import type { PendingAttachment } from "../../../../../attachments/contract";
+import { createOptimisticUser } from "../../../../services/transcript/optimistic";
 import { submitMessage } from "./submit";
 
 export function useComposerSubmit({
@@ -79,22 +80,23 @@ export function useComposerSubmit({
     submittingRef.current = true;
     setSubmitting(true);
     historyRef.current?.reset();
+    if (draftTarget.kind !== "session") {
+      throw new Error("新会话不能使用聊天消息提交协议");
+    }
+    const optimistic = createOptimisticUser(draftTarget.sessionId, submittedContent),
+      sending = onSend(optimistic, submittedRevision, attachmentValues(submittedContent));
     contentRef.current = "";
     setContent("");
     try {
       await submitMessage({
-        attachments: attachmentValues(submittedContent),
         clearPending: () => saverRef.current?.discardPending(),
-        draftTarget,
-        onSend,
         restore: () => {
           revisionRef.current = submittedRevision + 1;
           contentRef.current = submittedContent;
           setContent(submittedContent);
           saverRef.current?.schedule(submittedContent, revisionRef.current);
         },
-        submittedContent,
-        submittedRevision,
+        sending,
       });
       clearAttachments();
     } finally {

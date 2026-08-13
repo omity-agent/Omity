@@ -88,11 +88,11 @@ export class ReasoningTranslationCoordinator {
   }
   private async translate(candidate: TranslationCandidate, signal: AbortSignal) {
     const translator = await (this.options.createTranslator ?? createBrowserTranslator)(
-      this.options.targetLanguage,
-      candidate.content,
-      signal,
-    );
-    const translated = await translator.translate(candidate.content, signal);
+        this.options.targetLanguage,
+        candidate.content,
+        signal,
+      ),
+      translated = await translator.translate(candidate.content, signal);
     if (translated === null || signal.aborted) {
       return;
     }

@@ -9,11 +9,11 @@ import {
   prioritizeSettingsProfile,
   settingsProfileNames,
 } from "../infrastructure/configuration/settings/context";
-import { clearSessionDraft, readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { controllerHostEvents, controllerSessionInfo } from "./controllerHostEvents";
 import { createAppFork, createAppSession } from "./runtime/sessionActions";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
+import { readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { AppEvents } from "./events";
 import { AppHosts } from "./hosts";
 import type { AppInstanceOwner } from "./runtime/instanceLock";
@@ -110,10 +110,11 @@ export class AppController {
         this.settings,
         sessionId,
         submission.content,
+        submission.draftRevision,
+        submission.submissionId,
         submission.attachments,
         () => this.ensureHost(session),
       );
-    clearSessionDraft(sessionId, submission.draftRevision);
     this.hosts.clearError(sessionId);
     this.publishChange(sessionId);
     return result;

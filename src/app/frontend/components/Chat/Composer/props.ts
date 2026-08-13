@@ -3,6 +3,7 @@ import type { AttachmentSettings, PendingAttachment } from "../../../../attachme
 import type { ChatControlState } from "../actionState";
 import type { ComposerDraftTarget } from "../../../services/composerDrafts";
 import type { Control } from "../../../../../types";
+import type { OptimisticUser } from "../../../services/transcript/optimistic";
 import type { TokenUsage } from "../../../../timeline";
 
 export interface ComposerProps {
@@ -22,7 +23,7 @@ export interface ComposerProps {
   onDelete?: () => Promise<void>;
   onAnswer?: (callId: string, answer: AskUserAnswer) => Promise<void>;
   onSend: (
-    content: string,
+    optimistic: OptimisticUser,
     draftRevision: number,
     attachments: PendingAttachment[],
   ) => Promise<void>;

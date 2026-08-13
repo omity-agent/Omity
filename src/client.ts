@@ -3,12 +3,26 @@ import type { Control } from "./types";
 import { existsSync } from "node:fs";
 import { requestStepControlRecord } from "./infrastructure/database/records/queue/control";
 import { resolveSessionPaths } from "./infrastructure/configuration/sessionPaths";
+import { runTransaction } from "./infrastructure/database/connection";
 import { sessionNotFound } from "./errors";
+import { submitUserRecord } from "./infrastructure/database/records/queue/submission";
 
 type ClientControl = Control;
 export function appendSessionMessage(sessionId: string, content: string) {
   return withSessionDatabase(sessionId, (db) => ({
     queueId: db.appendUser(sessionId, content),
+  }));
+}
+export function submitSessionMessage(
+  sessionId: string,
+  content: string,
+  draftRevision: number,
+  submissionId: string,
+) {
+  return withSessionDatabase(sessionId, (db) => ({
+    queueId: runTransaction(db.db, () =>
+      submitUserRecord(db.db, sessionId, content, draftRevision, submissionId),
+    ),
   }));
 }
 export function setSessionControl(sessionId: string, control: ClientControl) {

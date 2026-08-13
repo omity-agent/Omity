@@ -4,14 +4,8 @@ import {
   deleteSession,
   forkSession,
   pickWorkspacePath,
-  sendMessage,
   setControl,
 } from "./services/client";
-import {
-  addOptimisticUser,
-  confirmOptimisticUser,
-  removeOptimisticUser,
-} from "./services/transcript/optimistic";
 import { addSession, removeSession, useBootstrap, useSessionTranscript } from "./services/queries";
 import { layout, main, sidebar } from "./design";
 import { readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
@@ -26,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import { useSessionToolActions } from "./components/Chat/toolActions";
+import { useUserMessageSubmissions } from "./services/transcript/submissions";
 
 const emptySessions: SessionInfo[] = [],
   emptyProfiles: string[] = [];
@@ -53,6 +48,7 @@ function AuthenticatedApp() {
       activeSession?.id,
       bootstrap.data?.frontend.transcriptRefreshIntervalMs,
     ),
+    submissions = useUserMessageSubmissions(activeSession?.id, transcript),
     navigate = usePageNavigator(setPage),
     {
       create: createNewSession,
@@ -127,27 +123,7 @@ function AuthenticatedApp() {
       },
       [activeSession, navigate, queryClient, setPausingSessionId],
     ),
-    sendSessionMessage = useCallback<ChatPageProps["onSend"]>(
-      async (content, draftRevision, attachments) => {
-        if (!activeSession) {
-          return;
-        }
-        const optimisticKey = addOptimisticUser(queryClient, activeSession.id, content);
-        try {
-          const { content: sentContent, queueId } = await sendMessage(
-            activeSession.id,
-            content,
-            draftRevision,
-            attachments,
-          );
-          confirmOptimisticUser(queryClient, activeSession.id, optimisticKey, queueId, sentContent);
-        } catch (error) {
-          removeOptimisticUser(queryClient, activeSession.id, optimisticKey);
-          throw error;
-        }
-      },
-      [activeSession, queryClient],
-    );
+    sendSessionMessage = submissions.send;
   return (
     <div className={cx("dark", layout)}>
       <aside className={sidebar}>
@@ -174,7 +150,7 @@ function AuthenticatedApp() {
           selectedProfile={newProfile}
           sessionStatus={displayedActiveSession?.status}
           translationSettings={bootstrap.data?.frontend.reasoningTranslation}
-          view={transcript.view}
+          view={submissions.view}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}
           onCancelTool={toolActions.handleCancel}
