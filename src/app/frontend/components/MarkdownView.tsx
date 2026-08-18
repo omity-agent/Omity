@@ -126,12 +126,12 @@ function MarkdownTable({ node: _node, ...props }: ComponentProps<"table"> & Extr
   return <div className={tableScroll}>{createElement("table", props)}</div>;
 }
 const components = {
-  a: MarkdownAnchor,
-  code: MarkdownCode,
-  pre: MarkdownPre,
-  table: MarkdownTable,
-} satisfies Components;
-const inlineComponents = { code: MarkdownCode } satisfies Components,
+    a: MarkdownAnchor,
+    code: MarkdownCode,
+    pre: MarkdownPre,
+    table: MarkdownTable,
+  } satisfies Components,
+  inlineComponents = { code: MarkdownCode } satisfies Components,
   inlineElements = ["code", "del", "em", "strong"];
 function useMarkdownRenderContext() {
   const context = useContext(MarkdownContext);

@@ -12,28 +12,6 @@ export const copyButton = css({
   zIndex: "1",
 });
 export const block = css({
-  "& .hljs-addition": { color: "syntaxAddition" },
-  "& .hljs-attr, & .hljs-attribute, & .hljs-property": {
-    color: "syntaxProperty",
-  },
-  "& .hljs-comment, & .hljs-quote": {
-    color: "syntaxComment",
-    fontStyle: "italic",
-  },
-  "& .hljs-deletion": { color: "syntaxDeletion" },
-  "& .hljs-keyword, & .hljs-selector-tag, & .hljs-built_in": {
-    color: "syntaxKeyword",
-  },
-  "& .hljs-meta, & .hljs-doctag": { color: "syntaxMeta" },
-  "& .hljs-number, & .hljs-literal, & .hljs-symbol": {
-    color: "syntaxNumber",
-  },
-  "& .hljs-string, & .hljs-regexp, & .hljs-template-variable": {
-    color: "syntaxString",
-  },
-  "& .hljs-title, & .hljs-title.function_, & .hljs-title.class_": {
-    color: "syntaxTitle",
-  },
   bg: "surfaceInset",
   borderColor: "line",
   borderWidth: "1px",

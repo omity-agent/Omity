@@ -5,7 +5,7 @@ import { retainedLineMarkup } from "../../../../src/app/frontend/components/High
 const highlight: HighlightedCodeResult = {
   code: "const value =",
   language: "typescript",
-  lines: ['<span class="hljs-keyword">const</span> value ='],
+  lines: ['<span style="color:var(--colors-syntax-keyword)">const</span> value ='],
   sourceLines: ["const value ="],
 };
 describe("retainedLineMarkup", () => {

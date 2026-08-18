@@ -1,38 +1,61 @@
 import type { HighlightRequest, HighlightResponse } from "./worker";
+import type { HighlightInput } from "./markup";
 
 interface HighlightJob {
   canceled: boolean;
-  input: Omit<HighlightRequest, "id">;
+  input: HighlightInput;
+  kind: "highlight";
   onError: (error: Error) => void;
   onResult: (result: HighlightedCodeResult) => void;
 }
+interface ReleaseJob {
+  canceled: boolean;
+  kind: "release";
+  streamId: string;
+}
+type WorkerJob = HighlightJob | ReleaseJob;
 export interface HighlightedCodeResult {
   code: string;
-  language?: string;
+  language: string;
   lines: string[];
   sourceLines: string[];
 }
-let active: (HighlightJob & { id: number }) | undefined,
+let active: (WorkerJob & { id: number }) | undefined,
   nextId = 1,
-  queue: HighlightJob[] = [],
+  queue: WorkerJob[] = [],
   worker: Worker | undefined;
 export function scheduleHighlight(
-  input: HighlightJob["input"],
+  input: HighlightInput,
   onResult: HighlightJob["onResult"],
   onError: HighlightJob["onError"],
 ) {
-  const job: HighlightJob = { canceled: false, input, onError, onResult };
+  for (const queued of queue) {
+    if (queued.kind === "release" && queued.streamId === input.streamId) {
+      queued.canceled = true;
+    }
+  }
+  const job: HighlightJob = {
+    canceled: false,
+    input,
+    kind: "highlight",
+    onError,
+    onResult,
+  };
   queue.push(job);
   startNext();
   return () => {
     job.canceled = true;
   };
 }
+export function releaseHighlightStream(streamId: string) {
+  queue.push({ canceled: false, kind: "release", streamId });
+  startNext();
+}
 function startNext() {
   if (active) {
     return;
   }
-  let job: HighlightJob | undefined;
+  let job: WorkerJob | undefined;
   while ((job = queue.pop())?.canceled) {}
   if (!job) {
     return;
@@ -40,7 +63,11 @@ function startNext() {
   const id = nextId;
   nextId += 1;
   active = { ...job, id };
-  workerInstance().postMessage({ ...job.input, id } satisfies HighlightRequest, []);
+  const request: HighlightRequest =
+    job.kind === "highlight"
+      ? { ...job.input, id, kind: "highlight" }
+      : { id, kind: "release", streamId: job.streamId };
+  workerInstance().postMessage(request, []);
 }
 function workerInstance() {
   if (worker) {
@@ -57,14 +84,20 @@ function handleMessage(event: MessageEvent<HighlightResponse>) {
     resetWorker(new Error("代码高亮 Worker 返回了无效任务 ID"));
     return;
   }
+  if (!("error" in event.data) && event.data.kind !== job.kind) {
+    resetWorker(new Error("代码高亮 Worker 返回了无效任务类型"));
+    return;
+  }
   active = undefined;
   if (!job.canceled) {
     if ("error" in event.data) {
-      job.onError(new Error(`代码高亮失败：${event.data.error}`));
-    } else {
+      if (job.kind === "highlight") {
+        job.onError(new Error(`代码高亮失败：${event.data.error}`));
+      }
+    } else if (job.kind === "highlight" && event.data.kind === "highlight") {
       job.onResult({
         ...event.data.result,
-        ...job.input,
+        code: job.input.code,
         sourceLines: job.input.code.split("\n"),
       });
     }
@@ -79,7 +112,7 @@ function resetWorker(error: Error) {
   active = undefined;
   worker?.terminate();
   worker = undefined;
-  if (job && !job.canceled) {
+  if (job && !job.canceled && job.kind === "highlight") {
     job.onError(error);
   }
   startNext();

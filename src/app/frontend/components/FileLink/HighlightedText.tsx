@@ -1,9 +1,10 @@
-import { type ReactNode, useMemo } from "react";
+import { type CSSProperties, type ReactNode, useMemo } from "react";
 import { FileLinkMenu } from "./Menu";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 
 interface HighlightToken {
   className?: string;
+  style?: CSSProperties;
   text: string;
 }
 interface HighlightPiece extends HighlightToken {
@@ -16,24 +17,40 @@ export function HighlightedText({ html, matches }: { html: string; matches: File
 function readTokens(html: string) {
   const document = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html"),
     tokens: HighlightToken[] = [];
-  walk(document.body, [], tokens);
+  walk(document.body, [], {}, tokens);
   return tokens;
 }
-function walk(node: Node, inherited: string[], tokens: HighlightToken[]) {
+function walk(
+  node: Node,
+  inheritedClasses: string[],
+  inheritedStyle: CSSProperties,
+  tokens: HighlightToken[],
+) {
   if (node.nodeType === Node.TEXT_NODE) {
     if (node.textContent) {
       tokens.push({
-        ...(inherited.length > 0 ? { className: inherited.join(" ") } : {}),
+        ...(inheritedClasses.length > 0 ? { className: inheritedClasses.join(" ") } : {}),
+        ...(Object.keys(inheritedStyle).length > 0 ? { style: inheritedStyle } : {}),
         text: node.textContent,
       });
     }
     return;
   }
-  const own = node instanceof Element ? [...node.classList] : [],
-    classes = [...inherited, ...own];
+  const ownClasses = node instanceof Element ? [...node.classList] : [],
+    classes = [...inheritedClasses, ...ownClasses],
+    style = node instanceof HTMLElement ? mergeStyle(inheritedStyle, node.style) : inheritedStyle;
   for (const child of node.childNodes) {
-    walk(child, classes, tokens);
+    walk(child, classes, style, tokens);
   }
+}
+function mergeStyle(inherited: CSSProperties, style: CSSStyleDeclaration): CSSProperties {
+  return {
+    ...inherited,
+    ...(style.color ? { color: style.color } : {}),
+    ...(style.fontStyle ? { fontStyle: style.fontStyle } : {}),
+    ...(style.fontWeight ? { fontWeight: style.fontWeight } : {}),
+    ...(style.textDecoration ? { textDecoration: style.textDecoration } : {}),
+  };
 }
 function splitTokens(tokens: HighlightToken[], matches: FilePathMatch[]) {
   const normalized = nonOverlapping(matches),
@@ -114,7 +131,7 @@ function groupPieces(pieces: HighlightPiece[]) {
 }
 function tokenNode(token: HighlightPiece, index: number) {
   return (
-    <span className={token.className} key={index}>
+    <span className={token.className} key={index} style={token.style}>
       {token.text}
     </span>
   );

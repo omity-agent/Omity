@@ -1,6 +1,7 @@
 import { join, resolve } from "node:path";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { build } from "vite";
+import { prepareMagikaAssets } from "./magikaModel";
 
 const databases = [
     {
@@ -16,6 +17,7 @@ const databases = [
   migrationsRoot = resolve(root, "dist/migrations"),
   frontendDirectory = resolve(root, "src/app/frontend"),
   frontendOutput = resolve(frontendDirectory, "dist"),
+  frontendPublicCache = resolve(root, "dist/frontend-public"),
   executableOutput = resolve(root, "dist/omity.exe");
 try {
   await generateMigrations();
@@ -32,12 +34,14 @@ try {
 }
 async function buildApplication() {
   await rm(frontendOutput, { force: true, recursive: true });
+  const frontendPublicDirectory = await prepareMagikaAssets(frontendPublicCache);
   await build({
     build: {
       emptyOutDir: true,
       outDir: frontendOutput,
     },
     configFile: resolve(root, "vite.config.ts"),
+    publicDir: frontendPublicDirectory,
   });
   await mkdir(resolve(root, "dist"), { recursive: true });
   const compile = {

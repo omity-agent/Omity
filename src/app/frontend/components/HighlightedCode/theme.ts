@@ -1,0 +1,38 @@
+import { createCssVariablesTheme } from "shiki/core";
+
+export const syntaxThemeName = "omity";
+export const syntaxTheme = createCssVariablesTheme({
+  name: syntaxThemeName,
+  variableDefaults: {
+    "ansi-black": "var(--colors-surface-inset)",
+    "ansi-blue": "var(--colors-syntax-meta)",
+    "ansi-bright-black": "var(--colors-muted-strong)",
+    "ansi-bright-blue": "var(--colors-syntax-meta)",
+    "ansi-bright-cyan": "var(--colors-syntax-title)",
+    "ansi-bright-green": "var(--colors-syntax-addition)",
+    "ansi-bright-magenta": "var(--colors-syntax-keyword)",
+    "ansi-bright-red": "var(--colors-syntax-deletion)",
+    "ansi-bright-white": "var(--colors-text)",
+    "ansi-bright-yellow": "var(--colors-syntax-number)",
+    "ansi-cyan": "var(--colors-syntax-title)",
+    "ansi-green": "var(--colors-syntax-addition)",
+    "ansi-magenta": "var(--colors-syntax-keyword)",
+    "ansi-red": "var(--colors-syntax-deletion)",
+    "ansi-white": "var(--colors-text)",
+    "ansi-yellow": "var(--colors-syntax-number)",
+    background: "var(--colors-surface-inset)",
+    foreground: "var(--colors-text)",
+    "token-changed": "var(--colors-syntax-meta)",
+    "token-comment": "var(--colors-syntax-comment)",
+    "token-constant": "var(--colors-syntax-number)",
+    "token-deleted": "var(--colors-syntax-deletion)",
+    "token-function": "var(--colors-syntax-title)",
+    "token-inserted": "var(--colors-syntax-addition)",
+    "token-keyword": "var(--colors-syntax-keyword)",
+    "token-link": "var(--colors-syntax-meta)",
+    "token-parameter": "var(--colors-syntax-property)",
+    "token-punctuation": "var(--colors-text)",
+    "token-string": "var(--colors-syntax-string)",
+    "token-string-expression": "var(--colors-syntax-string)",
+  },
+});

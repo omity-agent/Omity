@@ -31,6 +31,7 @@ function HighlightedCodeView({
   fileLinkMatches?: FilePathMatch[];
   language?: string;
 }) {
+  "use no memo";
   const normalized = useMemo(
       () => normalizeCodeMatches(code, fileLinkMatches),
       [code, fileLinkMatches],
@@ -52,6 +53,7 @@ function HighlightedCodeView({
       ref: blockRef,
       version: normalized.code,
     }),
+    // oxlint-disable-next-line react/incompatible-library
     virtualizer = useVirtualizer({
       count: lines.length,
       estimateSize: () => estimatedLineHeight,
