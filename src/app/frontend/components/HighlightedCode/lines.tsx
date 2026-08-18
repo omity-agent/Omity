@@ -3,6 +3,7 @@ import type { FilePathMatch } from "../../../../fileLinks/types";
 import type { HighlightedCodeResult } from "./scheduler";
 import { HighlightedText } from "../FileLink/HighlightedText";
 import { memo } from "react";
+import { retainedLineMarkup } from "./retention";
 
 export interface CodeLine {
   end: number;
@@ -11,15 +12,22 @@ export interface CodeLine {
   text: string;
 }
 function HighlightedLineView({
+  appendOnly,
   highlight,
   line,
   lineIndex,
 }: {
+  appendOnly: boolean;
   highlight?: HighlightedCodeResult;
   line: CodeLine;
   lineIndex: number;
 }) {
-  const html = matchingMarkup(highlight, line, lineIndex);
+  const html = retainedLineMarkup({
+    appendOnly,
+    current: line.text,
+    highlight,
+    index: lineIndex,
+  });
   if (html === undefined) {
     return line.matches.length > 0 ? (
       <HighlightedText html={escapeHtml(line.text)} matches={line.matches} />
@@ -61,17 +69,6 @@ export function codeLines(code: string, matches: FilePathMatch[]) {
     start = end + 1;
   }
   return lines;
-}
-function matchingMarkup(
-  highlight: HighlightedCodeResult | undefined,
-  line: CodeLine,
-  lineIndex: number,
-) {
-  if (!highlight) {
-    return undefined;
-  }
-  const sourceLine = highlight.sourceLines[lineIndex];
-  return sourceLine === line.text ? highlight.lines[lineIndex] : undefined;
 }
 function escapeHtml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");

@@ -41,13 +41,11 @@ function HighlightedCodeView({
     ),
     widestLine = useMemo(
       () =>
-        lines.reduce(
-          (widest, line) => (line.text.length > widest.length ? line.text : widest),
-          "",
-        ),
+        lines.reduce((widest, line) => (line.text.length > widest.length ? line.text : widest), ""),
       [lines],
     ),
     highlight = useHighlight(normalized.code, language),
+    appendOnly = highlight !== undefined && normalized.code.startsWith(highlight.code),
     blockRef = useRef<HTMLPreElement>(null),
     onScroll = useFollowBottom({
       enabled: autoFollow,
@@ -80,6 +78,7 @@ function HighlightedCodeView({
           </span>
           {virtualLines.map((item) => (
             <CodeRow
+              appendOnly={appendOnly}
               highlight={highlight}
               item={item}
               key={item.key}
@@ -94,11 +93,13 @@ function HighlightedCodeView({
 }
 export const HighlightedCode = memo(HighlightedCodeView);
 function CodeRow({
+  appendOnly,
   highlight,
   item,
   line,
   measure,
 }: {
+  appendOnly: boolean;
   highlight?: ReturnType<typeof useHighlight>;
   item: VirtualItem;
   line?: ReturnType<typeof codeLines>[number];
@@ -110,7 +111,12 @@ function CodeRow({
   );
   return line ? (
     <span className={virtualLine} data-index={item.index} ref={measure} style={style}>
-      <HighlightedLine highlight={highlight} line={line} lineIndex={item.index} />
+      <HighlightedLine
+        appendOnly={appendOnly}
+        highlight={highlight}
+        line={line}
+        lineIndex={item.index}
+      />
     </span>
   ) : null;
 }
