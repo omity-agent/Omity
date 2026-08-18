@@ -13,10 +13,7 @@ export interface PeerRequest {
 }
 export class ClientNetwork {
   private readonly trustedProxies: Cidr[];
-  constructor(
-    trustedProxies: string[],
-    private readonly publicMode = false,
-  ) {
+  constructor(trustedProxies: string[]) {
     this.trustedProxies = trustedProxies.map((cidr) => ipaddr.parseCIDR(cidr));
   }
   identify(request: PeerRequest): ClientIdentity {
@@ -26,12 +23,12 @@ export class ClientNetwork {
   }
   private forwardedAddress(request: PeerRequest, remote: Address) {
     const forwarded = request.headers["x-forwarded-for"];
+    if (forwarded === undefined && remote.range() === "loopback") {
+      return remote;
+    }
     if (!this.matchesTrustedProxy(remote)) {
       if (forwarded !== undefined) {
         throw new Error("未受信任的对端不能发送 X-Forwarded-For");
-      }
-      if (this.publicMode && remote.range() === "loopback") {
-        throw new Error("公网模式下回环对端必须作为可信代理提供 X-Forwarded-For");
       }
       return remote;
     }

@@ -25,10 +25,7 @@ export class AccessService {
   private readonly limiter: RateLimiterMemory;
   private readonly ceremony: WebAuthnCeremony;
   constructor(private readonly settings: Settings) {
-    this.network = new ClientNetwork(
-      settings.access.trustedProxies,
-      settings.access.publicOrigin !== null,
-    );
+    this.network = new ClientNetwork(settings.access.trustedProxies);
     this.store = new AccessStore();
     this.ceremony = new WebAuthnCeremony(settings, this.store);
     this.limiter = new RateLimiterMemory({

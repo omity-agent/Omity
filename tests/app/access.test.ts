@@ -12,9 +12,14 @@ test("trusted proxy chains resolve from right to left", () => {
     identity = network.identify(request("127.0.0.1", "198.51.100.7, 10.1.2.3"));
   expect(identity).toEqual({ address: "198.51.100.7", local: false });
 });
+test("direct loopback clients do not need a forwarded address", () => {
+  const network = new ClientNetwork(["127.0.0.0/8"]),
+    identity = network.identify(request("127.0.0.1"));
+  expect(identity).toEqual({ address: "127.0.0.1", local: true });
+});
 test("trusted proxies must supply a forwarded address", () => {
-  const network = new ClientNetwork(["127.0.0.0/8"]);
-  expect(() => network.identify(request("127.0.0.1"))).toThrow(
+  const network = new ClientNetwork(["10.0.0.0/8"]);
+  expect(() => network.identify(request("10.1.2.3"))).toThrow(
     "来自可信代理的请求缺少 X-Forwarded-For",
   );
 });
