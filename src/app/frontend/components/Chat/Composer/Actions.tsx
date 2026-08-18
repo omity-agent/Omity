@@ -64,8 +64,9 @@ export function Actions({
     controlLabel = controlState ? t(controlState) : "",
     resumeLabel = t("resumeContinuous"),
     stepLabel = t("step"),
+    cancelPauseLabel = t("cancelPause"),
     control =
-      controlState === "resume" ? (
+      controlState === "resume" || controlState === "stepping" ? (
         <>
           <IconButton
             aria-label={resumeLabel}
@@ -76,30 +77,31 @@ export function Actions({
           >
             <Play size={16} />
           </IconButton>
-          {stepAvailable ? (
+          {stepAvailable || controlState === "stepping" ? (
             <IconButton
-              aria-label={stepLabel}
-              disabled={controlDisabled}
+              aria-label={controlState === "stepping" ? controlLabel : stepLabel}
+              disabled={controlDisabled || controlState === "stepping"}
               onClick={step}
-              title={stepLabel}
+              title={controlState === "stepping" ? controlLabel : stepLabel}
               type="button"
             >
-              <StepForward size={16} />
+              <StepForward
+                className={controlState === "stepping" ? activeIcon : undefined}
+                size={16}
+              />
             </IconButton>
           ) : null}
         </>
       ) : controlState ? (
         <IconButton
-          aria-label={controlLabel}
+          aria-label={controlState === "pausing" ? cancelPauseLabel : controlLabel}
           disabled={controlDisabled}
-          onClick={controlState === "pause" ? pause : undefined}
-          title={controlLabel}
+          onClick={controlState === "pause" ? pause : resume}
+          title={controlState === "pausing" ? cancelPauseLabel : controlLabel}
           type="button"
         >
           {controlState === "pausing" ? (
             <LoaderCircle className={activeIcon} size={16} />
-          ) : controlState === "stepping" ? (
-            <StepForward size={16} />
           ) : (
             <Pause size={16} />
           )}

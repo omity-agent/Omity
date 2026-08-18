@@ -42,6 +42,7 @@
   "idle": "空闲",
   "pause": "暂停",
   "pausing": "正在暂停",
+  "cancelPause": "取消暂停",
   "resume": "继续",
   "resumeContinuous": "继续持续运行",
   "step": "向前一步",

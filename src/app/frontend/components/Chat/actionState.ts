@@ -46,8 +46,7 @@ export function deriveChatActionState({
     waitingForPause = pausePhase === "pausing",
     stepping = control === "step";
   return {
-    controlDisabled:
-      stepping || waitingForPause || (!resumable && sessionStatus === "idle" && !queueRunning),
+    controlDisabled: !resumable && sessionStatus === "idle" && !queueRunning,
     controlState: stepping
       ? "stepping"
       : waitingForPause
