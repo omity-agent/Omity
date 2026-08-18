@@ -7,6 +7,7 @@ import {
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
+import { omitToolItemIds } from "./toolProviderOptions";
 
 export function fromModelMessages(
   messages: ModelMessage[],
@@ -94,11 +95,13 @@ function toolProviderOptions(content: Extract<ModelMessage, { role: "assistant" 
   if (typeof content === "string") {
     return undefined;
   }
-  const entries = content.flatMap((part) =>
-    part.type === "tool-call" && part.providerOptions
-      ? [[part.toolCallId, part.providerOptions] as const]
-      : [],
-  );
+  const entries = content.flatMap((part) => {
+    if (part.type !== "tool-call" || !part.providerOptions) {
+      return [];
+    }
+    const providerOptions = omitToolItemIds(part.providerOptions);
+    return providerOptions ? [[part.toolCallId, providerOptions] as const] : [];
+  });
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 function langChainUsage(usage: LanguageModelUsage): UsageMetadata {

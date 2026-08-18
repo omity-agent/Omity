@@ -1,9 +1,9 @@
 import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { contentToText, messageReasoning } from "../runtime/content";
-import { freeformCallIds, rawFreeformInput } from "../runtime/freeform";
 import type { FileLinkSurface } from "./types";
 import { formatToolInput } from "./toolInput";
 import { randomUUID } from "node:crypto";
+import { rawFreeformInput } from "../runtime/freeform";
 
 export interface FileLinkSource {
   mode: "lines" | "output";
@@ -39,8 +39,7 @@ function aiSources(message: AIMessage): FileLinkSource[] {
     throw new Error("模型消息缺少文件链接所有者 ID");
   }
   const ownerId = message.id,
-    reasoning = messageReasoning(message),
-    freeformIds = freeformCallIds(message);
+    reasoning = messageReasoning(message);
   return [
     ...(reasoning
       ? [{ mode: "lines", ownerId, surface: "reasoning", text: reasoning } as const]
@@ -48,7 +47,7 @@ function aiSources(message: AIMessage): FileLinkSource[] {
     ...(message.tool_calls ?? []).map((call, index): FileLinkSource => {
       const callOwnerId = call.id ?? `tool-${index.toString()}`,
         input = call.args,
-        freeform = Reflect.get(call, "isCustomTool") === true || freeformIds.has(callOwnerId);
+        freeform = Reflect.get(call, "isCustomTool") === true;
       return {
         mode: "lines",
         ownerId: callOwnerId,

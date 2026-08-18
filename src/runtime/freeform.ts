@@ -1,30 +1,3 @@
-import type { BaseMessage } from "@langchain/core/messages";
-
-export function freeformCallIds(message: BaseMessage) {
-  const ids = new Set<string>(),
-    idMap = message.additional_kwargs["__openai_custom_tool_call_ids__"],
-    responseOutput = isRecord(message.response_metadata)
-      ? message.response_metadata["output"]
-      : undefined;
-  if (isRecord(idMap)) {
-    for (const id of Object.keys(idMap)) {
-      ids.add(id);
-    }
-  }
-  for (const value of [message.additional_kwargs["tool_outputs"], responseOutput]) {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        if (isRecord(item) && item["type"] === "custom_tool_call") {
-          const id = item["call_id"];
-          if (typeof id === "string") {
-            ids.add(id);
-          }
-        }
-      }
-    }
-  }
-  return ids;
-}
 export function rawFreeformInput(input: unknown) {
   if (isRecord(input) && typeof input["input"] === "string") {
     return input["input"];

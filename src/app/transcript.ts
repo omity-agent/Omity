@@ -2,7 +2,6 @@ import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type DisplayMessage, type DisplayToolCall } from "./timeline";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
-import { freeformCallIds, rawFreeformInput } from "../runtime/freeform";
 import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
@@ -14,6 +13,7 @@ import { loadReasoningTranslations } from "../infrastructure/database/records/re
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { parseError } from "../failures/details";
 import { prependInstructions } from "./timeline/build/instructions";
+import { rawFreeformInput } from "../runtime/freeform";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
@@ -146,13 +146,12 @@ function messageRole(message: BaseMessage): DisplayMessage["role"] {
   throw new Error(`不支持显示消息类型：${message.type}`);
 }
 function extractToolCalls(message: BaseMessage): DisplayToolCall[] {
-  const calls = readRecordArray(message, "tool_calls"),
-    freeformIds = freeformCallIds(message);
+  const calls = readRecordArray(message, "tool_calls");
   return calls.map((call, index) => {
     const input = call["args"] ?? call["input"] ?? call,
       callId = stringField(call, "id"),
       id = callId ?? `tool-${index.toString()}`,
-      freeform = call["isCustomTool"] === true || freeformIds.has(id),
+      freeform = call["isCustomTool"] === true,
       toolCall: DisplayToolCall = {
         id,
         index,

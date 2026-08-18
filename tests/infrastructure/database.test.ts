@@ -156,6 +156,37 @@ test("persists custom tool markers in tool metadata", () => {
   expect(stored).toMatchObject({ custom: true });
   expect(restored).toMatchObject({ metadata: { customTool: true } });
 });
+test("does not persist upstream tool item IDs", () => {
+  const message = new AIMessage({
+      additional_kwargs: {
+        __openai_custom_tool_call_ids__: { "call-1": "ctc-item-1" },
+        aiSdkToolProviderOptions: {
+          "call-1": { openai: { itemId: "ctc-item-1" } },
+        },
+      },
+      content: "",
+      tool_calls: [
+        {
+          args: { input: "raw patch" },
+          id: "call-1",
+          name: "apply_patch",
+          type: "tool_call",
+        },
+      ],
+    }),
+    call = message.tool_calls?.[0];
+  if (!call) {
+    throw new Error("模型消息缺少工具调用");
+  }
+  Reflect.set(call, "isCustomTool", true);
+  Reflect.set(call, "call_id", "ctc-direct-item");
+  const stored = encodeMessage(message, "history");
+  expect(JSON.stringify(stored)).not.toContain("ctc-item-1");
+  expect(JSON.stringify(stored)).not.toContain("ctc-direct-item");
+  expect(stored).toMatchObject({
+    toolCalls: [{ id: "call-1", isCustomTool: true }],
+  });
+});
 function setUpdatedAt(database: ReturnType<typeof makeDb>, value: number) {
   database.db.run("UPDATE sessions SET updated_at = ? WHERE id = '123'", [value]);
 }

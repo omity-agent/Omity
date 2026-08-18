@@ -86,15 +86,19 @@ test("transcript counts raw tool input and output text", async () => {
 });
 test("transcript exposes original Freeform tool input", async () => {
   const db = makeDb(),
-    input = "*** Begin Patch\n*** End Patch";
+    input = "*** Begin Patch\n*** End Patch",
+    toolCall = {
+      args: { input },
+      id: "call-1",
+      name: "apply_patch",
+      type: "tool_call" as const,
+    };
+  Reflect.set(toolCall, "isCustomTool", true);
   db.resetSession("freeform-session", workspace);
   await db.syncHistory("freeform-session", [
     new AIMessage({
-      additional_kwargs: {
-        __openai_custom_tool_call_ids__: { "call-1": "ct-1" },
-      },
       content: "",
-      tool_calls: [{ args: { input }, id: "call-1", name: "apply_patch" }],
+      tool_calls: [toolCall],
     }),
   ]);
   const part = view(loadTranscript(db, "freeform-session"))

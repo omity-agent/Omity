@@ -9,8 +9,8 @@ const modelManifestSchema = z.object({
       paths: z.array(z.string().min(1)),
     }),
   ),
-});
-const sourceSchema = z.object({
+}),
+ sourceSchema = z.object({
   modelConfigURL: z.url(),
   modelURL: z.url(),
 });
