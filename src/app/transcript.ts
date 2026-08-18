@@ -13,6 +13,8 @@ import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks"
 import { loadReasoningTranslations } from "../infrastructure/database/records/reasoningTranslations";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { parseError } from "../failures/details";
+import { prependInstructions } from "./timeline/build/instructions";
+import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
 import { toolOutputTokens } from "../runtime/toolOutput";
@@ -55,14 +57,17 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
   return runTransaction(db.db, () => {
     const control = db.control(sessionId),
       transcriptRevision = db.transcriptRevision(sessionId),
-      messages = queryAll<MessageRow>(
-        db.db,
-        `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at
-       FROM messages m
-       WHERE m.session_id = ? AND m.position IS NOT NULL
-       ORDER BY m.position`,
-        sessionId,
-      ).map(toDisplayMessage),
+      messages = prependInstructions(
+        queryAll<MessageRow>(
+          db.db,
+          `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at
+	       FROM messages m
+	       WHERE m.session_id = ? AND m.position IS NOT NULL
+	       ORDER BY m.position`,
+          sessionId,
+        ).map(toDisplayMessage),
+        readDefinitionRecord(db.db, sessionId).systemPrompt,
+      ),
       queue = queryAll<QueueRow>(
         db.db,
         `SELECT q.id, COALESCE(q.content, '') AS content, q.status, q.error,
@@ -132,10 +137,13 @@ function messageRole(message: BaseMessage): DisplayMessage["role"] {
   if (message.type === "human") {
     return "user";
   }
+  if (message.type === "ai") {
+    return "assistant";
+  }
   if (message.type === "tool") {
     return "tool";
   }
-  return "assistant";
+  throw new Error(`不支持显示消息类型：${message.type}`);
 }
 function extractToolCalls(message: BaseMessage): DisplayToolCall[] {
   const calls = readRecordArray(message, "tool_calls"),

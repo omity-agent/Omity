@@ -18,7 +18,7 @@ const row = css({
     minW: 0,
     w: "full",
   }),
-  userRow = css({ justifyContent: "flex-end" }),
+  inputRow = css({ justifyContent: "flex-end" }),
   forkButton = css({
     borderWidth: "0",
     flexShrink: 0,
@@ -102,16 +102,17 @@ export function Message({
   onFork: (messageId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(),
-    tone = roleTone({ role: item.role }),
+    visualRole = item.role === "system" ? "user" : item.role,
+    tone = roleTone({ role: visualRole }),
     forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork"),
     handleFork = useCallback(() => {
       reportPromiseErrors(onFork(item.id));
     }, [item.id, onFork]);
   return (
-    <div className={cx(row, item.role === "user" && userRow)}>
-      <article className={message({ role: item.role })}>
+    <div className={cx(row, visualRole === "user" && inputRow)}>
+      <article className={message({ role: visualRole })}>
         <div className={header}>
-          <span className={actions({ role: item.role })}>
+          <span className={actions({ role: visualRole })}>
             {canFork ? (
               <IconButton
                 aria-label={forkLabel}
@@ -125,7 +126,7 @@ export function Message({
                 <GitFork size={14} />
               </IconButton>
             ) : null}
-            {item.role === "user" || item.role === "assistant" ? (
+            {visualRole === "user" || visualRole === "assistant" ? (
               <CopyButton className={tone} value={item.content} />
             ) : null}
           </span>
@@ -137,7 +138,7 @@ export function Message({
                 content={part.content}
                 fileLinks={part.fileLinks}
                 key={`content-${index.toString()}`}
-                preserveLineBreaks={item.role === "user"}
+                preserveLineBreaks={visualRole === "user"}
               />
             );
           }

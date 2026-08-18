@@ -12,6 +12,7 @@ import type { HostRunOptions } from "./hostOptions";
 import { existsSync } from "node:fs";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
+import { readDefinitionRecord } from "../../infrastructure/database/records/sessions";
 import { recoverHostSession } from "./recovery";
 import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
 
@@ -27,13 +28,18 @@ export function prepareHostSession(
       db = openLoadedDatabase(paths.dbPath, mode, options.recoverInterrupted ?? false);
     try {
       const profiles = db.profiles(mode.sessionId),
+        definition = readDefinitionRecord(db.db, mode.sessionId),
         settingsContext = selectSettingsProfiles(baseContext, profiles),
-        settings = loadSettings(root, {
+        loadedSettings = loadSettings(root, {
           cwd: workspace,
           sessionId: mode.sessionId,
           settingsContext,
-        });
-      return { db, paths, profiles, settings, settingsContext };
+        }),
+        settings = {
+          ...loadedSettings,
+          agent: { ...loadedSettings.agent, systemPrompt: definition.systemPrompt },
+        };
+      return { db, definition, paths, profiles, settings, settingsContext, workspace };
     } catch (error) {
       db.close();
       throw error;
@@ -48,13 +54,7 @@ export function prepareHostSession(
     }),
     paths = prepareWritableSession(mode),
     db = new AgentDatabase(paths.dbPath);
-  try {
-    db.createSession(mode.sessionId, workspace, profiles);
-    return { db, paths, profiles, settings, settingsContext };
-  } catch (error) {
-    db.close();
-    throw error;
-  }
+  return { db, definition: undefined, paths, profiles, settings, settingsContext, workspace };
 }
 function prepareWritableSession(mode: HostMode) {
   const planned = resolveSessionPaths(mode.sessionId),

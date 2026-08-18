@@ -11,6 +11,7 @@ import {
 } from "@langchain/langgraph";
 import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
 import { type HookPlan, agentPlan, toolPlan } from "../../hooks/plan";
+import { type ModelToolDefinition, modelToolDefinitions } from "../../infrastructure/mcp/snapshot";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
 import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
 import { BunSqliteSaver } from "../../checkpointer";
@@ -48,23 +49,33 @@ interface GraphOptions {
   hooks: HookRuntime;
   model?: LanguageModel;
   settings: Settings;
+  toolDefinitions?: ModelToolDefinition[];
   toolExecutions?: ToolExecutions;
   tools: StructuredToolInterface[];
 }
 export function buildGraph(
   settings: Settings,
   tools: StructuredToolInterface[],
+  toolDefinitions: ModelToolDefinition[],
   database: Database,
   hooks: HookRuntime,
   options: Pick<GraphOptions, "freeformToolParameters" | "toolExecutions"> = {},
 ) {
   const checkpointer = new BunSqliteSaver(database),
-    graph = createAgentGraph({ checkpointer, hooks, settings, tools, ...options });
+    graph = createAgentGraph({
+      checkpointer,
+      hooks,
+      settings,
+      toolDefinitions,
+      tools,
+      ...options,
+    });
   return { checkpointer, graph };
 }
 export function createAgentGraph(options: GraphOptions) {
   const freeform = options.freeformToolParameters ?? new Map(),
-    modelTools = aiModelTools(options.tools, freeform),
+    definitions = options.toolDefinitions ?? modelToolDefinitions(options.tools, freeform),
+    modelTools = aiModelTools(definitions),
     invokeTool = createToolInvoker(options.tools, {
       freeformToolParameters: freeform,
       sessionId: options.hooks.sessionId,

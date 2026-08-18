@@ -80,6 +80,7 @@ export function parseMcpConfiguration(parsed: unknown, path: string) {
     toolboxes: configuration.toolboxes,
   };
 }
+export type McpConfiguration = ReturnType<typeof parseMcpConfiguration>;
 export function normalizeMcpServers(mcpServers: McpServers): McpServers {
   const enabledServers: McpServers = {};
   for (const [name, server] of Object.entries(mcpServers)) {

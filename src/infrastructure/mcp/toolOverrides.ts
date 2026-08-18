@@ -5,7 +5,7 @@ import { resolveConfiguredPath } from "../configuration/configuredPath";
 
 type McpToolNameOverrides = Record<string, string>;
 type McpToolDescriptionOverrides = Record<string, string>;
-const sessionDescriptions = new WeakSet<StructuredToolInterface>();
+const sessionDescriptions = new WeakMap<StructuredToolInterface, string>();
 export function normalizeMcpToolNameOverrides(
   value: unknown,
   path = "settings/toolbox.yaml.toolNameOverrides",
@@ -99,13 +99,20 @@ export function overrideMcpToolDescriptions(
     }
     tool.description = description.value;
     if (description.allowSession) {
-      sessionDescriptions.add(tool);
+      sessionDescriptions.set(tool, description.value);
     }
   }
   return tools;
 }
 export function hasSessionDescription(tool: StructuredToolInterface) {
   return sessionDescriptions.has(tool);
+}
+export function sessionDescription(tool: StructuredToolInterface) {
+  const description = sessionDescriptions.get(tool);
+  if (description === undefined) {
+    throw new Error(`MCP 工具没有会话级描述：${tool.name}`);
+  }
+  return description;
 }
 function isWithin(parent: string, path: string) {
   const child = relative(parent, path);

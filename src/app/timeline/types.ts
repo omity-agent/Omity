@@ -4,7 +4,7 @@ import type { QueueStatus } from "../../types";
 import type { StreamEvent } from "../../infrastructure/database/records/streamEvents";
 import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
 
-export type DisplayRole = "user" | "assistant" | "tool";
+export type DisplayRole = "user" | "system" | "assistant" | "tool";
 export interface DisplayImage {
   src: string;
   mimeType: string;

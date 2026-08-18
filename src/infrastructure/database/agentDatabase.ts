@@ -1,4 +1,5 @@
 import type { Control, QueueItem, QueueStatus } from "../../types";
+import { type SessionDefinition, emptySessionDefinition } from "./sessionDefinition";
 import {
   type StreamEvent,
   type StreamEventDraft,
@@ -59,11 +60,13 @@ export class AgentDatabase extends RecoverableDatabase {
   onChange(notify: (event: StreamEvent) => void) {
     this.notify = notify;
   }
-  resetSession(sessionId: string, workspace: string, profiles: readonly string[] = []) {
-    const selectedProfiles = this.hasSession(sessionId) ? this.profiles(sessionId) : profiles;
-    runTransaction(this.db, () => {
-      resetSessionStorage(this.db, sessionId, workspace, selectedProfiles);
-    });
+  resetSession(
+    sessionId: string,
+    workspace: string,
+    profiles: readonly string[] = [],
+    initialDefinition: SessionDefinition = emptySessionDefinition(),
+  ) {
+    resetSessionStorage(this.db, sessionId, workspace, profiles, initialDefinition);
   }
   requestStorageReclaim() {
     this.storageReclaimPending = true;
@@ -80,9 +83,10 @@ export class AgentDatabase extends RecoverableDatabase {
     sessionId: string,
     workspace: string,
     profiles: readonly string[] = [],
+    definition: SessionDefinition = emptySessionDefinition(),
     initialControl: Control = "running",
   ) {
-    createSessionRecord(this.db, sessionId, workspace, profiles, initialControl);
+    createSessionRecord(this.db, sessionId, workspace, profiles, definition, initialControl);
   }
   hasSession(sessionId: string) {
     return hasSessionRecord(this.db, sessionId);

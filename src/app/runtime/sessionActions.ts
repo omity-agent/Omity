@@ -1,4 +1,5 @@
 import { forkSessionStorage, removeSessionStorage } from "./sessionStorage";
+import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import type { SessionSubmission } from "../attachments/contract";
 import type { Settings } from "../../types";
 import { claimShortId } from "../../infrastructure/randomId";
@@ -11,14 +12,19 @@ import { userDataDirectory } from "../../infrastructure/configuration/settings/f
 export async function createAppSession(
   appRoot: string,
   submission: SessionSubmission,
-  settings: Settings,
   profiles: string[],
+  prepare: (
+    sessionId: string,
+    workspace: string,
+  ) => Promise<{ definition: SessionDefinition; settings: Settings }>,
 ) {
   const workspace = normalizeWorkspacePath(submission.workspace, appRoot),
     sessionId = reserveSessionId();
   try {
+    const { definition, settings } = await prepare(sessionId, workspace);
     await createSessionWithAttachments({
       attachments: submission.attachments,
+      definition,
       history: submission.history,
       message: submission.message,
       profiles,

@@ -6,11 +6,8 @@ import {
   type SettingsContext,
   availableSettingsProfiles,
   createSettingsContext,
-  prioritizeSettingsProfile,
-  settingsProfileNames,
 } from "../infrastructure/configuration/settings/context";
 import { controllerHostEvents, controllerSessionInfo } from "./controllerHostEvents";
-import { createAppFork, createAppSession } from "./runtime/sessionActions";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { readSessionDraft, writeSessionDraft } from "./composerDraft";
@@ -22,7 +19,9 @@ import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
+import { createAppFork } from "./runtime/sessionActions";
 import { createAppMcp } from "./runtime/mcp";
+import { createSnapshotSession } from "./runtime/sessionSnapshot";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
@@ -94,10 +93,12 @@ export class AppController {
     return { path: await activateFileLink(path, action) };
   }
   async createSession(submission: SessionSubmission) {
-    const sessionContext = prioritizeSettingsProfile(this.settingsContext, submission.profile),
-      profiles = settingsProfileNames(sessionContext),
-      sessionSettings = loadSettings(this.appRoot, { settingsContext: sessionContext }),
-      created = await createAppSession(this.appRoot, submission, sessionSettings, profiles),
+    const created = await createSnapshotSession({
+        baseContext: this.settingsContext,
+        mcp: this.hosts.mcp,
+        root: this.appRoot,
+        submission,
+      }),
       session = this.registry.refresh(created.sessionId);
     await this.hosts.start(created.sessionId, created.workspace, "load");
     const info = this.sessionInfo(session);

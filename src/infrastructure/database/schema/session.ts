@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import type { Control, QueueStatus } from "../../../types";
 import type { ErrorDetails } from "../../../failures/details";
+import type { SessionDefinition } from "../sessionDefinition";
 import { sql } from "drizzle-orm";
 
 const controls = [
@@ -31,6 +32,7 @@ export const sessions = sqliteTable(
   {
     control: text({ enum: controls }).notNull(),
     createdAt: integer("created_at").notNull(),
+    definition: text("definition_json", { mode: "json" }).$type<SessionDefinition>().notNull(),
     id: text().primaryKey(),
     profiles: text("profiles_json", { mode: "json" }).$type<string[]>().notNull(),
     transcriptRevision: integer("transcript_revision").notNull().default(0),

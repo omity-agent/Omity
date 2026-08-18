@@ -1,6 +1,6 @@
 import { type SessionPlaceholders, resolvePlaceholders } from "../configuration/placeholders";
+import { hasSessionDescription, sessionDescription } from "./toolOverrides";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { hasSessionDescription } from "./toolOverrides";
 import { z } from "zod";
 
 export interface FreeformMcpTools {
@@ -55,11 +55,10 @@ export function sessionModelTools(
   session: Required<SessionPlaceholders>,
 ) {
   return tools.map((tool) => {
-    const dynamicDescription = hasSessionDescription(tool);
-    if (!dynamicDescription) {
+    if (!hasSessionDescription(tool)) {
       return tool;
     }
-    const description = resolveDescription(tool.description, tool.name, session);
+    const description = resolveDescription(sessionDescription(tool), tool.name, session);
     tool.description = description;
     return tool;
   });

@@ -1,6 +1,7 @@
 import type { HostObserver } from "../context";
 import type { LoadedMcp } from "../../infrastructure/mcp/loadTools";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
+import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
 
 export interface HostControls {
@@ -9,7 +10,7 @@ export interface HostControls {
 export interface HostRunOptions {
   controller?: AbortController;
   cwd?: string;
-  mcp?: (profiles: string[]) => Promise<LoadedMcp>;
+  mcp?: (sessionId: string, definition: SessionDefinition) => Promise<LoadedMcp>;
   observer?: HostObserver;
   onReady?: (controls: HostControls) => void;
   owner?: ProcessOwner;

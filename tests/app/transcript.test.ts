@@ -16,9 +16,26 @@ import {
 import { buildTimeline, displayStreamEvent } from "../../src/app/timeline";
 import type { StreamEvent } from "../../src/infrastructure/database/records/streamEvents";
 import { countTokens } from "../../src/runtime/tokenizer";
+import { emptySessionDefinition } from "../../src/infrastructure/database/sessionDefinition";
 import { loadTranscript } from "../../src/app/transcript";
 
 afterEach(cleanupDatabaseDirs);
+test("transcript exposes instructions as a system message", async () => {
+  const db = makeDb(),
+    definition = emptySessionDefinition();
+  definition.systemPrompt = "Follow the project instructions.";
+  db.resetSession("system-session", workspace, [], definition);
+  await db.syncHistory("system-session", [
+    new HumanMessage({ content: "Implement the feature.", id: "user-1" }),
+  ]);
+  const messages = view(loadTranscript(db, "system-session"));
+  expect(messages.map(({ role }) => role)).toEqual(["system", "user"]);
+  expect(messages[0]).toMatchObject({
+    content: "Follow the project instructions.",
+    parts: [{ content: "Follow the project instructions.", type: "content" }],
+  });
+  db.close();
+});
 test("transcript exposes Responses API token and cache usage", async () => {
   const db = makeDb();
   db.resetSession("usage-session", workspace);

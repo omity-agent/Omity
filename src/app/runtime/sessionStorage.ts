@@ -1,4 +1,8 @@
 import { type InitialMessagePair, initialHistory } from "../initialState";
+import {
+  type SessionDefinition,
+  emptySessionDefinition,
+} from "../../infrastructure/database/sessionDefinition";
 import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import { HumanMessage } from "@langchain/core/messages";
@@ -14,12 +18,13 @@ export function createSessionStorage(
   profiles: string[],
   history: InitialMessagePair[],
   message: string,
+  definition: SessionDefinition = emptySessionDefinition(),
 ) {
   const paths = sessionPaths(sessionId),
     db = new AgentDatabase(paths.dbPath);
   let initialized = false;
   try {
-    db.createSession(sessionId, workspace, profiles);
+    db.createSession(sessionId, workspace, profiles, definition);
     initializeConversation(db.db, sessionId, initialHistory(history), message);
     new UserMessageStorage(paths.userMessagesDir).writeAll([
       ...history.map(({ user }) => user),

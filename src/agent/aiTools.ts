@@ -1,24 +1,20 @@
 import { type ToolSet, dynamicTool } from "ai";
-import type { StructuredToolInterface } from "@langchain/core/tools";
+import type { ModelToolDefinition } from "../infrastructure/mcp/snapshot";
 import { jsonSchema } from "@ai-sdk/provider-utils";
 import { openai } from "@ai-sdk/openai";
-import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
-export function aiModelTools(
-  tools: StructuredToolInterface[],
-  freeformToolParameters: ReadonlyMap<string, string>,
-): ToolSet {
+export function aiModelTools(tools: ModelToolDefinition[]): ToolSet {
   return Object.fromEntries(
     tools.map((tool) => [
       tool.name,
-      freeformToolParameters.has(tool.name)
+      tool.freeform
         ? openai.tools.customTool({
             description: tool.description,
             format: { type: "text" },
           })
         : dynamicTool({
             description: tool.description,
-            inputSchema: jsonSchema(toJsonSchema(tool.schema)),
+            inputSchema: jsonSchema(tool.inputSchema),
           }),
     ]),
   );

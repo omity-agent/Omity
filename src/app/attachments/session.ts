@@ -1,6 +1,7 @@
 import { createSessionStorage, removeSessionStorage } from "../runtime/sessionStorage";
 import type { InitialMessagePair } from "../initialState";
 import type { PendingAttachment } from "./contract";
+import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import type { Settings } from "../../types";
 import { saveMessageAttachments } from "./storage";
 
@@ -9,6 +10,7 @@ export async function createSessionWithAttachments(options: {
   sessionId: string;
   workspace: string;
   profiles: string[];
+  definition: SessionDefinition;
   history: InitialMessagePair[];
   message: string;
   attachments: PendingAttachment[];
@@ -26,6 +28,7 @@ export async function createSessionWithAttachments(options: {
       options.profiles,
       options.history,
       saved.content,
+      options.definition,
     );
   } catch (error) {
     await saved.discard();

@@ -32,7 +32,7 @@ export class AppHosts {
     private readonly events: AppHostEvents,
     private readonly owner: ProcessOwner,
     private readonly shutdownTimeoutMs: number,
-    private readonly mcp: AppMcp,
+    readonly mcp: AppMcp,
     private readonly settingsContext: SettingsContext,
   ) {}
   has(sessionId: string) {
@@ -67,7 +67,7 @@ export class AppHosts {
     const hostPromise = runHostSession({ kind, sessionId }, this.appRoot, {
         controller: force,
         cwd: root,
-        mcp: (sessionProfiles) => this.mcp.load(sessionProfiles),
+        mcp: (id, definition) => this.mcp.loadSession(id, definition.mcp),
         observer: this.observer(force),
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);

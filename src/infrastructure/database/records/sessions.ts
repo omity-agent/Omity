@@ -1,3 +1,4 @@
+import { type SessionDefinition, emptySessionDefinition } from "../sessionDefinition";
 import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
@@ -10,6 +11,7 @@ export function createSessionRecord(
   sessionId: string,
   workspace: string,
   profiles: readonly string[],
+  definition: SessionDefinition = emptySessionDefinition(),
   initialControl: Control = "running",
 ) {
   if (hasSessionRecord(db, sessionId)) {
@@ -22,6 +24,7 @@ export function createSessionRecord(
       .values({
         control: initialControl,
         createdAt: now,
+        definition,
         id: sessionId,
         profiles: [...profiles],
         transcriptRevision: 0,
@@ -76,6 +79,18 @@ export function readProfilesRecord(db: Database, sessionId: string) {
     throw sessionNotFound(sessionId);
   }
   return row.profiles;
+}
+export function readDefinitionRecord(db: Database, sessionId: string) {
+  requireSessionRecord(db, sessionId);
+  const row = sessionDatabase(db)
+    .select({ definition: sessions.definition })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .get();
+  if (!row) {
+    throw sessionNotFound(sessionId);
+  }
+  return row.definition;
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);

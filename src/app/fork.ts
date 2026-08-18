@@ -5,6 +5,7 @@ import { contentToText } from "../runtime/content";
 import { copyHookUsage } from "../hooks/storage/usage";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { randomUUID } from "node:crypto";
+import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
 import { runTransaction } from "../infrastructure/database/connection";
 import { storeMessage } from "../infrastructure/database/records/messages/history";
 
@@ -41,6 +42,7 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
       options.targetSessionId,
       options.workspace,
       options.profiles,
+      readDefinitionRecord(options.source.db, options.sourceSessionId),
       forkControl(forkPoint),
     );
     insertMessages(options.target.db, options.targetSessionId, messages);
