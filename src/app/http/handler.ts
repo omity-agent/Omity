@@ -18,6 +18,7 @@ import {
 import type { AccessService } from "../access/service";
 import type { AppController } from "../controller";
 import { bodyLimit } from "hono/body-limit";
+import { compress } from "hono/compress";
 import { writeReasoningTranslation } from "../reasoningTranslation";
 
 export type ApiController = Pick<
@@ -57,6 +58,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
     });
   mountAccess(app, access, regularBodyLimit);
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
+  app.use("/api/sessions/:sessionId/transcript", compress());
   app.get("/api/bootstrap", (c) => c.json(controller.bootstrap()));
   app.get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }));
   app.get("/api/events/state", (c) =>

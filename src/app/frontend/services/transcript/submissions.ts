@@ -1,7 +1,7 @@
 import { type OptimisticUser, optimisticTimelineMessage } from "./optimistic";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import { type TranscriptData, rebuildTranscript } from "./cache";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PendingAttachment } from "../../../attachments/contract";
 import { sendMessage } from "../client";
 import { transcriptKey } from "./query";
@@ -15,6 +15,7 @@ export function useUserMessageSubmissions(
 ) {
   const queryClient = useQueryClient(),
     [staged, setStaged] = useState<StagedUser[]>([]),
+    queryClientRef = useRef(queryClient),
     acknowledged = new Set(
       transcript.queue.flatMap(({ submissionId }) => (submissionId ? [submissionId] : [])),
     ),
@@ -28,6 +29,9 @@ export function useUserMessageSubmissions(
         )
         .map(optimisticTimelineMessage),
     ];
+  useLayoutEffect(() => {
+    queryClientRef.current = queryClient;
+  }, [queryClient]);
   useEffect(() => {
     const acknowledgedIds = new Set(
         transcript.queue.flatMap(({ submissionId }) => (submissionId ? [submissionId] : [])),
@@ -47,29 +51,34 @@ export function useUserMessageSubmissions(
       cancelAnimationFrame(frame);
     };
   }, [sessionId, transcript.queue]);
-  const send = async (
-    optimistic: OptimisticUser,
-    draftRevision: number,
-    attachments: PendingAttachment[],
-  ) => {
-    setStaged((current) => [...current, optimistic]);
-    try {
-      const { content, queueId } = await sendMessage(
-        optimistic.sessionId,
-        optimistic.content,
-        draftRevision,
-        optimistic.submissionId,
-        attachments,
-      );
-      setStaged((current) =>
-        current.map((user) => (user.key === optimistic.key ? { ...user, accepted: true } : user)),
-      );
-      acknowledgeUser(queryClient, optimistic.sessionId, optimistic.submissionId, queueId, content);
-    } catch (error) {
-      setStaged((current) => current.filter(({ key }) => key !== optimistic.key));
-      throw error;
-    }
-  };
+  const send = useCallback(
+    async (optimistic: OptimisticUser, draftRevision: number, attachments: PendingAttachment[]) => {
+      setStaged((current) => [...current, optimistic]);
+      try {
+        const { content, queueId } = await sendMessage(
+          optimistic.sessionId,
+          optimistic.content,
+          draftRevision,
+          optimistic.submissionId,
+          attachments,
+        );
+        setStaged((current) =>
+          current.map((user) => (user.key === optimistic.key ? { ...user, accepted: true } : user)),
+        );
+        acknowledgeUser(
+          queryClientRef.current,
+          optimistic.sessionId,
+          optimistic.submissionId,
+          queueId,
+          content,
+        );
+      } catch (error) {
+        setStaged((current) => current.filter(({ key }) => key !== optimistic.key));
+        throw error;
+      }
+    },
+    [setStaged],
+  );
   return { send, view };
 }
 function acknowledgeUser(

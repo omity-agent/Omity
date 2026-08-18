@@ -79,7 +79,7 @@ export interface Settings {
       enabled: boolean;
       minimumIntervalMs: number;
     };
-    transcriptRefreshIntervalMs: number;
+    transcriptSnapshotThrottleMs: number;
   };
   model: ModelSettings;
   host: {

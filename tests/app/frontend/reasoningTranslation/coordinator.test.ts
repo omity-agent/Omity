@@ -67,3 +67,22 @@ test("translation coordinator reuses a matching persisted translation", async ()
   expect(persist).not.toHaveBeenCalled();
   coordinator.close();
 });
+test("translation coordinator stops retrying after the translator becomes unavailable", async () => {
+  const failure = new DOMException("Model not available", "NotSupportedError"),
+    createTranslator = mock(() => Promise.reject(failure)),
+    reportError = mock((_error: unknown) => undefined),
+    coordinator = new ReasoningTranslationCoordinator({
+      createTranslator,
+      minimumIntervalMs: 0,
+      persist: () => Promise.resolve(),
+      reportError,
+      targetLanguage: "zh-CN",
+    });
+  coordinator.update({ content: "first", messageId: "message", streaming: true });
+  await Bun.sleep(0);
+  coordinator.update({ content: "second", messageId: "message", streaming: true });
+  await Bun.sleep(0);
+  expect(createTranslator).toHaveBeenCalledTimes(1);
+  expect(reportError).toHaveBeenCalledTimes(1);
+  coordinator.close();
+});

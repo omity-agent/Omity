@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 
 const row = css({
     alignItems: "start",
+    containIntrinsicSize: "auto 12rem",
+    contentVisibility: "auto",
     display: "flex",
     gap: "2",
     mb: "4",

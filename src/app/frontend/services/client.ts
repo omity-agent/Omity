@@ -28,7 +28,7 @@ export interface FrontendSettings {
     enabled: boolean;
     minimumIntervalMs: number;
   };
-  transcriptRefreshIntervalMs: number;
+  transcriptSnapshotThrottleMs: number;
 }
 export async function bootstrap(signal?: AbortSignal) {
   return request("api/bootstrap", bootstrapResponseSchema, { signal });

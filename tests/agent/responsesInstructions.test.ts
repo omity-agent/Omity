@@ -38,7 +38,6 @@ test("Responses API sends developer instructions in the top-level field", async 
     temperature: 0,
     timeoutMs: 1000,
   };
-
   let rejection: unknown;
   try {
     await streamAiModel({
@@ -51,7 +50,6 @@ test("Responses API sends developer instructions in the top-level field", async 
   } catch (error) {
     rejection = error;
   }
-
   expect(rejection).toMatchObject({ message: "request captured" });
   expect(requestBody).toMatchObject({
     input: [

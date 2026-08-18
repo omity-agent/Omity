@@ -37,6 +37,7 @@
     "@tanstack/pacer": "latest",
     "@tanstack/react-pacer": "latest",
     "@tanstack/react-query": "latest",
+    "@tanstack/react-virtual": "latest",
     "@uiw/react-codemirror": "latest",
     "ai": "latest",
     "ajv": "latest",

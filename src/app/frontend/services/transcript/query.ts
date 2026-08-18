@@ -6,19 +6,19 @@ import {
 } from "./cache";
 import { contentEvents, loadTranscript } from "../client";
 import { readContentSyncEvent, readTranscriptEvent } from "../events/data";
+import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DisplayEvent } from "../../../timeline";
+import { FrameBatcher } from "../scheduling/frameBatcher";
 import { reportError } from "../errors";
 import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
-import { useBatcher } from "@tanstack/react-pacer/batcher";
-import { useEffect } from "react";
 
 export type { TranscriptData } from "./cache";
 export const transcriptKey = (sessionId: string) => ["transcript", sessionId] as const;
 const emptyTranscript = emptyTranscriptData();
 export function useSessionTranscript(
   sessionId: string | undefined,
-  refreshIntervalMs: number | undefined,
+  snapshotThrottleMs: number | undefined,
 ) {
   const queryClient = useQueryClient(),
     query = useQuery({
@@ -40,36 +40,37 @@ export function useSessionTranscript(
       {
         asyncRetryerOptions: {
           backoff: "exponential",
-          baseWait: Math.max(refreshIntervalMs ?? 0, 250),
+          baseWait: Math.max(snapshotThrottleMs ?? 0, 250),
           maxAttempts: 4,
           maxWait: 2000,
         },
         onError: (error) => {
           reportError(error);
         },
-        wait: refreshIntervalMs ?? 0,
+        wait: snapshotThrottleMs ?? 0,
       },
     ),
-    deltas = useBatcher<DisplayEvent>(
-      (batch) => {
-        if (!sessionId) {
-          return;
-        }
-        queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) =>
-          appendTranscriptEvents(current ?? emptyTranscriptData(), batch),
-        );
-      },
-      { wait: refreshIntervalMs ?? 0 },
+    deltas = useMemo(
+      () =>
+        new FrameBatcher<DisplayEvent>((batch) => {
+          if (!sessionId) {
+            return;
+          }
+          queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) =>
+            appendTranscriptEvents(current ?? emptyTranscriptData(), batch),
+          );
+        }),
+      [queryClient, sessionId],
     );
   useEffect(() => {
-    if (!sessionId || refreshIntervalMs === undefined) {
+    if (!sessionId || snapshotThrottleMs === undefined) {
       return undefined;
     }
     const events = contentEvents(sessionId),
       delta = (event: Event) => {
         try {
           const incoming = readTranscriptEvent(event);
-          deltas.addItem(incoming);
+          deltas.add(incoming);
         } catch (error) {
           reportError(error);
         }
@@ -86,11 +87,10 @@ export function useSessionTranscript(
     return () => {
       events.close();
       deltas.cancel();
-      deltas.clear();
       refresh.cancel();
       refresh.abort();
     };
-  }, [deltas, refresh, refreshIntervalMs, sessionId]);
+  }, [deltas, refresh, sessionId, snapshotThrottleMs]);
   return query.data ?? emptyTranscript;
 }
 async function refreshTranscript(

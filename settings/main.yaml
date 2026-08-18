@@ -32,7 +32,7 @@ frontend:
   reasoningTranslation:
     enabled: true
     minimumIntervalMs: 1000
-  transcriptRefreshIntervalMs: 25
+  transcriptSnapshotThrottleMs: 250
 
 host:
   pollMs: 300

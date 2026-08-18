@@ -12,7 +12,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       frontend: {
         draftSaveDelayMs: 0,
         reasoningTranslation: { enabled: false, minimumIntervalMs: 0 },
-        transcriptRefreshIntervalMs: 0,
+        transcriptSnapshotThrottleMs: 0,
       },
       profiles: { available: [] },
       sessions: [],

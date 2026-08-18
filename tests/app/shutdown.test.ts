@@ -75,7 +75,6 @@ test("shutdown closes active HTTP streams", async () => {
     },
     "SIGTERM",
   );
-
   expect(server.listening).toBeFalse();
   expect(body).rejects.toThrow();
 }, 3000);

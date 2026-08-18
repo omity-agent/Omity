@@ -39,7 +39,6 @@ const checkboxClasses = checkbox(),
     w: "2.5",
   });
 type ChoiceQuestion = Extract<AskUserQuestion, { kind: "choice" }>;
-
 export function ChoiceOptions({
   question,
   selectedOptions,

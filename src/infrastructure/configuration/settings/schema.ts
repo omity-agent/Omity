@@ -137,7 +137,7 @@ const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high"
               minimumIntervalMs: z.number().int().nonnegative(),
             })
             .strict(),
-          transcriptRefreshIntervalMs: z.number().int().positive(),
+          transcriptSnapshotThrottleMs: z.number().int().positive(),
         })
         .strict(),
       host: z.object({

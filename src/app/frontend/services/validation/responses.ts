@@ -175,7 +175,7 @@ export const bootstrapResponseSchema = z.object({
       enabled: z.boolean(),
       minimumIntervalMs: integer.nonnegative(),
     }),
-    transcriptRefreshIntervalMs: integer.nonnegative(),
+    transcriptSnapshotThrottleMs: integer.nonnegative(),
   }),
   profiles: z.object({
     available: z.array(z.string()),

@@ -46,7 +46,7 @@ function AuthenticatedApp() {
         : undefined,
     transcript = useSessionTranscript(
       activeSession?.id,
-      bootstrap.data?.frontend.transcriptRefreshIntervalMs,
+      bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
     ),
     submissions = useUserMessageSubmissions(activeSession?.id, transcript),
     navigate = usePageNavigator(setPage),

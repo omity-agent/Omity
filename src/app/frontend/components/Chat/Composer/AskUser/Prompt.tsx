@@ -37,7 +37,6 @@ const choiceLayout = css({
     gridTemplateRows: "auto minmax(0, 1fr)",
     minH: 0,
   });
-
 export function AskUserPrompt({
   note,
   question,

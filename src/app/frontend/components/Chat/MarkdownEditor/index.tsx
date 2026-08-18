@@ -1,5 +1,4 @@
-import { EditorState, Prec } from "@codemirror/state";
-import { EditorView, type KeyBinding, keymap } from "@codemirror/view";
+import { EditorHandlerStore, editorInteractions } from "./interactions";
 import {
   bareRoot,
   codeMirror,
@@ -13,13 +12,15 @@ import {
   markdownSyntax,
   root,
 } from "./theme";
+import { useLayoutEffect, useMemo, useReducer } from "react";
 import CodeMirror from "@uiw/react-codemirror";
+import { EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import type { HistoryDirection } from "../Composer/history";
 import { cx } from "styled-system/css";
 import { indentUnit } from "@codemirror/language";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { markdown } from "@codemirror/lang-markdown";
-import { useMemo } from "react";
 
 const basicSetup = {
   autocompletion: false,
@@ -28,39 +29,6 @@ const basicSetup = {
   highlightActiveLineGutter: true,
   lineNumbers: true,
 };
-function historyBinding(
-  key: "ArrowDown" | "ArrowUp",
-  direction: HistoryDirection,
-  disabled: boolean,
-  navigate?: (direction: HistoryDirection) => string | undefined,
-): KeyBinding {
-  return {
-    key,
-    run: (view) => {
-      if (view.composing || disabled || !navigate) {
-        return false;
-      }
-      const nextValue = navigate(direction);
-      if (nextValue === undefined) {
-        return false;
-      }
-      view.dispatch({
-        changes: {
-          from: 0,
-          insert: nextValue,
-          to: view.state.doc.length,
-        },
-        scrollIntoView: true,
-        selection: { anchor: nextValue.length },
-      });
-      return true;
-    },
-  };
-}
-const emptyEditorArrowBindings: KeyBinding[] = ["ArrowLeft", "ArrowRight"].map((key) => ({
-  key,
-  run: (view) => view.state.doc.length === 0,
-}));
 export function MarkdownEditor({
   bare = false,
   disabled,
@@ -86,6 +54,25 @@ export function MarkdownEditor({
   placeholder: string;
   value: string;
 }) {
+  const [handlers] = useReducer(
+    (current: EditorHandlerStore) => current,
+    undefined,
+    () =>
+      new EditorHandlerStore({
+        disabled,
+        onHistoryNavigate,
+        onPasteFiles,
+        onSubmit,
+      }),
+  );
+  useLayoutEffect(() => {
+    handlers.update({
+      disabled,
+      onHistoryNavigate,
+      onPasteFiles,
+      onSubmit,
+    });
+  }, [disabled, handlers, onHistoryNavigate, onPasteFiles, onSubmit]);
   const extensions = useMemo(
     () => [
       markdown(),
@@ -103,57 +90,9 @@ export function MarkdownEditor({
       markdownSyntax,
       editorTheme,
       fluid ? fluidTheme : fixedTheme,
-      EditorView.domEventHandlers({
-        paste: (event, view) => {
-          if (disabled || !onPasteFiles) {
-            return false;
-          }
-          const files = [...(event.clipboardData?.files ?? [])];
-          if (files.length === 0) {
-            return false;
-          }
-          event.preventDefault();
-          const insert = onPasteFiles(files);
-          if (!insert) {
-            return true;
-          }
-          const selection = view.state.selection.main,
-            before = view.state.doc.sliceString(0, selection.from),
-            after = view.state.doc.sliceString(selection.to),
-            text =
-              (before && !before.endsWith("\n") ? "\n" : "") +
-              insert +
-              (after && !after.startsWith("\n") ? "\n" : "");
-          view.dispatch({
-            changes: {
-              from: selection.from,
-              insert: text,
-              to: selection.to,
-            },
-            selection: { anchor: selection.from + text.length },
-          });
-          return true;
-        },
-      }),
-      Prec.highest(
-        keymap.of([
-          historyBinding("ArrowUp", "previous", disabled, onHistoryNavigate),
-          historyBinding("ArrowDown", "next", disabled, onHistoryNavigate),
-          ...emptyEditorArrowBindings,
-          {
-            key: "Ctrl-Enter",
-            run: (view) => {
-              if (view.composing || disabled) {
-                return false;
-              }
-              onSubmit();
-              return true;
-            },
-          },
-        ]),
-      ),
+      ...editorInteractions(handlers.read),
     ],
-    [disabled, fluid, onHistoryNavigate, onPasteFiles, onSubmit],
+    [fluid, handlers],
   );
   return (
     <div

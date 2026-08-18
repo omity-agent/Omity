@@ -58,7 +58,7 @@ frontend:
   reasoningTranslation:
     enabled: false
     minimumIntervalMs: 1000
-  transcriptRefreshIntervalMs: 1
+  transcriptSnapshotThrottleMs: 1
 host:
   pollMs: 1
   pausePollMs: 1

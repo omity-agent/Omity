@@ -84,7 +84,6 @@ test("recovery leaves a stable paused session activity time unchanged", () => {
   db.setQueueStatus(queueId, "paused");
   db.setControl("123", "pause");
   db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = '123'");
-
   expect(db.recoverInterruptedSession({ now: 1000, sessionId: "123" })).toEqual({
     action: "paused",
     activeItems: 1,

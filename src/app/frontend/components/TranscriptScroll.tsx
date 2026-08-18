@@ -3,7 +3,7 @@ import {
   type RefObject,
   type UIEventHandler,
   useCallback,
-  useLayoutEffect,
+  useEffect,
   useRef,
 } from "react";
 import type { TimelineMessage } from "../../timeline";
@@ -25,15 +25,22 @@ export function useFollowBottom<T extends HTMLElement>({
   version: unknown;
 }) {
   const followingRef = useRef(true);
-  useLayoutEffect(() => {
+  useEffect(() => {
     followingRef.current = true;
   }, [resetKey]);
-  useLayoutEffect(() => {
+  useEffect(() => {
     const element = ref.current;
     if (!enabled || !element || !followingRef.current) {
-      return;
+      return undefined;
     }
-    element.scrollTop = element.scrollHeight;
+    const frame = requestAnimationFrame(() => {
+      if (ref.current === element && followingRef.current) {
+        element.scrollTop = Number.MAX_SAFE_INTEGER;
+      }
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
   }, [enabled, ref, resetKey, version]);
   const onScroll = useCallback<UIEventHandler<T>>((event) => {
     followingRef.current = isNearBottom(event.currentTarget);

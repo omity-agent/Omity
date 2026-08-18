@@ -43,6 +43,7 @@ export const block = css({
   fontSize: "sm",
   lineHeight: "1.65",
   m: 0,
+  maxH: "toolOutput",
   maxW: "full",
   minW: 0,
   overflow: "auto",
@@ -58,5 +59,14 @@ export const codeElement = css({
   fontSize: "inherit",
   lineHeight: "inherit",
   minW: "fit-content",
+  whiteSpace: "inherit",
+});
+export const virtualLine = css({
+  display: "block",
+  left: 0,
+  minH: "1lh",
+  position: "absolute",
+  top: 0,
+  w: "full",
   whiteSpace: "inherit",
 });

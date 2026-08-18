@@ -8,6 +8,7 @@ import {
 } from "../../../timeline";
 import type { Control } from "../../../../types";
 import type { FileLinkUnit } from "../../../../fileLinks/types";
+import { replaceEqualDeep } from "@tanstack/react-query";
 
 export interface TranscriptSnapshot {
   control: Control;
@@ -58,13 +59,13 @@ export function reconcileTranscript(
       events,
       fileLinks: mergeFileLinks(snapshot.fileLinks, replayLinks),
     },
-    optimisticMessages(current),
+    current,
     snapshot.eventCursor,
   );
 }
 export function appendTranscriptEvents(current: TranscriptData, incoming: DisplayEvent[]) {
   const accepted = incoming.filter((event) => event.id > current.snapshotCursor),
-    events = mergeEvents(current.events, accepted);
+    events = appendOrMergeEvents(current.events, accepted, current.eventCursor);
   if (events.length === current.events.length) {
     return current;
   }
@@ -78,7 +79,7 @@ export function appendTranscriptEvents(current: TranscriptData, incoming: Displa
         accepted.flatMap((event) => event.fileLinks ?? []),
       ),
     },
-    optimisticMessages(current),
+    current,
     current.snapshotCursor,
   );
 }
@@ -86,31 +87,28 @@ export function rebuildTranscript(
   current: TranscriptData,
   changes: Partial<Pick<TranscriptData, "queue" | "messages" | "events" | "reasoningTranslations">>,
 ) {
-  return buildTranscript(
-    { ...current, ...changes },
-    optimisticMessages(current),
-    current.snapshotCursor,
-  );
+  return buildTranscript({ ...current, ...changes }, current, current.snapshotCursor);
 }
 export function withoutOptimistic(current: TranscriptData, key: string): TranscriptData {
   return { ...current, view: current.view.filter((item) => item.key !== key) };
 }
 function buildTranscript(
   snapshot: TranscriptSnapshot,
-  optimistic: TimelineMessage[],
+  current: TranscriptData | undefined,
   snapshotCursor: number,
 ): TranscriptData {
+  const view = buildTimeline(
+    snapshot.messages,
+    snapshot.queue,
+    snapshot.events,
+    optimisticMessages(current),
+    snapshot.fileLinks,
+    snapshot.reasoningTranslations,
+  );
   return {
     ...snapshot,
     snapshotCursor,
-    view: buildTimeline(
-      snapshot.messages,
-      snapshot.queue,
-      snapshot.events,
-      optimistic,
-      snapshot.fileLinks,
-      snapshot.reasoningTranslations,
-    ),
+    view: current ? replaceEqualDeep(current.view, view) : view,
   };
 }
 function mergeFileLinks(left: FileLinkUnit[], right: FileLinkUnit[]) {
@@ -127,6 +125,18 @@ function mergeEvents(left: DisplayEvent[], right: DisplayEvent[]) {
   return [...new Map([...left, ...right].map((event) => [event.id, event])).values()].toSorted(
     (a, b) => a.id - b.id,
   );
+}
+function appendOrMergeEvents(
+  current: DisplayEvent[],
+  incoming: DisplayEvent[],
+  eventCursor: number,
+) {
+  const unique = [...new Map(incoming.map((event) => [event.id, event])).values()].toSorted(
+    (left, right) => left.id - right.id,
+  );
+  return unique.every((event) => event.id > eventCursor)
+    ? [...current, ...unique]
+    : mergeEvents(current, unique);
 }
 function optimisticMessages(current?: TranscriptData) {
   return current?.view.filter((item) => item.optimistic === true) ?? [];

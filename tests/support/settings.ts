@@ -17,7 +17,7 @@ export function testSettings(): Settings {
     frontend: {
       draftSaveDelayMs: 1,
       reasoningTranslation: { enabled: false, minimumIntervalMs: 1000 },
-      transcriptRefreshIntervalMs: 1,
+      transcriptSnapshotThrottleMs: 1,
     },
     hooks: [],
     host: {

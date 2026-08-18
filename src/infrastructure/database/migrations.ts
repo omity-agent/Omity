@@ -11,7 +11,6 @@ const migrationTables = {
   access: "__drizzle_access_migrations",
   session: "__drizzle_session_migrations",
 } satisfies Record<MigrationDatabase, string>;
-
 export function migrateSessionDatabase<
   TSchema extends Record<string, unknown>,
   TRelations extends AnyRelations,

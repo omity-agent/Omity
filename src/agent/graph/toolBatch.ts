@@ -20,7 +20,6 @@ export function pendingToolBatch(messages: BaseMessage[], parallel: boolean): Id
   }
   return parallel ? pending : pending.slice(0, 1);
 }
-
 export async function invokeToolBatch<T>(
   calls: ToolCall[],
   invoke: (call: ToolCall) => Promise<T>,
@@ -35,7 +34,6 @@ export async function invokeToolBatch<T>(
   }
   return outputs;
 }
-
 function identifiedToolCall(call: ToolCall): call is IdentifiedToolCall {
   requireCallId(call);
   return true;

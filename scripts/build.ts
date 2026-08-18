@@ -30,7 +30,6 @@ try {
 } finally {
   await rm(migrationsRoot, { force: true, recursive: true });
 }
-
 async function buildApplication() {
   await rm(frontendOutput, { force: true, recursive: true });
   await build({

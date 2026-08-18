@@ -22,12 +22,13 @@ interface TranslationCoordinatorOptions {
 export class ReasoningTranslationCoordinator {
   private active?: Promise<void>;
   private controller?: AbortController;
+  private failed = false;
   private lastTranslationAt = Number.NEGATIVE_INFINITY;
   private pending?: TranslationCandidate;
   private timer?: ReturnType<typeof setTimeout>;
   constructor(private readonly options: TranslationCoordinatorOptions) {}
   update(candidate: PendingTranslationCandidate) {
-    if (!candidate.messageId) {
+    if (this.failed || !candidate.messageId) {
       return;
     }
     if (isPersisted(candidate.translations, candidate.content, this.options.targetLanguage)) {
@@ -76,6 +77,8 @@ export class ReasoningTranslationCoordinator {
       await this.translate(candidate, controller.signal);
     } catch (error) {
       if (!controller.signal.aborted) {
+        this.failed = true;
+        this.pending = undefined;
         this.options.reportError?.(error);
       }
     } finally {
