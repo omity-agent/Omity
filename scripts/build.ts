@@ -13,7 +13,7 @@ const databases = [
     },
   ] as const,
   root = resolve(import.meta.dir, ".."),
-  migrationsRoot = resolve(root, "migrations"),
+  migrationsRoot = resolve(root, "dist/migrations"),
   frontendDirectory = resolve(root, "src/app/frontend"),
   frontendOutput = resolve(frontendDirectory, "dist"),
   executableOutput = resolve(root, "dist/omity.exe");
@@ -41,7 +41,7 @@ async function buildApplication() {
   });
   await mkdir(resolve(root, "dist"), { recursive: true });
   const compile = {
-      assets: ["./settings", "./src/app/frontend/dist", "./migrations"],
+      assets: ["./settings", "./src/app/frontend/dist", migrationsRoot],
       outfile: executableOutput,
     } satisfies Bun.CompileBuildOptions & { assets: string[] },
     executable = await Bun.build({
@@ -75,7 +75,7 @@ async function generateMigration(database: (typeof databases)[number]) {
         "generate",
         "--dialect=sqlite",
         `--schema=${database.schema}`,
-        `--out=./migrations/${database.name}`,
+        `--out=${migrationsRoot}/${database.name}`,
       ],
       {
         cwd: root,

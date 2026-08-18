@@ -63,6 +63,20 @@ export function MarkdownView({
     </MarkdownContext.Provider>
   );
 }
+export function MarkdownInline({ content }: { content: string }) {
+  const context = useMemo(() => ({ fileLinks: noFileLinks, source: content }), [content]);
+  return (
+    <MarkdownContext.Provider value={context}>
+      <ReactMarkdown
+        allowedElements={inlineElements}
+        components={inlineComponents}
+        unwrapDisallowed
+      >
+        {content}
+      </ReactMarkdown>
+    </MarkdownContext.Provider>
+  );
+}
 function MarkdownAnchor({ children, href, node, ...props }: ComponentProps<"a"> & ExtraProps) {
   const { fileLinks } = useMarkdownRenderContext(),
     linkedPath = pathFromFileLinkHref(href),
@@ -117,6 +131,8 @@ const components = {
   pre: MarkdownPre,
   table: MarkdownTable,
 } satisfies Components;
+const inlineComponents = { code: MarkdownCode } satisfies Components,
+  inlineElements = ["code", "del", "em", "strong"];
 function useMarkdownRenderContext() {
   const context = useContext(MarkdownContext);
   if (!context) {

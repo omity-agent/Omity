@@ -1,19 +1,26 @@
+import { MarkdownInline, MarkdownView } from "../MarkdownView";
 import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
+import { createElement, useLayoutEffect, useRef } from "react";
 import { BrainCircuit } from "lucide-react";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { Frame } from "./Frame";
-import { MarkdownView } from "../MarkdownView";
 import { css } from "styled-system/css";
+import { useCollapsibleContext } from "@ark-ui/react/collapsible";
 import { useTranslation } from "react-i18next";
 
 const content = css({
-  borderTopColor: "line",
-  borderTopWidth: "1px",
-  m: "3",
-  minW: 0,
-  mt: 0,
-  pt: "3",
-});
+    borderTopColor: "line",
+    borderTopWidth: "1px",
+    m: "3",
+    minW: 0,
+    mt: 0,
+    pt: "3",
+  }),
+  summary = css({
+    display: "block",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+  });
 export function Reasoning({
   part,
   fileLinks,
@@ -26,13 +33,14 @@ export function Reasoning({
   part: Extract<TimelinePart, { type: "reasoning" }>;
 }) {
   const { t } = useTranslation(),
-    reasoning = translatedReasoning(part, navigator.languages, liveTranslation);
+    reasoning = translatedReasoning(part, navigator.languages, liveTranslation),
+    title = createElement(ReasoningTitle, { label: t("reasoning"), reasoning });
   return (
     <Frame
       expandedInitially={latest}
       icon={BrainCircuit}
       label={t("reasoning")}
-      title={t("reasoning")}
+      title={title}
       tone="model"
     >
       <div className={content}>
@@ -40,6 +48,25 @@ export function Reasoning({
       </div>
     </Frame>
   );
+}
+function ReasoningTitle({ label, reasoning }: { label: string; reasoning: string }) {
+  const { open } = useCollapsibleContext(),
+    summaryReference = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    if (!open && summaryReference.current) {
+      summaryReference.current.scrollLeft = summaryReference.current.scrollWidth;
+    }
+  }, [open, reasoning]);
+  return open ? (
+    label
+  ) : (
+    <span className={summary} ref={summaryReference}>
+      <MarkdownInline content={singleLineReasoning(reasoning)} />
+    </span>
+  );
+}
+export function singleLineReasoning(text: string) {
+  return text.replace(/\r\n|[\r\n\u2028\u2029]/g, " ");
 }
 export function preferredTranslation(
   part: Extract<TimelinePart, { type: "reasoning" }>,
