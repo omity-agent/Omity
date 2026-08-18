@@ -41,7 +41,7 @@ export function buildSkillsList(settings: Pick<Settings, "skills">) {
   if (!settings.skills.enabled) {
     return "";
   }
-  const skillsDir = resolveUserPath(settings.skills.directory),
+  const skillsDir = resolveUserPath(settings.skills.directory).replaceAll("\\", "/"),
     lines = [
       skillsDir,
       ...skills.map(
