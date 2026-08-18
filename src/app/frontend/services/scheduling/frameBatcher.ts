@@ -1,20 +1,13 @@
-type ScheduleFrame = (callback: FrameRequestCallback) => number;
-type CancelFrame = (handle: number) => void;
-
 export class FrameBatcher<T> {
   private frame?: number;
   private items: T[] = [];
-  constructor(
-    private readonly flush: (items: T[]) => void,
-    private readonly schedule: ScheduleFrame = requestAnimationFrame,
-    private readonly cancelFrame: CancelFrame = cancelAnimationFrame,
-  ) {}
+  constructor(private readonly flush: (items: T[]) => void) {}
   add(item: T) {
     this.items.push(item);
     if (this.frame !== undefined) {
       return;
     }
-    this.frame = this.schedule(() => {
+    this.frame = globalThis.requestAnimationFrame(() => {
       this.frame = undefined;
       const { items } = this;
       this.items = [];
@@ -25,7 +18,7 @@ export class FrameBatcher<T> {
   }
   cancel() {
     if (this.frame !== undefined) {
-      this.cancelFrame(this.frame);
+      globalThis.cancelAnimationFrame(this.frame);
       this.frame = undefined;
     }
     this.items = [];
