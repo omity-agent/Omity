@@ -50,6 +50,16 @@ export default defineConfig({
   ],
   theme: {
     extend: {
+      keyframes: {
+        detailCollapse: {
+          from: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+          to: { opacity: "0", transform: "translate3d(0, -0.375rem, 0)" },
+        },
+        detailExpand: {
+          from: { opacity: "0", transform: "translate3d(0, -0.375rem, 0)" },
+          to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
+        },
+      },
       semanticTokens: {
         colors: {
           activeLine: {
@@ -85,6 +95,10 @@ export default defineConfig({
         },
       },
       tokens: {
+        animations: {
+          detailCollapse: { value: "detailCollapse 140ms ease-in" },
+          detailExpand: { value: "detailExpand 140ms ease-out" },
+        },
         colors: {
           accent: {
             blue: { value: "#7dcfff" },

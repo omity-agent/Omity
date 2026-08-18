@@ -1,12 +1,24 @@
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import { type ReactNode, useCallback, useState } from "react";
+import { Collapsible } from "@ark-ui/react/collapsible";
+import type { ReactNode } from "react";
 import { sva } from "styled-system/css";
 
 const frame = sva({
   base: {
     accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
+    content: {
+      _closed: {
+        _motionReduce: { animation: "none" },
+        animation: "detailCollapse",
+      },
+      _open: {
+        _motionReduce: { animation: "none" },
+        animation: "detailExpand",
+      },
+      overflow: "hidden",
+    },
     disclosure: {
-      'button[aria-expanded="true"] &': { transform: "rotate(90deg)" },
+      'button[data-state="open"] &': { transform: "rotate(90deg)" },
       color: "muted",
       flexShrink: 0,
       transition: "transform 120ms ease",
@@ -59,7 +71,7 @@ const frame = sva({
       textAlign: "left",
     },
   },
-  slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory"],
+  slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory", "content"],
   variants: {
     tone: {
       model: {
@@ -90,28 +102,23 @@ export function Frame({
   title?: ReactNode;
   tone: "model" | "tool";
 }) {
-  const [expanded, setExpanded] = useState(expandedInitially),
-    classes = frame({ tone }),
-    handleToggle = useCallback(() => {
-      setExpanded((current) => !current);
-    }, [setExpanded]);
+  const classes = frame({ tone });
   return (
-    <div className={classes.root}>
+    <Collapsible.Root
+      className={classes.root}
+      defaultOpen={expandedInitially}
+      lazyMount
+      unmountOnExit
+    >
       <div className={classes.header}>
-        <button
-          aria-expanded={expanded}
-          aria-label={label}
-          className={classes.trigger}
-          onClick={handleToggle}
-          type="button"
-        >
+        <Collapsible.Trigger aria-label={label} className={classes.trigger}>
           <ChevronRight className={classes.disclosure} size={12} />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
-        </button>
+        </Collapsible.Trigger>
         {accessory ? <div className={classes.accessory}>{accessory}</div> : null}
       </div>
-      {expanded ? children : null}
-    </div>
+      <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
+    </Collapsible.Root>
   );
 }

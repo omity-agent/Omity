@@ -12,7 +12,7 @@ import type { OptimisticUser } from "../../services/transcript/optimistic";
 import { TranscriptScroll } from "../TranscriptScroll";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
-import { findLatestDetail } from "./detailFocus";
+import { findLatestDetails } from "./detailFocus";
 import { useMemo } from "react";
 import { useReasoningTranslation } from "../../services/translation/useReasoningTranslation";
 import { useTranslation } from "react-i18next";
@@ -100,7 +100,7 @@ export function ChatPage({
     }),
     firstUserMessageId = view.find((item) => item.role === "user")?.id,
     forkDraft = queue.find((item) => item.status === "draft")?.content,
-    latestDetail = findLatestDetail(view),
+    latestDetails = findLatestDetails(view),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
     draftTarget = useMemo(
       () =>
@@ -148,8 +148,15 @@ export function ChatPage({
               item={item}
               key={item.key}
               liveTranslation={liveTranslation}
-              latestDetailIndex={
-                item.key === latestDetail?.messageKey ? latestDetail.partIndex : undefined
+              latestReasoningIndex={
+                item.key === latestDetails.reasoning?.messageKey
+                  ? latestDetails.reasoning.partIndex
+                  : undefined
+              }
+              latestToolIndex={
+                item.key === latestDetails.tool?.messageKey
+                  ? latestDetails.tool.partIndex
+                  : undefined
               }
               onFork={onFork}
               onCancelTool={onCancelTool}

@@ -95,7 +95,8 @@ export function Message({
   forkDisabled,
   item,
   liveTranslation,
-  latestDetailIndex,
+  latestReasoningIndex,
+  latestToolIndex,
   onCancelTool,
   onFork,
 }: {
@@ -103,7 +104,8 @@ export function Message({
   forkDisabled: boolean;
   item: TimelineMessage;
   liveTranslation?: ReasoningTranslation;
-  latestDetailIndex?: number;
+  latestReasoningIndex?: number;
+  latestToolIndex?: number;
   onCancelTool: (toolCallId: string) => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
 }) {
@@ -148,12 +150,14 @@ export function Message({
               />
             );
           }
+          const latest =
+            index === (part.type === "reasoning" ? latestReasoningIndex : latestToolIndex);
           if (part.type === "reasoning") {
             return (
               <Reasoning
                 fileLinks={part.fileLinks}
-                key={`reasoning-${index.toString()}-${index === latestDetailIndex ? "latest" : "settled"}`}
-                latest={index === latestDetailIndex}
+                key={`reasoning-${index.toString()}-${latest ? "latest" : "settled"}`}
+                latest={latest}
                 liveTranslation={liveTranslation}
                 part={part}
               />
@@ -162,8 +166,8 @@ export function Message({
           return (
             <ToolCall
               call={part.call}
-              key={`${part.key}-${index === latestDetailIndex ? "latest" : "settled"}`}
-              latest={index === latestDetailIndex}
+              key={`${part.key}-${latest ? "latest" : "settled"}`}
+              latest={latest}
               onCancel={onCancelTool}
               output={part.output}
               phase={part.phase}
