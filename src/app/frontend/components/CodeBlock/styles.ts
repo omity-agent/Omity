@@ -70,3 +70,10 @@ export const virtualLine = css({
   w: "full",
   whiteSpace: "inherit",
 });
+export const widthSizer = css({
+  display: "block",
+  h: 0,
+  overflow: "hidden",
+  visibility: "hidden",
+  whiteSpace: "inherit",
+});

@@ -6,10 +6,12 @@ import {
   useEffect,
   useRef,
 } from "react";
+import { css, cx } from "styled-system/css";
 import type { TimelineMessage } from "../../timeline";
 import { scroll } from "../design";
 
-const followBottomThreshold = 48;
+const followBottomThreshold = 48,
+  transcriptViewport = css({ containerType: "size" });
 function isNearBottom(element: HTMLElement) {
   return element.scrollHeight - element.scrollTop - element.clientHeight <= followBottomThreshold;
 }
@@ -63,7 +65,7 @@ export function TranscriptScroll({
       version: view,
     });
   return (
-    <section className={scroll} ref={scrollRef} onScroll={onScroll}>
+    <section className={cx(scroll, transcriptViewport)} ref={scrollRef} onScroll={onScroll}>
       {children}
     </section>
   );

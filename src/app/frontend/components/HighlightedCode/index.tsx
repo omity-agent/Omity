@@ -1,7 +1,14 @@
 import { type CSSProperties, memo, useMemo, useRef } from "react";
 import { HighlightedLine, codeLines } from "./lines";
 import { type VirtualItem, useVirtualizer } from "@tanstack/react-virtual";
-import { block, codeElement, container, copyButton, virtualLine } from "../CodeBlock/styles";
+import {
+  block,
+  codeElement,
+  container,
+  copyButton,
+  virtualLine,
+  widthSizer,
+} from "../CodeBlock/styles";
 import { CopyButton } from "../Chat/CopyButton";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { cx } from "styled-system/css";
@@ -32,6 +39,14 @@ function HighlightedCodeView({
       () => codeLines(normalized.code, normalized.matches),
       [normalized.code, normalized.matches],
     ),
+    widestLine = useMemo(
+      () =>
+        lines.reduce(
+          (widest, line) => (line.text.length > widest.length ? line.text : widest),
+          "",
+        ),
+      [lines],
+    ),
     highlight = useHighlight(normalized.code, language),
     blockRef = useRef<HTMLPreElement>(null),
     onScroll = useFollowBottom({
@@ -60,6 +75,9 @@ function HighlightedCodeView({
       <CopyButton className={copyButton} value={code} />
       <pre className={cx(block, className)} ref={blockRef} onScroll={onScroll}>
         <code className={codeElement} style={codeStyle}>
+          <span aria-hidden className={widthSizer}>
+            {widestLine}
+          </span>
           {virtualLines.map((item) => (
             <CodeRow
               highlight={highlight}

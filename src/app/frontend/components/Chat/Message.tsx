@@ -46,7 +46,11 @@ const row = css({
         user: {
           bg: "surfaceRaised",
           borderColor: "lineStrong",
+          maxH: "66.666667cqh",
           maxW: { base: "full", sm: "2/3" },
+          overflowY: "auto",
+          overscrollBehaviorY: "contain",
+          scrollbarGutter: "stable",
         },
       },
     },
