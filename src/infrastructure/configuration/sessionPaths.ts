@@ -9,8 +9,9 @@ export function sessionPaths(sessionId: string, storageDirectory = userDataDirec
 }
 export function resolveSessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
   const dir = resolve(storageDirectory, "sessions", safeId(sessionId)),
-    dbPath = resolve(dir, "agent.sqlite");
-  return { dbPath, dir };
+    dbPath = resolve(dir, "agent.sqlite"),
+    userMessagesDir = resolve(dir, "user_messages");
+  return { dbPath, dir, userMessagesDir };
 }
 export function safeId(value: string) {
   if (

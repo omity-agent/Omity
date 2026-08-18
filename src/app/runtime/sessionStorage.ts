@@ -1,6 +1,9 @@
 import { type InitialMessagePair, initialHistory } from "../initialState";
 import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
+import { HumanMessage } from "@langchain/core/messages";
+import { UserMessageStorage } from "../../infrastructure/database/userMessages";
+import { contentToText } from "../../runtime/content";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/initialConversation";
 import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
@@ -18,6 +21,10 @@ export function createSessionStorage(
   try {
     db.createSession(sessionId, workspace, profiles);
     initializeConversation(db.db, sessionId, initialHistory(history), message);
+    new UserMessageStorage(paths.userMessagesDir).writeAll([
+      ...history.map(({ user }) => user),
+      message,
+    ]);
     initialized = true;
   } finally {
     db.close();
@@ -56,6 +63,12 @@ export function forkSessionStorage({
       targetSessionId,
       workspace,
     });
+    new UserMessageStorage(targetPaths.userMessagesDir).writeAll(
+      target
+        .history(targetSessionId)
+        .filter((message) => HumanMessage.isInstance(message))
+        .map((message) => contentToText(message.content)),
+    );
     created = true;
   } finally {
     try {

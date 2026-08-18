@@ -32,6 +32,7 @@ test("settings use the unified user data directory", () => {
   expect(paths).toEqual({
     dbPath: resolve(directory, "sessions", safeId("abc-def"), "agent.sqlite"),
     dir: resolve(directory, "sessions", safeId("abc-def")),
+    userMessagesDir: resolve(directory, "sessions", safeId("abc-def"), "user_messages"),
   });
   expect(() => sessionPaths("abc/def")).toThrow("路径 ID 无效");
   expect(() => sessionPaths("abc:def")).toThrow("路径 ID 无效");

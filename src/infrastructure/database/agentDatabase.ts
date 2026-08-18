@@ -7,8 +7,12 @@ import {
   streamEventCursor,
 } from "./records/streamEvents";
 import {
-  appendDraftQueue,
-  appendUserQueue,
+  closeDatabase,
+  openSessionDatabase,
+  reclaimDatabasePages,
+  runTransaction,
+} from "./connection";
+import {
   consumedRunRows,
   nextQueueRow,
   pendingAppendRows,
@@ -16,12 +20,6 @@ import {
   setQueueStatusRecord,
   startQueueRecord,
 } from "./records/queue/operations";
-import {
-  closeDatabase,
-  openSessionDatabase,
-  reclaimDatabasePages,
-  runTransaction,
-} from "./connection";
 import {
   createSessionRecord,
   hasSessionRecord,
@@ -39,6 +37,7 @@ import { requestToolCancellation, takeToolCancellation } from "./records/toolCan
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import { FileLinkIndexer } from "./fileLinkIndexer";
+import { QueueSubmissionStore } from "./records/queue/submission";
 import { RecoverableDatabase } from "./records/recovery";
 import { appendFileLinkStream } from "./fileLinkAppend";
 import { loadMessages } from "./records/messages/history";
@@ -47,10 +46,12 @@ import { resetSessionStorage } from "./maintenance";
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
   private readonly fileLinks: FileLinkIndexer;
+  private readonly queueSubmissions: QueueSubmissionStore;
   private storageReclaimPending = false;
   constructor(path: string, root = process.cwd()) {
     super(openSessionDatabase(path, root));
     this.fileLinks = new FileLinkIndexer(this.db);
+    this.queueSubmissions = new QueueSubmissionStore(this.db, path);
   }
   close() {
     closeDatabase(this.db);
@@ -93,20 +94,13 @@ export class AgentDatabase extends RecoverableDatabase {
     return readProfilesRecord(this.db, sessionId);
   }
   appendUser(sessionId: string, content: string) {
-    requireSessionRecord(this.db, sessionId);
-    return runTransaction(this.db, () => {
-      const insertedQueueId = appendUserQueue(this.db, sessionId, content);
-      touchSessionRecord(this.db, sessionId);
-      return insertedQueueId;
-    });
+    return this.queueSubmissions.appendUser(sessionId, content);
+  }
+  submitUser(sessionId: string, content: string, draftRevision: number, submissionId: string) {
+    return this.queueSubmissions.submitUser(sessionId, content, draftRevision, submissionId);
   }
   appendDraft(sessionId: string, content: string) {
-    requireSessionRecord(this.db, sessionId);
-    return runTransaction(this.db, () => {
-      const queueId = appendDraftQueue(this.db, sessionId, content);
-      touchSessionRecord(this.db, sessionId);
-      return queueId;
-    });
+    return this.queueSubmissions.appendDraft(sessionId, content);
   }
   pendingAppends(sessionId: string): QueueItem[] {
     return pendingAppendRows(this.db, sessionId);
