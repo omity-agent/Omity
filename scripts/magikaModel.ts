@@ -4,16 +4,16 @@ import { Magika } from "magika";
 import { z } from "zod";
 
 const modelManifestSchema = z.object({
-  weightsManifest: z.array(
-    z.object({
-      paths: z.array(z.string().min(1)),
-    }),
-  ),
-}),
- sourceSchema = z.object({
-  modelConfigURL: z.url(),
-  modelURL: z.url(),
-});
+    weightsManifest: z.array(
+      z.object({
+        paths: z.array(z.string().min(1)),
+      }),
+    ),
+  }),
+  sourceSchema = z.object({
+    modelConfigURL: z.url(),
+    modelURL: z.url(),
+  });
 type Fetch = (url: string) => Promise<Response>;
 const source = {
   modelConfigURL: Magika.MODEL_CONFIG_URL,
@@ -67,12 +67,13 @@ async function hasCompleteCache(publicDirectory: string, sourcePath: string) {
     if (!(await modelFile.exists())) {
       return false;
     }
-    model = await modelFile.arrayBuffer(),
-      shards = modelShardPaths(new Uint8Array(model)),
+    const model = new Uint8Array(await modelFile.arrayBuffer()),
+      shards = modelShardPaths(model),
       assets = ["config.min.json", ...shards].map((path) =>
         Bun.file(assetPath(outputDirectory, path)),
       );
-    return (await Promise.all(assets.map((file) => file.exists()))).every(Boolean);
+    const availability = await Promise.all(assets.map((file) => file.exists()));
+    return availability.every(Boolean);
   } catch (error) {
     console.warn("Magika 模型缓存无效，将重新下载", error);
     return false;
@@ -82,12 +83,7 @@ function modelShardPaths(model: Uint8Array) {
   const manifest = modelManifestSchema.parse(JSON.parse(new TextDecoder().decode(model)));
   return [...new Set(manifest.weightsManifest.flatMap(({ paths }) => paths))];
 }
-async function downloadAsset(
-  directory: string,
-  path: string,
-  url: string,
-  fetcher: Fetch,
-) {
+async function downloadAsset(directory: string, path: string, url: string, fetcher: Fetch) {
   await writeAsset(directory, path, await download(url, fetcher));
 }
 async function download(url: string, fetcher: Fetch) {

@@ -57,9 +57,7 @@ function encodeAiMessage(message: AIMessage): StoredAi {
     ...("aiSdkContent" in message.additional_kwargs
       ? { aiSdkContent: message.additional_kwargs["aiSdkContent"] }
       : {}),
-    ...(message.tool_calls?.length
-      ? { toolCalls: message.tool_calls.map(storedToolCall) }
-      : {}),
+    ...(message.tool_calls?.length ? { toolCalls: message.tool_calls.map(storedToolCall) } : {}),
     ...(reasoning === undefined ? {} : { reasoning }),
     ...(usage === undefined ? {} : { usage }),
   };

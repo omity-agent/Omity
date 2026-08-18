@@ -56,7 +56,7 @@ function ReasoningTitle({ label, reasoning }: { label: string; reasoning: string
     if (!open && summaryReference.current) {
       summaryReference.current.scrollLeft = summaryReference.current.scrollWidth;
     }
-  }, [open, reasoning]);
+  });
   return open ? (
     label
   ) : (

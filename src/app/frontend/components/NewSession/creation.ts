@@ -1,11 +1,4 @@
-import {
-  type RefObject,
-  type SubmitEvent,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { type RefObject, type SubmitEvent, useLayoutEffect, useRef, useState } from "react";
 import type { EditablePair } from "./MessageStack";
 import type { InitialSessionState } from "../../../initialState";
 import type { PendingAttachment } from "../../../attachments/contract";
@@ -39,7 +32,7 @@ export function useSessionCreation({
   useLayoutEffect(() => {
     draftActionsRef.current = { clear: clearDraft, flush: flushDraft };
   }, [clearDraft, flushDraft]);
-  const submit = useCallback(async () => {
+  const submit = async () => {
       const valid =
         workspace.trim().length > 0 &&
         message.trim().length > 0 &&
@@ -61,16 +54,13 @@ export function useSessionCreation({
       } finally {
         setSubmitting(false);
       }
-    }, [attachmentsRef, message, pairs, setSubmitting, submitting, workspace]),
-    handleFormSubmit = useCallback(
-      (event: SubmitEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        reportPromiseErrors(submit());
-      },
-      [submit],
-    ),
-    handleSubmit = useCallback(() => {
+    },
+    handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
       reportPromiseErrors(submit());
-    }, [submit]);
+    },
+    handleSubmit = () => {
+      reportPromiseErrors(submit());
+    };
   return { handleFormSubmit, handleSubmit, submitting };
 }

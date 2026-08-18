@@ -26,17 +26,25 @@ export function useFollowBottom<T extends HTMLElement>({
   resetKey?: unknown;
   version: unknown;
 }) {
-  const followingRef = useRef(true);
+  const followingRef = useRef(true),
+    resetRef = useRef(resetKey),
+    versionRef = useRef(version);
   useEffect(() => {
-    followingRef.current = true;
-  }, [resetKey]);
-  useEffect(() => {
+    versionRef.current = version;
+    if (!Object.is(resetRef.current, resetKey)) {
+      resetRef.current = resetKey;
+      followingRef.current = true;
+    }
     const element = ref.current;
     if (!enabled || !element || !followingRef.current) {
       return undefined;
     }
     const frame = requestAnimationFrame(() => {
-      if (ref.current === element && followingRef.current) {
+      if (
+        ref.current === element &&
+        followingRef.current &&
+        Object.is(versionRef.current, version)
+      ) {
         element.scrollTop = Number.MAX_SAFE_INTEGER;
       }
     });

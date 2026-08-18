@@ -1,9 +1,9 @@
 import type { AskUserAnswer, AskUserQuestion } from "../../toolActions";
-import { type RefObject, useCallback } from "react";
 import type { ComposerDraftTarget } from "../../../../services/composerDrafts";
 import type { ComposerProps } from "../props";
 import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
 import type { PendingAttachment } from "../../../../../attachments/contract";
+import type { RefObject } from "react";
 import { createOptimisticUser } from "../../../../services/transcript/optimistic";
 import { submitMessage } from "./submit";
 
@@ -44,7 +44,7 @@ export function useComposerSubmit({
   setSubmitting: (submitting: boolean) => void;
   submittingRef: RefObject<boolean | null>;
 }) {
-  return useCallback(async () => {
+  return async () => {
     if (askUser) {
       if (!onAnswer || submittingRef.current) {
         return;
@@ -103,23 +103,5 @@ export function useComposerSubmit({
       submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [
-    askNote,
-    askUser,
-    attachmentValues,
-    clearAttachments,
-    contentRef,
-    draftTarget,
-    historyRef,
-    onAnswer,
-    onSend,
-    revisionRef,
-    saverRef,
-    selectedOptions,
-    setAskNote,
-    setContent,
-    setSelectedOptions,
-    setSubmitting,
-    submittingRef,
-  ]);
+  };
 }
