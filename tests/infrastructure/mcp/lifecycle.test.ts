@@ -2,7 +2,8 @@ import { type LoadedMcp, loadServerTools } from "../../../src/infrastructure/mcp
 import { expect, mock, test } from "bun:test";
 import { AppMcp } from "../../../src/app/runtime/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { emptyMcpSnapshot } from "../../../src/infrastructure/mcp/snapshot";
+import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/config";
+import { emptyMcpToolSnapshot } from "../../../src/infrastructure/mcp/snapshot";
 
 test("MCP adapter clients initialize sequentially", async () => {
   const firstReady = Promise.withResolvers<void>(),
@@ -72,14 +73,19 @@ test("App MCP lifecycles are isolated by ordered Profile selection", async () =>
 test("new App sessions receive independent MCP lifecycles", async () => {
   const close = mock(() => Promise.resolve()),
     initialize = mock(() => Promise.resolve(loadedMcp(close))),
-    mcp = new AppMcp(initialize),
+    initializeSnapshot = mock(() => Promise.resolve(loadedMcp(close))),
+    mcp = new AppMcp(initialize, initializeSnapshot),
     first = await mcp.createSession("first", ["work"]),
     second = await mcp.createSession("second", ["work"]);
   expect(first).not.toBe(second);
-  expect(await mcp.loadSession("first", emptyMcpSnapshot())).toBe(first);
+  expect(await mcp.loadSession("first", ["work"], emptyMcpToolSnapshot())).toBe(first);
   expect(initialize).toHaveBeenCalledTimes(2);
+  await mcp.discardSession("first");
+  const reloaded = await mcp.loadSession("first", ["work"], emptyMcpToolSnapshot());
+  expect(reloaded).not.toBe(first);
+  expect(initializeSnapshot).toHaveBeenCalledTimes(1);
   await mcp.close();
-  expect(close).toHaveBeenCalledTimes(2);
+  expect(close).toHaveBeenCalledTimes(3);
 });
 test("App MCP closes successful lifecycles after another initialization fails", async () => {
   const close = mock(() => Promise.resolve()),
@@ -110,7 +116,7 @@ function toolClient(name: string) {
 function loadedMcp(close: LoadedMcp["close"]): LoadedMcp {
   return {
     close,
-    configuration: emptyMcpSnapshot().configuration,
+    configuration: emptyMcpConfiguration(),
     freeformToolParameters: new Map(),
     modelTools: () => [],
     tools: [],

@@ -3,6 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AppController } from "../../src/app/controller";
 import { createTestDirectory } from "../support/artifacts";
+import { emptySessionDefinition } from "../../src/infrastructure/database/sessionDefinition";
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -104,12 +105,12 @@ test("standalone Host uses the shared interrupted-session recovery", () => {
   expect(fixture.db.queueStatus(fixture.queueId)).toBe("paused");
   fixture.db.close();
 });
-test("resume keeps the session MCP definition after configuration changes", async () => {
+test("resume reloads the current MCP configuration", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
   writeFileSync(join(fixture.root, "settings", "toolbox.yaml"), "[]\n");
   const controller = new AppController(fixture.root);
-  await controller.control("resume-failure", "running");
+  expect(controller.control("resume-failure", "running")).rejects.toThrow("MCP 配置");
   await controller.close();
 });
 function interruptedSession(sessionId: string) {
@@ -118,8 +119,15 @@ function interruptedSession(sessionId: string) {
   writeTestConfiguration(root);
   const workspace = join(root, "workspace");
   mkdirSync(workspace);
-  const db = openSession(sessionId);
-  db.createSession(sessionId, workspace);
+  const db = openSession(sessionId),
+    definition = emptySessionDefinition();
+  definition.prefix.model = {
+    adapter: "completions",
+    baseURL: null,
+    model: "test",
+    reasoning_effort: "medium",
+  };
+  db.createSession(sessionId, workspace, [], definition);
   const queueId = db.appendUser(sessionId, "运行中的输入");
   db.startQueue(sessionId, required(db.nextQueue(sessionId)));
   return { db, queueId, root };

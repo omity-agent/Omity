@@ -67,7 +67,8 @@ export class AppHosts {
     const hostPromise = runHostSession({ kind, sessionId }, this.appRoot, {
         controller: force,
         cwd: root,
-        mcp: (id, definition) => this.mcp.loadSession(id, definition.mcp),
+        mcp: (id, profiles, definition) =>
+          this.mcp.loadSession(id, profiles, definition.prefix.tools),
         observer: this.observer(force),
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);
@@ -146,14 +147,26 @@ export class AppHosts {
     isInitialized: () => boolean,
     ready: PromiseWithResolvers<undefined>,
   ) {
+    let failure: unknown;
     try {
       await hostPromise;
     } catch (error: unknown) {
-      this.errors.set(sessionId, captureError(error));
-      if (!isInitialized()) {
-        ready.reject(error);
-      }
+      failure = error;
     } finally {
+      try {
+        await this.mcp.discardSession(sessionId);
+      } catch (error) {
+        failure =
+          failure === undefined
+            ? error
+            : new AggregateError([failure, error], "Host 退出及 MCP 关闭均失败");
+      }
+      if (failure !== undefined) {
+        this.errors.set(sessionId, captureError(failure));
+        if (!isInitialized()) {
+          ready.reject(failure);
+        }
+      }
       if (this.running.get(sessionId)?.force === force) {
         this.running.delete(sessionId);
       }

@@ -71,8 +71,8 @@ async function hasCompleteCache(publicDirectory: string, sourcePath: string) {
       shards = modelShardPaths(model),
       assets = ["config.min.json", ...shards].map((path) =>
         Bun.file(assetPath(outputDirectory, path)),
-      );
-    const availability = await Promise.all(assets.map((file) => file.exists()));
+      ),
+      availability = await Promise.all(assets.map((file) => file.exists()));
     return availability.every(Boolean);
   } catch (error) {
     console.warn("Magika 模型缓存无效，将重新下载", error);

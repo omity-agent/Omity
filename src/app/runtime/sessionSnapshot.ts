@@ -67,7 +67,7 @@ async function captureSessionSnapshot(options: {
       settingsContext: options.settingsContext,
     }),
     mcp = await options.mcp.createSession(options.sessionId, options.profiles),
-    definition = createSessionDefinition(settings.agent.systemPrompt, mcp, {
+    definition = createSessionDefinition(settings, mcp, {
       cwd: options.workspace,
       session: resolveSessionPaths(options.sessionId).dir,
     });

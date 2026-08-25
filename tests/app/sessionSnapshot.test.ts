@@ -4,6 +4,7 @@ import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
+import { HumanMessage } from "@langchain/core/messages";
 import { buildTimeline } from "../../src/app/timeline";
 import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
@@ -36,7 +37,7 @@ afterEach(async () => {
 test("empty system instructions are omitted from the timeline", () => {
   const db = makeDb(),
     definition = emptySessionDefinition();
-  definition.systemPrompt = " \n";
+  definition.prefix.systemPrompt = " \n";
   db.resetSession("empty-instructions", workspace, [], definition);
   db.appendUser("empty-instructions", "message");
   const transcript = loadTranscript(db, "empty-instructions");
@@ -45,10 +46,38 @@ test("empty system instructions are omitted from the timeline", () => {
   ]);
   db.close();
 });
-test("session snapshots keep prompts and tools after configuration changes", async () => {
+test("session prefix exposes instructions as a system message", async () => {
+  const db = makeDb(),
+    definition = emptySessionDefinition();
+  definition.prefix.systemPrompt = "Follow the project instructions.";
+  db.resetSession("system-session", workspace, [], definition);
+  await db.syncHistory("system-session", [
+    new HumanMessage({ content: "Implement the feature.", id: "user-1" }),
+  ]);
+  const transcript = loadTranscript(db, "system-session"),
+    messages = buildTimeline(transcript.messages, transcript.queue, []);
+  expect(messages.map(({ role }) => role)).toEqual(["system", "user"]);
+  expect(messages[0]).toMatchObject({
+    content: "Follow the project instructions.",
+    parts: [{ content: "Follow the project instructions.", type: "content" }],
+  });
+  db.close();
+});
+test("session snapshots lock only the model prefix while runtime configuration changes", async () => {
   const root = createTestDirectory("session-snapshot");
   roots.push(root);
-  writeTestConfiguration(root, { systemPrompt: "locked prompt" });
+  writeTestConfiguration(root, {
+    modelYaml: `adapter: completions
+model: locked-model
+apiKeyEnv: INITIAL_KEY
+baseURL: https://locked.example.test
+temperature: 0
+reasoning_effort: medium
+retryDelayMs: 1000
+timeoutMs: 1000
+`,
+    systemPrompt: "locked prompt",
+  });
   writeFileSync(
     join(root, "settings", "toolbox.yaml"),
     "toolboxes:\n  ask_user:\n    enabled: true\n",
@@ -75,18 +104,61 @@ test("session snapshots keep prompts and tools after configuration changes", asy
   mcps.push(mcp);
   sessionDirectories.push(paths.dir);
   writeFileSync(join(root, "settings", "prompts", "system.md"), "changed prompt");
-  writeFileSync(join(root, "settings", "toolbox.yaml"), "[]\n");
-  expect(definition.systemPrompt).toBe("locked prompt\n\nuse skills");
-  expect(definition.mcp.tools.map(({ name }) => name)).toContain("ask_user__open_ended");
+  writeFileSync(
+    join(root, "settings", "model.yaml"),
+    `adapter: responses
+model: changed-model
+apiKeyEnv: CURRENT_KEY
+baseURL: https://changed.example.test
+temperature: 0.75
+reasoning_effort: high
+retryDelayMs: 2500
+timeoutMs: 3500
+`,
+  );
+  writeFileSync(
+    join(root, "settings", "toolbox.yaml"),
+    `stdio:
+  restart:
+    delayMs: 4321
+    maxAttempts: 7
+toolboxes:
+  ask_user:
+    enabled: true
+`,
+  );
+  expect(definition.prefix.systemPrompt).toBe("locked prompt\n\nuse skills");
+  expect(definition.prefix.model).toEqual({
+    adapter: "completions",
+    baseURL: "https://locked.example.test",
+    model: "locked-model",
+    reasoning_effort: "medium",
+  });
+  expect(definition.prefix.tools).not.toHaveProperty("configuration");
+  expect(definition.prefix.tools.tools.map(({ name }) => name)).toContain("ask_user__open_ended");
   const prepared = prepareHostSession({ kind: "load", sessionId: created.sessionId }, root, {
     cwd: workspacePath,
     settingsContext: context,
   });
   databases.push(prepared.db);
-  expect(prepared.settings.agent.systemPrompt).toBe(definition.systemPrompt);
+  expect(prepared.settings.agent.systemPrompt).toBe(definition.prefix.systemPrompt);
+  expect(prepared.settings.model).toEqual({
+    adapter: "completions",
+    apiKeyEnv: "CURRENT_KEY",
+    baseURL: "https://locked.example.test",
+    model: "locked-model",
+    reasoning_effort: "medium",
+    retryDelayMs: 2500,
+    temperature: 0.75,
+    timeoutMs: 3500,
+  });
   const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => undefined));
   mcps.push(restoredMcp);
-  const restored = await restoredMcp.loadSession(created.sessionId, definition.mcp);
+  const restored = await restoredMcp.loadSession(created.sessionId, [], definition.prefix.tools);
+  expect(restored.configuration.stdio.restart).toEqual({
+    delayMs: 4321,
+    maxAttempts: 7,
+  });
   expect(restored.tools.map(({ name }) => name)).toEqual(
     expect.arrayContaining(["ask_user__choice", "ask_user__open_ended"]),
   );

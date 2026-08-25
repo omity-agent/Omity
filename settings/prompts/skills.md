@@ -16,6 +16,6 @@ example-skill/
 
 Available Skills:
 
-${skills}
+${skills}/
 
 </skill_instructions>

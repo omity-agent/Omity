@@ -66,7 +66,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
 	       ORDER BY m.position`,
           sessionId,
         ).map(toDisplayMessage),
-        readDefinitionRecord(db.db, sessionId).systemPrompt,
+        readDefinitionRecord(db.db, sessionId).prefix.systemPrompt,
       ),
       queue = queryAll<QueueRow>(
         db.db,

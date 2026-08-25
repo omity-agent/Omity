@@ -3,8 +3,11 @@ import {
   normalizeMcpToolNameOverrides,
 } from "./toolOverrides";
 import { readSettingsYamlValue, resolvePlaceholders } from "../configuration/placeholders";
+import type { SettingsContext } from "../configuration/settings/context";
 import { normalizeFreeformToolInputs } from "./freeformInputs";
 import { omitDisabledToolboxConfiguration } from "./activation";
+import { readLayeredSettingsYaml } from "../configuration/settings/files";
+import { resolveConfiguredPath } from "../configuration/configuredPath";
 import { z } from "zod";
 
 type McpServers = Record<string, unknown>;
@@ -56,6 +59,19 @@ export function readMcpConfiguration(path: string) {
   );
   return parseMcpConfiguration(parsed, path);
 }
+export function readProfileMcpConfiguration(context: SettingsContext) {
+  const file = readLayeredSettingsYaml(
+    context,
+    "profile",
+    "toolbox.yaml",
+    {},
+    {
+      beforePlaceholders: omitDisabledToolboxConfiguration,
+      override: resolveProfilePaths,
+    },
+  );
+  return file ? parseMcpConfiguration(file.value, file.path) : undefined;
+}
 export function parseMcpConfiguration(parsed: unknown, path: string) {
   parsed = omitDisabledToolboxConfiguration(parsed ?? {});
   const result = mcpConfigurationSchema.safeParse(parsed);
@@ -81,6 +97,18 @@ export function parseMcpConfiguration(parsed: unknown, path: string) {
   };
 }
 export type McpConfiguration = ReturnType<typeof parseMcpConfiguration>;
+export function emptyMcpConfiguration(): McpConfiguration {
+  return parseMcpConfiguration(
+    {
+      toolboxes: {
+        ask_user: {
+          enabled: false,
+        },
+      },
+    },
+    "内置空 MCP 配置",
+  );
+}
 export function normalizeMcpServers(mcpServers: McpServers): McpServers {
   const enabledServers: McpServers = {};
   for (const [name, server] of Object.entries(mcpServers)) {
@@ -125,4 +153,28 @@ function normalizeMcpServer(server: unknown): unknown {
     automaticSSEFallback: false,
     reconnect: { enabled: false, maxAttempts: 0 },
   };
+}
+function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
+  if (
+    !isRecord(value) ||
+    !isRecord(value["toolDescriptionOverrides"]) ||
+    !isRecord(override) ||
+    !isRecord(override["toolDescriptionOverrides"])
+  ) {
+    return value;
+  }
+  const paths = { ...value["toolDescriptionOverrides"] };
+  for (const name of Object.keys(override["toolDescriptionOverrides"])) {
+    const path = paths[name];
+    if (typeof path === "string") {
+      paths[name] = resolveConfiguredPath(directory, path);
+    }
+  }
+  return {
+    ...value,
+    toolDescriptionOverrides: paths,
+  };
+}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

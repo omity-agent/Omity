@@ -10,7 +10,11 @@ export interface HostControls {
 export interface HostRunOptions {
   controller?: AbortController;
   cwd?: string;
-  mcp?: (sessionId: string, definition: SessionDefinition) => Promise<LoadedMcp>;
+  mcp?: (
+    sessionId: string,
+    profiles: string[],
+    definition: SessionDefinition,
+  ) => Promise<LoadedMcp>;
   observer?: HostObserver;
   onReady?: (controls: HostControls) => void;
   owner?: ProcessOwner;

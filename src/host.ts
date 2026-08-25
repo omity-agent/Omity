@@ -1,4 +1,4 @@
-import { loadMcp, loadMcpSnapshot } from "./infrastructure/mcp/loadTools";
+import { loadMcp, loadSessionMcp } from "./infrastructure/mcp/loadTools";
 import { HookRuntime } from "./hooks/runtime";
 import { HostLease } from "./runtime/execution/lease";
 import type { HostMode } from "./types";
@@ -63,11 +63,10 @@ export async function runHostSession(
     const session = { cwd: workspace, session: paths.dir },
       mcp = definition
         ? options.mcp
-          ? await options.mcp(mode.sessionId, definition)
-          : (ownedMcp = await loadMcpSnapshot(logger, definition.mcp))
+          ? await options.mcp(mode.sessionId, profiles, definition)
+          : (ownedMcp = await loadSessionMcp(logger, settingsContext, definition.prefix.tools))
         : (ownedMcp = await loadMcp(root, logger, settingsContext)),
-      frozenDefinition =
-        definition ?? createSessionDefinition(settings.agent.systemPrompt, mcp, session);
+      frozenDefinition = definition ?? createSessionDefinition(settings, mcp, session);
     if (!definition) {
       db.createSession(mode.sessionId, workspace, profiles, frozenDefinition);
       sessionCreated = true;
@@ -89,7 +88,7 @@ export async function runHostSession(
       { checkpointer, graph } = buildGraph(
         settings,
         tools,
-        frozenDefinition.mcp.tools,
+        frozenDefinition.prefix.tools.tools,
         db.db,
         hooks,
         {

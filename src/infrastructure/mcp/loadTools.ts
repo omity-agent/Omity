@@ -1,6 +1,10 @@
 import { type BuiltInToolOptions, loadBuiltInTools } from "../toolbox/loadBuiltIns";
-import { type McpConfiguration, parseMcpConfiguration } from "./config";
-import { type McpSnapshot, applyMcpSnapshot, emptyMcp, emptyMcpSnapshot } from "./snapshot";
+import {
+  type McpConfiguration,
+  emptyMcpConfiguration,
+  readProfileMcpConfiguration,
+} from "./config";
+import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./snapshot";
 import { type SettingsContext, createSettingsContext } from "../configuration/settings/context";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
 import { loadServerTools, validateConfiguredServers } from "./loadServers";
@@ -11,19 +15,16 @@ import type { SessionPlaceholders } from "../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./schemaIssues";
 import { disableAdapterRequestTimeout } from "./client/timeout";
-import { omitDisabledToolboxConfiguration } from "./activation";
-import { readLayeredSettingsYaml } from "../configuration/settings/files";
 import { resolve } from "node:path";
-import { resolveConfiguredPath } from "../configuration/configuredPath";
 import { suppressTerminalError } from "../../failures/output";
 
 export { loadServerTools } from "./loadServers";
 export interface LoadedMcp {
   configuration: McpConfiguration;
-  tools: StructuredToolInterface[];
+  close: () => Promise<void>;
   freeformToolParameters: ReadonlyMap<string, string>;
   modelTools: (session: Required<SessionPlaceholders>) => ReturnType<typeof sessionModelTools>;
-  close: () => Promise<void>;
+  tools: StructuredToolInterface[];
 }
 export type LoadMcpOptions = BuiltInToolOptions;
 export function createMcpLoadError(error: unknown): Error {
@@ -44,22 +45,34 @@ export async function loadMcp(
   context = createSettingsContext(root),
   options: LoadMcpOptions = {},
 ): Promise<LoadedMcp> {
-  const file = readLayeredSettingsYaml(
-    context,
-    "profile",
-    "toolbox.yaml",
-    {},
-    {
-      beforePlaceholders: omitDisabledToolboxConfiguration,
-      override: resolveProfilePaths,
-    },
-  );
-  if (!file) {
+  const configuration = readProfileMcpConfiguration(context);
+  if (!configuration) {
     logger.info("MCP 配置不存在，跳过工具加载");
-    return emptyMcp(emptyMcpSnapshot().configuration);
+    return emptyMcp(emptyMcpConfiguration());
   }
-  const configuration = parseMcpConfiguration(file.value, file.path),
-    names = Object.keys(configuration.mcpServers),
+  return loadMcpConfiguration(configuration, logger, context, options);
+}
+export async function loadSessionMcp(
+  logger: Logger,
+  context: SettingsContext,
+  snapshot: McpToolSnapshot,
+  options: LoadMcpOptions = {},
+) {
+  const configuration = readProfileMcpConfiguration(context);
+  if (!configuration) {
+    logger.info("MCP 配置不存在，跳过工具加载");
+    return emptyMcp(emptyMcpConfiguration(), snapshot);
+  }
+  return loadMcpConfiguration(configuration, logger, context, options, snapshot);
+}
+async function loadMcpConfiguration(
+  configuration: McpConfiguration,
+  logger: Logger,
+  context: SettingsContext,
+  options: LoadMcpOptions,
+  snapshot?: McpToolSnapshot,
+) {
+  const names = Object.keys(configuration.mcpServers),
     builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
   validateConfiguredServers(
     configuration,
@@ -68,35 +81,17 @@ export async function loadMcp(
   );
   if (names.length === 0 && builtInTools.length === 0) {
     logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
-    return emptyMcp(configuration);
-  }
-  return connectMcp(configuration, names, context, logger, builtInTools);
-}
-export async function loadMcpSnapshot(
-  logger: Logger,
-  snapshot: McpSnapshot,
-  options: LoadMcpOptions = {},
-) {
-  const { configuration } = snapshot,
-    names = Object.keys(configuration.mcpServers),
-    builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
-  validateConfiguredServers(
-    configuration,
-    names,
-    builtInTools.map((tool) => tool.name),
-  );
-  if (names.length === 0 && builtInTools.length === 0) {
     return emptyMcp(configuration, snapshot);
   }
-  return connectMcp(configuration, names, undefined, logger, builtInTools, snapshot);
+  return connectMcp(configuration, names, context, logger, builtInTools, snapshot);
 }
 async function connectMcp(
   configuration: McpConfiguration,
   names: string[],
-  context: SettingsContext | undefined,
+  context: SettingsContext,
   logger: Logger,
   builtInTools: StructuredToolInterface[],
-  snapshot?: McpSnapshot,
+  snapshot?: McpToolSnapshot,
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
   let pool: McpClientPool | undefined;
@@ -113,8 +108,8 @@ async function connectMcp(
         configuration.toolNameOverrides,
       ),
       configured = snapshot
-        ? applyMcpSnapshot(namedTools, snapshot)
-        : configureCurrentTools(namedTools, configuration, requireSettingsContext(context)),
+        ? applyMcpToolSnapshot(namedTools, snapshot)
+        : configureCurrentTools(namedTools, configuration, context),
       { freeformToolParameters, tools } = configured;
     logger.info("已加载 MCP 工具", {
       servers: names,
@@ -136,12 +131,6 @@ async function connectMcp(
     end();
   }
 }
-function requireSettingsContext(context: SettingsContext | undefined) {
-  if (!context) {
-    throw new Error("MCP 配置加载缺少 Settings Context");
-  }
-  return context;
-}
 function configureCurrentTools(
   tools: StructuredToolInterface[],
   configuration: McpConfiguration,
@@ -158,28 +147,4 @@ function configureCurrentTools(
     ),
     configured = configureFreeformMcpTools(described, configuration.freeformToolInputs);
   return { freeformToolParameters: configured.parameters, tools: described };
-}
-function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
-  if (
-    !isRecord(value) ||
-    !isRecord(value["toolDescriptionOverrides"]) ||
-    !isRecord(override) ||
-    !isRecord(override["toolDescriptionOverrides"])
-  ) {
-    return value;
-  }
-  const paths = { ...value["toolDescriptionOverrides"] };
-  for (const name of Object.keys(override["toolDescriptionOverrides"])) {
-    const path = paths[name];
-    if (typeof path === "string") {
-      paths[name] = resolveConfiguredPath(directory, path);
-    }
-  }
-  return {
-    ...value,
-    toolDescriptionOverrides: paths,
-  };
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

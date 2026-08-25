@@ -2,7 +2,7 @@ import {
   type LoadMcpOptions,
   type LoadedMcp,
   loadMcp,
-  loadMcpSnapshot,
+  loadSessionMcp,
 } from "../../infrastructure/mcp/loadTools";
 import {
   type SettingsContext,
@@ -11,7 +11,7 @@ import {
 import type { AskUserRuntime } from "../../infrastructure/toolbox/runtime";
 import type { LogLevel } from "../../types";
 import { Logger } from "../../infrastructure/logging/logger";
-import type { McpSnapshot } from "../../infrastructure/mcp/snapshot";
+import type { McpToolSnapshot } from "../../infrastructure/mcp/snapshot";
 
 export function createAppMcp(
   root: string,
@@ -25,7 +25,13 @@ export function createAppMcp(
   return new AppMcp(
     (profiles) =>
       loadMcp(root, new Logger(level, true), selectSettingsProfiles(context, profiles), options),
-    (snapshot) => loadMcpSnapshot(new Logger(level, true), snapshot, options),
+    (profiles, snapshot) =>
+      loadSessionMcp(
+        new Logger(level, true),
+        selectSettingsProfiles(context, profiles),
+        snapshot,
+        options,
+      ),
   );
 }
 export class AppMcp {
@@ -34,8 +40,10 @@ export class AppMcp {
   private readonly loading = new Map<string, Promise<LoadedMcp>>();
   constructor(
     private readonly initialize: (profiles: string[]) => Promise<LoadedMcp>,
-    private readonly initializeSnapshot: (snapshot: McpSnapshot) => Promise<LoadedMcp> = () =>
-      Promise.reject(new Error("App MCP 未配置会话快照加载器")),
+    private readonly initializeSnapshot: (
+      profiles: string[],
+      snapshot: McpToolSnapshot,
+    ) => Promise<LoadedMcp> = () => Promise.reject(new Error("App MCP 未配置会话快照加载器")),
   ) {}
   load(profiles: string[]) {
     if (this.closing) {
@@ -50,7 +58,7 @@ export class AppMcp {
     this.loading.set(key, loading);
     return loading;
   }
-  loadSession(sessionId: string, snapshot: McpSnapshot) {
+  loadSession(sessionId: string, profiles: string[], snapshot: McpToolSnapshot) {
     if (this.closing) {
       return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
     }
@@ -59,7 +67,7 @@ export class AppMcp {
     if (existing) {
       return existing;
     }
-    const loading = this.loadFresh(key, () => this.initializeSnapshot(snapshot));
+    const loading = this.loadFresh(key, () => this.initializeSnapshot(profiles, snapshot));
     this.loading.set(key, loading);
     return loading;
   }

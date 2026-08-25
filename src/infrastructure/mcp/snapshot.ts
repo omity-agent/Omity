@@ -1,6 +1,7 @@
 import type { LoadedMcp } from "./loadTools";
 import type { McpConfiguration } from "./config";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { configureFreeformMcpTools } from "./freeformInputs";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
 export interface ModelToolDefinition {
@@ -9,19 +10,15 @@ export interface ModelToolDefinition {
   inputSchema: ReturnType<typeof toJsonSchema>;
   name: string;
 }
-export interface McpSnapshot {
-  configuration: McpConfiguration;
-  freeformToolParameters: [string, string][];
+export interface McpToolSnapshot {
   tools: ModelToolDefinition[];
 }
-export function snapshotMcp(
+export function snapshotMcpTools(
   mcp: LoadedMcp,
   session: { cwd: string; session: string },
-): McpSnapshot {
+): McpToolSnapshot {
   const tools = mcp.modelTools(session);
   return {
-    configuration: mcp.configuration,
-    freeformToolParameters: [...mcp.freeformToolParameters],
     tools: modelToolDefinitions(tools, mcp.freeformToolParameters),
   };
 }
@@ -36,45 +33,32 @@ export function modelToolDefinitions(
     name: tool.name,
   }));
 }
-export function applyMcpSnapshot(tools: StructuredToolInterface[], snapshot: McpSnapshot) {
+export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot: McpToolSnapshot) {
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool])),
-    frozenTools = snapshot.tools.map((definition) => {
-      const tool = toolsByName.get(definition.name);
-      if (!tool) {
-        throw new Error(`会话冻结的 MCP 工具不存在：${definition.name}`);
-      }
-      tool.description = definition.description;
-      return tool;
-    }),
-    freeformToolParameters = new Map(snapshot.freeformToolParameters);
-  if (freeformToolParameters.size !== snapshot.freeformToolParameters.length) {
-    throw new Error("会话冻结的 MCP free-form 工具定义包含重复项");
-  }
-  for (const [name] of freeformToolParameters) {
-    const definition = snapshot.tools.find((tool) => tool.name === name);
-    if (!definition?.freeform) {
-      throw new Error(`会话冻结的 MCP free-form 工具不存在：${name}`);
+    frozenNames = new Set<string>();
+  for (const definition of snapshot.tools) {
+    if (frozenNames.has(definition.name)) {
+      throw new Error(`会话冻结的 MCP 工具定义包含重复项：${definition.name}`);
+    }
+    frozenNames.add(definition.name);
+    if (!toolsByName.has(definition.name)) {
+      throw new Error(`会话冻结的 MCP 工具不存在：${definition.name}`);
     }
   }
-  return { freeformToolParameters, tools: frozenTools };
+  const freeformToolParameters = configureFreeformMcpTools(
+    tools,
+    snapshot.tools.filter(({ freeform }) => freeform).map(({ name }) => name),
+  ).parameters;
+  return { freeformToolParameters, tools };
 }
-export function emptyMcpSnapshot(): McpSnapshot {
+export function emptyMcpToolSnapshot(): McpToolSnapshot {
   return {
-    configuration: {
-      freeformToolInputs: [],
-      mcpServers: {},
-      stdio: { restart: { delayMs: 1000, maxAttempts: 3 } },
-      toolDescriptionOverrides: {},
-      toolNameOverrides: {},
-      toolboxes: { ask_user: { enabled: false } },
-    },
-    freeformToolParameters: [],
     tools: [],
   };
 }
-export function emptyMcp(configuration: McpConfiguration, snapshot?: McpSnapshot): LoadedMcp {
+export function emptyMcp(configuration: McpConfiguration, snapshot?: McpToolSnapshot): LoadedMcp {
   const configured = snapshot
-    ? applyMcpSnapshot([], snapshot)
+    ? applyMcpToolSnapshot([], snapshot)
     : { freeformToolParameters: new Map<string, string>(), tools: [] };
   return {
     close: () => Promise.resolve(),

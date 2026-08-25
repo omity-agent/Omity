@@ -22,25 +22,32 @@ export type QueueStatus = "draft" | "pending" | "running" | "paused" | "done" | 
 export type LogLevel = "debug" | "info" | "warn" | "error";
 export type ReasoningEffort = "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 export type ModelApi = "responses" | "completions";
-interface SharedModelSettings {
+interface SharedModelPrefixSettings {
   model: string;
+  reasoning_effort?: ReasoningEffort;
+}
+interface RemoteModelPrefixSettings extends SharedModelPrefixSettings {
+  adapter: ModelApi;
+  baseURL: string | null;
+}
+interface CodexModelPrefixSettings extends SharedModelPrefixSettings {
+  adapter: "codex";
+  baseURL?: never;
+}
+interface ModelRuntimeSettings {
   retryDelayMs: number;
   temperature?: number;
-  reasoning_effort?: ReasoningEffort;
   timeoutMs: number;
 }
-export type ModelSettings = SharedModelSettings &
+export type ModelPrefixSettings = RemoteModelPrefixSettings | CodexModelPrefixSettings;
+export type ModelSettings = ModelRuntimeSettings &
   (
-    | {
-        adapter: ModelApi;
+    | (RemoteModelPrefixSettings & {
         apiKeyEnv: string;
-        baseURL: string | null;
-      }
-    | {
-        adapter: "codex";
+      })
+    | (CodexModelPrefixSettings & {
         apiKeyEnv?: never;
-        baseURL?: never;
-      }
+      })
   );
 export type HookMode = "silent" | "takeover";
 export type HookWhen = "before" | "after";

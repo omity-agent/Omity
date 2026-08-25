@@ -9,6 +9,7 @@ import { sessionConflict, sessionNotFound } from "../../errors";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import type { HostMode } from "../../types";
 import type { HostRunOptions } from "./hostOptions";
+import { applySessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import { existsSync } from "node:fs";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
@@ -35,10 +36,7 @@ export function prepareHostSession(
           sessionId: mode.sessionId,
           settingsContext,
         }),
-        settings = {
-          ...loadedSettings,
-          agent: { ...loadedSettings.agent, systemPrompt: definition.systemPrompt },
-        };
+        settings = applySessionDefinition(loadedSettings, definition);
       return { db, definition, paths, profiles, settings, settingsContext, workspace };
     } catch (error) {
       db.close();
