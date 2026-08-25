@@ -68,7 +68,7 @@ export class AppHosts {
         controller: force,
         cwd: root,
         mcp: (id, profiles, definition) =>
-          this.mcp.loadSession(id, profiles, definition.prefix.tools),
+          this.mcp.loadSession(id, profiles, definition.prefix.tools, root),
         observer: this.observer(force),
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);

@@ -75,15 +75,28 @@ test("new App sessions receive independent MCP lifecycles", async () => {
     initialize = mock(() => Promise.resolve(loadedMcp(close))),
     initializeSnapshot = mock(() => Promise.resolve(loadedMcp(close))),
     mcp = new AppMcp(initialize, initializeSnapshot),
-    first = await mcp.createSession("first", ["work"]),
-    second = await mcp.createSession("second", ["work"]);
+    first = await mcp.createSession("first", ["work"], "/workspaces/first"),
+    second = await mcp.createSession("second", ["work"], "/workspaces/second");
   expect(first).not.toBe(second);
-  expect(await mcp.loadSession("first", ["work"], emptyMcpToolSnapshot())).toBe(first);
+  expect(
+    await mcp.loadSession("first", ["work"], emptyMcpToolSnapshot(), "/workspaces/first"),
+  ).toBe(first);
   expect(initialize).toHaveBeenCalledTimes(2);
+  expect(initialize).toHaveBeenNthCalledWith(1, ["work"], "/workspaces/first");
+  expect(initialize).toHaveBeenNthCalledWith(2, ["work"], "/workspaces/second");
   await mcp.discardSession("first");
-  const reloaded = await mcp.loadSession("first", ["work"], emptyMcpToolSnapshot());
+  const reloaded = await mcp.loadSession(
+    "first",
+    ["work"],
+    emptyMcpToolSnapshot(),
+    "/workspaces/first",
+  );
   expect(reloaded).not.toBe(first);
-  expect(initializeSnapshot).toHaveBeenCalledTimes(1);
+  expect(initializeSnapshot).toHaveBeenCalledWith(
+    ["work"],
+    emptyMcpToolSnapshot(),
+    "/workspaces/first",
+  );
   await mcp.close();
   expect(close).toHaveBeenCalledTimes(3);
 });

@@ -70,6 +70,57 @@ test("MCP loading propagates captured stderr", async () => {
     rmSync(root, { force: true, recursive: true });
   }
 });
+test("configured MCP cwd overrides the session workspace default", async () => {
+  const root = createTestDirectory("mcp-cwd"),
+    settings = join(root, "settings"),
+    workspace = join(root, "workspace");
+  mkdirSync(settings);
+  mkdirSync(workspace);
+  writeFileSync(
+    join(settings, "toolbox.yaml"),
+    `toolboxes:
+  ask_user:
+    enabled: false
+mcpServers:
+  default:
+    command: ${JSON.stringify(process.execPath)}
+    env:
+      OMITY_TEST_REPORT_CWD: "1"
+    args:
+      - -e
+      - ${JSON.stringify(modernMcpServer)}
+  configured:
+    command: ${JSON.stringify(process.execPath)}
+    cwd: ${JSON.stringify(root)}
+    env:
+      OMITY_TEST_REPORT_CWD: "1"
+    args:
+      - -e
+      - ${JSON.stringify(modernMcpServer)}
+`,
+  );
+  const mcp = await loadMcp(
+    root,
+    new Logger("error", true),
+    createSettingsContext(root, join(root, "user")),
+    { cwd: workspace },
+  );
+  try {
+    expect(mcp.tools).toEqual([
+      expect.objectContaining({
+        description: workspace,
+        name: "default__cwd",
+      }),
+      expect.objectContaining({
+        description: root,
+        name: "configured__cwd",
+      }),
+    ]);
+  } finally {
+    await mcp.close();
+    rmSync(root, { force: true, recursive: true });
+  }
+});
 const modernMcpServer = String.raw`
 let input = "";
 process.stdin.setEncoding("utf8");
@@ -93,7 +144,18 @@ process.stdin.on("data", (chunk) => {
             },
           }
         : request.method === "tools/list"
-          ? { cacheScope: "private", resultType: "complete", tools: [], ttlMs: 0 }
+          ? {
+              cacheScope: "private",
+              resultType: "complete",
+              tools: process.env.OMITY_TEST_REPORT_CWD
+                ? [{
+                    description: process.cwd(),
+                    inputSchema: { properties: {}, type: "object" },
+                    name: "cwd",
+                  }]
+                : [],
+              ttlMs: 0,
+            }
           : undefined;
     const response = {
       jsonrpc: "2.0",

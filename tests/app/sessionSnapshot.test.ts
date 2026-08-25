@@ -154,7 +154,12 @@ toolboxes:
   });
   const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => undefined));
   mcps.push(restoredMcp);
-  const restored = await restoredMcp.loadSession(created.sessionId, [], definition.prefix.tools);
+  const restored = await restoredMcp.loadSession(
+    created.sessionId,
+    [],
+    definition.prefix.tools,
+    workspacePath,
+  );
   expect(restored.configuration.stdio.restart).toEqual({
     delayMs: 4321,
     maxAttempts: 7,

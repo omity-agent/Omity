@@ -20,17 +20,23 @@ export function createAppMcp(
   askUser: AskUserRuntime,
 ) {
   const options: LoadMcpOptions = {
-    askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
-  };
+      askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
+    },
+    sessionOptions = (cwd = root): LoadMcpOptions => ({ ...options, cwd });
   return new AppMcp(
-    (profiles) =>
-      loadMcp(root, new Logger(level, true), selectSettingsProfiles(context, profiles), options),
-    (profiles, snapshot) =>
+    (profiles, cwd) =>
+      loadMcp(
+        root,
+        new Logger(level, true),
+        selectSettingsProfiles(context, profiles),
+        sessionOptions(cwd),
+      ),
+    (profiles, snapshot, cwd) =>
       loadSessionMcp(
         new Logger(level, true),
         selectSettingsProfiles(context, profiles),
         snapshot,
-        options,
+        sessionOptions(cwd),
       ),
   );
 }
@@ -39,10 +45,11 @@ export class AppMcp {
   private closePromise?: Promise<void>;
   private readonly loading = new Map<string, Promise<LoadedMcp>>();
   constructor(
-    private readonly initialize: (profiles: string[]) => Promise<LoadedMcp>,
+    private readonly initialize: (profiles: string[], cwd?: string) => Promise<LoadedMcp>,
     private readonly initializeSnapshot: (
       profiles: string[],
       snapshot: McpToolSnapshot,
+      cwd?: string,
     ) => Promise<LoadedMcp> = () => Promise.reject(new Error("App MCP 未配置会话快照加载器")),
   ) {}
   load(profiles: string[]) {
@@ -58,7 +65,7 @@ export class AppMcp {
     this.loading.set(key, loading);
     return loading;
   }
-  loadSession(sessionId: string, profiles: string[], snapshot: McpToolSnapshot) {
+  loadSession(sessionId: string, profiles: string[], snapshot: McpToolSnapshot, cwd: string) {
     if (this.closing) {
       return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
     }
@@ -67,11 +74,11 @@ export class AppMcp {
     if (existing) {
       return existing;
     }
-    const loading = this.loadFresh(key, () => this.initializeSnapshot(profiles, snapshot));
+    const loading = this.loadFresh(key, () => this.initializeSnapshot(profiles, snapshot, cwd));
     this.loading.set(key, loading);
     return loading;
   }
-  createSession(sessionId: string, profiles: string[]) {
+  createSession(sessionId: string, profiles: string[], cwd: string) {
     if (this.closing) {
       return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
     }
@@ -79,7 +86,7 @@ export class AppMcp {
     if (this.loading.has(key)) {
       throw new Error(`Session 已绑定 MCP：${sessionId}`);
     }
-    const loading = this.loadFresh(key, () => this.initialize(profiles));
+    const loading = this.loadFresh(key, () => this.initialize(profiles, cwd));
     this.loading.set(key, loading);
     return loading;
   }

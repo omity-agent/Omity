@@ -11,6 +11,7 @@ export class McpClientPool {
     private readonly connections: Record<string, unknown>,
     private readonly restartPolicy: StdioRestartPolicy,
     private readonly logger: Logger,
+    private readonly cwd: string,
   ) {
     const httpConnections = Object.fromEntries(
       Object.entries(connections).filter(([, connection]) => !isStdioConnection(connection)),
@@ -32,7 +33,12 @@ export class McpClientPool {
     if (loading) {
       return loading;
     }
-    const client = RestartingStdioClient.create(name, connection, this.restartPolicy, this.logger);
+    const client = RestartingStdioClient.create(
+      name,
+      { cwd: this.cwd, ...connection },
+      this.restartPolicy,
+      this.logger,
+    );
     this.stdio.set(name, client);
     try {
       return await client;

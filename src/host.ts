@@ -64,8 +64,10 @@ export async function runHostSession(
       mcp = definition
         ? options.mcp
           ? await options.mcp(mode.sessionId, profiles, definition)
-          : (ownedMcp = await loadSessionMcp(logger, settingsContext, definition.prefix.tools))
-        : (ownedMcp = await loadMcp(root, logger, settingsContext)),
+          : (ownedMcp = await loadSessionMcp(logger, settingsContext, definition.prefix.tools, {
+              cwd: workspace,
+            }))
+        : (ownedMcp = await loadMcp(root, logger, settingsContext, { cwd: workspace })),
       frozenDefinition = definition ?? createSessionDefinition(settings, mcp, session);
     if (!definition) {
       db.createSession(mode.sessionId, workspace, profiles, frozenDefinition);

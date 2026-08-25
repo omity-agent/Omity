@@ -26,7 +26,9 @@ export interface LoadedMcp {
   modelTools: (session: Required<SessionPlaceholders>) => ReturnType<typeof sessionModelTools>;
   tools: StructuredToolInterface[];
 }
-export type LoadMcpOptions = BuiltInToolOptions;
+export interface LoadMcpOptions extends BuiltInToolOptions {
+  cwd?: string;
+}
 export function createMcpLoadError(error: unknown): Error {
   const details = collectReadableZodIssues(error);
   if (details.length === 0) {
@@ -83,7 +85,15 @@ async function loadMcpConfiguration(
     logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
     return emptyMcp(configuration, snapshot);
   }
-  return connectMcp(configuration, names, context, logger, builtInTools, snapshot);
+  return connectMcp(
+    configuration,
+    names,
+    context,
+    logger,
+    builtInTools,
+    options.cwd ?? context.root,
+    snapshot,
+  );
 }
 async function connectMcp(
   configuration: McpConfiguration,
@@ -91,6 +101,7 @@ async function connectMcp(
   context: SettingsContext,
   logger: Logger,
   builtInTools: StructuredToolInterface[],
+  cwd: string,
   snapshot?: McpToolSnapshot,
 ): Promise<LoadedMcp> {
   const end = logger.child("MCP 工具加载");
@@ -101,6 +112,7 @@ async function connectMcp(
       configuration.mcpServers,
       configuration.stdio.restart,
       logger,
+      cwd,
     );
     pool = connectedPool;
     const namedTools = renameMcpTools(
