@@ -24,7 +24,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
     deleteSession: notConfigured,
     eventCursor: () => 0,
     events: new AppEvents(),
-    forkSession: notConfigured,
+    materializeFork: notConfigured,
     pickWorkspace: notConfigured,
     saveComposerDraft: notConfigured,
     sendMessage: notConfigured,

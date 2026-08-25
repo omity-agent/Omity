@@ -175,11 +175,15 @@ export async function answerTool(sessionId: string, toolCallId: string, answer: 
     },
   );
 }
-export async function forkSession(sessionId: string, beforeMessageId: number) {
-  return request(`api/sessions/${encodeURIComponent(sessionId)}/fork`, sessionResponseSchema, {
-    body: JSON.stringify({ beforeMessageId }),
-    method: "POST",
-  });
+export async function materializeFork(sessionId: string, beforeMessageId: number) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/fork/materialize`,
+    sessionResponseSchema,
+    {
+      body: JSON.stringify({ beforeMessageId }),
+      method: "POST",
+    },
+  );
 }
 function eventSource(path: string) {
   return new EventSource(path);

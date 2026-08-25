@@ -1,5 +1,6 @@
 import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
+import { type ComposerDraftTarget, composerDraftKey } from "../../services/composerDrafts";
 import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
 import { Composer } from "./Composer/index";
@@ -36,9 +37,13 @@ const page = css({
   });
 export function ChatPage({
   activeId,
+  actionPending = false,
+  allowFork = true,
   attachmentSettings,
   control,
+  draft,
   draftSaveDelayMs,
+  draftTarget,
   newSession,
   pausing,
   queue,
@@ -62,9 +67,13 @@ export function ChatPage({
   onWorkspaceChange,
 }: {
   activeId?: string;
+  actionPending?: boolean;
+  allowFork?: boolean;
   attachmentSettings?: AttachmentSettings;
   control: Control;
+  draft?: string;
   draftSaveDelayMs?: number;
+  draftTarget: ComposerDraftTarget;
   newSession: boolean;
   pausing: boolean;
   queue: DisplayQueue[];
@@ -85,7 +94,7 @@ export function ChatPage({
   askUser: AskUserQuestion | null;
   onAnswer: (callId: string, answer: AskUserAnswer) => Promise<void>;
   onControl: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
-  onDelete: () => Promise<void>;
+  onDelete?: () => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
   onProfileChange: (profile?: string) => void;
@@ -99,14 +108,9 @@ export function ChatPage({
       sessionStatus,
     }),
     firstUserMessageId = view.find((item) => item.role === "user")?.id,
-    forkDraft = queue.find((item) => item.status === "draft")?.content,
+    forkDraft = draft ?? queue.find((item) => item.status === "draft")?.content,
     latestDetails = findLatestDetails(view),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
-    draftTarget = useMemo(
-      () =>
-        activeId ? ({ kind: "session", sessionId: activeId } as const) : ({ kind: "new" } as const),
-      [activeId],
-    ),
     userMessages = useMemo(
       () => view.filter((item) => item.role === "user").map((item) => item.content),
       [view],
@@ -143,8 +147,10 @@ export function ChatPage({
           {view.length === 0 ? <div className={empty}>{t("noMessages")}</div> : null}
           {view.map((item) => (
             <Message
-              canFork={item.role === "user" && item.id > 0 && item.id !== firstUserMessageId}
-              forkDisabled={actionState.sessionActionDisabled}
+              canFork={
+                allowFork && item.role === "user" && item.id > 0 && item.id !== firstUserMessageId
+              }
+              forkDisabled={actionPending || actionState.sessionActionDisabled}
               item={item}
               key={item.key}
               liveTranslation={liveTranslation}
@@ -167,14 +173,14 @@ export function ChatPage({
       <Composer
         attachmentSettings={attachmentSettings}
         askUser={askUser}
-        controlDisabled={actionState.controlDisabled}
+        controlDisabled={actionPending || actionState.controlDisabled}
         controlState={actionState.controlState}
-        deleteDisabled={actionState.sessionActionDisabled}
-        disabled={!activeId}
+        deleteDisabled={actionPending || actionState.sessionActionDisabled}
+        disabled={!activeId || actionPending}
         draft={forkDraft}
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
-        key={forkDraft === undefined ? activeId : `draft:${forkDraft}`}
+        key={composerDraftKey(draftTarget)}
         userMessages={userMessages}
         usage={latestUsage}
         stepAvailable={actionState.stepAvailable}

@@ -1,29 +1,24 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
-import {
-  type SessionInfo,
-  deleteSession,
-  forkSession,
-  pickWorkspacePath,
-  setControl,
-} from "./services/client";
-import { addSession, removeSession, useBootstrap, useSessionTranscript } from "./services/queries";
+import { type SessionInfo, deleteSession, pickWorkspacePath, setControl } from "./services/client";
 import { layout, main, sidebar } from "./design";
 import { readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
+import { removeSession, useBootstrap } from "./services/queries";
 import { AccessGate } from "./components/Access/AccessGate";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { Sidebar } from "./components/Sidebar";
 import { cx } from "styled-system/css";
 import { pauseRequestPending } from "./components/Chat/actionState";
 import { recentWorkspaces } from "./services/recentWorkspaces";
+import { useForkableTranscript } from "./services/transcript/fork";
 import { useNewSession } from "./services/newSession";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import { useSessionToolActions } from "./components/Chat/toolActions";
-import { useUserMessageSubmissions } from "./services/transcript/submissions";
 
 const emptySessions: SessionInfo[] = [],
-  emptyProfiles: string[] = [];
+  emptyProfiles: string[] = [],
+  emptyQueue: [] = [];
 type ChatPageProps = ComponentProps<typeof ChatPage>;
 export function App() {
   return (
@@ -37,22 +32,40 @@ function AuthenticatedApp() {
     bootstrap = useBootstrap(),
     [page, setPage] = useState(readPage),
     [pausingSessionId, setPausingSessionId] = useState<string>(),
+    navigate = usePageNavigator(setPage),
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
     currentPage = resolvePage(page, sessions, bootstrap.data !== undefined),
+    pendingFork = currentPage.kind === "fork" ? currentPage : undefined,
     activeSession =
       currentPage.kind === "session"
         ? sessions.find((session) => session.id === currentPage.id)
         : undefined,
-    transcript = useSessionTranscript(
-      activeSession?.id,
-      bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
-    ),
-    submissions = useUserMessageSubmissions(activeSession?.id, transcript),
-    navigate = usePageNavigator(setPage),
+    sourceSession = pendingFork
+      ? sessions.find((session) => session.id === pendingFork.sourceSessionId)
+      : activeSession,
+    {
+      busy: forkActionPending,
+      draftTarget,
+      flow: {
+        begin: beginPendingFork,
+        control: controlPendingFork,
+        discard: discardPendingFork,
+        send: sendPendingFork,
+      },
+      pendingPreview,
+      submissions,
+      transcript,
+    } = useForkableTranscript({
+      activeSessionId: activeSession?.id,
+      navigate,
+      page: pendingFork,
+      snapshotThrottleMs: bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
+      sourceSessionId: sourceSession?.id,
+    }),
     {
       create: createNewSession,
-      open: openNewSessionFrom,
+      open: openNewSession,
       profile: newProfile,
       setProfile: setNewProfile,
       setWorkspace: setNewWorkspace,
@@ -61,12 +74,11 @@ function AuthenticatedApp() {
       cwd,
       navigate,
       queryClient,
-    }),
-    openNewSession = useCallback(() => {
-      openNewSessionFrom(activeSession?.workspace);
-    }, [activeSession, openNewSessionFrom]);
+      sourceWorkspace: sourceSession?.workspace,
+    });
   usePageNavigation(page, currentPage, setPage);
-  const pausing = pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue),
+  const pausing =
+      !pendingFork && pauseRequestPending(pausingSessionId, activeSession?.id, transcript.queue),
     { activeSession: displayedActiveSession, sessions: displayedSessions } = useSessionPresentation(
       sessions,
       activeSession?.id,
@@ -74,15 +86,14 @@ function AuthenticatedApp() {
     ),
     unreadSessionIds = useSessionAttention(queryClient, activeSession?.id),
     workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
-    selectSession = useCallback(
-      (id: string) => {
-        navigate({ id, kind: "session" });
-      },
-      [navigate],
-    ),
+    selectSession = useCallback((id: string) => navigate({ id, kind: "session" }), [navigate]),
     toolActions = useSessionToolActions(activeSession),
     changeControl = useCallback<ChatPageProps["onControl"]>(
       async (control) => {
+        if (pendingFork) {
+          await controlPendingFork(control);
+          return;
+        }
         if (!activeSession) {
           return;
         }
@@ -101,29 +112,31 @@ function AuthenticatedApp() {
           setPausingSessionId(undefined);
         }
       },
-      [activeSession, setPausingSessionId],
+      [activeSession, controlPendingFork, pendingFork, setPausingSessionId],
     ),
     deleteActiveSession = useCallback(async () => {
+      if (pendingFork) {
+        await discardPendingFork();
+        return;
+      }
       if (!activeSession) {
         return;
       }
       await deleteSession(activeSession.id);
       removeSession(queryClient, activeSession.id);
       navigate({ kind: "new" });
-    }, [activeSession, navigate, queryClient]),
-    forkActiveSession = useCallback<ChatPageProps["onFork"]>(
+    }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient]),
+    beginFork = useCallback<ChatPageProps["onFork"]>(
       async (messageId) => {
-        if (!activeSession) {
+        const sourceSessionId = pendingFork?.sourceSessionId ?? activeSession?.id;
+        if (!sourceSessionId) {
           return;
         }
-        const { session } = await forkSession(activeSession.id, messageId);
-        addSession(queryClient, session);
-        setPausingSessionId(undefined);
-        navigate({ id: session.id, kind: "session" });
+        beginPendingFork(sourceSessionId, messageId);
       },
-      [activeSession, navigate, queryClient, setPausingSessionId],
+      [activeSession, beginPendingFork, pendingFork],
     ),
-    sendSessionMessage = submissions.send;
+    sendSessionMessage = pendingFork ? sendPendingFork : submissions.send;
   return (
     <div className={cx("dark", layout)}>
       <aside className={sidebar}>
@@ -138,19 +151,23 @@ function AuthenticatedApp() {
       </aside>
       <main className={main}>
         <ChatPage
-          activeId={activeSession?.id}
+          activeId={sourceSession?.id}
+          actionPending={forkActionPending}
+          allowFork={!pendingFork}
           attachmentSettings={bootstrap.data?.attachments}
+          control={pendingFork ? "running" : transcript.control}
+          draft={pendingPreview?.draft}
           draftSaveDelayMs={bootstrap.data?.frontend.draftSaveDelayMs}
+          draftTarget={draftTarget}
           newSession={currentPage.kind === "new"}
           pausing={pausing}
-          control={transcript.control}
-          queue={transcript.queue}
+          queue={pendingFork ? emptyQueue : transcript.queue}
           recentWorkspaces={workspaces}
           availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
           selectedProfile={newProfile}
-          sessionStatus={displayedActiveSession?.status}
+          sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
           translationSettings={bootstrap.data?.frontend.reasoningTranslation}
-          view={submissions.view}
+          view={pendingPreview?.view ?? submissions.view}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}
           onCancelTool={toolActions.handleCancel}
@@ -158,7 +175,7 @@ function AuthenticatedApp() {
           onAnswer={toolActions.handleAnswer}
           onControl={changeControl}
           onDelete={deleteActiveSession}
-          onFork={forkActiveSession}
+          onFork={beginFork}
           onPickWorkspace={pickWorkspacePath}
           onProfileChange={setNewProfile}
           onSend={sendSessionMessage}

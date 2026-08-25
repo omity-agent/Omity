@@ -38,7 +38,7 @@ export async function createAppSession(
   }
   return { sessionId, workspace };
 }
-export async function createAppFork(options: {
+export async function materializeAppFork(options: {
   beforeMessageId: number;
   pauseSource: () => Promise<unknown>;
   sourceSessionId: string;

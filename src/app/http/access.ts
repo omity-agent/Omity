@@ -1,10 +1,11 @@
 import { type AccessService, accessChallengeCookie, accessSessionCookie } from "../access/service";
 import { type Context, type Hono, type MiddlewareHandler } from "hono";
-import { authenticationBody, readJson, registrationBody, registrationOptionsBody } from "./request";
+import { authenticationBody, registrationBody, registrationOptionsBody } from "./accessRequest";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { ClientIdentity } from "../access/network";
 import type { HttpBindings } from "@hono/node-server";
 import { HttpError } from "./errors";
+import { readJson } from "./request";
 
 export interface AccessEnvironment {
   Bindings: HttpBindings;

@@ -1,7 +1,13 @@
 import { useCallback, useEffect } from "react";
 
-export type Page = { kind: "new" } | { kind: "session"; id: string };
-const sessionPrefix = "/sessions/";
+export interface ForkPage {
+  beforeMessageId: number;
+  kind: "fork";
+  sourceSessionId: string;
+}
+export type Page = ForkPage | { kind: "new" } | { kind: "session"; id: string };
+const forkPrefix = "/fork/",
+  sessionPrefix = "/sessions/";
 export function readPage(): Page {
   return pageFromHash(globalThis.location.hash);
 }
@@ -16,11 +22,30 @@ export function pageFromHash(hash: string): Page {
       return { id, kind: "session" };
     }
   }
+  if (path.startsWith(forkPrefix)) {
+    const [source, messageId, extra] = path.slice(forkPrefix.length).split("/"),
+      beforeMessageId = Number(messageId);
+    if (
+      source &&
+      extra === undefined &&
+      Number.isSafeInteger(beforeMessageId) &&
+      beforeMessageId > 0
+    ) {
+      return {
+        beforeMessageId,
+        kind: "fork",
+        sourceSessionId: decodeURIComponent(source),
+      };
+    }
+  }
   return { kind: "new" };
 }
 export function pagePath(page: Page) {
   if (page.kind === "new") {
     return "#/new";
+  }
+  if (page.kind === "fork") {
+    return `#/fork/${encodeURIComponent(page.sourceSessionId)}/${page.beforeMessageId.toString()}`;
   }
   return `#/sessions/${encodeURIComponent(page.id)}`;
 }
@@ -45,6 +70,9 @@ export function usePageNavigator(setPage: (page: Page) => void) {
 export function sessionPage(id: string): Page {
   return { id, kind: "session" };
 }
+export function forkPage(sourceSessionId: string, beforeMessageId: number): ForkPage {
+  return { beforeMessageId, kind: "fork", sourceSessionId };
+}
 export function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
   if (!ready) {
     return page;
@@ -52,7 +80,8 @@ export function resolvePage(page: Page, sessions: { id: string }[], ready: boole
   if (page.kind === "new") {
     return page;
   }
-  return sessions.some((session) => session.id === page.id) ? page : ({ kind: "new" } as const);
+  const sessionId = page.kind === "session" ? page.id : page.sourceSessionId;
+  return sessions.some((session) => session.id === sessionId) ? page : ({ kind: "new" } as const);
 }
 export function usePageNavigation(page: Page, currentPage: Page, setPage: (page: Page) => void) {
   useEffect(() => {
@@ -75,5 +104,14 @@ function samePage(left: Page, right: Page) {
   if (left.kind !== right.kind) {
     return false;
   }
-  return left.kind !== "session" || right.kind !== "session" ? true : left.id === right.id;
+  if (left.kind === "session" && right.kind === "session") {
+    return left.id === right.id;
+  }
+  if (left.kind === "fork" && right.kind === "fork") {
+    return (
+      left.sourceSessionId === right.sourceSessionId &&
+      left.beforeMessageId === right.beforeMessageId
+    );
+  }
+  return true;
 }

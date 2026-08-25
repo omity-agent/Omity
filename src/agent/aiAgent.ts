@@ -23,7 +23,6 @@ export async function streamAiModel(options: AiModelOptions) {
     maxRetries: 0,
     messages: toModelMessages(options.messages, modelApi(options.settings)),
     model: options.model ?? buildAiModel(options.settings),
-    // Runtime catches stream errors and reports retryable ones through browser events.
     onError: () => undefined,
     temperature: options.settings.model.temperature,
     timeout: {

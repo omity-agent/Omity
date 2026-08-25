@@ -13,21 +13,20 @@ export function useNewSession({
   cwd,
   navigate,
   queryClient,
+  sourceWorkspace,
 }: {
   cwd: string;
   navigate: (page: Page) => void;
   queryClient: QueryClient;
+  sourceWorkspace?: string;
 }) {
   const [workspace, setWorkspace] = useState<string>(),
     [profile, setProfile] = useState<string>(),
-    open = useCallback(
-      (sourceWorkspace?: string) => {
-        setWorkspace(sourceWorkspace);
-        setProfile(undefined);
-        navigate({ kind: "new" });
-      },
-      [navigate, setProfile, setWorkspace],
-    ),
+    open = useCallback(() => {
+      setWorkspace(sourceWorkspace);
+      setProfile(undefined);
+      navigate({ kind: "new" });
+    }, [navigate, setProfile, setWorkspace, sourceWorkspace]),
     create = useCallback(
       async (initialState: InitialSessionState, attachments: PendingAttachment[]) => {
         const result = await createSession(

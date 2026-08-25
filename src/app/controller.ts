@@ -19,12 +19,12 @@ import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
-import { createAppFork } from "./runtime/sessionActions";
 import { createAppMcp } from "./runtime/mcp";
 import { createSnapshotSession } from "./runtime/sessionSnapshot";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
+import { materializeAppFork } from "./runtime/sessionActions";
 import { setSessionControl } from "../client";
 
 export class AppController {
@@ -147,9 +147,9 @@ export class AppController {
     this.registry.require(sessionId);
     return this.askUser.answer(sessionId, toolCallId, answer);
   }
-  async forkSession(sessionId: string, beforeMessageId: number) {
+  async materializeFork(sessionId: string, beforeMessageId: number) {
     const session = this.registry.require(sessionId),
-      id = await createAppFork({
+      id = await materializeAppFork({
         beforeMessageId,
         pauseSource: () => this.control(sessionId, "pause"),
         profiles: session.profiles,

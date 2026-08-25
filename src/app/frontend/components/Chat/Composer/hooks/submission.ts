@@ -1,5 +1,5 @@
 import type { AskUserAnswer, AskUserQuestion } from "../../toolActions";
-import type { ComposerDraftTarget } from "../../../../services/composerDrafts";
+import { type ComposerDraftTarget, composerDraftKey } from "../../../../services/composerDrafts";
 import type { ComposerProps } from "../props";
 import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
 import type { PendingAttachment } from "../../../../../attachments/contract";
@@ -80,10 +80,12 @@ export function useComposerSubmit({
     submittingRef.current = true;
     setSubmitting(true);
     historyRef.current?.reset();
-    if (draftTarget.kind !== "session") {
+    if (draftTarget.kind === "new") {
       throw new Error("新会话不能使用聊天消息提交协议");
     }
-    const optimistic = createOptimisticUser(draftTarget.sessionId, submittedContent),
+    const submissionTarget =
+        draftTarget.kind === "session" ? draftTarget.sessionId : composerDraftKey(draftTarget),
+      optimistic = createOptimisticUser(submissionTarget, submittedContent),
       sending = onSend(optimistic, submittedRevision, attachmentValues(submittedContent));
     contentRef.current = "";
     setContent("");

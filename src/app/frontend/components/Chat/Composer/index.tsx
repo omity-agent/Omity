@@ -4,7 +4,7 @@ import {
   readComposerDraft,
 } from "../../../services/composerDrafts";
 import { reportError, reportPromiseErrors } from "../../../services/errors";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Actions } from "./Actions";
 import { AskUserPrompt } from "./AskUser/Prompt";
 import type { ComposerProps } from "./props";
@@ -51,36 +51,30 @@ export function Composer({
     revisionRef = useRef(0),
     saverRef = useRef<DraftSaver | undefined>(undefined),
     submittingRef = useRef(false),
-    sessionId = draftTarget.kind === "session" ? draftTarget.sessionId : undefined;
+    [stableDraftTarget] = useReducer((target: ComposerDraftTarget) => target, draftTarget);
   useEffect(() => {
     let current = true;
-    const target: ComposerDraftTarget = sessionId
-        ? { kind: "session", sessionId }
-        : { kind: "new" },
-      load = async () => {
-        const loaded = await readComposerDraft(target, draft ?? "");
-        if (!current) {
-          return;
-        }
-        revisionRef.current = loaded.revision;
-        contentRef.current = loaded.content;
-        historyRef.current.reset();
-        setContent(loaded.content);
-        setLoading(false);
-      };
+    const load = async () => {
+      const loaded = await readComposerDraft(stableDraftTarget, draft ?? "");
+      if (!current) {
+        return;
+      }
+      revisionRef.current = loaded.revision;
+      contentRef.current = loaded.content;
+      historyRef.current.reset();
+      setContent(loaded.content);
+      setLoading(false);
+    };
     reportPromiseErrors(load());
     return () => {
       current = false;
     };
-  }, [draft, sessionId]);
+  }, [draft, stableDraftTarget]);
   useEffect(() => {
     if (draftSaveDelayMs === undefined) {
       return undefined;
     }
-    const target: ComposerDraftTarget = sessionId
-        ? { kind: "session", sessionId }
-        : { kind: "new" },
-      saver = new DraftSaver(target, draftSaveDelayMs, reportError);
+    const saver = new DraftSaver(stableDraftTarget, draftSaveDelayMs, reportError);
     saverRef.current = saver;
     return () => {
       if (saverRef.current === saver) {
@@ -88,26 +82,34 @@ export function Composer({
       }
       reportPromiseErrors(saver.flush());
     };
-  }, [draftSaveDelayMs, sessionId]);
+  }, [draftSaveDelayMs, stableDraftTarget]);
   useEffect(() => {
-    const target: ComposerDraftTarget = sessionId
-        ? { kind: "session", sessionId }
-        : { kind: "new" },
-      flush = () => {
-        flushComposerDraft(target, contentRef.current, revisionRef.current);
-      };
+    const flush = () => {
+      flushComposerDraft(stableDraftTarget, contentRef.current, revisionRef.current);
+    };
     window.addEventListener("pagehide", flush);
     return () => {
       window.removeEventListener("pagehide", flush);
     };
-  }, [sessionId]);
-  const submit = useComposerSubmit({
+  }, [stableDraftTarget]);
+  const handleControl = useCallback(
+      async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
+        await saverRef.current?.flush();
+        await onControl?.(control);
+      },
+      [onControl],
+    ),
+    handleDelete = useCallback(async () => {
+      saverRef.current?.discardPending();
+      await onDelete?.();
+    }, [onDelete]),
+    submit = useComposerSubmit({
       askNote,
       askUser,
       attachmentValues,
       clearAttachments,
       contentRef,
-      draftTarget,
+      draftTarget: stableDraftTarget,
       historyRef,
       onAnswer,
       onSend,
@@ -166,8 +168,8 @@ export function Composer({
         submitLabel={askUser ? t("answer") : t("send")}
         submitDisabled={submitDisabled}
         usage={usage}
-        onControl={onControl}
-        onDelete={onDelete}
+        onControl={onControl ? handleControl : undefined}
+        onDelete={onDelete ? handleDelete : undefined}
       />
     </form>
   );

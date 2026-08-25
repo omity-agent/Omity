@@ -8,7 +8,7 @@ import {
   controlBody,
   decodeSessionId,
   fileLinkActionBody,
-  forkBody,
+  forkMaterializationBody,
   readJson,
   readMessageForm,
   readSessionForm,
@@ -37,7 +37,7 @@ export type ApiController = Pick<
   | "control"
   | "cancelTool"
   | "answerTool"
-  | "forkSession"
+  | "materializeFork"
   | "assertSession"
   | "events"
 >;
@@ -119,10 +119,10 @@ export function createApi(controller: ApiController, access?: AccessService) {
     const body = await readJson(c.req, answerToolBody);
     return c.json(controller.answerTool(sessionId(c), body.toolCallId, body.answer));
   });
-  app.post("/api/sessions/:sessionId/fork", regularBodyLimit, async (c) => {
-    const body = await readJson(c.req, forkBody);
+  app.post("/api/sessions/:sessionId/fork/materialize", regularBodyLimit, async (c) => {
+    const body = await readJson(c.req, forkMaterializationBody);
     return c.json({
-      session: await controller.forkSession(sessionId(c), body.beforeMessageId),
+      session: await controller.materializeFork(sessionId(c), body.beforeMessageId),
     });
   });
   app.notFound((c) => {
