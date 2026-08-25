@@ -9,7 +9,6 @@ import {
   fixedRoot,
   fixedTheme,
   fluidTheme,
-  markdownSyntax,
   root,
 } from "./theme";
 import { useLayoutEffect, useMemo, useReducer } from "react";
@@ -21,6 +20,7 @@ import { cx } from "styled-system/css";
 import { indentUnit } from "@codemirror/language";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 import { markdown } from "@codemirror/lang-markdown";
+import { markdownSyntax } from "../../Markdown/syntax";
 
 const basicSetup = {
   autocompletion: false,

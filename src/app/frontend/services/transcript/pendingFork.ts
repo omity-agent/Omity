@@ -52,8 +52,8 @@ export function usePendingFork({
     materializations = useRef(new Map<string, Promise<MaterializedSession>>()),
     navigateRef = useLatest(navigate),
     pageRef = useLatest(page),
-    queryClientRef = useLatest(queryClient);
-  const activate = useCallback(
+    queryClientRef = useLatest(queryClient),
+    activate = useCallback(
       async (action: (sessionId: string, pending: ForkPage) => Promise<void>) => {
         if (activating.current) {
           return;

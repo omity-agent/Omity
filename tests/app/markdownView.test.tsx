@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { MarkdownView } from "../../src/app/frontend/components/MarkdownView";
+import { fitSourceLineHeight } from "../../src/app/frontend/components/Markdown/Source";
+import { highlightMarkdownSource } from "../../src/app/frontend/components/Markdown/syntax";
 import { renderToStaticMarkup } from "react-dom/server";
 
 describe("MarkdownView", () => {
@@ -13,6 +15,22 @@ describe("MarkdownView", () => {
   test("默认仍遵循 CommonMark 软换行语义", () => {
     const html = renderToStaticMarkup(<MarkdownView content={"第一行\n第二行"} />);
     expect(html).not.toContain("<br");
+  });
+  test("在 Markdown 入口归一化每种行分隔符", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownView content={"第一行\r\n第二行\r第三行\u2028第四行"} preserveLineBreaks />,
+    );
+    expect(html).not.toContain("\r");
+    expect(html.match(/<br\/>/g)).toHaveLength(3);
+  });
+  test("时间线源码使用 Markdown 编辑器的语法高亮类", () => {
+    const highlighted = highlightMarkdownSource("# 标题\n[链接](https://example.com)");
+    expect(highlighted.lines[0]).toMatch(/<span class="[^"]+">#<\/span>/);
+    expect(highlighted.lines[1]).toMatch(/<span class="[^"]+">https:\/\/example\.com<\/span>/);
+  });
+  test("源码行高自动填满正常渲染高度", () => {
+    expect(fitSourceLineHeight(240, 120, 24)).toBe(48);
+    expect(fitSourceLineHeight(20, 0, 24)).toBe(20);
   });
   test("链接不透传解析节点并在新窗口安全打开", () => {
     const html = renderToStaticMarkup(<MarkdownView content="[示例](https://example.com/path)" />);

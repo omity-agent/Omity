@@ -6,6 +6,7 @@ import {
   useContext,
   useMemo,
 } from "react";
+import { FileLinkMenu, FileLinkMenuOpenProvider } from "./FileLink/Menu";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import {
   fileLinkRemark,
@@ -13,13 +14,15 @@ import {
   matchInsideNode,
   pathFromFileLinkHref,
 } from "./FileLink/markdown";
-import { inlineCode, markdown, tableScroll } from "./Markdown/styles";
+import { inlineCode, region, rendered, tableScroll } from "./Markdown/styles";
+import { normalizeCodeMatches, normalizeLineBreaks } from "./FileLink/lineBreaks";
 import { Code } from "./ParkUI";
-import { FileLinkMenu } from "./FileLink/Menu";
 import type { FilePathMatch } from "../../../fileLinks/types";
 import { HighlightedCode } from "./HighlightedCode";
+import { MarkdownSource } from "./Markdown/Source";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+import { useSourceHover } from "./Markdown/hover";
 
 interface MarkdownRenderContext {
   fileLinks: FilePathMatch[];
@@ -48,31 +51,70 @@ export function MarkdownView({
   fileLinks?: FilePathMatch[];
   preserveLineBreaks?: boolean;
 }) {
-  const context = useMemo(() => ({ fileLinks, source: content }), [content, fileLinks]),
-    remarkPlugins = useMemo(
-      () => [remarkGfm, fileLinkRemark(fileLinks), ...(preserveLineBreaks ? [remarkBreaks] : [])],
-      [fileLinks, preserveLineBreaks],
-    );
+  const normalized = useMemo(() => {
+      const result = normalizeCodeMatches(content, fileLinks);
+      return {
+        content: result.code,
+        context: { fileLinks: result.matches, source: result.code },
+        fileLinks: result.matches,
+        remarkPlugins: [
+          remarkGfm,
+          fileLinkRemark(result.matches),
+          ...(preserveLineBreaks ? [remarkBreaks] : []),
+        ],
+      };
+    }, [content, fileLinks, preserveLineBreaks]),
+    {
+      handlePointerEnter,
+      handlePointerLeave,
+      handlePointerMove,
+      onMenuOpenChange,
+      regionReference,
+      renderedHeight,
+      style,
+    } = useSourceHover();
   return (
-    <MarkdownContext.Provider value={context}>
-      <div className={markdown}>
-        <ReactMarkdown components={components} remarkPlugins={remarkPlugins}>
-          {content}
-        </ReactMarkdown>
+    <MarkdownContext.Provider value={normalized.context}>
+      <div
+        className={region}
+        onPointerEnter={handlePointerEnter}
+        onPointerLeave={handlePointerLeave}
+        onPointerMove={handlePointerMove}
+        ref={regionReference}
+        style={style}
+      >
+        {renderedHeight !== undefined ? (
+          <FileLinkMenuOpenProvider value={onMenuOpenChange}>
+            <MarkdownSource
+              content={normalized.content}
+              fileLinks={normalized.fileLinks}
+              targetHeight={renderedHeight}
+            />
+          </FileLinkMenuOpenProvider>
+        ) : (
+          <div className={rendered}>
+            <ReactMarkdown components={components} remarkPlugins={normalized.remarkPlugins}>
+              {normalized.content}
+            </ReactMarkdown>
+          </div>
+        )}
       </div>
     </MarkdownContext.Provider>
   );
 }
 export function MarkdownInline({ content }: { content: string }) {
-  const context = useMemo(() => ({ fileLinks: noFileLinks, source: content }), [content]);
+  const normalized = useMemo(() => {
+    const source = normalizeLineBreaks(content);
+    return { context: { fileLinks: noFileLinks, source }, source };
+  }, [content]);
   return (
-    <MarkdownContext.Provider value={context}>
+    <MarkdownContext.Provider value={normalized.context}>
       <ReactMarkdown
         allowedElements={inlineElements}
         components={inlineComponents}
         unwrapDisallowed
       >
-        {content}
+        {normalized.source}
       </ReactMarkdown>
     </MarkdownContext.Provider>
   );
@@ -105,7 +147,7 @@ function MarkdownCode({ children, className, node }: ComponentProps<"code"> & Ex
   if (className || raw.includes("\n")) {
     return <HighlightedCode code={code} fileLinkMatches={matches} language={language} />;
   }
-  const rendered = (
+  const codeNode = (
       <Code className={inlineCode} size="md" variant="ghost">
         {children}
       </Code>
@@ -113,10 +155,10 @@ function MarkdownCode({ children, className, node }: ComponentProps<"code"> & Ex
     [match] = matches;
   return match ? (
     <FileLinkMenu kind={match.kind} path={match.path}>
-      {rendered}
+      {codeNode}
     </FileLinkMenu>
   ) : (
-    rendered
+    codeNode
   );
 }
 function MarkdownPre({ children }: ComponentProps<"pre"> & ExtraProps) {

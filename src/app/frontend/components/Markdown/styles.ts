@@ -1,6 +1,6 @@
 import { css } from "styled-system/css";
 
-export const markdown = css({
+export const rendered = css({
   "& .task-list-item": { listStyleType: "none" },
   "& .task-list-item > input": { mr: "2", verticalAlign: "middle" },
   "& > :first-child": { mt: 0 },
@@ -65,6 +65,31 @@ export const tableScroll = css({
   overflowX: "auto",
   overscrollBehaviorX: "contain",
   w: "full",
+});
+export const region = css({
+  lineHeight: "1.7",
+  maxW: "full",
+  minW: 0,
+  w: "full",
+});
+export const source = css({
+  "& code": {
+    font: "inherit",
+    overflowWrap: "anywhere",
+    whiteSpace: "inherit",
+  },
+  bg: "transparent",
+  borderWidth: "0",
+  fontFamily: "mono",
+  fontSize: "inherit",
+  lineHeight: "inherit",
+  m: 0,
+  maxW: "full",
+  minW: 0,
+  overflow: "visible",
+  p: 0,
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
 });
 export const inlineCode = css({
   display: "inline",
