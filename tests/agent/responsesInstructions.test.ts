@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { HumanMessage } from "@langchain/core/messages";
 import { createOpenAI } from "@ai-sdk/openai";
-import { streamAiModel } from "../../src/agent/aiAgent";
+import { streamAiModel } from "../../src/agent/model/request";
 import { testSettings } from "../support/settings";
 
 test("Responses API sends developer instructions in the top-level field", async () => {

@@ -1,5 +1,5 @@
-import type { ModelApi, Settings } from "../types";
-import { codexClientFields } from "../infrastructure/openai/codexAuthentication";
+import type { ModelApi, Settings } from "../../types";
+import { codexClientFields } from "../../infrastructure/openai/codexAuthentication";
 import { createOpenAI } from "@ai-sdk/openai";
 
 export function buildAiModel(settings: Settings) {

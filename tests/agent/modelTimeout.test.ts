@@ -3,7 +3,7 @@ import { APICallError } from "@ai-sdk/provider";
 import { HumanMessage } from "@langchain/core/messages";
 import { MockLanguageModelV4 } from "ai/test";
 import { simulateReadableStream } from "ai";
-import { streamAiModel } from "../../src/agent/aiAgent";
+import { streamAiModel } from "../../src/agent/model/request";
 import { testSettings } from "../support/settings";
 
 const usage = {
@@ -45,6 +45,81 @@ test("model timeout resets after each stream update", async () => {
     content: "test",
     role: "system",
   });
+  expect(model.doStreamCalls).toHaveLength(1);
+});
+test("model request is duplicated after first chunk timeout and losers are aborted", async () => {
+  const settings = testSettings(),
+    writtenTypes: string[] = [],
+    writtenText: string[] = [];
+  settings.model.timeoutMs = 30;
+  let firstAborted = false,
+    requests = 0;
+  const model = new MockLanguageModelV4({
+      doStream: async ({ abortSignal }) => {
+        requests += 1;
+        if (requests === 1) {
+          if (!abortSignal) {
+            throw new Error("模型请求缺少取消信号");
+          }
+          return {
+            stream: new ReadableStream({
+              start(controller) {
+                controller.enqueue({
+                  id: "response-1",
+                  modelId: "mock",
+                  timestamp: new Date(0),
+                  type: "response-metadata",
+                });
+                controller.enqueue({ id: "text-1", type: "text-start" });
+                abortSignal.addEventListener(
+                  "abort",
+                  () => {
+                    firstAborted = true;
+                    controller.error(abortSignal.reason);
+                  },
+                  { once: true },
+                );
+              },
+            }),
+          };
+        }
+        expect(firstAborted).toBe(false);
+        return {
+          stream: simulateReadableStream({
+            chunks: [
+              {
+                id: "response-2",
+                modelId: "mock",
+                timestamp: new Date(0),
+                type: "response-metadata",
+              },
+              { id: "text-2", type: "text-start" },
+              { delta: "winner", id: "text-2", type: "text-delta" },
+              { id: "text-2", type: "text-end" },
+              { finishReason: { raw: undefined, unified: "stop" }, type: "finish", usage },
+            ],
+          }),
+        };
+      },
+    }),
+    response = await streamAiModel({
+      messages: [new HumanMessage("Say hello")],
+      model,
+      sessionId: "test-session",
+      settings,
+      tools: {},
+      write: ({ part }) => {
+        writtenTypes.push(part.type);
+        if (part.type === "text-delta") {
+          writtenText.push(part.text);
+        }
+      },
+    });
+  expect(response.text).toBe("winner");
+  expect(model.doStreamCalls).toHaveLength(2);
+  expect(firstAborted).toBe(true);
+  expect(writtenTypes.filter((type) => type === "start")).toHaveLength(1);
+  expect(writtenText).toEqual(["winner"]);
 });
 test("model stream errors are propagated without terminal output", async () => {
   const log = spyOn(console, "error").mockReturnValue(undefined),

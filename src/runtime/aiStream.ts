@@ -1,6 +1,6 @@
 import { acceptMessageId, sequentialPart, toolPart } from "./stream/parts";
 import { appendReasoningDelta, flushReasoning } from "./content";
-import type { AiStreamEvent } from "../agent/aiAgent";
+import type { AiStreamEvent } from "../agent/model/request";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";

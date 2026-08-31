@@ -1,16 +1,8 @@
 {
   "$schema": "./node_modules/knip/schema.json",
-  "entry": [
-    "scripts/**/*.ts",
-    "tests/**/*.{ts,tsx}"
-  ],
+  "entry": ["scripts/**/*.ts", "tests/**/*.{ts,tsx}"],
   "ignoreDependencies": ["@typescript-eslint/parser", "drizzle-kit"],
   "includeEntryExports": true,
   "ignoreExportsUsedInFile": false,
-  "project": [
-    "src/**/*.{ts,tsx}",
-    "scripts/**/*.ts",
-    "tests/**/*.{ts,tsx}",
-    "*.config.ts"
-  ]
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "tests/**/*.{ts,tsx}", "*.config.ts"]
 }

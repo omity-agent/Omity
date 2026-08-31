@@ -28,10 +28,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "panda.config.ts",
-        "vite.config.ts"
-      ],
+      "files": ["panda.config.ts", "vite.config.ts"],
       "rules": {
         "import-js/no-unused-modules": "allow"
       }
@@ -85,9 +82,7 @@
     "import/no-unassigned-import": [
       "warn",
       {
-        "allow": [
-          "**/*.css"
-        ]
+        "allow": ["**/*.css"]
       }
     ],
     "max-lines-per-function": "allow",
@@ -114,19 +109,11 @@
   "settings": {
     "@pandacss/configPath": "./panda.config.ts",
     "import-x/parsers": {
-      "@typescript-eslint/parser": [
-        ".ts",
-        ".tsx"
-      ]
+      "@typescript-eslint/parser": [".ts", ".tsx"]
     },
     "import-x/resolver": {
       "node": {
-        "extensions": [
-          ".js",
-          ".jsx",
-          ".ts",
-          ".tsx"
-        ]
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
       }
     }
   }

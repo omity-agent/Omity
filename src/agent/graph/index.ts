@@ -22,10 +22,10 @@ import type { LanguageModel } from "ai";
 import type { Settings } from "../../types";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "../toolExecutions";
-import { aiModelTools } from "../aiTools";
+import { aiModelTools } from "../model/tools";
 import { createHookNode } from "../../hooks/graph/node";
 import { createToolInvoker } from "../toolExecution";
-import { streamAiModel } from "../aiAgent";
+import { streamAiModel } from "../model/request";
 
 const AgentState = Annotation.Root({
   ...MessagesAnnotation.spec,
