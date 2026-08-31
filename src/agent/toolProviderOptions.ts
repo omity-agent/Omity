@@ -1,4 +1,4 @@
-import type { ProviderOptions } from "@ai-sdk/provider-utils";
+import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 
 export function omitToolItemIds(value: ProviderOptions): ProviderOptions | undefined {
   const providers = Object.entries(value).flatMap(([provider, options]) => {

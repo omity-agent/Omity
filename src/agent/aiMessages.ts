@@ -13,7 +13,7 @@ import {
 import { isJSONObject, isPlainObject } from "es-toolkit";
 import type { ModelApi } from "../types";
 import type { ModelMessage } from "ai";
-import type { ProviderOptions } from "@ai-sdk/provider-utils";
+import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 import type { StoredAiSdkPart } from "./fromAiMessages";
 
 type AssistantPart = Exclude<

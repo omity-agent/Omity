@@ -1,6 +1,5 @@
-import { type ToolSet, dynamicTool } from "ai";
+import { type ToolSet, dynamicTool, jsonSchema } from "ai";
 import type { ModelToolDefinition } from "../infrastructure/mcp/snapshot";
-import { jsonSchema } from "@ai-sdk/provider-utils";
 import { openai } from "@ai-sdk/openai";
 
 export function aiModelTools(tools: ModelToolDefinition[]): ToolSet {

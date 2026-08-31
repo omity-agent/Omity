@@ -6,7 +6,7 @@ import {
   type UsageMetadata,
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
-import type { ProviderOptions } from "@ai-sdk/provider-utils";
+import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { omitToolItemIds } from "./toolProviderOptions";
 

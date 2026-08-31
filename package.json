@@ -57,7 +57,6 @@
     "magika": "latest",
     "mitt": "latest",
     "nanoid": "latest",
-    "openai": "latest",
     "openai-codex-oauth": "latest",
     "pathprobe": "latest",
     "rate-limiter-flexible": "latest",
@@ -80,6 +79,7 @@
     "@rolldown/plugin-babel": "latest",
     "@tanstack/eslint-plugin-query": "latest",
     "@types/bun": "latest",
+    "@types/mdast": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@typescript-eslint/parser": "latest",
@@ -93,6 +93,7 @@
     "oxlint": "latest",
     "oxlint-tsgolint": "latest",
     "postcss": "latest",
+    "unified": "latest",
     "vite": "latest"
   },
   "patchedDependencies": {

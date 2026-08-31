@@ -1,13 +1,10 @@
 {
   "$schema": "./node_modules/knip/schema.json",
   "entry": [
-    "src/cli.ts",
-    "src/app/frontend/main.tsx",
     "scripts/**/*.ts",
-    "tests/**/*.{ts,tsx}",
-    "panda.config.ts",
-    "vite.config.ts"
+    "tests/**/*.{ts,tsx}"
   ],
+  "ignoreDependencies": ["@typescript-eslint/parser", "drizzle-kit"],
   "includeEntryExports": true,
   "ignoreExportsUsedInFile": false,
   "project": [
