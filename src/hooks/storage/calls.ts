@@ -1,14 +1,14 @@
 import type { HookRule, HookTrigger, HookWhen } from "../../types";
 import { createHash } from "node:crypto";
 
-export interface HookCallDetails {
+interface HookCallDetails {
   trigger: HookTrigger;
   sourceId: string;
   hookId: string;
 }
 const hookCallPrefix = "omity-hook:",
   hookCallPattern = /^omity-hook:[A-Za-z0-9_-]{43}$/;
-export function hookTrigger(target: string, when: HookWhen): HookTrigger {
+function hookTrigger(target: string, when: HookWhen): HookTrigger {
   return `${target}:${when}`;
 }
 export function hookCallDetails(rule: HookRule, sourceId: string): HookCallDetails {

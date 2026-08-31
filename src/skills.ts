@@ -10,7 +10,7 @@ const skillMetaSchema = z.object({
   name: z.string().min(1),
 });
 type SkillMeta = z.infer<typeof skillMetaSchema>;
-export function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
+function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
   if (!settings.skills.enabled) {
     return [];
   }

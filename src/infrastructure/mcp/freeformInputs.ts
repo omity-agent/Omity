@@ -3,7 +3,7 @@ import { hasSessionDescription, sessionDescription } from "./toolOverrides";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { z } from "zod";
 
-export interface FreeformMcpTools {
+interface FreeformMcpTools {
   parameters: ReadonlyMap<string, string>;
 }
 const toolJsonSchema = z.looseObject({

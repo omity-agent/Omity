@@ -12,7 +12,7 @@ import { readSettingsText } from "../placeholders";
 import { resolveConfiguredPath } from "../configuredPath";
 import { safeId } from "../sessionPaths";
 
-export interface LoadSettingsOptions {
+interface LoadSettingsOptions {
   cwd?: string;
   sessionId?: string;
   settingsContext?: SettingsContext;

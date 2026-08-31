@@ -19,7 +19,6 @@ import type { InitialSessionState } from "../../initialState";
 import { request } from "./request";
 import { z } from "./validation";
 
-export { ApiError } from "./request";
 export type { SessionInfo } from "../../sessionState";
 const fileLinkActionSchema = z.object({ path: z.string() });
 export interface FrontendSettings {
@@ -57,7 +56,7 @@ export async function deleteSession(sessionId: string) {
     method: "DELETE",
   });
 }
-export async function pickWorkspace() {
+async function pickWorkspace() {
   return request("api/workspace-picker", workspaceResponseSchema, {
     method: "POST",
   });

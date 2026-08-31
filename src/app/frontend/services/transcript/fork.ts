@@ -6,8 +6,8 @@ import { useSessionTranscript } from "./query";
 import { useUserMessageSubmissions } from "./submissions";
 
 type Navigate = (page: Page, replace?: boolean) => void;
-export { forkDraftTarget, forkSubmissionKey } from "./pendingFork";
-export function chatDraftTarget(page: ForkPage | undefined, sessionId: string | undefined) {
+export { forkDraftTarget } from "./pendingFork";
+function chatDraftTarget(page: ForkPage | undefined, sessionId: string | undefined) {
   if (page) {
     return forkDraftTarget(page);
   }

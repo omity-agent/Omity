@@ -4,7 +4,7 @@ import { z } from "./validation";
 const errorResponse = z.object({
   error: z.object({ code: z.string(), message: z.string() }),
 });
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,

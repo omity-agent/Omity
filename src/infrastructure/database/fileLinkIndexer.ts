@@ -12,7 +12,7 @@ interface StreamState {
   queueId: number;
   text: string;
 }
-export interface PreparedFileLinks {
+interface PreparedFileLinks {
   commit: () => void;
   units: StoredFileLinkUnit[];
 }

@@ -4,8 +4,8 @@ import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
 import { promisify } from "node:util";
 
-export type ShutdownSignal = "SIGINT" | "SIGTERM";
-export type ShutdownReason = ShutdownSignal | "startup-failure";
+type ShutdownSignal = "SIGINT" | "SIGTERM";
+type ShutdownReason = ShutdownSignal | "startup-failure";
 interface ShutdownHttpServer {
   connections: ReadonlySet<Socket>;
   instance: Server;

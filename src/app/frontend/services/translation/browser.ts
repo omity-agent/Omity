@@ -1,6 +1,6 @@
 import { encodeTranslationLineBreaks } from "./lineBreaks";
 
-export interface BrowserTranslator {
+interface BrowserTranslator {
   translate: (text: string, signal?: AbortSignal) => Promise<string | null>;
 }
 export function browserTranslationSupported() {

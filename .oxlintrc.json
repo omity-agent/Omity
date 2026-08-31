@@ -16,12 +16,27 @@
     {
       "name": "@pandacss",
       "specifier": "@pandacss/eslint-plugin"
+    },
+    {
+      "name": "import-js",
+      "specifier": "eslint-plugin-import-x"
     }
   ],
   "options": {
     "typeAware": true,
     "typeCheck": true
   },
+  "overrides": [
+    {
+      "files": [
+        "panda.config.ts",
+        "vite.config.ts"
+      ],
+      "rules": {
+        "import-js/no-unused-modules": "allow"
+      }
+    }
+  ],
   "plugins": [
     "eslint",
     "typescript",
@@ -52,6 +67,12 @@
     "@tanstack/query/no-void-query-fn": "error",
     "@tanstack/query/mutation-property-order": "error",
     "typescript/no-deprecated": "error",
+    "import-js/no-unused-modules": [
+      "warn",
+      {
+        "unusedExports": true
+      }
+    ],
     "consistent-type-specifier-style": "allow",
     "exports-last": "allow",
     "filename-case": "allow",
@@ -91,6 +112,22 @@
     "require-hook": "allow"
   },
   "settings": {
-    "@pandacss/configPath": "./panda.config.ts"
+    "@pandacss/configPath": "./panda.config.ts",
+    "import-x/parsers": {
+      "@typescript-eslint/parser": [
+        ".ts",
+        ".tsx"
+      ]
+    },
+    "import-x/resolver": {
+      "node": {
+        "extensions": [
+          ".js",
+          ".jsx",
+          ".ts",
+          ".tsx"
+        ]
+      }
+    }
   }
 }

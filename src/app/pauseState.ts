@@ -1,6 +1,6 @@
 import type { Control } from "../types";
 
-export type PausePhase = "active" | "pausing" | "paused";
+type PausePhase = "active" | "pausing" | "paused";
 export function pauseRequested(control: Control) {
   return control === "pause" || control === "pause_cancel";
 }

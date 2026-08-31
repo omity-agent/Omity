@@ -129,7 +129,7 @@ async function detectWithMagika(code: string) {
 function tokenizerLines(tokenizer: ShikiStreamTokenizer) {
   return tokenLines([...tokenizer.tokensStable, ...tokenizer.tokensUnstable]);
 }
-export function tokenLines(tokens: ThemedToken[]) {
+function tokenLines(tokens: ThemedToken[]) {
   const lines = [""];
   for (const token of tokens) {
     const pieces = token.content.split("\n");

@@ -2,7 +2,7 @@ import { EditorView, type KeyBinding, keymap } from "@codemirror/view";
 import type { HistoryDirection } from "../Composer/history";
 import { Prec } from "@codemirror/state";
 
-export interface EditorHandlers {
+interface EditorHandlers {
   disabled: boolean;
   onHistoryNavigate?: (direction: HistoryDirection) => string | undefined;
   onPasteFiles?: (files: File[]) => string | undefined;

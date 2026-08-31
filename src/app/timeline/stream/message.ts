@@ -11,7 +11,7 @@ import type { FileLinkUnit } from "../../../fileLinks/types";
 import { countTokens } from "../../../runtime/tokenizer";
 import { streamCallKey } from "../tool/correlation";
 
-export type StreamPart = TextPart | ToolPart;
+type StreamPart = TextPart | ToolPart;
 type TextPart = {
   [Kind in "assistant_reasoning_delta" | "assistant_text_delta"]: {
     content: string;

@@ -3,7 +3,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { isRetryableModelError } from "../../runtime/network";
 import { isTerminalErrorSuppressed } from "../../failures/output";
 
-export type ApiErrorCode =
+type ApiErrorCode =
   | DomainErrorCode
   | "AUTH_INVALID"
   | "AUTH_NOT_CONFIGURED"

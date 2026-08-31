@@ -4,10 +4,6 @@ export type ComposerDraftTarget =
   | { beforeMessageId: number; kind: "fork"; sourceSessionId: string }
   | { kind: "new" }
   | { kind: "session"; sessionId: string };
-export interface LoadedComposerDraft {
-  content: string;
-  revision: number;
-}
 export async function readComposerDraft(target: ComposerDraftTarget, fallback: string) {
   if (target.kind === "session") {
     const draft = await loadComposerDraft(target.sessionId);

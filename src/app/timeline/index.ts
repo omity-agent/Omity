@@ -21,10 +21,8 @@ import { syntheticMessage } from "./build/synthetic";
 
 export type {
   DisplayEvent,
-  DisplayImage,
   DisplayMessage,
   DisplayQueue,
-  DisplayRole,
   DisplayToolCall,
   DisplayToolOutput,
   TokenUsage,

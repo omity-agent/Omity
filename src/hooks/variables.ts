@@ -2,7 +2,7 @@ import type { HookToolOutput } from "./storage/outputs";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
 
-export interface HookVariables {
+interface HookVariables {
   cwd: string;
   session?: string;
   toolOutputs: readonly HookToolOutput[];

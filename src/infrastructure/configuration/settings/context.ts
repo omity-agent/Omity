@@ -20,7 +20,7 @@ export const settingsProfileNamesSchema = z
       });
     }
   });
-export interface SettingsProfile {
+interface SettingsProfile {
   directory: string;
   name: string;
 }

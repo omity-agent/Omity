@@ -78,7 +78,7 @@ function normalizePair(address: Address, network: Cidr[0]): [Address, Address] |
   }
   return undefined;
 }
-export function isLocalAddress(address: Address) {
+function isLocalAddress(address: Address) {
   const range = address.range();
   return (
     range === "loopback" || range === "linkLocal" || range === "private" || range === "uniqueLocal"

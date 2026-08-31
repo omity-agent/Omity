@@ -6,7 +6,7 @@ import { escape as escapeHtml } from "es-toolkit";
 import { memo } from "react";
 import { retainedLineMarkup } from "./retention";
 
-export interface CodeLine {
+interface CodeLine {
   end: number;
   matches: FilePathMatch[];
   start: number;

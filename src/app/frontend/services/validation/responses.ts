@@ -12,21 +12,21 @@ import type { TranscriptSnapshot } from "../transcript/cache";
 import { errorDetailsSchema } from "../../../../failures/details";
 import { z } from ".";
 
-const integer = z.number().int();
-export const askUserQuestionSchema = z.discriminatedUnion("kind", [
-  z.object({
-    callId: z.string(),
-    kind: z.literal("choice"),
-    multiple: z.boolean(),
-    options: z.array(z.string()),
-    question: z.string(),
-  }),
-  z.object({
-    callId: z.string(),
-    kind: z.literal("open_ended"),
-    question: z.string(),
-  }),
-]);
+const integer = z.number().int(),
+  askUserQuestionSchema = z.discriminatedUnion("kind", [
+    z.object({
+      callId: z.string(),
+      kind: z.literal("choice"),
+      multiple: z.boolean(),
+      options: z.array(z.string()),
+      question: z.string(),
+    }),
+    z.object({
+      callId: z.string(),
+      kind: z.literal("open_ended"),
+      question: z.string(),
+    }),
+  ]);
 export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   askUser: askUserQuestionSchema.nullable().optional(),
   createdAt: integer,

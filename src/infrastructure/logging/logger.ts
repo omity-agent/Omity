@@ -77,7 +77,7 @@ export class Logger {
     return `${" ".repeat(13)} ${styles.dim}│${styles.reset} `;
   }
 }
-export function formatData(data: unknown): string[] {
+function formatData(data: unknown): string[] {
   if (data === undefined) {
     return [];
   }

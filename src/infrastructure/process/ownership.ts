@@ -12,7 +12,7 @@ export interface ProcessOwner {
   kind: "app" | "standalone";
   pid: number;
 }
-export type HostOwner = ProcessOwner & { hostId: string };
+type HostOwner = ProcessOwner & { hostId: string };
 export function hostOwnerId(owner: ProcessOwner) {
   return JSON.stringify({ ...owner, hostId: randomUUID() });
 }

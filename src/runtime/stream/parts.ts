@@ -1,7 +1,7 @@
 import { type ReasoningStreamState, createReasoningStreamState } from "../content";
 
 type SequentialPartKind = "assistant_reasoning_delta" | "assistant_text_delta";
-export interface StreamPartState {
+interface StreamPartState {
   messageId?: string;
   nextPart: number;
   reasoning: ReasoningStreamState;

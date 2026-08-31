@@ -1,7 +1,7 @@
 import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
 import { requireCallId } from "../../hooks/plan";
 
-export type IdentifiedToolCall = ToolCall & { id: string };
+type IdentifiedToolCall = ToolCall & { id: string };
 export function pendingToolBatch(messages: BaseMessage[], parallel: boolean): IdentifiedToolCall[] {
   const completed = new Set(
       messages

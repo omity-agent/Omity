@@ -12,7 +12,7 @@ import { WebAuthnCeremony } from "./ceremony";
 
 export const accessSessionCookie = "__Host-omity_access";
 export const accessChallengeCookie = "__Host-omity_challenge";
-export interface AccessStatus {
+interface AccessStatus {
   authenticated: boolean;
   configured: boolean;
   credentialCount: number;

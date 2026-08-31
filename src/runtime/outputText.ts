@@ -1,7 +1,7 @@
 import type { ContentBlock, MessageContent } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-export interface ToolTextContent {
+interface ToolTextContent {
   text: string;
   isError: boolean;
   normalized: MessageContent;

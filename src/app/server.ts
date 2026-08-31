@@ -18,7 +18,7 @@ import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
 import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
-export interface AppServerOptions {
+interface AppServerOptions {
   root: string;
   host?: string;
   port?: number;

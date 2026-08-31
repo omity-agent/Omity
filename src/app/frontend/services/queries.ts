@@ -13,7 +13,7 @@ import { reportError } from "./errors";
 import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
-export interface BootstrapData {
+interface BootstrapData {
   attachments: AttachmentSettings;
   cwd: string;
   frontend: FrontendSettings;
@@ -22,8 +22,8 @@ export interface BootstrapData {
   };
   sessions: SessionInfo[];
 }
-export { transcriptKey, useSessionTranscript, type TranscriptData } from "./transcript/query";
-export const bootstrapKey = ["bootstrap"] as const;
+export { transcriptKey, type TranscriptData } from "./transcript/query";
+const bootstrapKey = ["bootstrap"] as const;
 export function useBootstrap() {
   const queryClient = useQueryClient(),
     attention = sessionAttentionStore(queryClient),

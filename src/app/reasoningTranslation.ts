@@ -5,7 +5,7 @@ import {
 import { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 
-export type ReasoningTranslationSubmission = ReasoningTranslation;
+type ReasoningTranslationSubmission = ReasoningTranslation;
 export function writeReasoningTranslation(
   sessionId: string,
   submission: ReasoningTranslationSubmission,

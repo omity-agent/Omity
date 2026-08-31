@@ -2,7 +2,7 @@ import { type BaseMessage, type ContentBlock, ToolMessage } from "@langchain/cor
 import type { ModelApi } from "../types";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-export interface ToolImage {
+interface ToolImage {
   src: string;
   mimeType: string;
 }

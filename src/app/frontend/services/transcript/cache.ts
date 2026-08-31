@@ -89,9 +89,6 @@ export function rebuildTranscript(
 ) {
   return buildTranscript({ ...current, ...changes }, current, current.snapshotCursor);
 }
-export function withoutOptimistic(current: TranscriptData, key: string): TranscriptData {
-  return { ...current, view: current.view.filter((item) => item.key !== key) };
-}
 function buildTranscript(
   snapshot: TranscriptSnapshot,
   current: TranscriptData | undefined,

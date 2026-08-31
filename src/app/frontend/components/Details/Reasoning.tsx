@@ -65,10 +65,10 @@ function ReasoningTitle({ label, reasoning }: { label: string; reasoning: string
     </span>
   );
 }
-export function singleLineReasoning(text: string) {
+function singleLineReasoning(text: string) {
   return text.replace(/\r\n|[\r\n\u2028\u2029]/g, " ");
 }
-export function preferredTranslation(
+function preferredTranslation(
   part: Extract<TimelinePart, { type: "reasoning" }>,
   preferredLanguages: readonly string[],
   liveTranslation?: ReasoningTranslation,

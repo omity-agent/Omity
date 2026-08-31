@@ -1,17 +1,12 @@
 import type { ErrorDetails } from "./failures/details";
 import { z } from "zod";
 
-export {
-  streamEventSchema,
-  toolOutputSnapshotSchema,
-} from "./infrastructure/database/schema/streamEvent";
+export { streamEventSchema } from "./infrastructure/database/schema/streamEvent";
 export type {
   StreamEvent,
   StreamEventDraft,
   StreamEventKind,
   StreamEventValues,
-  StreamToolCallDelta,
-  ToolFinishedEvent,
   ToolOutputSnapshot,
 } from "./infrastructure/database/schema/streamEvent";
 export type {
@@ -48,7 +43,7 @@ export interface HostMode {
   sessionId: string;
   profile?: string;
 }
-export type HookMode = "silent" | "takeover";
+type HookMode = "silent" | "takeover";
 export type HookWhen = "before" | "after";
 export type HookTrigger = `${string}:${HookWhen}`;
 export interface HookRule {

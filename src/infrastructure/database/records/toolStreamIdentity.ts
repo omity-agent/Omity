@@ -4,7 +4,7 @@ import { events } from "../schema";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { sessionDatabase } from "../connection";
 
-export interface ToolStreamIdentity {
+interface ToolStreamIdentity {
   messageId: string;
   partId: string;
 }

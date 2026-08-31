@@ -2,7 +2,7 @@ import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
 import type { AskUserRequest } from "./askUser";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-export type AskUserAnswer =
+type AskUserAnswer =
   | { kind: "choice"; options: string[]; note: string }
   | { answer: string; kind: "open_ended" };
 interface PendingQuestion {

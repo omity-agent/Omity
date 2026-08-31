@@ -1,4 +1,4 @@
-export interface ToolExecutionHandle {
+interface ToolExecutionHandle {
   signal: AbortSignal;
   cancellationDurationMs: () => number | undefined;
   complete: () => void;

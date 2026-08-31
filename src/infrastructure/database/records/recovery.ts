@@ -18,19 +18,19 @@ import type { ErrorDetails } from "../../../failures/details";
 import { pruneUnreferencedMessages } from "./messages/history";
 import { runTransaction } from "../connection";
 
-export interface InterruptedSessionClaim {
+interface InterruptedSessionClaim {
   sessionId: string;
   now: number;
   confirmedDeadOwnerId?: string;
 }
-export type InterruptedSessionRecovery =
+type InterruptedSessionRecovery =
   | { status: "blocked"; lease: HostLeaseRecord }
   | {
       status: "recovered";
       action: "paused" | "canceled" | "none";
       activeItems: number;
     };
-export function recoverInterruptedSessionRecord(
+function recoverInterruptedSessionRecord(
   db: Database,
   claim: InterruptedSessionClaim,
 ): InterruptedSessionRecovery {

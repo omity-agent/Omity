@@ -11,11 +11,11 @@ import { isPlainObject as isRecord } from "es-toolkit";
 import { config as loadDotenv } from "dotenv";
 import untildify from "untildify";
 
-export interface LayeredSettingsFile {
+interface LayeredSettingsFile {
   path: string;
   value: unknown;
 }
-export type SettingsScope = "global" | "profile";
+type SettingsScope = "global" | "profile";
 type OverrideTransform = (value: unknown, override: unknown, directory: string) => unknown;
 interface LayeredSettingsTransforms {
   beforePlaceholders?: (value: unknown) => unknown;
@@ -25,7 +25,7 @@ export function userDataDirectory() {
   const configured = process.env["OMITY_HOME"];
   return configured ? resolve(untildify(configured)) : join(homedir(), ".omity");
 }
-export function userEnvironmentPath() {
+function userEnvironmentPath() {
   return join(userDataDirectory(), ".env");
 }
 export function loadUserEnvironment(path = userEnvironmentPath()) {

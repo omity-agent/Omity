@@ -6,7 +6,7 @@ import type { Settings } from "../types";
 import { fromModelMessages } from "./fromAiMessages";
 import { toModelMessages } from "./aiMessages";
 
-export interface AiModelOptions {
+interface AiModelOptions {
   freeformToolNames?: ReadonlySet<string>;
   messages: BaseMessage[];
   model?: LanguageModel;

@@ -2,7 +2,7 @@ import { type MessageStorageMode, encodeMessage } from "./payload";
 import type { BaseMessage } from "@langchain/core/messages";
 import { decodeMessage } from "./hydration";
 
-export interface MessageRow {
+interface MessageRow {
   message_json: string;
   source_id?: string;
 }

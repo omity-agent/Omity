@@ -103,7 +103,7 @@ function messageContent(value: unknown): BaseMessage["content"] {
   }
   return JSON.stringify(value);
 }
-export function formatDuration(durationMs: number) {
+function formatDuration(durationMs: number) {
   if (durationMs < 1000) {
     return `${Math.round(durationMs).toString()} 毫秒`;
   }

@@ -2,7 +2,7 @@ import { isPlainObject as isRecord } from "es-toolkit";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
-export type ErrorValue =
+type ErrorValue =
   | null
   | boolean
   | number
@@ -17,12 +17,12 @@ export interface ErrorDetails {
   cause?: ErrorDetails;
   details?: Record<string, ErrorValue>;
 }
-export interface ErrorSummaryItem {
+interface ErrorSummaryItem {
   name: string;
   message: string;
   details?: Record<string, ErrorValue>;
 }
-export interface ErrorSummary extends ErrorSummaryItem {
+interface ErrorSummary extends ErrorSummaryItem {
   causes?: ErrorSummaryItem[];
 }
 const errorValueSchema: z.ZodType<ErrorValue> = z.lazy(() =>

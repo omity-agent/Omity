@@ -3,13 +3,11 @@ import {
   type ButtonVariantProps,
   type CodeVariantProps,
   type InputVariantProps,
-  type TextareaVariantProps,
   badge as badgeRecipe,
   button as buttonRecipe,
   code as codeRecipe,
   field as fieldRecipe,
   input as inputRecipe,
-  textarea as textareaRecipe,
 } from "styled-system/recipes";
 import { type ComponentProps, type ReactNode, createElement } from "react";
 import { css, cx } from "styled-system/css";
@@ -129,13 +127,6 @@ export function Select({ className, size = "sm", ...props }: SelectProps) {
   return createElement("select", {
     ...props,
     className: cx(inputRecipe({ size }), compactControl, surfacedControl, className),
-  });
-}
-type TextareaProps = ComponentProps<"textarea"> & TextareaVariantProps;
-export function Textarea({ className, size = "md", ...props }: TextareaProps) {
-  return createElement("textarea", {
-    ...props,
-    className: cx(textareaRecipe({ size }), compactControl, surfacedControl, className),
   });
 }
 function FieldRoot({ className, ...props }: ComponentProps<"div">) {

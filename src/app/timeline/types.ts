@@ -4,7 +4,7 @@ import type { FilePathMatch } from "../../fileLinks/types";
 import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
 
 export type DisplayRole = "user" | "system" | "assistant" | "tool";
-export interface DisplayImage {
+interface DisplayImage {
   src: string;
   mimeType: string;
 }

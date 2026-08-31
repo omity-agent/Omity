@@ -8,7 +8,7 @@ import type { ToolMessage } from "@langchain/core/messages";
 import { consumeHookUsage } from "./storage/usage";
 import { resolveHookArgs } from "./variables";
 
-export interface HookExecutionOptions {
+interface HookExecutionOptions {
   consume: (hookId: string, limit: number) => Promise<boolean>;
   invoke: (call: ReturnType<HookRuntime["resolvedCall"]>) => Promise<ToolMessage>;
   toolOutputs: readonly HookToolOutput[];

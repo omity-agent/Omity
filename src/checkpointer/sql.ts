@@ -17,13 +17,13 @@ export interface WriteRow {
   type: string;
   value: string;
 }
-export function requiredString(value: unknown, name: string) {
+function requiredString(value: unknown, name: string) {
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(`缺少 ${name}`);
   }
   return value;
 }
-export function optionalString(value: unknown, name: string) {
+function optionalString(value: unknown, name: string) {
   if (value == null) {
     return undefined;
   }

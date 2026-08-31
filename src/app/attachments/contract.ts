@@ -46,7 +46,7 @@ export function fileSuffix(name: string) {
   const index = name.lastIndexOf(".");
   return index > 0 ? name.slice(index).toLowerCase() : "";
 }
-export function validateAttachment(
+function validateAttachment(
   file: unknown,
   settings: AttachmentSettings,
 ): asserts file is AttachmentMetadata {

@@ -86,7 +86,7 @@ export function streamedMessageReasoning(message: BaseMessage, state: ReasoningS
   const reasoning = contentBlocksToReasoning(message.contentBlocks);
   return reasoning ? appendReasoningPart({ text: reasoning }, state) : flushReasoning(state);
 }
-export function contentBlocksToReasoning(content: unknown): string {
+function contentBlocksToReasoning(content: unknown): string {
   if (!Array.isArray(content)) {
     return "";
   }

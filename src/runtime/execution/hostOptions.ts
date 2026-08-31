@@ -4,7 +4,7 @@ import type { ProcessOwner } from "../../infrastructure/process/ownership";
 import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
 
-export interface HostControls {
+interface HostControls {
   cancelTool: (callId: string) => boolean;
 }
 export interface HostRunOptions {

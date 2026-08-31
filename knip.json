@@ -1,1 +1,19 @@
-{}
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": [
+    "src/cli.ts",
+    "src/app/frontend/main.tsx",
+    "scripts/**/*.ts",
+    "tests/**/*.{ts,tsx}",
+    "panda.config.ts",
+    "vite.config.ts"
+  ],
+  "includeEntryExports": true,
+  "ignoreExportsUsedInFile": false,
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.ts",
+    "tests/**/*.{ts,tsx}",
+    "*.config.ts"
+  ]
+}

@@ -49,7 +49,7 @@ export function pagePath(page: Page) {
   }
   return `#/sessions/${encodeURIComponent(page.id)}`;
 }
-export function writePage(page: Page, replace = false) {
+function writePage(page: Page, replace = false) {
   const path = pagePath(page);
   if (globalThis.location.hash === path) {
     return;

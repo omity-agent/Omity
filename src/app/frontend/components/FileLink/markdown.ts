@@ -17,7 +17,7 @@ export function fileLinkRemark(matches: FilePathMatch[]): Plugin<[], Root> {
     transformChildren(tree, matches, false);
   };
 }
-export function fileLinkHref(path: string) {
+function fileLinkHref(path: string) {
   return `${marker}${encodeURIComponent(path)}`;
 }
 export function pathFromFileLinkHref(href?: string) {

@@ -7,7 +7,7 @@ interface CodexClientOptions {
   authFilePath?: string;
   fetch?: FetchLike;
 }
-export function createCodexClientFields(options: CodexClientOptions = {}) {
+function createCodexClientFields(options: CodexClientOptions = {}) {
   const authFilePath = options.authFilePath ?? join(homedir(), ".codex", "auth.json");
   return {
     apiKey: "codex-oauth",

@@ -59,38 +59,6 @@ export function loadMessages(db: Database, sessionId: string): BaseMessage[] {
   );
   return messageRowsToChatMessages(rows);
 }
-export function loadMessageRows(db: Database, ids: number[]) {
-  const select = db.prepare<StoredRow, [number]>(
-    "SELECT source_id, message_json FROM messages WHERE id = ?",
-  );
-  try {
-    return ids.map((id) => {
-      const row = select.get(id);
-      if (!row) {
-        throw new Error(`待恢复消息不存在：${id.toString()}`);
-      }
-      return row;
-    });
-  } finally {
-    select.finalize();
-  }
-}
-export function loadMessageBySourceId(db: Database, sessionId: string, sourceId: string) {
-  const row = queryGet<StoredRow>(
-    db,
-    "SELECT source_id, message_json FROM messages WHERE session_id = ? AND source_id = ?",
-    sessionId,
-    sourceId,
-  );
-  if (!row) {
-    throw new Error(`消息不存在：${sourceId}`);
-  }
-  const [message] = messageRowsToChatMessages([row]);
-  if (!message) {
-    throw new Error(`消息无法还原：${sourceId}`);
-  }
-  return message;
-}
 export function storeMessage(
   db: Database,
   sessionId: string,

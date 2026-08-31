@@ -15,7 +15,7 @@ export interface StoredUsage {
   input: number;
   output: number;
 }
-export interface StoredHuman {
+interface StoredHuman {
   content: MessageContent;
   type: "human";
 }
