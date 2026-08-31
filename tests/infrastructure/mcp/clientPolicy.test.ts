@@ -7,6 +7,7 @@ import { createSettingsContext } from "../../../src/infrastructure/configuration
 import { createTestDirectory } from "../../support/artifacts";
 import { errorResponse } from "../../../src/app/http/errors";
 import { join } from "node:path";
+import { z } from "zod";
 
 test("stdio diagnostics are attached to initialization errors", async () => {
   const output = "error: unsupported option --broken";
@@ -185,4 +186,13 @@ test("MCP load errors are returned to the browser without terminal logging", () 
   } finally {
     log.mockRestore();
   }
+});
+test("MCP load errors format native Zod issues", () => {
+  const result = z.object({ args: z.array(z.string()) }).safeParse({ args: "invalid" });
+  if (result.success) {
+    throw new Error("测试输入应触发 Zod 校验错误");
+  }
+  expect(createMcpLoadError(result.error).message).toContain(
+    "settings/toolbox.yaml.args 应为字符串数组；如无参数可省略",
+  );
 });

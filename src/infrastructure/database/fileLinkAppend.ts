@@ -1,4 +1,4 @@
-import type { StreamEvent, StreamEventDraft } from "./records/streamEvents";
+import type { StreamEvent, StreamEventDraft } from "../../types";
 import { appendIndexedStream, insertPlainStream } from "./fileLinkOperations";
 import type { Database } from "bun:sqlite";
 import type { FileLinkIndexer } from "./fileLinkIndexer";

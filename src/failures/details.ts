@@ -1,3 +1,4 @@
+import { isPlainObject as isRecord } from "es-toolkit";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
@@ -25,25 +26,25 @@ export interface ErrorSummary extends ErrorSummaryItem {
   causes?: ErrorSummaryItem[];
 }
 const errorValueSchema: z.ZodType<ErrorValue> = z.lazy(() =>
-    z.union([
-      z.null(),
-      z.boolean(),
-      z.number(),
-      z.string(),
-      z.array(errorValueSchema),
-      z.record(z.string(), errorValueSchema),
-    ]),
-  ),
-  errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
-    z.strictObject({
-      cause: errorDetailsSchema.optional(),
-      details: z.record(z.string(), errorValueSchema).optional(),
-      message: z.string(),
-      name: z.string(),
-      stack: z.string().optional(),
-    }),
-  ),
-  errorValuesSchema = z.record(z.string(), errorValueSchema),
+  z.union([
+    z.null(),
+    z.boolean(),
+    z.number(),
+    z.string(),
+    z.array(errorValueSchema),
+    z.record(z.string(), errorValueSchema),
+  ]),
+);
+export const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
+  z.strictObject({
+    cause: errorDetailsSchema.optional(),
+    details: z.record(z.string(), errorValueSchema).optional(),
+    message: z.string(),
+    name: z.string(),
+    stack: z.string().optional(),
+  }),
+);
+const errorValuesSchema = z.record(z.string(), errorValueSchema),
   hiddenDetailKeys = new Set(["pregelTaskId"]),
   structuralErrorKeys = new Set(["name", "message", "stack", "cause", ...hiddenDetailKeys]);
 export function captureError(error: unknown): ErrorDetails {
@@ -57,9 +58,7 @@ export function captureError(error: unknown): ErrorDetails {
       name: valueName(error),
     });
   }
-  return errorDetailsSchema.parse(
-    adaptSerializedError(isRecord(serialized) ? serialized : {}, error),
-  );
+  return errorDetailsSchema.parse(adaptSerializedError(isRecord(serialized) ? serialized : {}));
 }
 export function stringifyError(error: ErrorDetails) {
   return JSON.stringify(error);
@@ -94,26 +93,23 @@ export function parseError(value: string): ErrorDetails {
   }
   return result.data;
 }
-function adaptSerializedError(serialized: Record<string, unknown>, source?: unknown): ErrorDetails {
+function adaptSerializedError(serialized: Record<string, unknown>): ErrorDetails {
   const details: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(serialized)) {
     if (!structuralErrorKeys.has(key)) {
-      details[key] = sourceProperty(source, key, value);
+      details[key] = value;
     }
   }
   const { cause } = serialized,
     parsedDetails = errorValuesSchema.parse(details);
   return {
-    message: typeof serialized["message"] === "string" ? serialized["message"] : String(source),
-    name: typeof serialized["name"] === "string" ? serialized["name"] : valueName(source),
+    message: typeof serialized["message"] === "string" ? serialized["message"] : "Unknown error",
+    name: typeof serialized["name"] === "string" ? serialized["name"] : "Error",
     ...(typeof serialized["stack"] === "string" ? { stack: serialized["stack"] } : {}),
     ...(cause === undefined
       ? {}
       : {
-          cause: adaptSerializedError(
-            isRecord(cause) ? cause : serializeError(cause),
-            source instanceof Error ? source.cause : undefined,
-          ),
+          cause: adaptSerializedError(isRecord(cause) ? cause : serializeError(cause)),
         }),
     ...(Object.keys(parsedDetails).length > 0 ? { details: parsedDetails } : {}),
   };
@@ -133,17 +129,6 @@ function visibleDetails(details: Record<string, ErrorValue> | undefined) {
   return Object.fromEntries(
     Object.entries(details).filter(([key]) => !hiddenDetailKeys.has(key)),
   ) as Record<string, ErrorValue>;
-}
-function sourceProperty(source: unknown, key: string, serialized: unknown) {
-  if (!isRecord(source)) {
-    return serialized;
-  }
-  try {
-    const value = source[key];
-    return value instanceof Headers ? Object.fromEntries(value.entries()) : serialized;
-  } catch {
-    return serialized;
-  }
 }
 function nonErrorValue(value: unknown, serialized: unknown): unknown {
   if (value === null || ["string", "boolean"].includes(typeof value)) {
@@ -172,7 +157,4 @@ function valueName(value: unknown) {
   }
   const { constructor } = value;
   return typeof constructor === "function" && constructor.name ? constructor.name : "Object";
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

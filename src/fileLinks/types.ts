@@ -1,19 +1,28 @@
-export type FileLinkAction = "open" | "reveal";
-export type FileLinkSurface = "content" | "reasoning" | "tool_input" | "tool_output";
-export type FilePathKind = "directory" | "file";
-export interface FilePathMatch {
-  kind: FilePathKind;
-  path: string;
-  position: {
-    end: number;
-    start: number;
-  };
-}
-export interface FileLinkUnit {
-  end: number;
-  matches: FilePathMatch[];
-  ownerId: string;
-  start: number;
-  surface: FileLinkSurface;
-  unitIndex: number;
-}
+import { z } from "zod";
+
+const offsetSchema = z.number().int().nonnegative(),
+  positionSchema = z.object({
+    end: offsetSchema,
+    start: offsetSchema,
+  });
+export const fileLinkActionSchema = z.enum(["open", "reveal"]),
+  fileLinkSurfaceSchema = z.enum(["content", "reasoning", "tool_input", "tool_output"]),
+  filePathKindSchema = z.enum(["directory", "file"]),
+  filePathMatchSchema = z.object({
+    kind: filePathKindSchema,
+    path: z.string(),
+    position: positionSchema,
+  }),
+  fileLinkUnitSchema = z.object({
+    end: offsetSchema,
+    matches: z.array(filePathMatchSchema),
+    ownerId: z.string(),
+    start: offsetSchema,
+    surface: fileLinkSurfaceSchema,
+    unitIndex: offsetSchema,
+  });
+export type FileLinkAction = z.infer<typeof fileLinkActionSchema>;
+export type FileLinkSurface = z.infer<typeof fileLinkSurfaceSchema>;
+export type FilePathKind = z.infer<typeof filePathKindSchema>;
+export type FilePathMatch = z.infer<typeof filePathMatchSchema>;
+export type FileLinkUnit = z.infer<typeof fileLinkUnitSchema>;

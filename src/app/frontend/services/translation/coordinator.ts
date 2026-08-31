@@ -1,3 +1,4 @@
+import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import type { ReasoningTranslation } from "../../../timeline";
 import { createBrowserTranslator } from "./browser";
 
@@ -13,81 +14,53 @@ type PendingTranslationCandidate = Omit<TranslationCandidate, "messageId"> & {
 interface TranslationCoordinatorOptions {
   createTranslator?: typeof createBrowserTranslator;
   minimumIntervalMs: number;
-  now?: () => number;
   onTranslation?: (translation: ReasoningTranslation) => void;
   persist: (translation: ReasoningTranslation) => Promise<unknown>;
   reportError?: (error: unknown) => void;
   targetLanguage: string;
 }
 export class ReasoningTranslationCoordinator {
-  private active?: Promise<void>;
-  private controller?: AbortController;
+  private closed = false;
   private failed = false;
-  private lastTranslationAt = Number.NEGATIVE_INFINITY;
-  private pending?: TranslationCandidate;
-  private timer?: ReturnType<typeof setTimeout>;
-  constructor(private readonly options: TranslationCoordinatorOptions) {}
+  private readonly queue: AsyncQueuer<TranslationCandidate>;
+  constructor(private readonly options: TranslationCoordinatorOptions) {
+    this.queue = new AsyncQueuer(
+      (candidate) => {
+        const signal = this.queue.getAbortSignal();
+        if (!signal) {
+          throw new Error("翻译任务缺少取消信号");
+        }
+        return this.translate(candidate, signal);
+      },
+      {
+        onError: (error) => {
+          if (this.closed) {
+            return;
+          }
+          this.failed = true;
+          this.queue.clear();
+          this.queue.stop();
+          this.options.reportError?.(error);
+        },
+        wait: options.minimumIntervalMs,
+      },
+    );
+  }
   update(candidate: PendingTranslationCandidate) {
-    if (this.failed || !candidate.messageId) {
+    if (this.closed || this.failed || !candidate.messageId) {
       return;
     }
     if (isPersisted(candidate.translations, candidate.content, this.options.targetLanguage)) {
       return;
     }
-    this.pending = { ...candidate, messageId: candidate.messageId };
-    this.schedule();
+    this.queue.clear();
+    this.queue.addItem({ ...candidate, messageId: candidate.messageId });
   }
   close() {
-    this.controller?.abort();
-    if (this.timer) {
-      clearTimeout(this.timer);
-    }
-    this.pending = undefined;
-  }
-  private schedule() {
-    if (this.active || !this.pending) {
-      return;
-    }
-    const now = this.options.now?.() ?? Date.now(),
-      remaining = this.options.minimumIntervalMs - (now - this.lastTranslationAt);
-    if (remaining <= 0) {
-      this.start();
-      return;
-    }
-    if (!this.timer) {
-      this.timer = setTimeout(() => {
-        this.timer = undefined;
-        this.start();
-      }, remaining);
-    }
-  }
-  private start() {
-    const candidate = this.pending;
-    if (!candidate) {
-      return;
-    }
-    this.pending = undefined;
-    this.lastTranslationAt = this.options.now?.() ?? Date.now();
-    const controller = new AbortController();
-    this.controller = controller;
-    this.active = this.run(candidate, controller);
-  }
-  private async run(candidate: TranslationCandidate, controller: AbortController) {
-    try {
-      await this.translate(candidate, controller.signal);
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        this.failed = true;
-        this.pending = undefined;
-        this.options.reportError?.(error);
-      }
-    } finally {
-      if (this.controller === controller) {
-        this.active = undefined;
-        this.controller = undefined;
-        this.schedule();
-      }
-    }
+    this.closed = true;
+    this.queue.stop();
+    this.queue.clear();
+    this.queue.abort();
   }
   private async translate(candidate: TranslationCandidate, signal: AbortSignal) {
     const translator = await (this.options.createTranslator ?? createBrowserTranslator)(

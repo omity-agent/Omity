@@ -1,7 +1,7 @@
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
-import type { StreamEvent } from "../../../src/infrastructure/database/records/streamEvents";
+import type { StreamEvent } from "../../../src/types";
 import { buildTimeline } from "../../../src/app/timeline";
 import { loadTranscript } from "../../../src/app/transcript";
 

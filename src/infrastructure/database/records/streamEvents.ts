@@ -1,8 +1,7 @@
+import type { StreamEvent, StreamEventDraft } from "../schema/streamEvent";
 import { and, eq, ne } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { Database } from "bun:sqlite";
-import type { FileLinkUnit } from "../../../fileLinks/types";
-import type { ToolOutputSnapshot } from "../../../runtime/toolOutput";
 import { events } from "../schema";
 import { sessionDatabase } from "../connection";
 
@@ -10,49 +9,6 @@ const sqliteSequence = sqliteTable("sqlite_sequence", {
   name: text().notNull(),
   seq: integer().notNull(),
 });
-export interface StreamToolCallDelta {
-  index: number;
-  argumentsDelta?: string;
-  freeform?: boolean;
-  idDelta?: string;
-  nameDelta?: string;
-}
-export type StreamEventKind =
-  | "assistant_reasoning_delta"
-  | "assistant_text_delta"
-  | "tool_call_delta"
-  | "tool_finished"
-  | "tool_started"
-  | "user_appended";
-interface StreamEventBase {
-  id: number;
-  fileLinks?: FileLinkUnit[];
-  messageId: string;
-  partId: string;
-  queueId: number;
-}
-export interface StreamEventValues {
-  assistant_reasoning_delta: string;
-  assistant_text_delta: string;
-  tool_call_delta: StreamToolCallDelta;
-  tool_finished: ToolFinishedEvent;
-  tool_started: string;
-  user_appended: null;
-}
-export interface ToolFinishedEvent {
-  callId: string;
-  output: ToolOutputSnapshot;
-}
-type StreamEventOf<Kind extends StreamEventKind> = StreamEventBase & {
-  kind: Kind;
-  value: StreamEventValues[Kind];
-};
-export type StreamEvent = {
-  [Kind in StreamEventKind]: StreamEventOf<Kind>;
-}[StreamEventKind];
-export type StreamEventDraft = {
-  [Kind in StreamEventKind]: Omit<StreamEventOf<Kind>, "id">;
-}[StreamEventKind];
 export function streamEventCursor(db: Database) {
   const cursor =
     sessionDatabase(db)

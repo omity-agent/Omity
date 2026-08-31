@@ -1,5 +1,5 @@
+import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
-import { HumanMessage } from "@langchain/core/messages";
 import type { QueueRun } from "./run";
 import { queueMessageId } from "../infrastructure/database/records/messages/history";
 
@@ -88,17 +88,13 @@ function hasPendingTools(state: BoundaryState) {
   if (!Array.isArray(messages)) {
     return false;
   }
-  const toolIds = new Set(messages.filter(isToolMessage).map((message) => message.tool_call_id)),
-    lastAi = messages.findLast(isAiMessage);
-  return Boolean(lastAi?.tool_calls?.some((call) => !toolIds.has(call.id)));
-}
-function isToolMessage(message: unknown): message is { type: "tool"; tool_call_id: string } {
-  return (
-    isRecord(message) && message["type"] === "tool" && typeof message["tool_call_id"] === "string"
-  );
-}
-function isAiMessage(message: unknown): message is { type: "ai"; tool_calls?: { id: string }[] } {
-  return isRecord(message) && message["type"] === "ai";
+  const toolIds = new Set(
+      messages
+        .filter((message) => ToolMessage.isInstance(message))
+        .map((message) => message.tool_call_id),
+    ),
+    lastAi = messages.findLast((message) => AIMessage.isInstance(message));
+  return Boolean(lastAi?.tool_calls?.some((call) => !call.id || !toolIds.has(call.id)));
 }
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

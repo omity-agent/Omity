@@ -5,6 +5,8 @@ import type {
 } from "../attachments/contract";
 import type { HonoRequest } from "hono/request";
 import { HttpError } from "./errors";
+import { controlCommandSchema } from "../../types";
+import { fileLinkActionSchema } from "../../fileLinks/types";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/context";
 import { z } from "zod";
@@ -33,9 +35,7 @@ export const composerDraftBody = z
     revision: z.number().int().positive(),
   })
   .strict();
-export const controlBody = z
-  .object({ control: z.enum(["running", "step", "pause", "cancel"]) })
-  .strict();
+export const controlBody = z.object({ control: controlCommandSchema }).strict();
 export const cancelToolBody = z.object({ toolCallId: z.string().min(1).max(1024) }).strict();
 export const answerToolBody = z
   .object({
@@ -45,7 +45,7 @@ export const answerToolBody = z
   .strict();
 export const fileLinkActionBody = z
   .object({
-    action: z.enum(["open", "reveal"]),
+    action: fileLinkActionSchema,
     path: z.string().min(1).max(32_767),
   })
   .strict();

@@ -1,64 +1,42 @@
-interface ZodIssueLike {
-  code?: string;
-  expected?: unknown;
-  message?: string;
-  path?: (string | number)[];
-  received?: unknown;
-  unionErrors?: { issues?: ZodIssueLike[] }[];
-}
+import { ZodError, type z } from "zod";
+import { uniq } from "es-toolkit";
+
 export function collectReadableZodIssues(error: unknown): string[] {
-  const issues = getZodIssues(error);
-  if (issues.length === 0) {
+  if (!(error instanceof ZodError)) {
     return [];
   }
-  return [...new Set(flattenBestIssues(issues).map(formatZodIssue))];
+  return uniq(flattenBestIssues(error.issues).map(formatZodIssue));
 }
-function getZodIssues(error: unknown): ZodIssueLike[] {
-  if (isRecord(error) && Array.isArray(error["issues"])) {
-    return error["issues"].filter(isZodIssueLike);
-  }
-  return [];
-}
-function flattenBestIssues(issues: ZodIssueLike[]): ZodIssueLike[] {
+function flattenBestIssues(issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssue[] {
   return issues.flatMap((issue) => {
-    if (issue.code !== "invalid_union" || issue.unionErrors === undefined) {
+    if (issue.code !== "invalid_union") {
       return [issue];
     }
-    const candidates = issue.unionErrors
-        .map((unionError) => flattenBestIssues(unionError.issues ?? []))
+    const candidates = issue.errors
+        .map((candidate) => flattenBestIssues(candidate))
         .filter((candidate) => candidate.length > 0),
       [best] = candidates.toSorted((left, right) => left.length - right.length);
     return best ?? [issue];
   });
 }
-function formatZodIssue(issue: ZodIssueLike): string {
+function formatZodIssue(issue: z.core.$ZodIssue): string {
   const path = formatIssuePath(issue.path);
-  if (issue.path?.at(-1) === "args" && issue.expected === "array") {
-    return `${path} 应为字符串数组；如无参数可省略（当前为 ${formatValue(issue.received)}）`;
+  if (issue.code === "invalid_type") {
+    if (issue.path.at(-1) === "args" && issue.expected === "array") {
+      return `${path} 应为字符串数组；如无参数可省略`;
+    }
+    if (issue.path.at(-1) === "command" && issue.expected === "string") {
+      return `${path} 应为可执行命令字符串`;
+    }
+    if (issue.path.at(-1) === "url" && issue.expected === "string") {
+      return `${path} 应为 HTTP/SSE MCP 服务地址`;
+    }
   }
-  if (issue.path?.at(-1) === "command" && issue.expected === "string") {
-    return `${path} 应为可执行命令字符串`;
-  }
-  if (issue.path?.at(-1) === "url" && issue.expected === "string") {
-    return `${path} 应为 HTTP/SSE MCP 服务地址`;
-  }
-  return `${path} ${issue.message ?? "配置无效"}`;
+  return `${path} ${issue.message}`;
 }
-function formatIssuePath(path: (string | number)[] | undefined): string {
-  if (path === undefined || path.length === 0) {
+function formatIssuePath(path: PropertyKey[]): string {
+  if (path.length === 0) {
     return "settings/toolbox.yaml";
   }
-  return `settings/toolbox.yaml.${path.join(".")}`;
-}
-function formatValue(value: unknown): string {
-  if (value === undefined) {
-    return "未填写";
-  }
-  return JSON.stringify(value);
-}
-function isZodIssueLike(value: unknown): value is ZodIssueLike {
-  return isRecord(value);
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return `settings/toolbox.yaml.${path.map(String).join(".")}`;
 }

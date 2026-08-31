@@ -1,28 +1,18 @@
+import {
+  controlCommandSchema,
+  controlSchema,
+  queueStatusSchema,
+  sessionStatusSchema,
+  streamEventSchema,
+} from "../../../../types";
+import { fileLinkUnitSchema, filePathMatchSchema } from "../../../../fileLinks/types";
 import type { AttachmentSettings } from "../../../attachments/contract";
-import type { DisplayEvent } from "../../../timeline";
-import type { FileLinkUnit } from "../../../../fileLinks/types";
 import type { SessionInfo } from "../../../sessionState";
 import type { TranscriptSnapshot } from "../transcript/cache";
-import { errorDetailsSchema } from "./errors";
+import { errorDetailsSchema } from "../../../../failures/details";
 import { z } from ".";
 
-const integer = z.number().int(),
-  fileLinkMatchSchema = z.object({
-    kind: z.enum(["directory", "file"]),
-    path: z.string(),
-    position: z.object({
-      end: integer.nonnegative(),
-      start: integer.nonnegative(),
-    }),
-  }),
-  fileLinkUnitSchema: z.ZodType<FileLinkUnit> = z.object({
-    end: integer.nonnegative(),
-    matches: z.array(fileLinkMatchSchema),
-    ownerId: z.string(),
-    start: integer.nonnegative(),
-    surface: z.enum(["content", "reasoning", "tool_input", "tool_output"]),
-    unitIndex: integer.nonnegative(),
-  });
+const integer = z.number().int();
 export const askUserQuestionSchema = z.discriminatedUnion("kind", [
   z.object({
     callId: z.string(),
@@ -42,12 +32,12 @@ export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   createdAt: integer,
   error: errorDetailsSchema.nullable(),
   id: z.string(),
-  status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
+  status: sessionStatusSchema,
   updatedAt: integer,
   workspace: z.string(),
 });
 const toolCallSchema = z.object({
-    fileLinks: z.array(fileLinkMatchSchema).optional(),
+    fileLinks: z.array(filePathMatchSchema).optional(),
     id: z.string(),
     index: integer.nonnegative(),
     input: z.unknown(),
@@ -88,60 +78,14 @@ const toolCallSchema = z.object({
     error: errorDetailsSchema.nullable(),
     id: integer.positive(),
     root: z.boolean().optional(),
-    status: z.enum(["draft", "pending", "running", "paused", "done", "canceled"]),
+    status: queueStatusSchema,
     submissionId: z.string().nullable().optional(),
     userMessageId: integer.positive().nullable().optional(),
   }),
-  eventBase = {
-    fileLinks: z.array(fileLinkUnitSchema).optional(),
-    id: integer.positive(),
-    messageId: z.string().min(1),
-    partId: z.string().min(1),
-    queueId: integer.positive(),
-  };
-export const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
-  z.object({
-    ...eventBase,
-    kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
-    value: z.string(),
-  }),
-  z.object({
-    ...eventBase,
-    kind: z.literal("tool_call_delta"),
-    value: z.object({
-      argumentsDelta: z.string().optional(),
-      freeform: z.boolean().optional(),
-      idDelta: z.string().optional(),
-      index: integer.nonnegative(),
-      nameDelta: z.string().optional(),
-    }),
-  }),
-  z.object({
-    ...eventBase,
-    kind: z.literal("tool_finished"),
-    value: z.object({
-      callId: z.string().min(1),
-      output: z.object({
-        content: z.string(),
-        images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
-        outputTokens: integer.nonnegative().optional(),
-      }),
-    }),
-  }),
-  z.object({
-    ...eventBase,
-    kind: z.literal("tool_started"),
-    value: z.string().min(1),
-  }),
-  z.object({
-    ...eventBase,
-    kind: z.literal("user_appended"),
-    partId: z.literal("user"),
-    value: z.null(),
-  }),
-]);
+  eventSchema = streamEventSchema;
+export { eventSchema };
 export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object({
-  control: z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
+  control: controlSchema,
   eventCursor: integer.nonnegative(),
   events: z.array(eventSchema),
   fileLinks: z.array(fileLinkUnitSchema),
@@ -180,7 +124,7 @@ export const draftResponseSchema = z.object({
 export const revisionResponseSchema = z.object({ revision: integer.nonnegative() });
 export const messageResponseSchema = z.object({ content: z.string(), queueId: integer.positive() });
 export const controlResponseSchema = z.object({
-  control: z.enum(["running", "step", "pause", "cancel"]),
+  control: controlCommandSchema,
 });
 export const cancellationResponseSchema = z.object({ toolCallId: z.string() });
 export const answerResponseSchema = z.object({ toolCallId: z.string() });

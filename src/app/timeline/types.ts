@@ -1,7 +1,6 @@
+import type { QueueStatus, StreamEvent } from "../../types";
 import type { ErrorDetails } from "../../failures/details";
 import type { FilePathMatch } from "../../fileLinks/types";
-import type { QueueStatus } from "../../types";
-import type { StreamEvent } from "../../infrastructure/database/records/streamEvents";
 import type { ToolOutputSnapshot } from "../../runtime/toolOutput";
 
 export type DisplayRole = "user" | "system" | "assistant" | "tool";

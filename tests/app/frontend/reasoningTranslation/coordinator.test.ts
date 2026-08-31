@@ -2,7 +2,6 @@ import { expect, mock, test } from "bun:test";
 import { ReasoningTranslationCoordinator } from "../../../../src/app/frontend/services/translation/coordinator";
 
 test("translation coordinator only persists the final reasoning", async () => {
-  let now = 0;
   const displayed: string[] = [],
     persisted: string[] = [],
     createTranslator = mock(() =>
@@ -12,8 +11,7 @@ test("translation coordinator only persists the final reasoning", async () => {
     ),
     coordinator = new ReasoningTranslationCoordinator({
       createTranslator,
-      minimumIntervalMs: 20,
-      now: () => now,
+      minimumIntervalMs: 10,
       onTranslation: (translation) => {
         displayed.push(translation.source);
       },
@@ -25,16 +23,14 @@ test("translation coordinator only persists the final reasoning", async () => {
     });
   coordinator.update({ content: "first", messageId: "message", streaming: true, translations: [] });
   await Bun.sleep(0);
-  now = 5;
   coordinator.update({
     content: "first second",
     messageId: "message",
     streaming: true,
     translations: [],
   });
-  now = 10;
   coordinator.update({ content: "first second final", messageId: "message", translations: [] });
-  await Bun.sleep(25);
+  await Bun.sleep(30);
   expect(displayed).toEqual(["first", "first second final"]);
   expect(persisted).toEqual(["first second final"]);
   coordinator.close();

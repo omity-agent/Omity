@@ -1,12 +1,6 @@
 import type { Control, QueueItem, QueueStatus } from "../../types";
 import { type SessionDefinition, emptySessionDefinition } from "./sessionDefinition";
-import {
-  type StreamEvent,
-  type StreamEventDraft,
-  deleteQueueStream,
-  insertUserBoundaryEvent,
-  streamEventCursor,
-} from "./records/streamEvents";
+import type { StreamEvent, StreamEventDraft } from "./schema/streamEvent";
 import {
   closeDatabase,
   openSessionDatabase,
@@ -33,6 +27,11 @@ import {
   touchSessionRecord,
   writeControlRecord,
 } from "./records/sessions";
+import {
+  deleteQueueStream,
+  insertUserBoundaryEvent,
+  streamEventCursor,
+} from "./records/streamEvents";
 import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
 import { requestToolCancellation, takeToolCancellation } from "./records/toolCancellations";
 import type { BaseMessage } from "@langchain/core/messages";

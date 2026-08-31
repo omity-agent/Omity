@@ -1,8 +1,8 @@
+import { logLevelSchema, modelApiSchema, reasoningEffortSchema } from "../../../types";
 import ipaddr from "ipaddr.js";
 import { z } from "zod";
 
-const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
-  promptFileSchema = z
+const promptFileSchema = z
     .string()
     .trim()
     .min(1)
@@ -34,7 +34,7 @@ const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high"
   modelSettingsSchema = z.discriminatedUnion("adapter", [
     z
       .object({
-        adapter: z.enum(["responses", "completions"]),
+        adapter: modelApiSchema,
         apiKeyEnv: z.string().min(1),
         baseURL: z.url().nullable(),
         ...sharedModelSettings,
@@ -150,7 +150,7 @@ const reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high"
         hostTtlMs: z.number().int().positive(),
       }),
       logging: z.object({
-        level: z.enum(["debug", "info", "warn", "error"]),
+        level: logLevelSchema,
         streamTokens: z.boolean(),
       }),
       server: z

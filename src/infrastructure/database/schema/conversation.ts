@@ -1,4 +1,4 @@
-import type { StreamEventKind, StreamEventValues } from "../records/streamEvents";
+import type { StreamEventKind, StreamEventValues } from "../../../types";
 import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { queue, sessions } from "./session";
 import type { FileLinkUnit } from "../../../fileLinks/types";

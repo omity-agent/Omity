@@ -14,7 +14,7 @@ import {
   reconcileTranscript,
 } from "../../src/app/frontend/services/transcript/cache";
 import { buildTimeline, displayStreamEvent } from "../../src/app/timeline";
-import type { StreamEvent } from "../../src/infrastructure/database/records/streamEvents";
+import type { StreamEvent } from "../../src/types";
 import { countTokens } from "../../src/runtime/tokenizer";
 import { loadTranscript } from "../../src/app/transcript";
 

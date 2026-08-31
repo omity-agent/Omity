@@ -1,14 +1,11 @@
 import { type ToolMessage } from "@langchain/core/messages";
+import type { ToolOutputSnapshot } from "../types";
 import { contentToText } from "./content";
 import { countTokens } from "./tokenizer";
 import { extractToolImages } from "./modelImages";
 import { isPlainObject as isRecord } from "es-toolkit";
 
-export interface ToolOutputSnapshot {
-  content: string;
-  images: { mimeType: string; src: string }[];
-  outputTokens?: number;
-}
+export type { ToolOutputSnapshot } from "../types";
 export function toolOutputSnapshot(message: ToolMessage): ToolOutputSnapshot {
   const content = contentToText(message.content);
   return {

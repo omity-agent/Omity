@@ -4,7 +4,7 @@ import { recordAiStreamPart, recordToolStarted } from "../../src/runtime/aiStrea
 import { streamTimelineMessages, toolCallLifecycle } from "../../src/app/timeline/streamEvents";
 import { AIMessage } from "@langchain/core/messages";
 import { Logger } from "../../src/infrastructure/logging/logger";
-import type { StreamEvent } from "../../src/infrastructure/database/records/streamEvents";
+import type { StreamEvent } from "../../src/types";
 import { createStreamLogState } from "../../src/runtime/stream";
 import { testSettings } from "../support/settings";
 

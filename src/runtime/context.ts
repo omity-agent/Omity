@@ -1,9 +1,8 @@
-import type { BrowserWarning, SessionStatus, Settings } from "../types";
+import type { BrowserWarning, SessionStatus, Settings, StreamEvent } from "../types";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { BaseMessage } from "@langchain/core/messages";
 import type { BunSqliteSaver } from "../checkpointer";
 import type { Logger } from "../infrastructure/logging/logger";
-import type { StreamEvent } from "../infrastructure/database/records/streamEvents";
 import type { ToolExecutions } from "../agent/toolExecutions";
 import type { buildGraph } from "../agent";
 import { setTimeout as sleep } from "node:timers/promises";

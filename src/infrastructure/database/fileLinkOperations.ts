@@ -1,4 +1,4 @@
-import { type StreamEvent, type StreamEventDraft, insertStreamEvent } from "./records/streamEvents";
+import type { StreamEvent, StreamEventDraft } from "../../types";
 import {
   deleteQueueFileLinkUnits,
   publicFileLinkUnits,
@@ -9,6 +9,7 @@ import type { Database } from "bun:sqlite";
 import type { FileLinkIndexer } from "./fileLinkIndexer";
 import { clearToolCancellations } from "./records/toolCancellations";
 import { finishToolStreams } from "./records/toolCompletion";
+import { insertStreamEvent } from "./records/streamEvents";
 import { messageFileLinkSources } from "../../fileLinks/messageSources";
 import { runTransaction } from "./connection";
 import { syncMessages } from "./records/messages/sync";

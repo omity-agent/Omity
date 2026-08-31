@@ -1,4 +1,5 @@
 import type { LogLevel } from "../../types";
+import { isPlainObject } from "es-toolkit";
 
 const priority: Record<LogLevel, number> = {
     debug: 10,
@@ -80,7 +81,7 @@ export function formatData(data: unknown): string[] {
   if (data === undefined) {
     return [];
   }
-  if (isPlainRecord(data)) {
+  if (isPlainObject(data)) {
     return Object.entries(data).flatMap(([key, value]) => {
       if (isScalar(value)) {
         return [`${styles.dim}${key}${styles.reset}: ${formatScalar(value)}`];
@@ -97,14 +98,6 @@ export function formatData(data: unknown): string[] {
 function formatTime(date: Date) {
   const time = date.toISOString().slice(11, 23);
   return `${time}Z`;
-}
-function isPlainRecord(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
 }
 function isScalar(value: unknown) {
   return value === null || ["string", "number", "boolean"].includes(typeof value);

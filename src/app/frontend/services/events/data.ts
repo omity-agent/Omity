@@ -1,6 +1,6 @@
 import { eventSchema, sessionInfoSchema } from "../validation/responses";
 import type { BrowserWarning } from "../../../../types";
-import { errorDetailsSchema } from "../validation/errors";
+import { errorDetailsSchema } from "../../../../failures/details";
 import { z } from "../validation";
 
 const sessionsEventSchema = z.object({
