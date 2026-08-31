@@ -2,6 +2,7 @@ import { type ToolMessage } from "@langchain/core/messages";
 import { contentToText } from "./content";
 import { countTokens } from "./tokenizer";
 import { extractToolImages } from "./modelImages";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export interface ToolOutputSnapshot {
   content: string;
@@ -29,7 +30,4 @@ export function toolOutputTokens(message: ToolMessage, text: string) {
     throw new Error("工具大输出 token 数无效");
   }
   return tokens;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

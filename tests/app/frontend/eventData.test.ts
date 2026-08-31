@@ -42,6 +42,16 @@ test("content event IDs must match their persisted cursors", () => {
     "eventCursor 不一致",
   );
   const delta = JSON.stringify({
+    fileLinks: [
+      {
+        end: 5,
+        matches: [],
+        ownerId: "message",
+        start: 0,
+        surface: "content",
+        unitIndex: 0,
+      },
+    ],
     id: 5,
     kind: "assistant_text_delta",
     messageId: "message",
@@ -49,7 +59,10 @@ test("content event IDs must match their persisted cursors", () => {
     queueId: 1,
     value: "hello",
   });
-  expect(readTranscriptEvent(message(delta, "5"))).toMatchObject({ id: 5 });
+  expect(readTranscriptEvent(message(delta, "5"))).toMatchObject({
+    fileLinks: [{ ownerId: "message" }],
+    id: 5,
+  });
   expect(() => readTranscriptEvent(message(delta, "6"))).toThrow("data.id 不一致");
   const finished = JSON.stringify({
     id: 7,

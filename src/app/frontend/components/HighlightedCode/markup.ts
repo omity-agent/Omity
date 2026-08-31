@@ -3,6 +3,7 @@ import { syntaxTheme, syntaxThemeName } from "./theme";
 import { Magika } from "magika";
 import { ShikiStreamTokenizer } from "@shikijs/stream";
 import type { ThemedToken } from "shiki/core";
+import { escape as escapeHtml } from "es-toolkit";
 
 export interface HighlightInput {
   code: string;
@@ -167,14 +168,8 @@ function tokenMarkup(content: string, token: ThemedToken) {
   }
   const escaped = escapeHtml(content);
   return styles.length > 0
-    ? `<span style="${escapeAttribute(styles.join(";"))}">${escaped}</span>`
+    ? `<span style="${escapeHtml(styles.join(";"))}">${escaped}</span>`
     : escaped;
-}
-function escapeHtml(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-function escapeAttribute(value: string) {
-  return escapeHtml(value).replaceAll('"', "&quot;");
 }
 function normalizeLanguage(language?: string) {
   return language

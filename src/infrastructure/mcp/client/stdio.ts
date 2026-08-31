@@ -3,6 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "@langchain/mcp-adapters";
 import { Writable } from "node:stream";
 import { disableClientRequestTimeout } from "./timeout";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 const maximumStderrBytes = 64 * 1024;
 export interface ConnectedStdioClient {
@@ -113,7 +114,4 @@ function toBuffer(value: unknown) {
     return Buffer.from(value);
   }
   return Buffer.from(typeof value === "string" ? value : String(value));
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

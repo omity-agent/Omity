@@ -1,4 +1,5 @@
 import type { AIMessage } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export function partitionToolResponse(
   original: AIMessage,
@@ -99,7 +100,4 @@ function itemCallId(item: unknown, allCallIds: Set<string>) {
 }
 function toolCallIds(message: AIMessage) {
   return new Set(message.tool_calls?.flatMap((call) => (call.id ? [call.id] : [])));
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -1,5 +1,6 @@
 import { isAbsolute, relative, resolve } from "node:path";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { readSettingsText } from "../configuration/placeholders";
 import { resolveConfiguredPath } from "../configuration/configuredPath";
 
@@ -127,7 +128,4 @@ function indexMcpTools(tools: StructuredToolInterface[]) {
     toolsByName.set(tool.name, tool);
   }
   return toolsByName;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

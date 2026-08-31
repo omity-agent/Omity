@@ -1,3 +1,5 @@
+import { isPlainObject as isRecord } from "es-toolkit";
+
 export function omitDisabledToolboxConfiguration(value: unknown): unknown {
   if (!isRecord(value)) {
     return value;
@@ -99,7 +101,4 @@ function isEnabledServerToolName(
     aliases.enabled.has(name) ||
     (!aliases.disabled.has(name) && !belongsToDisabledServer(name, serverNames, disabled))
   );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -9,11 +9,9 @@ import { join } from "node:path";
 import { migrateAccessDatabase } from "../../infrastructure/database/migrations";
 import { userDataDirectory } from "../../infrastructure/configuration/settings/files";
 
-const schema = { accessSessions, challenges, credentials, registrationTickets };
-type AccessSchema = typeof schema;
 export class AccessStore {
   private readonly db: Database;
-  private readonly orm: SQLiteBunDatabase<AccessSchema>;
+  private readonly orm: SQLiteBunDatabase;
   constructor(root = process.cwd()) {
     this.db = new Database(join(userDataDirectory(), "access.sqlite"), {
       create: true,
@@ -21,7 +19,7 @@ export class AccessStore {
     });
     try {
       configureDatabase(this.db);
-      this.orm = drizzle({ client: this.db, schema });
+      this.orm = drizzle({ client: this.db });
       migrateAccessDatabase(this.orm, root);
     } catch (error) {
       closeDatabase(this.db);

@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { SessionInfo } from "../client";
 import type { SessionStatus } from "../../../../types";
+import { isEqual } from "es-toolkit";
 
 type Listener = () => void;
 const stores = new WeakMap<QueryClient, SessionAttentionStore>();
@@ -55,7 +56,7 @@ export class SessionAttentionStore {
   };
   snapshot = () => this.unread;
   private updateUnread(unread: ReadonlySet<string>) {
-    if (sameSet(this.unread, unread)) {
+    if (isEqual(this.unread, unread)) {
       return;
     }
     this.unread = unread;
@@ -83,7 +84,4 @@ export function useSessionAttention(queryClient: QueryClient, activeId?: string)
     store.view(activeId);
   }, [activeId, store]);
   return unread;
-}
-function sameSet(left: ReadonlySet<string>, right: ReadonlySet<string>) {
-  return left.size === right.size && [...left].every((id) => right.has(id));
 }

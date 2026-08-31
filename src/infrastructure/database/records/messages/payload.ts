@@ -6,6 +6,7 @@ import {
   type ToolCall,
   ToolMessage,
 } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { structuredToolOutput } from "../../../mcp/artifacts";
 
 export type MessageStorageMode = "history" | "recovery";
@@ -117,7 +118,4 @@ function readLargeOutputTokens(message: ToolMessage) {
   return isRecord(largeOutput) && typeof largeOutput["tokens"] === "number"
     ? largeOutput["tokens"]
     : undefined;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

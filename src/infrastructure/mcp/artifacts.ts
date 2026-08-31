@@ -1,3 +1,5 @@
+import { isPlainObject as isRecord } from "es-toolkit";
+
 export function structuredToolOutput(value: unknown) {
   if (!Array.isArray(value)) {
     return undefined;
@@ -22,7 +24,4 @@ function isStructuredArtifact(
   value: unknown,
 ): value is Record<string, unknown> & { type: "mcp_structured_content" } {
   return isRecord(value) && value["type"] === "mcp_structured_content";
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

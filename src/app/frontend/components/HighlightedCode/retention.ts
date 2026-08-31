@@ -1,4 +1,5 @@
 import type { HighlightedCodeResult } from "./scheduler";
+import { escape as escapeHtml } from "es-toolkit";
 
 export function retainedLineMarkup({
   appendOnly,
@@ -23,7 +24,4 @@ export function retainedLineMarkup({
     return markup + escapeHtml(current.slice(source.length));
   }
   return undefined;
-}
-function escapeHtml(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }

@@ -1,4 +1,5 @@
 import type { OpenAI } from "openai";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export function normalizeResponsesStreamEvent(
   event: OpenAI.Responses.ResponseStreamEvent,
@@ -51,7 +52,4 @@ function normalizeOutputPart(part: unknown) {
     throw new Error("Responses API output_text.annotations 必须为数组");
   }
   return part;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

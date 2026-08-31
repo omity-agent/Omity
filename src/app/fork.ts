@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 import { DomainError } from "../errors";
 import { contentToText } from "../runtime/content";
 import { copyHookUsage } from "../hooks/storage/usage";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { randomUUID } from "node:crypto";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
@@ -123,7 +124,4 @@ function messageContent(value: string) {
     throw new Error("无法还原 Fork 消息");
   }
   return contentToText(message.content);
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

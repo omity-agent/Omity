@@ -37,16 +37,16 @@ export const askUserQuestionSchema = z.discriminatedUnion("kind", [
     question: z.string(),
   }),
 ]);
-const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
-    askUser: askUserQuestionSchema.nullable().optional(),
-    createdAt: integer,
-    error: errorDetailsSchema.nullable(),
-    id: z.string(),
-    status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
-    updatedAt: integer,
-    workspace: z.string(),
-  }),
-  toolCallSchema = z.object({
+export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
+  askUser: askUserQuestionSchema.nullable().optional(),
+  createdAt: integer,
+  error: errorDetailsSchema.nullable(),
+  id: z.string(),
+  status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
+  updatedAt: integer,
+  workspace: z.string(),
+});
+const toolCallSchema = z.object({
     fileLinks: z.array(fileLinkMatchSchema).optional(),
     id: z.string(),
     index: integer.nonnegative(),
@@ -92,66 +92,54 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
     submissionId: z.string().nullable().optional(),
     userMessageId: integer.positive().nullable().optional(),
   }),
-  eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
-    z.object({
-      fileLinks: z.array(fileLinkUnitSchema).optional(),
-      id: integer.positive(),
-      kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
-      messageId: z.string().min(1),
-      partId: z.string().min(1),
-      queueId: integer.positive(),
-      value: z.string(),
+  eventBase = {
+    fileLinks: z.array(fileLinkUnitSchema).optional(),
+    id: integer.positive(),
+    messageId: z.string().min(1),
+    partId: z.string().min(1),
+    queueId: integer.positive(),
+  };
+export const eventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
+  z.object({
+    ...eventBase,
+    kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
+    value: z.string(),
+  }),
+  z.object({
+    ...eventBase,
+    kind: z.literal("tool_call_delta"),
+    value: z.object({
+      argumentsDelta: z.string().optional(),
+      freeform: z.boolean().optional(),
+      idDelta: z.string().optional(),
+      index: integer.nonnegative(),
+      nameDelta: z.string().optional(),
     }),
-    z.object({
-      fileLinks: z.array(fileLinkUnitSchema).optional(),
-      id: integer.positive(),
-      kind: z.literal("tool_call_delta"),
-      messageId: z.string().min(1),
-      partId: z.string().min(1),
-      queueId: integer.positive(),
-      value: z.object({
-        argumentsDelta: z.string().optional(),
-        freeform: z.boolean().optional(),
-        idDelta: z.string().optional(),
-        index: integer.nonnegative(),
-        nameDelta: z.string().optional(),
+  }),
+  z.object({
+    ...eventBase,
+    kind: z.literal("tool_finished"),
+    value: z.object({
+      callId: z.string().min(1),
+      output: z.object({
+        content: z.string(),
+        images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
+        outputTokens: integer.nonnegative().optional(),
       }),
     }),
-    z.object({
-      fileLinks: z.array(fileLinkUnitSchema).optional(),
-      id: integer.positive(),
-      kind: z.literal("tool_finished"),
-      messageId: z.string().min(1),
-      partId: z.string().min(1),
-      queueId: integer.positive(),
-      value: z.object({
-        callId: z.string().min(1),
-        output: z.object({
-          content: z.string(),
-          images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
-          outputTokens: integer.nonnegative().optional(),
-        }),
-      }),
-    }),
-    z.object({
-      fileLinks: z.array(fileLinkUnitSchema).optional(),
-      id: integer.positive(),
-      kind: z.literal("tool_started"),
-      messageId: z.string().min(1),
-      partId: z.string().min(1),
-      queueId: integer.positive(),
-      value: z.string().min(1),
-    }),
-    z.object({
-      fileLinks: z.array(fileLinkUnitSchema).optional(),
-      id: integer.positive(),
-      kind: z.literal("user_appended"),
-      messageId: z.string().min(1),
-      partId: z.literal("user"),
-      queueId: integer.positive(),
-      value: z.null(),
-    }),
-  ]);
+  }),
+  z.object({
+    ...eventBase,
+    kind: z.literal("tool_started"),
+    value: z.string().min(1),
+  }),
+  z.object({
+    ...eventBase,
+    kind: z.literal("user_appended"),
+    partId: z.literal("user"),
+    value: z.null(),
+  }),
+]);
 export const transcriptResponseSchema: z.ZodType<TranscriptSnapshot> = z.object({
   control: z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
   eventCursor: integer.nonnegative(),

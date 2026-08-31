@@ -44,7 +44,8 @@
     "ajv": "latest",
     "dompurify": "latest",
     "dotenv": "latest",
-    "drizzle-orm": "beta",
+    "drizzle-orm": "rc",
+    "es-toolkit": "latest",
     "fast-json-stable-stringify": "latest",
     "gpt-tokenizer": "latest",
     "gray-matter": "latest",
@@ -71,7 +72,7 @@
     "shiki": "latest",
     "untildify": "latest",
     "yaml": "next",
-    "zod": "canary"
+    "zod": "latest"
   },
   "devDependencies": {
     "@babel/core": "latest",
@@ -84,7 +85,7 @@
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
     "babel-plugin-react-compiler": "latest",
-    "drizzle-kit": "beta",
+    "drizzle-kit": "rc",
     "oxfmt": "latest",
     "oxlint": "latest",
     "oxlint-tsgolint": "latest",

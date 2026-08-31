@@ -6,6 +6,7 @@ import {
   ToolMessage,
 } from "@langchain/core/messages";
 import type { StoredAi, StoredConversationMessage, StoredTool, StoredUsage } from "./payload";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { structuredOutputArtifact } from "../../../mcp/artifacts";
 
 export function decodeMessage(value: string, id?: string) {
@@ -123,7 +124,4 @@ function isToolCallArray(value: unknown): value is ToolCall[] {
         item["type"] === "tool_call",
     )
   );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

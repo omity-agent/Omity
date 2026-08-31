@@ -1,20 +1,9 @@
+import { eventSchema, sessionInfoSchema } from "../validation/responses";
 import type { BrowserWarning } from "../../../../types";
-import type { DisplayEvent } from "../../../timeline";
-import type { SessionInfo } from "../../../sessionState";
-import { askUserQuestionSchema } from "../validation/responses";
 import { errorDetailsSchema } from "../validation/errors";
 import { z } from "../validation";
 
-const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
-    askUser: askUserQuestionSchema.nullable().optional(),
-    createdAt: z.number().int(),
-    error: errorDetailsSchema.nullable(),
-    id: z.string(),
-    status: z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
-    updatedAt: z.number().int(),
-    workspace: z.string(),
-  }),
-  sessionsEventSchema = z.object({
+const sessionsEventSchema = z.object({
     sessions: z.array(sessionInfoSchema),
   }),
   deletedEventSchema = z.object({ sessionId: z.string() }),
@@ -29,54 +18,7 @@ const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
     }),
     message: z.string().min(1),
   }),
-  syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() }),
-  eventBase = {
-    id: z.number().int().positive(),
-    messageId: z.string().min(1),
-    partId: z.string().min(1),
-    queueId: z.number().int().positive(),
-  },
-  displayEventSchema: z.ZodType<DisplayEvent> = z.discriminatedUnion("kind", [
-    z.object({
-      ...eventBase,
-      kind: z.enum(["assistant_reasoning_delta", "assistant_text_delta"]),
-      value: z.string(),
-    }),
-    z.object({
-      ...eventBase,
-      kind: z.literal("tool_call_delta"),
-      value: z.object({
-        argumentsDelta: z.string().optional(),
-        freeform: z.boolean().optional(),
-        idDelta: z.string().optional(),
-        index: z.number().int().nonnegative(),
-        nameDelta: z.string().optional(),
-      }),
-    }),
-    z.object({
-      ...eventBase,
-      kind: z.literal("tool_finished"),
-      value: z.object({
-        callId: z.string().min(1),
-        output: z.object({
-          content: z.string(),
-          images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
-          outputTokens: z.number().int().nonnegative().optional(),
-        }),
-      }),
-    }),
-    z.object({
-      ...eventBase,
-      kind: z.literal("tool_started"),
-      value: z.string().min(1),
-    }),
-    z.object({
-      ...eventBase,
-      kind: z.literal("user_appended"),
-      partId: z.literal("user"),
-      value: z.null(),
-    }),
-  ]);
+  syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() });
 export function readSessionsEvent(event: Event) {
   readStateEventId(event, "sessions");
   return readEventData(event, sessionsEventSchema, "sessions").sessions;
@@ -94,7 +36,7 @@ export function readWarningEvent(event: Event) {
   return readEventData(event, warningEventSchema, "warning");
 }
 export function readTranscriptEvent(event: Event) {
-  const data = readEventData(event, displayEventSchema, "delta"),
+  const data = readEventData(event, eventSchema, "delta"),
     id = readNumericEventId(event, "delta");
   if (data.id !== id) {
     throw new Error("SSE delta 事件 ID 与 data.id 不一致");

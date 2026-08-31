@@ -2,6 +2,7 @@ import { type Connection, MultiServerMCPClient } from "@langchain/mcp-adapters";
 import type { Logger } from "../../logging/logger";
 import { RestartingStdioClient } from "./restarting";
 import type { StdioRestartPolicy } from "./availability";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { isStdioConnection } from "./stdio";
 
 export class McpClientPool {
@@ -78,7 +79,4 @@ function isMcpConnection(value: unknown): value is Connection {
     return isStdioConnection(value);
   }
   return typeof value["url"] === "string";
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

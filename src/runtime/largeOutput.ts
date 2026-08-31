@@ -2,6 +2,7 @@ import { type MessageContent, ToolMessage } from "@langchain/core/messages";
 import { claimShortIdAsync } from "../infrastructure/randomId";
 import { countTokens } from "./tokenizer";
 import { inspectToolTextContent } from "./outputText";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
@@ -64,9 +65,6 @@ function mergeMetadata(
     throw new Error("工具消息 metadata 必须是对象");
   }
   return { ...metadata, ...(largeOutput ? { largeOutput } : {}) };
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 async function writeLargeToolOutput(content: string, sessionId: string) {
   const dir = join(resolveSessionPaths(sessionId).dir, "large_output");

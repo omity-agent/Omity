@@ -8,6 +8,7 @@ import {
 } from "./stream/toolIdentity";
 import type { HostContext } from "./context";
 import { incrementalSummary } from "./stream/debug";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export { incrementalSummary } from "./stream/debug";
 export interface StreamLogState {
@@ -169,7 +170,4 @@ function readMessageId(value: AIMessageChunk) {
 }
 function stringField(value: unknown, key: string) {
   return isRecord(value) && typeof value[key] === "string" ? value[key] : undefined;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -7,6 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { existsSync, statSync } from "node:fs";
 import type { SettingsContext } from "./context";
 import { homedir } from "node:os";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { config as loadDotenv } from "dotenv";
 import untildify from "untildify";
 
@@ -123,7 +124,4 @@ function mergeSettings(defaults: unknown, overrides: unknown): unknown {
       Object.hasOwn(overrides, key) ? mergeSettings(defaults[key], overrides[key]) : defaults[key],
     ]),
   );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

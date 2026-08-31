@@ -1,4 +1,5 @@
 import { markMcpRequestCompleted, markMcpRequestStarted } from "../../agent/toolExecutions";
+import { isPlainObject as isRecord } from "es-toolkit";
 import type { loadMcpTools } from "@langchain/mcp-adapters";
 
 type McpClient = Parameters<typeof loadMcpTools>[1];
@@ -85,7 +86,4 @@ function formatMcpContentBlock(block: unknown) {
     return block["text"];
   }
   return JSON.stringify(block);
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -2,6 +2,7 @@ import DOMPurify from "dompurify";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import type { HighlightedCodeResult } from "./scheduler";
 import { HighlightedText } from "../FileLink/HighlightedText";
+import { escape as escapeHtml } from "es-toolkit";
 import { memo } from "react";
 import { retainedLineMarkup } from "./retention";
 
@@ -69,9 +70,6 @@ export function codeLines(code: string, matches: FilePathMatch[]) {
     start = end + 1;
   }
   return lines;
-}
-function escapeHtml(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 function highlightedMarkup(html: string) {
   return { __html: html };

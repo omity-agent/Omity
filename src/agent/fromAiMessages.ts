@@ -7,6 +7,7 @@ import {
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { omitToolItemIds } from "./toolProviderOptions";
 
 export function fromModelMessages(
@@ -127,9 +128,6 @@ function outputText(output: ToolResult["output"]) {
     return output.reason ?? "工具执行已拒绝";
   }
   return output.value.flatMap((part) => ("text" in part ? [part.text] : [])).join("");
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 export interface StoredAiSdkPart {
   providerOptions?: ProviderOptions;

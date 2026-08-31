@@ -3,6 +3,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
 import { events } from "../schema";
 import { insertStreamEvent } from "./streamEvents";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { sessionDatabase } from "../connection";
 import { toolOutputSnapshot } from "../../../runtime/toolOutput";
 
@@ -109,7 +110,4 @@ function requiredTool(tools: Map<string, ToolMessage>, callId: string) {
     throw new Error(`工具完成事件缺少输出：${callId}`);
   }
   return tool;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

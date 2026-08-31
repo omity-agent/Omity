@@ -4,6 +4,7 @@ import type { Settings } from "../types";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "./toolExecutions";
 import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { requireCallId } from "../hooks/plan";
 
@@ -110,7 +111,4 @@ export function formatDuration(durationMs: number) {
   return seconds < 60
     ? `${Number(seconds.toFixed(1)).toString()} 秒`
     : `${Math.floor(seconds / 60).toString()} 分 ${Math.round(seconds % 60).toString()} 秒`;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

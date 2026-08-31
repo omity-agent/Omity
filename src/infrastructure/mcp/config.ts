@@ -4,6 +4,7 @@ import {
 } from "./toolOverrides";
 import { readSettingsYamlValue, resolvePlaceholders } from "../configuration/placeholders";
 import type { SettingsContext } from "../configuration/settings/context";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { normalizeFreeformToolInputs } from "./freeformInputs";
 import { omitDisabledToolboxConfiguration } from "./activation";
 import { readLayeredSettingsYaml } from "../configuration/settings/files";
@@ -174,7 +175,4 @@ function resolveProfilePaths(value: unknown, override: unknown, directory: strin
     ...value,
     toolDescriptionOverrides: paths,
   };
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -1,5 +1,6 @@
 import { parse, parseAllDocuments } from "yaml";
 import { homedir } from "node:os";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 
@@ -142,9 +143,6 @@ function isScalar(value: unknown): value is string | number | boolean | null {
     typeof value === "number" ||
     typeof value === "boolean"
   );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 function forwardSlashPath(path: string) {
   return path.replaceAll("\\", "/");

@@ -1,5 +1,6 @@
 import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
 import type { AskUserRequest } from "./askUser";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export type AskUserAnswer =
   | { kind: "choice"; options: string[]; note: string }
@@ -95,7 +96,4 @@ function parseAnswer(request: AskUserRequest, answer: unknown): AskUserAnswer {
     throw askUserAnswerInvalid("没有备注时至少选择一个选项");
   }
   return { kind: "choice", note: answer["note"], options };
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

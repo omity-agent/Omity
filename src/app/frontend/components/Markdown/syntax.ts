@@ -3,6 +3,7 @@ import { highlightTree, tags } from "@lezer/highlight";
 import type { HighlightedCodeResult } from "../HighlightedCode/scheduler";
 import { commonmarkLanguage } from "@codemirror/lang-markdown";
 import { css } from "styled-system/css";
+import { escape as escapeHtml } from "es-toolkit";
 
 interface HighlightSpan {
   classes: string;
@@ -66,7 +67,4 @@ function lineMarkup(code: string, start: number, end: number, spans: HighlightSp
     }
   }
   return markup + escapeHtml(code.slice(cursor, end));
-}
-function escapeHtml(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }

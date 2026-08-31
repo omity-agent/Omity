@@ -1,4 +1,5 @@
 import type { HookToolOutput } from "./storage/outputs";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
 
 export interface HookVariables {
@@ -102,7 +103,4 @@ function readPath(value: unknown, path: string[], variable: string): unknown {
     }
   }
   return current;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

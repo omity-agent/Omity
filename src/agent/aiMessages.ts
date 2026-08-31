@@ -10,6 +10,7 @@ import {
   prepareModelImageMessages,
   toolContentText,
 } from "../runtime/modelImages";
+import { isJSONObject, isPlainObject } from "es-toolkit";
 import type { ModelApi } from "../types";
 import type { ModelMessage } from "ai";
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
@@ -74,7 +75,7 @@ function modelToolCall(
 }
 function toolProviderOptions(message: AIMessage, callId: string): ProviderOptions | undefined {
   const byCall = message.additional_kwargs["aiSdkToolProviderOptions"];
-  if (!isRecord(byCall) || !isProviderOptions(byCall[callId])) {
+  if (!isPlainObject(byCall) || !isProviderOptions(byCall[callId])) {
     return undefined;
   }
   return byCall[callId];
@@ -101,7 +102,7 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   if (Reflect.get(call, "isCustomTool") !== true) {
     return call.args;
   }
-  const input = isRecord(call.args) ? call.args["input"] : undefined;
+  const input = isPlainObject(call.args) ? call.args["input"] : undefined;
   if (typeof input !== "string") {
     throw new Error(`MCP free-form 工具 ${call.name} 输入必须是字符串`);
   }
@@ -139,23 +140,6 @@ function textContent(content: MessageContent) {
     )
     .join("");
 }
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 function isProviderOptions(value: unknown): value is ProviderOptions {
-  return isRecord(value) && Object.values(value).every(isJsonObject);
+  return isPlainObject(value) && Object.values(value).every(isJSONObject);
 }
-function isJsonObject(value: unknown): value is Record<string, JsonValue> {
-  return isRecord(value) && Object.values(value).every(isJsonValue);
-}
-function isJsonValue(value: unknown): value is JsonValue {
-  return (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    (Array.isArray(value) && value.every(isJsonValue)) ||
-    isJsonObject(value)
-  );
-}
-type JsonValue = boolean | number | string | null | JsonValue[] | { [key: string]: JsonValue };

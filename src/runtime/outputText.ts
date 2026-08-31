@@ -1,4 +1,5 @@
 import type { ContentBlock, MessageContent } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export interface ToolTextContent {
   text: string;
@@ -93,7 +94,4 @@ function asContentBlocks(value: unknown[]) {
 }
 function isContentBlock(value: unknown): value is ContentBlock {
   return isRecord(value) && typeof value["type"] === "string";
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

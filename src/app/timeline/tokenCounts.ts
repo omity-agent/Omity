@@ -1,6 +1,7 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { TokenUsage } from "./types";
 import { countTokens } from "../../runtime/tokenizer";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   if (call["isCustomTool"] === true) {
@@ -41,7 +42,4 @@ export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
     throw new Error("模型 cache_read tokens 超过 input tokens");
   }
   return { cacheReadTokens, inputTokens, outputTokens };
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

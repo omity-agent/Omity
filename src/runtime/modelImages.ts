@@ -1,5 +1,6 @@
 import { type BaseMessage, type ContentBlock, ToolMessage } from "@langchain/core/messages";
 import type { ModelApi } from "../types";
+import { isPlainObject as isRecord } from "es-toolkit";
 
 export interface ToolImage {
   src: string;
@@ -149,7 +150,4 @@ function isStructuredContent(value: unknown) {
     Array.isArray(value) ||
     (isRecord(value) && (Array.isArray(value["content"]) || typeof value["type"] === "string"))
   );
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
