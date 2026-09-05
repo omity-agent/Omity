@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { HighlightedCodeResult } from "../../../../src/app/frontend/components/HighlightedCode/scheduler";
+import type { HighlightedCodeResult } from "../../../../src/app/frontend/components/HighlightedCode/background/dispatch";
 import { retainedLineMarkup } from "../../../../src/app/frontend/components/HighlightedCode/retention";
 
 const highlight: HighlightedCodeResult = {

@@ -1,4 +1,4 @@
-import type { TimelineMessage, TimelinePart } from "./types";
+import type { TimelineMessage, TimelinePart } from "./contracts/projection";
 import { sameToolCall } from "./tool/correlation";
 
 export function groupAssistantMessages(messages: TimelineMessage[]) {

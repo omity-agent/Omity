@@ -5,7 +5,7 @@ import type {
   ReasoningTranslation,
   TimelineMessage,
   TimelinePart,
-} from "../types";
+} from "../contracts/projection";
 import { linkedCall, linkedOutput, matchesFor, optionalLinks } from "./fileLinks";
 import type { FileLinkUnit } from "../../../fileLinks/types";
 import { displayToolCallKey } from "../tool/correlation";

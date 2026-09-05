@@ -6,13 +6,8 @@ import type {
   DisplayToolOutput,
   ReasoningTranslation,
   TimelineMessage,
-} from "./types";
-import {
-  eventMessageId,
-  eventQueueId,
-  streamTimelineMessages,
-  toolCallLifecycle,
-} from "./streamEvents";
+} from "./contracts/projection";
+import { streamTimelineMessages, toolCallLifecycle } from "./streamEvents";
 import type { FileLinkUnit } from "../../fileLinks/types";
 import { groupAssistantMessages } from "./grouping";
 import { persistedTimelineMessage } from "./build/message";
@@ -30,9 +25,8 @@ export type {
   TimelinePart,
   ReasoningTranslation,
   ToolCallPhase,
-} from "./types";
-export { canCancelToolCall } from "./types";
-export { displayStreamEvent } from "./streamEvents";
+} from "./contracts/projection";
+export { canCancelToolCall } from "./contracts/projection";
 export function buildTimeline(
   messages: DisplayMessage[],
   queue: DisplayQueue[],
@@ -92,8 +86,8 @@ export function buildTimeline(
     liveEvents = events.filter(
       (event) =>
         (event.kind === "user_appended" && queuedUsers.has(event.queueId)) ||
-        (activeQueueIds.has(eventQueueId(event)) &&
-          (event.kind === "tool_call_delta" || !persistedSourceIds.has(eventMessageId(event)))),
+        (activeQueueIds.has(event.queueId) &&
+          (event.kind === "tool_call_delta" || !persistedSourceIds.has(event.messageId))),
     ),
     live = timelineTail(
       liveEvents,

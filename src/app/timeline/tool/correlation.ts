@@ -1,4 +1,4 @@
-import type { DisplayEvent, DisplayToolCall } from "../types";
+import type { DisplayEvent, DisplayToolCall } from "../contracts/projection";
 
 interface StreamIdentityPart {
   formal?: true;

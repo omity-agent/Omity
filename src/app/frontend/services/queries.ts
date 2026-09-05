@@ -1,5 +1,5 @@
-import { type FrontendSettings, type SessionInfo, bootstrap, stateEvents } from "./client";
 import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type SessionInfo, bootstrap, stateEvents } from "./client";
 import {
   readDeletedEvent,
   readSessionEvent,
@@ -8,20 +8,11 @@ import {
 } from "./events/data";
 import { reportBrowserWarning, reportSessionErrors } from "./events/reporting";
 import { useEffect, useRef } from "react";
-import type { AttachmentSettings } from "../../attachments/contract";
 import { reportError } from "./errors";
 import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
-interface BootstrapData {
-  attachments: AttachmentSettings;
-  cwd: string;
-  frontend: FrontendSettings;
-  profiles: {
-    available: string[];
-  };
-  sessions: SessionInfo[];
-}
+type BootstrapData = Awaited<ReturnType<typeof bootstrap>>;
 export { transcriptKey, type TranscriptData } from "./transcript/query";
 const bootstrapKey = ["bootstrap"] as const;
 export function useBootstrap() {
@@ -43,9 +34,7 @@ export function useBootstrap() {
           const sessions = readSessionsEvent(event);
           attention.replace(sessions);
           streamedSessions.current = sessions;
-          if (!replaceCachedSessions(queryClient, sessions)) {
-            streamedSessions.current = sessions;
-          }
+          updateCachedSessions(queryClient, () => sessions);
         } catch (error) {
           reportError(error);
         }
@@ -115,17 +104,6 @@ export function removeSession(queryClient: QueryClient, sessionId: string) {
       : current,
   );
   queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
-}
-function replaceCachedSessions(queryClient: QueryClient, sessions: SessionInfo[]) {
-  let replaced = false;
-  queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) => {
-    if (!current) {
-      return current;
-    }
-    replaced = true;
-    return { ...current, sessions };
-  });
-  return replaced;
 }
 function updateCachedSessions(
   queryClient: QueryClient,

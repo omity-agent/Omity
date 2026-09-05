@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { normalizeMcpServers, parseMcpConfiguration } from "../../../src/infrastructure/mcp/config";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
-import { loadMcp } from "../../../src/infrastructure/mcp/loadTools";
+import { loadMcp } from "../../../src/infrastructure/mcp/tools/catalog";
+import { normalizeMcpServers } from "../../../src/infrastructure/mcp/configuration/connections";
+import { parseMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
 
 test("MCP config omits disabled servers and consumes enabled flags", () => {

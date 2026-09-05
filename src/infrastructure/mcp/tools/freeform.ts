@@ -1,5 +1,5 @@
-import { type SessionPlaceholders, resolvePlaceholders } from "../configuration/placeholders";
-import { hasSessionDescription, sessionDescription } from "./toolOverrides";
+import { type SessionPlaceholders, resolvePlaceholders } from "../../configuration/placeholders";
+import { hasSessionDescription, sessionDescription } from "./descriptions";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -10,28 +10,6 @@ const toolJsonSchema = z.looseObject({
     properties: z.record(z.string(), z.unknown()),
   }),
   stringParameterSchema = z.looseObject({ type: z.literal("string") });
-export function normalizeFreeformToolInputs(
-  value: unknown,
-  path = "settings/toolbox.yaml.freeformToolInputs",
-): string[] {
-  if (value == null) {
-    return [];
-  }
-  if (!Array.isArray(value)) {
-    throw new Error(`MCP free-form 工具配置 ${path} 必须是数组`);
-  }
-  const names = new Set<string>();
-  for (const [index, name] of value.entries()) {
-    if (typeof name !== "string" || name.length === 0) {
-      throw new Error(`MCP free-form 工具配置 ${path}[${index.toString()}] 必须是非空字符串`);
-    }
-    if (names.has(name)) {
-      throw new Error(`MCP free-form 工具配置包含重复工具：${name}`);
-    }
-    names.add(name);
-  }
-  return [...names];
-}
 export function configureFreeformMcpTools(
   tools: StructuredToolInterface[],
   names: string[],

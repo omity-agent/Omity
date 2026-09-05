@@ -1,3 +1,4 @@
+import type { Control, Settings } from "../../../types";
 import { type PendingAttachment, appendAttachments } from "../../attachments/contract";
 import {
   answerResponseSchema,
@@ -13,22 +14,15 @@ import {
   transcriptResponseSchema,
   workspaceResponseSchema,
 } from "./validation/responses";
-import type { Control } from "../../../types";
 import type { FileLinkAction } from "../../../fileLinks/types";
 import type { InitialSessionState } from "../../initialState";
+import type { ReasoningTranslation } from "../../timeline";
 import { request } from "./request";
 import { z } from "./validation";
 
 export type { SessionInfo } from "../../sessionState";
 const fileLinkActionSchema = z.object({ path: z.string() });
-export interface FrontendSettings {
-  draftSaveDelayMs: number;
-  reasoningTranslation: {
-    enabled: boolean;
-    minimumIntervalMs: number;
-  };
-  transcriptSnapshotThrottleMs: number;
-}
+export type FrontendSettings = Settings["frontend"];
 export async function bootstrap(signal?: AbortSignal) {
   return request("api/bootstrap", bootstrapResponseSchema, { signal });
 }
@@ -106,12 +100,7 @@ export async function saveComposerDraft(sessionId: string, content: string, revi
 }
 export async function saveReasoningTranslation(
   sessionId: string,
-  translation: {
-    messageId: string;
-    source: string;
-    targetLanguage: string;
-    translated: string;
-  },
+  translation: ReasoningTranslation,
 ) {
   return request(
     `api/sessions/${encodeURIComponent(sessionId)}/reasoning-translation`,

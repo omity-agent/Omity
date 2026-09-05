@@ -13,8 +13,8 @@ import {
   emptyTranscriptData,
   reconcileTranscript,
 } from "../../src/app/frontend/services/transcript/cache";
-import { buildTimeline, displayStreamEvent } from "../../src/app/timeline";
 import type { StreamEvent } from "../../src/types";
+import { buildTimeline } from "../../src/app/timeline";
 import { countTokens } from "../../src/runtime/tokenizer";
 import { loadTranscript } from "../../src/app/transcript";
 
@@ -130,7 +130,7 @@ test("live stream events match persisted snapshots and keep their cursor", async
     "user_appended",
     "assistant_text_delta",
   ]);
-  expect(streaming.events[1]).toEqual(displayStreamEvent(event));
+  expect(streaming.events[1]).toEqual(event);
   expect(streaming.eventCursor).toBe(event.id);
   await db.syncHistory("stream-session", [new HumanMessage("question"), new AIMessage("hello")]);
   const completed = loadTranscript(db, "stream-session");
@@ -171,7 +171,7 @@ test("snapshot refresh does not discard a tool event committed after its events 
         writer.close();
       }
     })(),
-    current = appendTranscriptEvents(emptyTranscriptData(), emitted.map(displayStreamEvent)),
+    current = appendTranscriptEvents(emptyTranscriptData(), emitted),
     reconciled = reconcileTranscript(snapshot, current),
     toolPart = reconciled.view
       .flatMap((message) => message.parts)

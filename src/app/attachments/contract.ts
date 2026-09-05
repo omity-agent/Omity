@@ -1,5 +1,6 @@
 import { DomainError } from "../../errors";
 import type { InitialMessagePair } from "../initialState";
+import type { Settings } from "../../types";
 
 export interface PendingAttachment {
   id: string;
@@ -18,10 +19,7 @@ export interface SessionSubmission {
   message: string;
   attachments: PendingAttachment[];
 }
-export interface AttachmentSettings {
-  allowedSuffixes: string[];
-  maxSizeBytes: number;
-}
+export type AttachmentSettings = Settings["attachments"];
 interface AttachmentMetadata {
   name: string;
   size: number;

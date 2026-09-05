@@ -1,7 +1,7 @@
-import type { LoadedMcp } from "./loadTools";
-import type { McpConfiguration } from "./config";
+import type { LoadedMcp } from "./catalog";
+import type { McpConfiguration } from "../configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { configureFreeformMcpTools } from "./freeformInputs";
+import { configureFreeformMcpTools } from "./freeform";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
 export interface ModelToolDefinition {

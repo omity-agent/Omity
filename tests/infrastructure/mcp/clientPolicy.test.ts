@@ -1,4 +1,4 @@
-import { createMcpLoadError, loadMcp } from "../../../src/infrastructure/mcp/loadTools";
+import { createMcpLoadError, loadMcp } from "../../../src/infrastructure/mcp/tools/catalog";
 import { expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../src/infrastructure/logging/logger";

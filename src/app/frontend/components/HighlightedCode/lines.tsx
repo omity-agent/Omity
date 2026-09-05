@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import type { FilePathMatch } from "../../../../fileLinks/types";
-import type { HighlightedCodeResult } from "./scheduler";
+import type { HighlightedCodeResult } from "./background/dispatch";
 import { HighlightedText } from "../FileLink/HighlightedText";
 import { escape as escapeHtml } from "es-toolkit";
 import { memo } from "react";

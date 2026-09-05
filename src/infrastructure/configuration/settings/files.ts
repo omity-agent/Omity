@@ -58,14 +58,15 @@ export function readLayeredSettingsYaml(
         override: true,
         path: resolve(directory, relativePath),
       })),
-    ].filter(({ path }) => existsSync(path));
+    ]
+      .filter(({ path }) => existsSync(path))
+      .map((layer) => Object.assign(layer, { value: readSettingsLayer(layer.path) }));
   if (layers.length === 0) {
     return undefined;
   }
   let value: unknown;
   for (const [index, layer] of layers.entries()) {
-    const raw = readSettingsLayer(layer.path);
-    value = index === 0 ? raw : mergeSettings(value, raw);
+    value = index === 0 ? layer.value : mergeSettings(value, layer.value);
   }
   const source = layers.at(-1)?.path;
   if (!source) {
@@ -79,11 +80,7 @@ export function readLayeredSettingsYaml(
   if (transforms.override) {
     for (const layer of layers.toReversed()) {
       if (layer.override) {
-        resolved = transforms.override(
-          resolved,
-          readSettingsLayer(layer.path),
-          dirname(layer.path),
-        );
+        resolved = transforms.override(resolved, layer.value, dirname(layer.path));
       }
     }
   }

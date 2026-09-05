@@ -1,5 +1,5 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
-import type { TokenUsage } from "./types";
+import type { TokenUsage } from "./contracts/projection";
 import { countTokens } from "../../runtime/tokenizer";
 import { isPlainObject as isRecord } from "es-toolkit";
 

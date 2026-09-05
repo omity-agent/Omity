@@ -7,7 +7,7 @@ import {
 } from "@langchain/core/messages";
 import type { StoredAi, StoredConversationMessage, StoredTool, StoredUsage } from "./payload";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { structuredOutputArtifact } from "../../../mcp/artifacts";
+import { structuredOutputArtifact } from "../../../mcp/tools/structured";
 
 export function decodeMessage(value: string, id?: string) {
   const stored = parseStoredMessage(value);

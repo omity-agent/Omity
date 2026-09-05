@@ -1,4 +1,4 @@
-import type { DisplayRole, TimelineMessage } from "../types";
+import type { DisplayRole, TimelineMessage } from "../contracts/projection";
 
 export function syntheticMessage(role: DisplayRole, content: string, key: string): TimelineMessage {
   return {

@@ -1,4 +1,4 @@
-import type { HighlightedCodeResult } from "./scheduler";
+import type { HighlightedCodeResult } from "./background/dispatch";
 import { escape as escapeHtml } from "es-toolkit";
 
 export function retainedLineMarkup({

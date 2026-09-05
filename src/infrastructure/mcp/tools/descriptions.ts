@@ -1,70 +1,29 @@
 import { isAbsolute, relative, resolve } from "node:path";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { readSettingsText } from "../configuration/placeholders";
-import { resolveConfiguredPath } from "../configuration/configuredPath";
+import { readSettingsText } from "../../configuration/placeholders";
+import { resolveConfiguredPath } from "../../configuration/configuredPath";
 
 type McpToolNameOverrides = Record<string, string>;
 type McpToolDescriptionOverrides = Record<string, string>;
 const sessionDescriptions = new WeakMap<StructuredToolInterface, string>();
-export function normalizeMcpToolNameOverrides(
-  value: unknown,
-  path = "settings/toolbox.yaml.toolNameOverrides",
-): McpToolNameOverrides {
-  if (value == null) {
-    return {};
-  }
-  if (!isRecord(value)) {
-    throw new Error(`MCP 工具重命名配置 ${path} 必须是对象`);
-  }
-  return Object.fromEntries(
-    Object.entries(value).map(([from, to]) => {
-      if (typeof to !== "string" || to.length === 0) {
-        throw new Error(`MCP 工具重命名配置 ${path}.${from} 必须是非空字符串`);
-      }
-      if (to === "agent") {
-        throw new Error(`MCP 工具重命名配置 ${path}.${from} 不能命名为 agent`);
-      }
-      return [from, to];
-    }),
-  );
-}
-export function normalizeMcpToolDescriptionOverrides(
-  value: unknown,
-  path = "settings/toolbox.yaml.toolDescriptionOverrides",
-): McpToolDescriptionOverrides {
-  if (value == null) {
-    return {};
-  }
-  if (!isRecord(value)) {
-    throw new Error(`MCP 工具描述覆盖配置 ${path} 必须是对象`);
-  }
-  return Object.fromEntries(
-    Object.entries(value).map(([name, file]) => {
-      if (typeof file !== "string" || file.length === 0) {
-        throw new Error(`MCP 工具描述覆盖配置 ${path}.${name} 必须是非空路径`);
-      }
-      return [name, file];
-    }),
-  );
-}
 export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpToolNameOverrides) {
-  const toolsByName = indexMcpTools(tools);
-  for (const from of Object.keys(overrides)) {
+  const toolsByName = indexMcpTools(tools),
+    names = new Map(Object.entries(overrides));
+  for (const from of names.keys()) {
     if (!toolsByName.has(from)) {
       throw new Error(`MCP 工具重命名配置引用了不存在的工具：${from}`);
     }
   }
   const finalNames = new Set<string>();
   for (const tool of tools) {
-    const name = overrides[tool.name] ?? tool.name;
+    const name = names.get(tool.name) ?? tool.name;
     if (finalNames.has(name)) {
       throw new Error(`MCP 工具重命名后名称冲突：${name}`);
     }
     finalNames.add(name);
   }
   for (const tool of tools) {
-    tool.name = overrides[tool.name] ?? tool.name;
+    tool.name = names.get(tool.name) ?? tool.name;
   }
   return tools;
 }

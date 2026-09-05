@@ -7,7 +7,7 @@ import {
   ToolMessage,
 } from "@langchain/core/messages";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { structuredToolOutput } from "../../../mcp/artifacts";
+import { structuredToolOutput } from "../../../mcp/tools/structured";
 
 export type MessageStorageMode = "history" | "recovery";
 export interface StoredUsage {

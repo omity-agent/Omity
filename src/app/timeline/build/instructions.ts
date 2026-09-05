@@ -1,4 +1,4 @@
-import type { DisplayMessage } from "../types";
+import type { DisplayMessage } from "../contracts/projection";
 
 export function prependInstructions(messages: DisplayMessage[], instructions?: string) {
   if (instructions === undefined || instructions.trim().length === 0) {

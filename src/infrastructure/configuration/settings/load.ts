@@ -59,10 +59,10 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
       recursionLimit: agent.recursionLimit,
       systemPrompt: agent.prompts
         .map((file) =>
-          readPrompt(
+          readSettingsText(
             resolveLayeredSettingsText(context, "profile", join("prompts", file)),
             promptPlaceholders,
-          ),
+          ).trimEnd(),
         )
         .join("\n\n"),
     },
@@ -84,8 +84,4 @@ function requireLayeredYaml(
     throw new Error(`配置文件不存在：${resolve(context.defaultsDirectory, relativePath)}`);
   }
   return file;
-}
-function readPrompt(path: string, placeholders: Parameters<typeof readSettingsText>[1]) {
-  const content = readSettingsText(path, placeholders).trimEnd();
-  return content;
 }

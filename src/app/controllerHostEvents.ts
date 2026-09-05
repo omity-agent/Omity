@@ -4,7 +4,6 @@ import type { AppEvents } from "./events";
 import type { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import type { BrowserWarning } from "../types";
 import type { RegisteredSession } from "./registry";
-import { displayStreamEvent } from "./timeline";
 
 export function controllerHostEvents(
   events: AppEvents,
@@ -17,7 +16,7 @@ export function controllerHostEvents(
     },
     changed,
     transcript: (sessionId, event) => {
-      events.notifyTranscript(sessionId, displayStreamEvent(event));
+      events.notifyTranscript(sessionId, event);
     },
     wait: (sessionId, delayMs) => events.wait(sessionId, delayMs),
     warning: (sessionId, warning: BrowserWarning) => {

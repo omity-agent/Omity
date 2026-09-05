@@ -7,6 +7,18 @@ import {
 import type { SessionInfo } from "../../src/app/frontend/services/client";
 
 describe("侧栏会话排序", () => {
+  test("空列表及特殊对象键名可以安全分组", () => {
+    expect(groupSessions([])).toEqual([]);
+    const groups = groupSessions([
+      session("first", "__proto__", "idle", 1),
+      session("second", "__proto__", "tool", 2),
+      session("third", "constructor", "idle", 3),
+    ]);
+    expect(groups.map(({ workspace }) => workspace)).toEqual(["__proto__", "constructor"]);
+    expect(groups[0]?.sessions.map(({ id }) => id)).toEqual(["second", "first"]);
+    expect(groups[0]?.runningCount).toBe(1);
+    expect(groups[0]?.updatedAt).toBe(2);
+  });
   test("运行工作区和运行会话优先，同时保持工作区聚类", () => {
     const input = [
         session("history-new", "F:/history", "idle", 900),

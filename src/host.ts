@@ -1,4 +1,4 @@
-import { loadMcp, loadSessionMcp } from "./infrastructure/mcp/loadTools";
+import { loadMcp, loadSessionMcp } from "./infrastructure/mcp/tools/catalog";
 import { HookRuntime } from "./hooks/runtime";
 import { HostLease } from "./runtime/execution/lease";
 import type { HostMode } from "./types";

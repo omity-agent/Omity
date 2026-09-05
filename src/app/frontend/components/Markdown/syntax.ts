@@ -1,6 +1,6 @@
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { highlightTree, tags } from "@lezer/highlight";
-import type { HighlightedCodeResult } from "../HighlightedCode/scheduler";
+import type { HighlightedCodeResult } from "../HighlightedCode/background/dispatch";
 import { commonmarkLanguage } from "@codemirror/lang-markdown";
 import { css } from "styled-system/css";
 import { escape as escapeHtml } from "es-toolkit";

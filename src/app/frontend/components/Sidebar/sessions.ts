@@ -1,6 +1,7 @@
 import type { SessionInfo } from "../../services/client";
 import type { SessionStatus } from "../../../../types";
 import { isRunningStatus } from "../../services/events/attention";
+import { maxBy } from "es-toolkit";
 
 const minuteMs = 60_000,
   hourMs = 3_600_000,
@@ -26,16 +27,9 @@ export function statusLabelKey(status: SessionStatus) {
   }[status];
 }
 export function groupSessions(sessions: SessionInfo[]): SessionGroup[] {
-  const byWorkspace = new Map<string, SessionInfo[]>();
-  for (const session of sessions) {
-    const group = byWorkspace.get(session.workspace);
-    if (group) {
-      group.push(session);
-    } else {
-      byWorkspace.set(session.workspace, [session]);
-    }
-  }
-  return [...byWorkspace].map(toGroup).toSorted(compareGroups);
+  return [...Map.groupBy(sessions, (session) => session.workspace)]
+    .map(toGroup)
+    .toSorted(compareGroups);
 }
 export function workspaceLabel(workspace: string) {
   const parts = workspace.split(/[\\/]+/u).filter(Boolean);
@@ -85,7 +79,7 @@ function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
   return {
     runningCount: sessions.filter(isRunning).length,
     sessions,
-    updatedAt: Math.max(...sessions.map(({ updatedAt }) => updatedAt)),
+    updatedAt: maxBy(sessions, (session) => session.updatedAt)!.updatedAt,
     workspace,
   };
 }

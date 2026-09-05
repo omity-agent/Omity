@@ -11,7 +11,10 @@ import {
 } from "@langchain/langgraph";
 import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
 import { type HookPlan, agentPlan, toolPlan } from "../../hooks/plan";
-import { type ModelToolDefinition, modelToolDefinitions } from "../../infrastructure/mcp/snapshot";
+import {
+  type ModelToolDefinition,
+  modelToolDefinitions,
+} from "../../infrastructure/mcp/tools/definitions";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
 import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
 import { BunSqliteSaver } from "../../checkpointer";

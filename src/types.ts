@@ -25,7 +25,6 @@ export type Control = z.infer<typeof controlSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export type QueueStatus = z.infer<typeof queueStatusSchema>;
 export type LogLevel = z.infer<typeof logLevelSchema>;
-export type ReasoningEffort = z.infer<typeof reasoningEffortSchema>;
 export type ModelApi = z.infer<typeof modelApiSchema>;
 export interface BrowserWarning {
   code: "model_api_unavailable";

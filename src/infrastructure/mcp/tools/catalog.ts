@@ -1,24 +1,24 @@
-import { type BuiltInToolOptions, loadBuiltInTools } from "../toolbox/loadBuiltIns";
+import { type BuiltInToolOptions, loadBuiltInTools } from "../../toolbox/loadBuiltIns";
 import {
   type McpConfiguration,
   emptyMcpConfiguration,
   readProfileMcpConfiguration,
-} from "./config";
-import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./snapshot";
-import { type SettingsContext, createSettingsContext } from "../configuration/settings/context";
-import { configureFreeformMcpTools, sessionModelTools } from "./freeformInputs";
-import { loadServerTools, validateConfiguredServers } from "./loadServers";
-import { overrideMcpToolDescriptions, renameMcpTools } from "./toolOverrides";
-import type { Logger } from "../logging/logger";
-import { McpClientPool } from "./client/pool";
-import type { SessionPlaceholders } from "../configuration/placeholders";
+} from "../configuration";
+import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./definitions";
+import { type SettingsContext, createSettingsContext } from "../../configuration/settings/context";
+import { configureFreeformMcpTools, sessionModelTools } from "./freeform";
+import { loadServerTools, validateConfiguredServers } from "../loadServers";
+import { overrideMcpToolDescriptions, renameMcpTools } from "./descriptions";
+import type { Logger } from "../../logging/logger";
+import { McpClientPool } from "../client/pool";
+import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { collectReadableZodIssues } from "./schemaIssues";
-import { disableAdapterRequestTimeout } from "./client/timeout";
+import { collectReadableZodIssues } from "./issues";
+import { disableAdapterRequestTimeout } from "../client/timeout";
 import { resolve } from "node:path";
-import { suppressTerminalError } from "../../failures/output";
+import { suppressTerminalError } from "../../../failures/output";
 
-export { loadServerTools } from "./loadServers";
+export { loadServerTools } from "../loadServers";
 export interface LoadedMcp {
   configuration: McpConfiguration;
   close: () => Promise<void>;

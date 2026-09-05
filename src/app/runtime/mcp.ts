@@ -3,7 +3,7 @@ import {
   type LoadedMcp,
   loadMcp,
   loadSessionMcp,
-} from "../../infrastructure/mcp/loadTools";
+} from "../../infrastructure/mcp/tools/catalog";
 import {
   type SettingsContext,
   selectSettingsProfiles,
@@ -11,7 +11,7 @@ import {
 import type { AskUserRuntime } from "../../infrastructure/toolbox/runtime";
 import type { LogLevel } from "../../types";
 import { Logger } from "../../infrastructure/logging/logger";
-import type { McpToolSnapshot } from "../../infrastructure/mcp/snapshot";
+import type { McpToolSnapshot } from "../../infrastructure/mcp/tools/definitions";
 
 export function createAppMcp(
   root: string,

@@ -3,7 +3,7 @@ import type {
   DisplayToolOutput,
   ReasoningTranslation,
   TimelineMessage,
-} from "./types";
+} from "./contracts/projection";
 import {
   type StreamMessage,
   createStreamPart,
@@ -14,15 +14,6 @@ import type { FileLinkUnit } from "../../fileLinks/types";
 import { reconcileToolStreams } from "./tool/correlation";
 
 type ToolLifecycle = { phase: "running" } | { output: DisplayToolOutput; phase: "completed" };
-export function displayStreamEvent(event: DisplayEvent): DisplayEvent {
-  return event;
-}
-export function eventQueueId(event: DisplayEvent) {
-  return event.queueId;
-}
-export function eventMessageId(event: DisplayEvent) {
-  return event.messageId;
-}
 export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, DisplayToolOutput>) {
   const phases = new Map<string, ToolLifecycle>();
   for (const event of events) {
@@ -33,11 +24,7 @@ export function toolCallLifecycle(events: DisplayEvent[], outputs: Map<string, D
       phases.set(event.value.callId, { output: event.value.output, phase: "completed" });
     }
   }
-  for (const callId of outputs.keys()) {
-    const output = outputs.get(callId);
-    if (!output) {
-      throw new Error(`工具输出快照不存在：${callId}`);
-    }
+  for (const [callId, output] of outputs) {
     phases.set(callId, { output, phase: "completed" });
   }
   return phases;

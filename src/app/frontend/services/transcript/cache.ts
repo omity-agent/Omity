@@ -1,25 +1,10 @@
-import {
-  type DisplayEvent,
-  type DisplayMessage,
-  type DisplayQueue,
-  type ReasoningTranslation,
-  type TimelineMessage,
-  buildTimeline,
-} from "../../../timeline";
-import type { Control } from "../../../../types";
+import { type DisplayEvent, type TimelineMessage, buildTimeline } from "../../../timeline";
 import type { FileLinkUnit } from "../../../../fileLinks/types";
+import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
+import { maxBy } from "es-toolkit";
 import { replaceEqualDeep } from "@tanstack/react-query";
 
-export interface TranscriptSnapshot {
-  control: Control;
-  queue: DisplayQueue[];
-  messages: DisplayMessage[];
-  events: DisplayEvent[];
-  eventCursor: number;
-  fileLinks: FileLinkUnit[];
-  reasoningTranslations: ReasoningTranslation[];
-  transcriptRevision: number;
-}
+export type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 export interface TranscriptData extends TranscriptSnapshot {
   snapshotCursor: number;
   view: TimelineMessage[];
@@ -72,7 +57,10 @@ export function appendTranscriptEvents(current: TranscriptData, incoming: Displa
   return buildTranscript(
     {
       ...current,
-      eventCursor: Math.max(current.eventCursor, ...accepted.map((event) => event.id)),
+      eventCursor: Math.max(
+        current.eventCursor,
+        maxBy(accepted, (event) => event.id)?.id ?? current.eventCursor,
+      ),
       events,
       fileLinks: mergeFileLinks(
         current.fileLinks,

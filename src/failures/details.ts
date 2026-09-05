@@ -1,15 +1,8 @@
-import { isPlainObject as isRecord } from "es-toolkit";
+import { isPlainObject as isRecord, omit } from "es-toolkit";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
-type ErrorValue =
-  | null
-  | boolean
-  | number
-  | string
-  | ErrorValue[]
-  | ErrorDetails
-  | { [key: string]: ErrorValue };
+type ErrorValue = z.infer<z.ZodJSONSchema>;
 export interface ErrorDetails {
   name: string;
   message: string;
@@ -25,16 +18,7 @@ interface ErrorSummaryItem {
 interface ErrorSummary extends ErrorSummaryItem {
   causes?: ErrorSummaryItem[];
 }
-const errorValueSchema: z.ZodType<ErrorValue> = z.lazy(() =>
-  z.union([
-    z.null(),
-    z.boolean(),
-    z.number(),
-    z.string(),
-    z.array(errorValueSchema),
-    z.record(z.string(), errorValueSchema),
-  ]),
-);
+const errorValueSchema = z.json();
 export const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
   z.strictObject({
     cause: errorDetailsSchema.optional(),
@@ -45,8 +29,8 @@ export const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
   }),
 );
 const errorValuesSchema = z.record(z.string(), errorValueSchema),
-  hiddenDetailKeys = new Set(["pregelTaskId"]),
-  structuralErrorKeys = new Set(["name", "message", "stack", "cause", ...hiddenDetailKeys]);
+  hiddenDetailKeys = ["pregelTaskId"] as const,
+  structuralErrorKeys = ["name", "message", "stack", "cause", ...hiddenDetailKeys] as const;
 export function captureError(error: unknown): ErrorDetails {
   const serializedError: unknown = serializeError(error),
     json = JSON.stringify(serializedError),
@@ -94,14 +78,8 @@ export function parseError(value: string): ErrorDetails {
   return result.data;
 }
 function adaptSerializedError(serialized: Record<string, unknown>): ErrorDetails {
-  const details: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(serialized)) {
-    if (!structuralErrorKeys.has(key)) {
-      details[key] = value;
-    }
-  }
   const { cause } = serialized,
-    parsedDetails = errorValuesSchema.parse(details);
+    parsedDetails = errorValuesSchema.parse(omit(serialized, structuralErrorKeys));
   return {
     message: typeof serialized["message"] === "string" ? serialized["message"] : "Unknown error",
     name: typeof serialized["name"] === "string" ? serialized["name"] : "Error",
@@ -115,20 +93,12 @@ function adaptSerializedError(serialized: Record<string, unknown>): ErrorDetails
   };
 }
 function summarizeLevel(error: ErrorDetails): ErrorSummaryItem {
-  const details = visibleDetails(error.details);
+  const details = omit(error.details ?? {}, hiddenDetailKeys);
   return {
     ...(Object.keys(details).length > 0 ? { details } : {}),
     message: error.message,
     name: error.name,
   };
-}
-function visibleDetails(details: Record<string, ErrorValue> | undefined) {
-  if (!details) {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(details).filter(([key]) => !hiddenDetailKeys.has(key)),
-  ) as Record<string, ErrorValue>;
 }
 function nonErrorValue(value: unknown, serialized: unknown): unknown {
   if (value === null || ["string", "boolean"].includes(typeof value)) {

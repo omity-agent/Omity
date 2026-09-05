@@ -1,8 +1,8 @@
 import { type BundledLanguage, type Highlighter, bundledLanguages, createHighlighter } from "shiki";
-import { syntaxTheme, syntaxThemeName } from "./theme";
+import { type ThemedToken, getTokenStyleObject, stringifyTokenStyle } from "shiki/core";
+import { syntaxTheme, syntaxThemeName } from "./palette";
 import { Magika } from "magika";
 import { ShikiStreamTokenizer } from "@shikijs/stream";
-import type { ThemedToken } from "shiki/core";
 import { escape as escapeHtml } from "es-toolkit";
 
 export interface HighlightInput {
@@ -16,22 +16,20 @@ export interface HighlightResult {
 }
 type LanguageDetector = (code: string) => Promise<string>;
 type SyntaxLanguage = BundledLanguage | "text";
-interface StreamState extends Omit<HighlightResult, "language"> {
+interface StreamState {
   code: string;
   language: SyntaxLanguage;
+  lines: string[];
   requestedLanguage?: string;
+  stableLines: string[];
   tokenizer: ShikiStreamTokenizer;
 }
 const languageAliases: Record<string, BundledLanguage> = {
-    autohotkey: "ahk",
-    h: "c",
-    hpp: "cpp",
-    objectivec: "objective-c",
-  },
-  fontBold = 2,
-  fontItalic = 1,
-  fontStrikethrough = 8,
-  fontUnderline = 4;
+  autohotkey: "ahk",
+  h: "c",
+  hpp: "cpp",
+  objectivec: "objective-c",
+};
 let detectorPromise: Promise<Magika> | undefined,
   highlighterPromise: Promise<Highlighter> | undefined;
 export function createCodeHighlighter(detect: LanguageDetector = detectWithMagika) {
@@ -47,9 +45,8 @@ export function createCodeHighlighter(detect: LanguageDetector = detectWithMagik
         input.code.startsWith(previous.code)
       ) {
         if (input.code !== previous.code) {
-          await previous.tokenizer.enqueue(input.code.slice(previous.code.length));
+          previous.lines = await appendMarkup(previous, input.code.slice(previous.code.length));
           previous.code = input.code;
-          previous.lines = tokenizerLines(previous.tokenizer);
         }
         return { language, lines: previous.lines };
       }
@@ -58,17 +55,18 @@ export function createCodeHighlighter(detect: LanguageDetector = detectWithMagik
           highlighter,
           lang: language,
           theme: syntaxThemeName,
-        });
-      await tokenizer.enqueue(input.code);
-      const lines = tokenizerLines(tokenizer);
-      streams.set(input.streamId, {
-        code: input.code,
-        language,
-        lines,
-        requestedLanguage,
-        tokenizer,
-      });
-      return { language, lines };
+        }),
+        state: StreamState = {
+          code: input.code,
+          language,
+          lines: [],
+          requestedLanguage,
+          stableLines: [""],
+          tokenizer,
+        };
+      state.lines = await appendMarkup(state, input.code);
+      streams.set(input.streamId, state);
+      return { language, lines: state.lines };
     },
     release(streamId: string) {
       streams.delete(streamId);
@@ -126,11 +124,12 @@ async function detectWithMagika(code: string) {
     result = await detector.identifyBytes(new TextEncoder().encode(code));
   return result.prediction.output.label;
 }
-function tokenizerLines(tokenizer: ShikiStreamTokenizer) {
-  return tokenLines([...tokenizer.tokensStable, ...tokenizer.tokensUnstable]);
+async function appendMarkup(state: StreamState, code: string) {
+  const { stable, unstable } = await state.tokenizer.enqueue(code);
+  appendTokens(state.stableLines, stable);
+  return appendTokens([...state.stableLines], unstable);
 }
-function tokenLines(tokens: ThemedToken[]) {
-  const lines = [""];
+function appendTokens(lines: string[], tokens: ThemedToken[]) {
   for (const token of tokens) {
     const pieces = token.content.split("\n");
     for (const [index, piece] of pieces.entries()) {
@@ -146,30 +145,10 @@ function tokenMarkup(content: string, token: ThemedToken) {
   if (!content) {
     return "";
   }
-  const fontStyle = token.fontStyle ?? 0,
-    styles = token.color ? [`color:${token.color}`] : [],
-    decoration = [];
-  if (fontStyle > 0) {
-    if (fontStyle & fontItalic) {
-      styles.push("font-style:italic");
-    }
-    if (fontStyle & fontBold) {
-      styles.push("font-weight:bold");
-    }
-    if (fontStyle & fontUnderline) {
-      decoration.push("underline");
-    }
-    if (fontStyle & fontStrikethrough) {
-      decoration.push("line-through");
-    }
-  }
-  if (decoration.length > 0) {
-    styles.push(`text-decoration:${decoration.join(" ")}`);
-  }
-  const escaped = escapeHtml(content);
-  return styles.length > 0
-    ? `<span style="${escapeHtml(styles.join(";"))}">${escaped}</span>`
-    : escaped;
+  const style = stringifyTokenStyle(getTokenStyleObject(token));
+  return style
+    ? `<span style="${escapeHtml(style)}">${escapeHtml(content)}</span>`
+    : escapeHtml(content);
 }
 function normalizeLanguage(language?: string) {
   return language

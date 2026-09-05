@@ -1,6 +1,6 @@
-import type { McpConfiguration } from "./config";
+import type { McpConfiguration } from "./configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { createMcpToolFailureClient } from "./toolFailures";
+import { createMcpToolFailureClient } from "./tools/invocation";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 
 export async function loadServerTools(

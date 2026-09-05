@@ -1,5 +1,5 @@
 import { ZodError, type z } from "zod";
-import { uniq } from "es-toolkit";
+import { minBy, uniq } from "es-toolkit";
 
 export function collectReadableZodIssues(error: unknown): string[] {
   if (!(error instanceof ZodError)) {
@@ -15,7 +15,7 @@ function flattenBestIssues(issues: readonly z.core.$ZodIssue[]): z.core.$ZodIssu
     const candidates = issue.errors
         .map((candidate) => flattenBestIssues(candidate))
         .filter((candidate) => candidate.length > 0),
-      [best] = candidates.toSorted((left, right) => left.length - right.length);
+      best = minBy(candidates, (candidate) => candidate.length);
     return best ?? [issue];
   });
 }

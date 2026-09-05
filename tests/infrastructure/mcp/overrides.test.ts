@@ -1,20 +1,19 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import {
-  normalizeMcpToolDescriptionOverrides,
   overrideMcpToolDescriptions,
   renameMcpTools,
-} from "../../../src/infrastructure/mcp/toolOverrides";
+} from "../../../src/infrastructure/mcp/tools/descriptions";
 import {
   parseMcpConfiguration,
   readMcpConfiguration,
-} from "../../../src/infrastructure/mcp/config";
+} from "../../../src/infrastructure/mcp/configuration";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
 import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
-import { sessionModelTools } from "../../../src/infrastructure/mcp/freeformInputs";
+import { sessionModelTools } from "../../../src/infrastructure/mcp/tools/freeform";
 
 test("user MCP settings deeply override repository defaults", () => {
   const root = createTestDirectory("mcp-layered-config"),
@@ -145,9 +144,9 @@ test("MCP tool descriptions reject session placeholders outside settings prompts
   }
 });
 test("MCP tool description override paths must be non-empty strings", () => {
-  expect(() => normalizeMcpToolDescriptionOverrides({ search: "" })).toThrow(
-    "MCP 工具描述覆盖配置 settings/toolbox.yaml.toolDescriptionOverrides.search 必须是非空路径",
-  );
+  expect(() =>
+    parseMcpConfiguration({ toolDescriptionOverrides: { search: "" } }, "toolbox.yaml"),
+  ).toThrow("toolDescriptionOverrides");
 });
 function tool(name: string) {
   return new DynamicStructuredTool({

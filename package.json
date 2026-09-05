@@ -41,6 +41,7 @@
     "@tanstack/react-virtual": "latest",
     "@uiw/react-codemirror": "latest",
     "ai": "latest",
+    "birpc": "latest",
     "dompurify": "latest",
     "dotenv": "latest",
     "drizzle-orm": "rc",

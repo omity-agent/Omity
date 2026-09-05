@@ -1,6 +1,10 @@
-import { type McpToolSnapshot, emptyMcpToolSnapshot, snapshotMcpTools } from "../mcp/snapshot";
+import {
+  type McpToolSnapshot,
+  emptyMcpToolSnapshot,
+  snapshotMcpTools,
+} from "../mcp/tools/definitions";
 import type { ModelPrefixSettings, ModelSettings, Settings } from "../../types";
-import type { LoadedMcp } from "../mcp/loadTools";
+import type { LoadedMcp } from "../mcp/tools/catalog";
 
 export interface SessionDefinition {
   prefix: {

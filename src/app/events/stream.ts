@@ -2,12 +2,12 @@ import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 
-interface OutboundEvent {
+export interface OutboundEvent {
   data: unknown;
   event: string;
   id: string;
 }
-export type EventWriter = (event: OutboundEvent) => void;
+type EventWriter = (event: OutboundEvent) => void;
 export function eventStream(c: Context, subscribe: (write: EventWriter) => () => void) {
   const response = streamSSE(c, async (stream) => {
     const closed = Promise.withResolvers<void>(),

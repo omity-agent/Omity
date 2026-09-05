@@ -1,4 +1,4 @@
-import type { DisplayToolCall, DisplayToolOutput } from "../types";
+import type { DisplayToolCall, DisplayToolOutput } from "../contracts/projection";
 import type { FileLinkSurface, FileLinkUnit, FilePathMatch } from "../../../fileLinks/types";
 
 export function linkedCall(call: DisplayToolCall, fileLinks: FileLinkUnit[]) {

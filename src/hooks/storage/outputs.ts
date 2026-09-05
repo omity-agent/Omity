@@ -1,5 +1,5 @@
 import type { ToolMessage } from "@langchain/core/messages";
-import { structuredToolOutput } from "../../infrastructure/mcp/artifacts";
+import { structuredToolOutput } from "../../infrastructure/mcp/tools/structured";
 
 export interface HookToolOutput {
   output: unknown;

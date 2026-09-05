@@ -5,7 +5,7 @@ import type {
   ReasoningTranslation,
   TimelineMessage,
   TimelinePart,
-} from "../types";
+} from "../contracts/projection";
 import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
 import type { FileLinkUnit } from "../../../fileLinks/types";
 import { countTokens } from "../../../runtime/tokenizer";

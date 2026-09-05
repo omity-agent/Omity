@@ -1,17 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
 import {
-  normalizeMcpServers,
   parseMcpConfiguration,
   readMcpConfiguration,
-} from "../../src/infrastructure/mcp/config";
-import {
-  normalizeMcpToolNameOverrides,
-  renameMcpTools,
-} from "../../src/infrastructure/mcp/toolOverrides";
+} from "../../src/infrastructure/mcp/configuration";
 import { rmSync, writeFileSync } from "node:fs";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
+import { normalizeMcpServers } from "../../src/infrastructure/mcp/configuration/connections";
+import { renameMcpTools } from "../../src/infrastructure/mcp/tools/descriptions";
 
 const savedEnv = new Map<string, string | undefined>();
 afterEach(() => {
@@ -144,9 +141,9 @@ test("mcp stdio config validates its restart policy", () => {
   ).toThrow();
 });
 test("mcp config rejects renaming a tool to agent", () => {
-  expect(() => normalizeMcpToolNameOverrides({ web__search: "agent" })).toThrow(
-    "MCP 工具重命名配置 settings/toolbox.yaml.toolNameOverrides.web__search 不能命名为 agent",
-  );
+  expect(() =>
+    parseMcpConfiguration({ toolNameOverrides: { web__search: "agent" } }, "toolbox.yaml"),
+  ).toThrow("MCP 工具不能命名为 agent");
 });
 test("mcp tool name overrides rename loaded tools", () => {
   const tools = toolNames(["web__search", "web__crawl"]);
@@ -169,6 +166,10 @@ test("mcp tool name overrides report renamed conflicts", () => {
       web__search: "web__crawl",
     }),
   ).toThrow("MCP 工具重命名后名称冲突：web__crawl");
+});
+test.each(["constructor", "toString", "__proto__"])("tool names do not read inherited overrides: %s", (name) => {
+  expect(renameMcpTools(toolNames([name]), {})[0]?.name).toBe(name);
+  expect(renameMcpTools(toolNames([name]), Object.fromEntries([[name, "renamed"]]))[0]?.name).toBe("renamed");
 });
 function toolNames(names: string[]) {
   return names.map(

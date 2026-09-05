@@ -1,9 +1,9 @@
-import { type LoadedMcp, loadServerTools } from "../../../src/infrastructure/mcp/loadTools";
+import { type LoadedMcp, loadServerTools } from "../../../src/infrastructure/mcp/tools/catalog";
 import { expect, mock, test } from "bun:test";
 import { AppMcp } from "../../../src/app/runtime/mcp";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/config";
-import { emptyMcpToolSnapshot } from "../../../src/infrastructure/mcp/snapshot";
+import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
+import { emptyMcpToolSnapshot } from "../../../src/infrastructure/mcp/tools/definitions";
 
 test("MCP adapter clients initialize sequentially", async () => {
   const firstReady = Promise.withResolvers<void>(),
