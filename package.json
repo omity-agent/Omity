@@ -98,5 +98,11 @@
   },
   "patchedDependencies": {
     "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch"
-  }
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "core-js",
+    "koffi",
+    "unrs-resolver"
+  ]
 }

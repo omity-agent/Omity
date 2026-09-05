@@ -17,9 +17,7 @@ export const registrationBody: z.ZodType<RegistrationResponseJSON> = z.object({
     clientDataJSON: z.string().min(1),
     publicKey: z.string().min(1).optional(),
     publicKeyAlgorithm: z.number().int().optional(),
-    transports: z
-      .array(z.enum(["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"]))
-      .optional(),
+    transports: z.array(z.string()).optional(),
   }),
 });
 export const authenticationBody: z.ZodType<AuthenticationResponseJSON> = z.object({

@@ -1,5 +1,5 @@
 import { blob, check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type { AuthenticatorTransportFuture } from "@simplewebauthn/server";
+import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { sql } from "drizzle-orm";
 
 export const credentials = sqliteTable("credentials", {
@@ -7,7 +7,9 @@ export const credentials = sqliteTable("credentials", {
   createdAt: integer("created_at").notNull(),
   id: text().primaryKey(),
   publicKey: blob("public_key", { mode: "buffer" }).notNull(),
-  transports: text("transports_json", { mode: "json" }).$type<AuthenticatorTransportFuture[]>(),
+  transports: text("transports_json", { mode: "json" }).$type<
+    NonNullable<WebAuthnCredential["transports"]>
+  >(),
 });
 export const challenges = sqliteTable(
   "challenges",

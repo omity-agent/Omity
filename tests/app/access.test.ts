@@ -1,5 +1,6 @@
 import { ClientNetwork, type PeerRequest } from "../../src/app/access/network";
 import { expect, test } from "bun:test";
+import { registrationBody } from "../../src/app/http/accessRequest";
 
 test("untrusted clients cannot supply X-Forwarded-For", () => {
   const network = new ClientNetwork([]);
@@ -29,6 +30,37 @@ test("trusted proxy chains must contain an external client address", () => {
     "X-Forwarded-For 未包含可信代理链之外的客户端地址",
   );
 });
+test.each<{ transports: string[] | undefined }>([
+  { transports: undefined },
+  { transports: [] },
+  { transports: ["ble", "cable", "hybrid", "internal", "nfc", "smart-card", "usb"] },
+  { transports: ["vendor-transport"] },
+])("registration accepts optional transport strings: %j", ({ transports }) => {
+  const result = registrationBody.parse(registrationResponse(transports));
+  expect(result.response.transports).toEqual(transports);
+});
+test.each([
+  { transports: null },
+  { transports: "usb" },
+  { transports: [42] },
+  { transports: ["usb", null] },
+  { transports: {} },
+])("registration rejects invalid transport values: %j", ({ transports }) => {
+  expect(registrationBody.safeParse(registrationResponse(transports)).success).toBe(false);
+});
+function registrationResponse(transports: unknown) {
+  return {
+    clientExtensionResults: {},
+    id: "credential",
+    rawId: "credential",
+    response: {
+      attestationObject: "attestation",
+      clientDataJSON: "client-data",
+      ...(transports === undefined ? {} : { transports }),
+    },
+    type: "public-key",
+  };
+}
 function request(remoteAddress: string, forwarded?: string) {
   return {
     headers: forwarded ? { "x-forwarded-for": forwarded } : {},
