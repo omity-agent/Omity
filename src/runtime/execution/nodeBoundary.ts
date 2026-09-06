@@ -4,8 +4,8 @@ import { completeActiveStream, createStreamLogState, discardActiveStream } from 
 import { consumeBoundaryAppends, recoverConsumedAppends } from "../appends";
 import { pauseForStop, waitIfPaused } from "./pause";
 import { recordAiStreamPart, recordToolStarted } from "../aiStream";
+import { historyInput } from "../../agent/graph/historyInput";
 import { isRetryableModelError } from "../network";
-import { queueMessageId } from "../../infrastructure/database/records/messages/history";
 import { waitAfterCompletedStep } from "./step";
 import { waitBeforeModelRetry } from "../retry";
 
@@ -26,10 +26,7 @@ export async function runGraphUntilBoundary(
   let state = checkpoint ? readGraphState(await ctx.graph.getState(config)) : undefined,
     input: Parameters<HostContext["graph"]["stream"]>[0] = state
       ? recoverConsumedAppends(ctx, run, state)
-      : {
-          hookPendingUserIds: [queueMessageId(ctx.sessionId, item.id)],
-          messages: ctx.db.history(ctx.sessionId),
-        },
+      : historyInput(ctx.db.history(ctx.sessionId)),
     retries = 0,
     steppedOperation: AgentOperation | undefined,
     stepping = initialStepping;

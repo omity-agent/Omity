@@ -1,5 +1,25 @@
-import { useCallback, useEffect } from "react";
+import { type MouseEvent, useCallback, useEffect } from "react";
 
+export function navigateLink(
+  event: Pick<
+    MouseEvent<HTMLAnchorElement>,
+    "altKey" | "button" | "ctrlKey" | "defaultPrevented" | "metaKey" | "preventDefault" | "shiftKey"
+  >,
+  navigate: () => void,
+) {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  ) {
+    return;
+  }
+  event.preventDefault();
+  navigate();
+}
 export interface ForkPage {
   beforeMessageId: number;
   kind: "fork";

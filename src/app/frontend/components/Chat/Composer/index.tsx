@@ -2,6 +2,7 @@ import {
   type ComposerDraftTarget,
   flushComposerDraft,
   readComposerDraft,
+  writeComposerDraft,
 } from "../../../services/composerDrafts";
 import { reportError, reportPromiseErrors } from "../../../services/errors";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
@@ -95,9 +96,12 @@ export function Composer({
   const handleControl = useCallback(
       async (control: Parameters<NonNullable<ComposerProps["onControl"]>>[0]) => {
         await saverRef.current?.flush();
+        if (stableDraftTarget.kind !== "session") {
+          await writeComposerDraft(stableDraftTarget, contentRef.current, revisionRef.current);
+        }
         await onControl?.(control);
       },
-      [onControl],
+      [onControl, stableDraftTarget],
     ),
     handleDelete = useCallback(async () => {
       saverRef.current?.discardPending();
@@ -161,7 +165,7 @@ export function Composer({
         />
       )}
       <Actions
-        controlDisabled={controlDisabled}
+        controlDisabled={controlDisabled || loading || submitting}
         controlState={controlState}
         deleteDisabled={deleteDisabled}
         stepAvailable={stepAvailable}

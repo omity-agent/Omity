@@ -1,9 +1,11 @@
 import { expect, test } from "bun:test";
 import { makeDb, required, workspace } from "../support/database";
+import { buildTimeline } from "../../src/app/timeline";
 import { insertStreamEvent } from "../../src/infrastructure/database/records/streamEvents";
+import { loadTranscript } from "../../src/app/transcript";
 import { toolNotRunning } from "../../src/errors";
 
-test("tool cancellation requests are persisted and consumed once", () => {
+test("tool cancellation requests retain their first timestamp across reads and retries", () => {
   const db = makeDb();
   try {
     db.resetSession("session", workspace);
@@ -18,8 +20,10 @@ test("tool cancellation requests are persisted and consumed once", () => {
       value: "call-1",
     });
     db.requestToolCancellation("session", "call-1");
-    expect(db.takeToolCancellation("session", "call-1")).toBe(true);
-    expect(db.takeToolCancellation("session", "call-1")).toBe(false);
+    const requestedAt = db.toolCancellation("session", "call-1");
+    expect(requestedAt).toBeNumber();
+    db.requestToolCancellation("session", "call-1");
+    expect(db.toolCancellation("session", "call-1")).toBe(requestedAt);
   } finally {
     db.close();
   }
@@ -51,7 +55,16 @@ test("paused pending tool calls can be cancelled before execution starts", () =>
       value: { idDelta: "call-1", index: 0, nameDelta: "capture" },
     });
     db.requestToolCancellation("session", "call-1");
-    expect(db.takeToolCancellation("session", "call-1")).toBe(true);
+    expect(db.toolCancellation("session", "call-1")).toBeNumber();
+    const transcript = loadTranscript(db, "session"),
+      parts = buildTimeline(transcript.messages, transcript.queue, transcript.events).flatMap(
+        (message) => message.parts,
+      );
+    expect(parts.find((part) => part.type === "tool")).toMatchObject({
+      output: { content: "工具运行 0 毫秒 后被用户手动终止。" },
+      phase: "completed",
+    });
+    expect(db.nextQueue("session")?.status).toBe("paused");
   } finally {
     db.close();
   }

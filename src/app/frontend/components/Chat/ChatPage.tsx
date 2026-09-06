@@ -108,7 +108,6 @@ export function ChatPage({
       sessionStatus,
     }),
     firstUserMessageId = view.find((item) => item.role === "user")?.id,
-    forkDraft = draft ?? queue.find((item) => item.status === "draft")?.content,
     latestDetails = findLatestDetails(view),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
     userMessages = useMemo(
@@ -143,7 +142,7 @@ export function ChatPage({
   return (
     <div className={page}>
       <FileLinkProvider sessionId={activeId}>
-        <TranscriptScroll activeId={activeId} view={view}>
+        <TranscriptScroll activeId={activeId}>
           {view.length === 0 ? <div className={empty}>{t("noMessages")}</div> : null}
           {view.map((item) => (
             <Message
@@ -177,7 +176,7 @@ export function ChatPage({
         controlState={actionState.controlState}
         deleteDisabled={actionPending || actionState.sessionActionDisabled}
         disabled={!activeId || actionPending}
-        draft={forkDraft}
+        draft={draft}
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
         key={composerDraftKey(draftTarget)}

@@ -1,14 +1,8 @@
 import type { AppHosts } from "./hosts";
 import { requestHostToolCancellation } from "../sessionStorage";
-import { toolNotRunning } from "../errors";
 
 export function cancelSessionTool(hosts: AppHosts, sessionId: string, toolCallId: string) {
-  if (hosts.has(sessionId)) {
-    if (!hosts.cancelTool(sessionId, toolCallId)) {
-      throw toolNotRunning(toolCallId);
-    }
-  } else {
-    requestHostToolCancellation(sessionId, toolCallId);
-  }
+  requestHostToolCancellation(sessionId, toolCallId);
+  hosts.cancelTool(sessionId, toolCallId);
   return { toolCallId };
 }

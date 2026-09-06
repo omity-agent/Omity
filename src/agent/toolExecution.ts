@@ -3,6 +3,7 @@ import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 import type { Settings } from "../types";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "./toolExecutions";
+import { cancelledToolMessage } from "../runtime/toolOutput";
 import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
@@ -28,24 +29,25 @@ export function createToolInvoker(
     }
     const execution = options.toolExecutions?.begin(callId, config.signal);
     try {
+      execution?.signal.throwIfAborted();
       const raw = await tool.invoke(
-        materializeFreeformInput(call, options.freeformToolParameters),
-        {
-          configurable: { ...config.configurable, sessionId: options.sessionId },
-          signal: execution?.signal ?? config.signal,
-          toolCall: call,
-        },
-      );
+          materializeFreeformInput(call, options.freeformToolParameters),
+          {
+            configurable: { ...config.configurable, sessionId: options.sessionId },
+            signal: execution?.signal ?? config.signal,
+            toolCall: call,
+          },
+        ),
+        duration = execution?.cancellationDurationMs();
+      execution?.complete();
+      if (duration !== undefined) {
+        return cancelledToolMessage(callId, duration, call.name);
+      }
       return await normalizeOutput(raw, call, callId, options);
     } catch (error) {
       const duration = execution?.cancellationDurationMs();
       if (duration !== undefined) {
-        return toolMessage(
-          `工具运行 ${formatDuration(duration)} 后被用户手动终止。`,
-          call,
-          callId,
-          "error",
-        );
+        return cancelledToolMessage(callId, duration, call.name);
       }
       if (config.signal?.aborted) {
         throw error;
@@ -102,13 +104,4 @@ function messageContent(value: unknown): BaseMessage["content"] {
     return value;
   }
   return JSON.stringify(value);
-}
-function formatDuration(durationMs: number) {
-  if (durationMs < 1000) {
-    return `${Math.round(durationMs).toString()} 毫秒`;
-  }
-  const seconds = durationMs / 1000;
-  return seconds < 60
-    ? `${Number(seconds.toFixed(1)).toString()} 秒`
-    : `${Math.floor(seconds / 60).toString()} 分 ${Math.round(seconds % 60).toString()} 秒`;
 }

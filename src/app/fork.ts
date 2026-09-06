@@ -1,3 +1,4 @@
+import { queueMessageId, storeMessage } from "../infrastructure/database/records/messages/history";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Database } from "bun:sqlite";
 import { DomainError } from "../errors";
@@ -8,7 +9,7 @@ import { messageRowsToChatMessages } from "../infrastructure/database/records/me
 import { randomUUID } from "node:crypto";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
 import { runTransaction } from "../infrastructure/database/connection";
-import { storeMessage } from "../infrastructure/database/records/messages/history";
+import { writeComposerDraftRecord } from "../infrastructure/database/records/composerDrafts";
 
 interface MessageRow {
   id: number;
@@ -44,7 +45,7 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
       options.workspace,
       options.profiles,
       readDefinitionRecord(options.source.db, options.sourceSessionId),
-      forkControl(forkPoint),
+      "pause",
     );
     insertMessages(options.target.db, options.targetSessionId, messages);
     copyHookUsage(
@@ -54,7 +55,7 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
       options.targetSessionId,
     );
     const content = messageContent(forkPoint.message_json);
-    options.target.appendDraft(options.targetSessionId, content);
+    writeComposerDraftRecord(options.target.db, options.targetSessionId, content, 1);
   });
 }
 function assertForkPoint(db: Database, sessionId: string, messageId: number) {
@@ -94,21 +95,30 @@ function forkMessages(db: Database, sessionId: string, beforePosition: number) {
     query.finalize();
   }
 }
-function forkControl(forkPoint: MessageRow) {
-  return forkPoint.queue_id !== null &&
-    forkPoint.root_id !== null &&
-    forkPoint.queue_id !== forkPoint.root_id
-    ? "pause"
-    : "running";
-}
 function insertMessages(db: Database, sessionId: string, messages: MessageRow[]) {
+  const lastUserIndex = messages.findLastIndex(
+      (message) => storedMessageType(message.message_json) === "human",
+    ),
+    queueId = Number(
+      db.run("INSERT INTO queue (session_id, status) VALUES (?, 'paused')", [sessionId])
+        .lastInsertRowid,
+    );
+  db.run("UPDATE queue SET root_id = ? WHERE id = ?", [queueId, queueId]);
   for (const [position, message] of messages.entries()) {
     const [chatMessage] = messageRowsToChatMessages([message]);
     if (!chatMessage) {
       throw new Error("无法还原 Fork 消息");
     }
-    chatMessage.id = randomUUID();
-    storeMessage(db, sessionId, chatMessage, position, undefined, message.created_at);
+    const continuation = position === lastUserIndex;
+    chatMessage.id = continuation ? queueMessageId(sessionId, queueId) : randomUUID();
+    storeMessage(
+      db,
+      sessionId,
+      chatMessage,
+      position,
+      continuation ? queueId : undefined,
+      message.created_at,
+    );
   }
 }
 function storedMessageType(value: string) {

@@ -154,15 +154,15 @@ test.each(["paused", "running", "canceled"] as const)(
     expect(summary(view)).toEqual(["user:已接受"]);
   },
 );
-test("does not show fork drafts as sent messages", () => {
+test("does not invent user messages for continuation queues", () => {
   const view = buildTimeline(
     [],
     [
       {
-        content: "可编辑草稿",
+        content: "",
         error: null,
         id: 1,
-        status: "draft",
+        status: "paused",
         userMessageId: null,
       },
     ],

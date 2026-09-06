@@ -63,7 +63,6 @@ export function buildTimeline(
       queue
         .filter(
           (item) =>
-            item.status !== "draft" &&
             item.content.length > 0 &&
             item.userMessageId == null &&
             !persistedUserQueue.has(item.id) &&

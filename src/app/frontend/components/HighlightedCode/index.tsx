@@ -51,7 +51,6 @@ function HighlightedCodeView({
     onScroll = useFollowBottom({
       enabled: autoFollow,
       ref: blockRef,
-      version: normalized.code,
     }),
     // oxlint-disable-next-line react/incompatible-library
     virtualizer = useVirtualizer({

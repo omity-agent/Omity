@@ -167,10 +167,15 @@ test("mcp tool name overrides report renamed conflicts", () => {
     }),
   ).toThrow("MCP 工具重命名后名称冲突：web__crawl");
 });
-test.each(["constructor", "toString", "__proto__"])("tool names do not read inherited overrides: %s", (name) => {
-  expect(renameMcpTools(toolNames([name]), {})[0]?.name).toBe(name);
-  expect(renameMcpTools(toolNames([name]), Object.fromEntries([[name, "renamed"]]))[0]?.name).toBe("renamed");
-});
+test.each(["constructor", "toString", "__proto__"])(
+  "tool names do not read inherited overrides: %s",
+  (name) => {
+    expect(renameMcpTools(toolNames([name]), {})[0]?.name).toBe(name);
+    expect(
+      renameMcpTools(toolNames([name]), Object.fromEntries([[name, "renamed"]]))[0]?.name,
+    ).toBe("renamed");
+  },
+);
 function toolNames(names: string[]) {
   return names.map(
     (name) =>

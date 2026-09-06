@@ -88,7 +88,9 @@ export async function recordToolStarted(
   queueId: number,
 ) {
   const calls = pendingToolBatch(messages, ctx.settings.toolExecution.parallel);
-  for (const call of calls) {
+  for (const call of calls.filter(
+    (pending) => ctx.db.toolCancellation(ctx.sessionId, pending.id) === undefined,
+  )) {
     const callId = call.id,
       identity = findToolStreamIdentity(ctx.db.db, ctx.sessionId, callId) ?? {
         messageId: callId,

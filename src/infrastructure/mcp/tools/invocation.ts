@@ -1,4 +1,3 @@
-import { markMcpRequestCompleted, markMcpRequestStarted } from "../../../agent/toolExecutions";
 import { isPlainObject as isRecord } from "es-toolkit";
 import type { loadMcpTools } from "@langchain/mcp-adapters";
 
@@ -15,11 +14,9 @@ export function createMcpToolFailureClient(client: object): McpClient {
         return value;
       }
       return async (...args: unknown[]) => {
-        const signal = requestSignal(args);
         try {
-          const request: unknown = Reflect.apply(value, target, args);
-          markMcpRequestStarted(signal);
-          const result: unknown = await request;
+          const request: unknown = Reflect.apply(value, target, args),
+            result: unknown = await request;
           if (isRecord(result) && result["isError"] === true) {
             throw createMcpToolFailure(formatMcpContent(result["content"]));
           }
@@ -29,19 +26,10 @@ export function createMcpToolFailureClient(client: object): McpClient {
             throw error;
           }
           throw createMcpToolFailure(errorMessage(error), error);
-        } finally {
-          markMcpRequestCompleted(signal);
         }
       };
     },
   });
-}
-function requestSignal(args: unknown[]) {
-  const [, ...remainingArgs] = args,
-    [, options] = remainingArgs;
-  return isRecord(options) && options["signal"] instanceof AbortSignal
-    ? options["signal"]
-    : undefined;
 }
 function createMcpToolFailure(message: string, cause?: unknown) {
   const error = new Error(message, cause === undefined ? undefined : { cause });

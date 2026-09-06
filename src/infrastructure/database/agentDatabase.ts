@@ -33,7 +33,7 @@ import {
   streamEventCursor,
 } from "./records/streamEvents";
 import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
-import { requestToolCancellation, takeToolCancellation } from "./records/toolCancellations";
+import { readToolCancellation, requestToolCancellation } from "./records/toolCancellations";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import { FileLinkIndexer } from "./fileLinkIndexer";
@@ -101,9 +101,6 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   submitUser(sessionId: string, content: string, draftRevision: number, submissionId: string) {
     return this.queueSubmissions.submitUser(sessionId, content, draftRevision, submissionId);
-  }
-  appendDraft(sessionId: string, content: string) {
-    return this.queueSubmissions.appendDraft(sessionId, content);
   }
   pendingAppends(sessionId: string): QueueItem[] {
     return pendingAppendRows(this.db, sessionId);
@@ -174,8 +171,8 @@ export class AgentDatabase extends RecoverableDatabase {
     requireSessionRecord(this.db, sessionId);
     requestToolCancellation(this.db, sessionId, callId);
   }
-  takeToolCancellation(sessionId: string, callId: string) {
-    return takeToolCancellation(this.db, sessionId, callId);
+  toolCancellation(sessionId: string, callId: string) {
+    return readToolCancellation(this.db, sessionId, callId);
   }
   appendStream(sessionId: string, event: StreamEventDraft) {
     return appendFileLinkStream({

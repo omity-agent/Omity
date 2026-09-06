@@ -19,11 +19,11 @@ import {
   unreadFingerprint,
   workspaceName,
 } from "./groupStyles";
+import { navigateLink, pagePath } from "../../route";
 import { ChevronDown } from "lucide-react";
 import { RelativeTime } from "./RelativeTime";
 import { Status } from "./Status";
 import { cx } from "styled-system/css";
-import { pagePath } from "../../route";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -43,18 +43,7 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
   const { t } = useTranslation(),
     handleSelect = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => {
-        if (
-          event.defaultPrevented ||
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        ) {
-          return;
-        }
-        event.preventDefault();
-        onSelect(session.id);
+        navigateLink(event, () => onSelect(session.id));
       },
       [onSelect, session.id],
     );

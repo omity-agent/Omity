@@ -4,16 +4,14 @@ interface ToolExecutionHandle {
   complete: () => void;
 }
 interface ToolExecution {
-  announcedAt: number;
+  active: boolean;
+  startedAt?: number;
   cancelledAt?: number;
   controller: AbortController;
-  requestCompleted: boolean;
-  requestStarted: boolean;
   timer?: ReturnType<typeof setInterval>;
 }
-const executionsBySignal = new WeakMap<AbortSignal, ToolExecution>();
 interface ToolExecutionsOptions {
-  cancellationRequested?: (callId: string) => boolean;
+  cancellationRequested?: (callId: string) => number | undefined;
   now?: () => number;
   pollMs?: number;
 }
@@ -30,20 +28,25 @@ export class ToolExecutions {
   }
   begin(callId: string, parentSignal?: AbortSignal): ToolExecutionHandle {
     const execution = this.executions.get(callId) ?? this.createExecution();
-    if (executionsBySignal.has(execution.controller.signal)) {
+    if (execution.active) {
       throw new Error(`工具调用已在运行：${callId}`);
     }
     this.executions.set(callId, execution);
+    execution.active = true;
+    this.startPolling(callId, execution);
+    if (execution.cancelledAt === undefined) {
+      execution.startedAt = this.now();
+    }
     const signal = parentSignal
       ? AbortSignal.any([parentSignal, execution.controller.signal])
       : execution.controller.signal;
-    executionsBySignal.set(signal, execution);
-    this.startPolling(callId, execution);
     return {
       cancellationDurationMs: () =>
         execution.cancelledAt === undefined
           ? undefined
-          : Math.max(0, execution.cancelledAt - execution.announcedAt),
+          : execution.startedAt === undefined
+            ? 0
+            : Math.max(0, execution.cancelledAt - execution.startedAt),
       complete: () => {
         if (execution.timer) {
           clearInterval(execution.timer);
@@ -55,21 +58,25 @@ export class ToolExecutions {
       signal,
     };
   }
-  cancel(callId: string) {
+  cancel(callId: string, requestedAt = this.now()) {
     const execution = this.executions.get(callId);
-    if (!execution || execution.cancelledAt !== undefined || execution.requestCompleted) {
+    if (!execution || execution.cancelledAt !== undefined) {
       return false;
     }
-    execution.cancelledAt = this.now();
-    abortCancelledRequest(execution);
+    execution.cancelledAt = requestedAt;
+    execution.controller.abort(new Error("用户手动终止工具"));
     return true;
+  }
+  close() {
+    for (const execution of this.executions.values()) {
+      clearInterval(execution.timer);
+    }
+    this.executions.clear();
   }
   private createExecution(): ToolExecution {
     return {
-      announcedAt: this.now(),
+      active: false,
       controller: new AbortController(),
-      requestCompleted: false,
-      requestStarted: false,
     };
   }
   private startPolling(callId: string, execution: ToolExecution) {
@@ -77,8 +84,9 @@ export class ToolExecutions {
       return;
     }
     const check = () => {
-      if (this.options.cancellationRequested?.(callId)) {
-        this.cancel(callId);
+      const requestedAt = this.options.cancellationRequested?.(callId);
+      if (requestedAt !== undefined) {
+        this.cancel(callId, requestedAt);
       }
     };
     check();
@@ -88,24 +96,4 @@ export class ToolExecutions {
     execution.timer = setInterval(check, this.options.pollMs ?? 100);
     execution.timer.unref();
   }
-}
-export function markMcpRequestStarted(signal?: AbortSignal) {
-  const execution = signal ? executionsBySignal.get(signal) : undefined;
-  if (!execution) {
-    return;
-  }
-  execution.requestStarted = true;
-  abortCancelledRequest(execution);
-}
-export function markMcpRequestCompleted(signal?: AbortSignal) {
-  const execution = signal ? executionsBySignal.get(signal) : undefined;
-  if (execution) {
-    execution.requestCompleted = true;
-  }
-}
-function abortCancelledRequest(execution: ToolExecution) {
-  if (execution.cancelledAt === undefined || !execution.requestStarted) {
-    return;
-  }
-  execution.controller.abort(new Error("用户手动终止工具"));
 }

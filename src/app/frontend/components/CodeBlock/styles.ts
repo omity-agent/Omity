@@ -25,6 +25,7 @@ export const block = css({
   maxW: "full",
   minW: 0,
   overflow: "auto",
+  overflowAnchor: "none",
   p: "3",
   pr: "12",
   whiteSpace: "pre",

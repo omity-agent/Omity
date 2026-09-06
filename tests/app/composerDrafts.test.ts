@@ -43,7 +43,7 @@ test("sending clears only the composer revision it submitted", () => {
   expect(readSessionDraft(fixture.sessionId).content).toBe("next message");
   clearSessionDraft(fixture.sessionId, 2);
   expect(readSessionDraft(fixture.sessionId)).toEqual({
-    content: null,
+    content: "",
     revision: 2,
   });
 });
@@ -52,7 +52,7 @@ test("a late save cannot restore a draft after sending", () => {
   clearSessionDraft(fixture.sessionId, 3);
   writeSessionDraft(fixture.sessionId, "stale", 3);
   expect(readSessionDraft(fixture.sessionId)).toEqual({
-    content: null,
+    content: "",
     revision: 3,
   });
   writeSessionDraft(fixture.sessionId, "next message", 4);
@@ -60,6 +60,12 @@ test("a late save cannot restore a draft after sending", () => {
     content: "next message",
     revision: 4,
   });
+});
+test("an explicitly empty draft is distinct from an absent draft", () => {
+  const fixture = createSession();
+  expect(readSessionDraft(fixture.sessionId)).toEqual({ content: null, revision: 0 });
+  writeSessionDraft(fixture.sessionId, "", 1);
+  expect(readSessionDraft(fixture.sessionId)).toEqual({ content: "", revision: 1 });
 });
 function createSession() {
   const root = createTestDirectory("composer-drafts");

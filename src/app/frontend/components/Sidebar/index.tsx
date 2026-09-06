@@ -1,4 +1,6 @@
-import { Button } from "../ParkUI";
+import { type MouseEvent, useCallback } from "react";
+import { navigateLink, pagePath } from "../../route";
+import { LinkButton } from "../ParkUI";
 import { Plus } from "lucide-react";
 import { SessionGroup } from "./SessionGroup";
 import type { SessionInfo } from "../../services/client";
@@ -63,7 +65,11 @@ export function Sidebar({
   onCreate,
   onSelect,
 }: SidebarProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(),
+    handleCreate = useCallback(
+      (event: MouseEvent<HTMLAnchorElement>) => navigateLink(event, onCreate),
+      [onCreate],
+    );
   return (
     <>
       <header className={panel}>
@@ -71,16 +77,16 @@ export function Sidebar({
           {t("brand")} <span className={total}>/ {sessions.length}</span>
         </h1>
         {showCreate && (
-          <Button
+          <LinkButton
             aria-label={t("newSession")}
             className={newButton}
-            onClick={onCreate}
+            href={pagePath({ kind: "new" })}
+            onClick={handleCreate}
             title={t("newSession")}
-            type="button"
           >
             <Plus size={14} />
             {t("new")}
-          </Button>
+          </LinkButton>
         )}
       </header>
       <nav aria-label={t("sessions")} className={list}>

@@ -4,6 +4,7 @@ import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/dat
 import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
 import { consumeHookUsage } from "../../src/hooks/storage/usage";
 import { forkDatabaseBeforeMessage } from "../../src/app/fork";
+import { readComposerDraftRecord } from "../../src/infrastructure/database/records/composerDrafts";
 
 afterEach(cleanupDatabaseDirs);
 test("fork copies messages before selected user message", () => {
@@ -28,13 +29,14 @@ test("fork copies messages before selected user message", () => {
     workspace,
   });
   expect(target.history("target").map((message) => message.text)).toEqual(["第一条", "第一条回复"]);
-  expect(target.control("target")).toBe("running");
+  expect(target.control("target")).toBe("pause");
   expect(target.profiles("target")).toEqual(["base", "work"]);
   expect(readOnlyQueue(target)).toMatchObject({
-    content: "不要复制",
-    status: "draft",
-    user_message_id: null,
+    content: null,
+    status: "paused",
+    user_message_id: expect.any(Number),
   });
+  expect(readComposerDraftRecord(target.db, "target").content).toBe("不要复制");
   source.close();
   target.close();
 });
@@ -142,7 +144,7 @@ function latestMessageId(db: ReturnType<typeof makeDb>) {
     query.finalize();
   }
 }
-test("fork preserves completed takeover pairs in an editable draft", async () => {
+test("fork preserves completed takeover pairs and an independent editable draft", async () => {
   const source = makeDb(),
     target = makeDb();
   source.resetSession("source", workspace);
@@ -181,12 +183,13 @@ test("fork preserves completed takeover pairs in an editable draft", async () =>
     "tool",
     "ai",
   ]);
-  expect(target.control("target")).toBe("running");
+  expect(target.control("target")).toBe("pause");
   expect(readOnlyQueue(target)).toMatchObject({
-    content: "第二条",
-    status: "draft",
-    user_message_id: null,
+    content: null,
+    status: "paused",
+    user_message_id: expect.any(Number),
   });
+  expect(readComposerDraftRecord(target.db, "target").content).toBe("第二条");
   source.close();
   target.close();
 });

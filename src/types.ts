@@ -17,7 +17,7 @@ export type {
 export const controlSchema = z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
   controlCommandSchema = controlSchema.exclude(["pause_cancel"]),
   sessionStatusSchema = z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
-  queueStatusSchema = z.enum(["draft", "pending", "running", "paused", "done", "canceled"]),
+  queueStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
   logLevelSchema = z.enum(["debug", "info", "warn", "error"]),
   reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
   modelApiSchema = z.enum(["responses", "completions"]);

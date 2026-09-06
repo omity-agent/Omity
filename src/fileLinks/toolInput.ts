@@ -12,7 +12,7 @@ export function formatToolInput(call: ToolInputSource) {
   }
   return stringify(parseInputText(call.inputText) ?? call.input, {
     lineWidth: 0,
-  });
+  }).replace(/\n$/u, "");
 }
 function parseInputText(text?: string) {
   if (!text) {

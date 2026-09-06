@@ -7,7 +7,7 @@ import {
 import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
 import type { FileLinkIndexer } from "./fileLinkIndexer";
-import { clearToolCancellations } from "./records/toolCancellations";
+import { clearCompletedCancellations } from "./records/toolCancellations";
 import { finishToolStreams } from "./records/toolCompletion";
 import { insertStreamEvent } from "./records/streamEvents";
 import { messageFileLinkSources } from "../../fileLinks/messageSources";
@@ -31,7 +31,7 @@ export async function syncIndexedHistory(options: {
     const messagesChanged = syncMessages(options.db, options.sessionId, options.messages);
     upsertFileLinkUnits(options.db, options.sessionId, units);
     const streams = finishToolStreams(options.db, options.sessionId, options.messages);
-    clearToolCancellations(options.db, options.sessionId);
+    clearCompletedCancellations(options.db, options.sessionId, options.messages);
     if (messagesChanged || streams.changed || units.length > 0) {
       touchSessionRecord(options.db, options.sessionId);
     }

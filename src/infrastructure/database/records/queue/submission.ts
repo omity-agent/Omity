@@ -1,8 +1,8 @@
-import { appendDraftQueue, appendUserQueue } from "./operations";
 import { dirname, resolve } from "node:path";
 import { requireSessionRecord, touchSessionRecord } from "../sessions";
 import type { Database } from "bun:sqlite";
 import { UserMessageStorage } from "../../userMessages";
+import { appendUserQueue } from "./operations";
 import { clearComposerDraftRecord } from "../composerDrafts";
 import { runTransaction } from "../../connection";
 
@@ -29,14 +29,6 @@ export class QueueSubmissionStore {
       const queueId = appendUserQueue(this.db, sessionId, content, submissionId);
       clearComposerDraftRecord(this.db, sessionId, draftRevision);
       save();
-      touchSessionRecord(this.db, sessionId);
-      return queueId;
-    });
-  }
-  appendDraft(sessionId: string, content: string) {
-    requireSessionRecord(this.db, sessionId);
-    return runTransaction(this.db, () => {
-      const queueId = appendDraftQueue(this.db, sessionId, content);
       touchSessionRecord(this.db, sessionId);
       return queueId;
     });

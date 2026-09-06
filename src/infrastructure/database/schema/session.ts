@@ -20,7 +20,6 @@ const controls = [
     "pause_cancel",
   ] as const satisfies readonly Control[],
   queueStatuses = [
-    "draft",
     "pending",
     "running",
     "paused",
@@ -62,7 +61,7 @@ export const queue = sqliteTable(
   (table) => [
     check(
       "queue_status",
-      sql`${table.status} in ('draft', 'pending', 'running', 'paused', 'done', 'canceled')`,
+      sql`${table.status} in ('pending', 'running', 'paused', 'done', 'canceled')`,
     ),
     uniqueIndex("queue_submission").on(table.sessionId, table.submissionId),
   ],

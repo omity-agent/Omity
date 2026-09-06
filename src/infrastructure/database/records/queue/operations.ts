@@ -17,7 +17,6 @@ export function appendUserQueue(
   content: string,
   submissionId?: string,
 ) {
-  db.run("DELETE FROM queue WHERE session_id = ? AND status = 'draft'", [sessionId]);
   const activeRun = queryGet<{ root_id: number }>(
     db,
     `SELECT root_id FROM queue
@@ -37,13 +36,6 @@ export function appendUserQueue(
     queueId = Number(result.lastInsertRowid);
   db.run("UPDATE queue SET root_id = ? WHERE id = ?", [queueId, queueId]);
   return queueId;
-}
-export function appendDraftQueue(db: Database, sessionId: string, content: string) {
-  const result = db.run("INSERT INTO queue (session_id, content, status) VALUES (?, ?, 'draft')", [
-    sessionId,
-    content,
-  ]);
-  return Number(result.lastInsertRowid);
 }
 export function pendingAppendRows(db: Database, sessionId: string): QueueItem[] {
   const query = db.prepare<QueueRow, [string]>(

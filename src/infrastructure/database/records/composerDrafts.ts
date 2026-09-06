@@ -13,7 +13,7 @@ export function readComposerDraftRecord(db: Database, sessionId: string) {
     return { content: null, revision: 0 };
   }
   return {
-    content: row.content.length > 0 ? row.content : null,
+    content: row.content,
     revision: row.revision,
   };
 }

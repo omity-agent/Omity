@@ -89,7 +89,7 @@ test("message enqueue and submitted draft clear commit together", () => {
     id: result.queueId,
     status: "pending",
   });
-  expect(readSessionDraft("submit")).toEqual({ content: null, revision: 1 });
+  expect(readSessionDraft("submit")).toEqual({ content: "", revision: 1 });
   reopened.close();
 });
 function parseValue(args: string[]) {

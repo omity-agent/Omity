@@ -43,7 +43,7 @@ export async function runHostSession(
     controller = options.controller ?? new AbortController(),
     stoppingController = options.stoppingController ?? new AbortController(),
     toolExecutions = new ToolExecutions({
-      cancellationRequested: (callId) => db.takeToolCancellation(mode.sessionId, callId),
+      cancellationRequested: (callId) => db.toolCancellation(mode.sessionId, callId),
       pollMs: settings.host.pollMs,
     });
   let lease: HostLease | undefined,
@@ -119,6 +119,7 @@ export async function runHostSession(
     });
     requireLease().assertOwned();
   } finally {
+    toolExecutions.close();
     unwireSignals();
     try {
       await ownedMcp?.close();

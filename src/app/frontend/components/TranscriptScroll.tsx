@@ -7,11 +7,10 @@ import {
   useRef,
 } from "react";
 import { css, cx } from "styled-system/css";
-import type { TimelineMessage } from "../../timeline";
 import { scroll } from "../design";
 
 const followBottomThreshold = 48,
-  transcriptViewport = css({ containerType: "size" }),
+  transcriptViewport = css({ containerType: "size", overflowAnchor: "none" }),
   transcriptContent = css({ display: "flow-root", minH: "full", minW: 0 });
 type ScrollViewport = Pick<HTMLElement, "clientHeight" | "scrollHeight" | "scrollTop">;
 function isNearBottom(element: ScrollViewport) {
@@ -19,16 +18,26 @@ function isNearBottom(element: ScrollViewport) {
 }
 export class FollowBottomController {
   private following = true;
+  private previousTop?: number;
   align(element: ScrollViewport) {
     if (this.following) {
-      element.scrollTop = element.scrollHeight;
+      element.scrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
     }
+    this.previousTop = element.scrollTop;
   }
   reset() {
     this.following = true;
+    this.previousTop = undefined;
   }
   update(element: ScrollViewport) {
-    this.following = isNearBottom(element);
+    const maximumTop = Math.max(0, element.scrollHeight - element.clientHeight),
+      previousTop = Math.min(this.previousTop ?? maximumTop, maximumTop);
+    if (isNearBottom(element)) {
+      this.following = true;
+    } else if (element.scrollTop < previousTop - 1) {
+      this.following = false;
+    }
+    this.previousTop = element.scrollTop;
   }
 }
 export function useFollowBottom<T extends HTMLElement>({
@@ -36,19 +45,15 @@ export function useFollowBottom<T extends HTMLElement>({
   enabled = true,
   ref,
   resetKey,
-  version,
 }: {
   contentRef?: RefObject<Element | null>;
   enabled?: boolean;
   ref: RefObject<T | null>;
   resetKey?: unknown;
-  version: unknown;
 }) {
   const controllerRef = useRef<FollowBottomController>(null),
-    resetRef = useRef(resetKey),
-    versionRef = useRef(version);
+    resetRef = useRef(resetKey);
   useLayoutEffect(() => {
-    versionRef.current = version;
     let controller = controllerRef.current;
     if (!controller) {
       controller = new FollowBottomController();
@@ -62,7 +67,7 @@ export function useFollowBottom<T extends HTMLElement>({
     if (enabled && element) {
       controller.align(element);
     }
-  }, [enabled, ref, resetKey, version]);
+  });
   useLayoutEffect(() => {
     const element = ref.current,
       content = contentRef?.current ?? element?.firstElementChild,
@@ -74,11 +79,15 @@ export function useFollowBottom<T extends HTMLElement>({
       controller.align(element);
     });
     observer.observe(content);
+    observer.observe(element);
     return () => {
       observer.disconnect();
     };
   }, [contentRef, enabled, ref]);
   const onScroll = useCallback<UIEventHandler<T>>((event) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
     controllerRef.current?.update(event.currentTarget);
   }, []);
   return onScroll;
@@ -86,11 +95,9 @@ export function useFollowBottom<T extends HTMLElement>({
 export function TranscriptScroll({
   activeId,
   children,
-  view,
 }: {
   activeId: string;
   children: ReactNode;
-  view: TimelineMessage[];
 }) {
   const scrollRef = useRef<HTMLElement>(null),
     contentRef = useRef<HTMLDivElement>(null),
@@ -98,7 +105,6 @@ export function TranscriptScroll({
       contentRef,
       ref: scrollRef,
       resetKey: activeId,
-      version: view,
     });
   return (
     <section className={cx(scroll, transcriptViewport)} ref={scrollRef} onScroll={onScroll}>
