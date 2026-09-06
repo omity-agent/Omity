@@ -15,34 +15,39 @@ export const composerFrame = css({
 });
 export const composerActions = css({
   display: "flex",
-  flexDirection: { base: "row", md: "column", smDown: "column" },
-  gap: { base: "3", md: "0", smDown: "2" },
+  flexDirection: "column",
+  gap: "3",
   h: "full",
-  justifyContent: { base: "space-between", md: "initial", smDown: "initial" },
-  minW: { md: "controlColumn" },
+  justifyContent: "space-between",
+  minW: { md: { _coarse: "60" } },
+  w: { base: "full", md: "controlColumn" },
 });
 export const composerControls = css({
+  "& button": { borderWidth: "1px", flexShrink: 0 },
   alignItems: "center",
   display: "flex",
   gap: "1",
   justifyContent: "flex-end",
+  minH: { _coarse: "11", base: "8" },
+  order: { base: 1, md: 0 },
   w: "full",
 });
 export const runtimeControls = css({
-  "& > button + button": { borderLeftWidth: "0" },
-  "& > button:only-child": { w: "full" },
   display: "flex",
+  flexShrink: 0,
+  gap: "1",
   justifyContent: "flex-end",
   w: {
-    _coarse: "calc(token(sizes.11) + token(sizes.11))",
-    base: "16",
+    _coarse: "calc(token(sizes.11) + token(sizes.11) + token(spacing.1))",
+    base: "calc(token(sizes.8) + token(sizes.8) + token(spacing.1))",
   },
 });
 export const composerRole = css({
   alignItems: "center",
   color: "mutedStrong",
-  display: { base: "flex", smDown: "none" },
-  justifyContent: "center",
+  display: { base: "none", md: "flex" },
+  justifyContent: "flex-end",
   minH: { _coarse: "11", base: "8" },
   mt: { md: "auto" },
+  pr: { _coarse: "3", base: "1.5" },
 });

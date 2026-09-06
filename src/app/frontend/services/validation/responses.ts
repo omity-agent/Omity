@@ -44,6 +44,7 @@ export const bootstrapResponseSchema = z.object({
 });
 export const sessionResponseSchema = z.object({ session: sessionInfoSchema });
 export const deletedResponseSchema = z.object({ deleted: z.string() });
+export const cleanupResponseSchema = z.object({ skipped: z.array(z.string()) });
 export const workspaceResponseSchema = z.object({ workspace: z.string().nullable() });
 export const draftResponseSchema = z.object({
   content: z.string().nullable(),

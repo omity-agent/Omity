@@ -6,7 +6,7 @@ import {
 } from "../../../services/composerDrafts";
 import { reportError, reportPromiseErrors } from "../../../services/errors";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { Actions } from "./Actions";
+import { Actions } from "./controls";
 import { AskUserPrompt } from "./AskUser/Prompt";
 import type { ComposerProps } from "./props";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
@@ -168,6 +168,7 @@ export function Composer({
         controlDisabled={controlDisabled || loading || submitting}
         controlState={controlState}
         deleteDisabled={deleteDisabled}
+        sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
         stepAvailable={stepAvailable}
         submitLabel={askUser ? t("answer") : t("send")}
         submitDisabled={submitDisabled}

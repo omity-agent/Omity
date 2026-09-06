@@ -3,6 +3,7 @@ import {
   answerResponseSchema,
   bootstrapResponseSchema,
   cancellationResponseSchema,
+  cleanupResponseSchema,
   controlResponseSchema,
   deletedResponseSchema,
   draftResponseSchema,
@@ -42,6 +43,13 @@ export async function deleteSession(sessionId: string) {
   return request(`api/sessions/${encodeURIComponent(sessionId)}`, deletedResponseSchema, {
     method: "DELETE",
   });
+}
+export async function clearTemporaryFiles(sessionId: string) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/temporary-files`,
+    cleanupResponseSchema,
+    { method: "DELETE" },
+  );
 }
 async function pickWorkspace() {
   return request("api/workspace-picker", workspaceResponseSchema, {

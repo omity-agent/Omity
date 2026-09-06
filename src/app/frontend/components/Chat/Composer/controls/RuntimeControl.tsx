@@ -1,47 +1,25 @@
-import { LoaderCircle, Pause, Play, Send, StepForward } from "lucide-react";
-import { composerActions, composerControls, runtimeControls } from "./layout";
-import type { ChatControlState } from "../actionState";
-import { ContextUsage } from "../ContextUsage";
-import type { Control } from "../../../../../types";
-import { DeleteSessionButton } from "../DeleteSessionButton";
-import { IconButton } from "../../ParkUI";
-import type { TokenUsage } from "../../../../timeline";
+import { LoaderCircle, Pause, Play, StepForward } from "lucide-react";
+import type { ChatControlState } from "../../actionState";
+import type { Control } from "../../../../../../types";
+import { IconButton } from "../../../ParkUI";
 import { css } from "styled-system/css";
-import { reportPromiseErrors } from "../../../services/errors";
+import { reportPromiseErrors } from "../../../../services/errors";
+import { runtimeControls } from "../layout";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
-const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" }),
-  sendAction = css({
-    _hover: {
-      bg: "mutedStrong",
-      borderColor: "mutedStrong",
-    },
-    bg: "text",
-    borderColor: "text",
-    color: "canvas",
-  });
-export function Actions({
+const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" });
+export function RuntimeControl({
   controlDisabled,
   controlState,
-  deleteDisabled,
-  submitDisabled,
-  submitLabel,
   stepAvailable = false,
-  usage,
   onControl,
-  onDelete,
 }: {
   controlDisabled: boolean;
   controlState?: ChatControlState;
-  deleteDisabled: boolean;
-  submitDisabled: boolean;
-  submitLabel?: string;
   stepAvailable?: boolean;
-  usage?: TokenUsage | null;
   onControl?: (control: RequestedControl) => Promise<void>;
-  onDelete?: () => Promise<void>;
 }) {
   const { t } = useTranslation(),
     requestControl = useCallback(
@@ -106,28 +84,10 @@ export function Actions({
             <Pause size={16} />
           )}
         </IconButton>
-      ) : null,
-    sendLabel = submitLabel ?? t("send");
+      ) : null;
   return (
-    <div className={composerActions}>
-      <div className={composerControls}>
-        {onDelete ? <DeleteSessionButton disabled={deleteDisabled} onDelete={onDelete} /> : null}
-        {onControl ? (
-          <div aria-label={controlLabel} className={runtimeControls} role="group">
-            {control}
-          </div>
-        ) : null}
-        <IconButton
-          aria-label={sendLabel}
-          className={submitDisabled ? undefined : sendAction}
-          disabled={submitDisabled}
-          title={sendLabel}
-          type="submit"
-        >
-          <Send size={16} />
-        </IconButton>
-      </div>
-      {usage !== undefined ? <ContextUsage usage={usage} /> : null}
+    <div aria-label={controlLabel} className={runtimeControls} role="group">
+      {control}
     </div>
   );
 }

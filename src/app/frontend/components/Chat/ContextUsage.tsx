@@ -13,11 +13,10 @@ const panel = css({
     fontFamily: "mono",
     fontSize: "xs",
     gap: "2",
-    gridTemplateColumns: { smDown: "repeat(2, auto)" },
-    justifyContent: { smDown: "space-between" },
-    justifyItems: "end",
-    mt: { base: "auto", smDown: 0 },
-    pt: { base: "3", smDown: "2" },
+    gridTemplateColumns: { base: "repeat(2, auto)", md: "1fr" },
+    justifyContent: "space-between",
+    mt: { base: 0, md: "auto" },
+    pt: "3",
     w: "full",
     whiteSpace: "nowrap",
   }),
@@ -25,6 +24,7 @@ const panel = css({
     alignItems: "center",
     display: "flex",
     gap: "1.5",
+    justifyContent: "space-between",
   }),
   value = css({ color: "mutedStrong" });
 export function ContextUsage({ usage }: { usage: TokenUsage | null }) {
@@ -46,8 +46,10 @@ export function ContextUsage({ usage }: { usage: TokenUsage | null }) {
         <span className={value}>{totalTokens}</span>
       </span>
       <span className={row}>
-        <DatabaseZap aria-hidden="true" size={12} />
-        <span>{t("kvCache")}</span>
+        <span className={row}>
+          <DatabaseZap aria-hidden="true" size={12} />
+          <span>{t("kvCache")}</span>
+        </span>
         <span className={value}>{cacheRate}</span>
       </span>
     </div>

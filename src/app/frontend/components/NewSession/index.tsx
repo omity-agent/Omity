@@ -1,19 +1,16 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import { type EditablePair, MessageStack } from "./MessageStack";
-import { Plus, Send, UserRound } from "lucide-react";
-import {
-  composerActions,
-  composerControls,
-  composerFrame,
-  composerRole,
-} from "../Chat/Composer/layout";
-import { messageFlow, scroll, scrollContent, setup } from "./layout";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button } from "../ParkUI";
+import { Plus, UserRound } from "lucide-react";
+import { composerFrame, composerRole } from "../Chat/Composer/layout";
+import { scroll, scrollContent, setup } from "./layout";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
+import { IconButton } from "../ParkUI";
 import type { InitialSessionState } from "../../../initialState";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
 import { PendingAttachments } from "../Chat/Composer/attachments";
 import { ProfilePicker } from "./ProfilePicker";
+import { SubmitButton } from "../Chat/Composer/controls/SubmitButton";
 import { Toggles } from "./options/Toggles";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { claimShortId } from "../../../../infrastructure/randomId";
@@ -117,7 +114,15 @@ export function NewSessionPage({
         const id = claimShortId((candidate) => !current.some((item) => item.id === candidate));
         return [...current, { assistant: "", id, user: "" }];
       });
-    }, [setPairs]);
+    }, [setPairs]),
+    footer = useMemo(
+      () => (
+        <span aria-label={t("user")} className={composerRole} title={t("user")}>
+          <UserRound aria-hidden size={20} />
+        </span>
+      ),
+      [t],
+    );
   return (
     <form className={pageClassName} onSubmit={handleFormSubmit}>
       <div className={scroll} ref={scrollRef}>
@@ -136,43 +141,38 @@ export function NewSessionPage({
             />
             <Toggles disabled={submitting} selection={hookSelection} />
           </div>
-          <div className={messageFlow}>
-            <MessageStack
-              pairs={pairs}
-              onPairChange={changePair}
-              onRemove={removePair}
-              onSubmit={handleSubmit}
-            />
-            <div className={composerFrame}>
-              <MarkdownEditor
-                disabled={draftLoading || submitting}
-                onChange={setMessage}
-                onPasteFiles={attachmentSettings ? pasteFiles : undefined}
-                onSubmit={handleSubmit}
-                placeholder={t("messagePlaceholder")}
-                value={message}
-              />
-              <div className={composerActions}>
-                <div className={composerControls}>
-                  <Button
-                    disabled={draftLoading || !hookSelection.ready || !complete || submitting}
-                    type="submit"
-                    variant="outline"
-                  >
-                    <Send size={14} />
-                    {submitting ? t("creating") : t("createAndSend")}
-                  </Button>
-                  <Button disabled={submitting} onClick={addPair} type="button" variant="outline">
-                    <Plus size={14} /> {t("addMessagePair")}
-                  </Button>
-                </div>
-                <span aria-label={t("user")} className={composerRole} title={t("user")}>
-                  <UserRound aria-hidden size={20} />
-                </span>
-              </div>
-            </div>
-          </div>
+          <MessageStack
+            pairs={pairs}
+            onPairChange={changePair}
+            onRemove={removePair}
+            onSubmit={handleSubmit}
+          />
         </div>
+      </div>
+      <div className={composerFrame}>
+        <MarkdownEditor
+          disabled={draftLoading || submitting}
+          onChange={setMessage}
+          onPasteFiles={attachmentSettings ? pasteFiles : undefined}
+          onSubmit={handleSubmit}
+          placeholder={t("messagePlaceholder")}
+          value={message}
+        />
+        <ActionPanel footer={footer}>
+          <IconButton
+            aria-label={t("addMessagePair")}
+            disabled={submitting}
+            onClick={addPair}
+            title={t("addMessagePair")}
+            type="button"
+          >
+            <Plus aria-hidden size={16} />
+          </IconButton>
+          <SubmitButton
+            disabled={draftLoading || !hookSelection.ready || !complete || submitting}
+            label={submitting ? t("creating") : t("createAndSend")}
+          />
+        </ActionPanel>
       </div>
     </form>
   );

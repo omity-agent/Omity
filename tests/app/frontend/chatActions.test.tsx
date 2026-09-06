@@ -1,6 +1,6 @@
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import { expect, test } from "bun:test";
-import { Actions } from "../../../src/app/frontend/components/Chat/Composer/Actions";
+import { Actions } from "../../../src/app/frontend/components/Chat/Composer/controls";
 import { createInstance } from "i18next";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -11,6 +11,9 @@ await i18n.use(initReactI18next).init({
     "zh-CN": {
       translation: {
         cancelPause: "取消暂停",
+        clearTemporaryFiles: "清空 Agent 临时文件",
+        contextUsage: "上下文",
+        kvCache: "KV Cache",
         pausing: "正在暂停",
         resumeContinuous: "继续持续运行",
         send: "发送",
@@ -21,7 +24,11 @@ await i18n.use(initReactI18next).init({
   },
 });
 const handleControl: NonNullable<Parameters<typeof Actions>[0]["onControl"]> = () =>
-  Promise.resolve();
+    Promise.resolve(),
+  usage = { cacheReadTokens: 50, inputTokens: 100, outputTokens: 20 };
+function handleDelete() {
+  return Promise.resolve();
+}
 test("pending pause remains an enabled cancel action", () => {
   const button = runtimeButton(
     renderActions({
@@ -41,6 +48,34 @@ test("running step keeps resume enabled and disables only the step action", () =
     step = runtimeButton(markup, "单步执行中");
   expect(resume).not.toContain(' disabled=""');
   expect(step).toContain(' disabled=""');
+});
+test("cleanup stays enabled while running and action buttons contain no visible text", () => {
+  const markup = renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <Actions
+        controlDisabled={false}
+        controlState="pause"
+        deleteDisabled
+        onControl={handleControl}
+        onDelete={handleDelete}
+        sessionId="active-session"
+        submitDisabled={false}
+        usage={usage}
+      />
+    </I18nextProvider>,
+  );
+  expect(runtimeButton(markup, "清空 Agent 临时文件")).not.toContain(' disabled=""');
+  for (const button of markup.matchAll(/<button\b[^>]*>(?<content>.*?)<\/button>/gs)) {
+    expect(button.groups?.["content"]?.replace(/<[^>]*>/g, "")).toBe("");
+  }
+  expect(markup).toContain("上下文");
+  expect(markup).toContain("KV Cache");
+  expect(markup).toContain("50.00%");
+});
+test("unmaterialized sessions do not expose temporary cleanup", () => {
+  expect(renderActions({ controlDisabled: false, controlState: "resume" })).not.toContain(
+    "清空 Agent 临时文件",
+  );
 });
 function renderActions(
   props: Pick<Parameters<typeof Actions>[0], "controlDisabled" | "controlState">,

@@ -29,6 +29,7 @@ export type ApiController = Pick<
   | "pickWorkspace"
   | "createSession"
   | "deleteSession"
+  | "clearTemporaryFiles"
   | "transcript"
   | "eventCursor"
   | "composerDraft"
@@ -77,6 +78,9 @@ export function createApi(controller: ApiController, access?: AccessService) {
     const deletedSessionId = decodeSessionId(c.req.param("sessionId"));
     return c.json(await controller.deleteSession(deletedSessionId));
   });
+  app.delete("/api/sessions/:sessionId/temporary-files", async (c) =>
+    c.json(await controller.clearTemporaryFiles(sessionId(c))),
+  );
   app.get("/api/sessions/:sessionId/transcript", (c) =>
     c.json(controller.transcript(sessionId(c))),
   );

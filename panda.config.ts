@@ -137,7 +137,7 @@ export default defineConfig({
           chatCanvas: { value: "120rem" },
           composerEditor: { value: "12rem" },
           content: { value: "52rem" },
-          controlColumn: { value: "9rem" },
+          controlColumn: { value: "11rem" },
           detailHeader: { value: "2.25rem" },
           toolOutput: { value: "16rem" },
         },

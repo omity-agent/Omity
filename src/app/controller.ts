@@ -20,6 +20,7 @@ import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
+import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
@@ -164,6 +165,10 @@ export class AppController {
     this.registry.remove(sessionId);
     this.events.notifyDeleted(sessionId);
     return { deleted: sessionId };
+  }
+  clearTemporaryFiles(sessionId: string) {
+    this.registry.require(sessionId);
+    return clearAgentTemporaryFiles(sessionId);
   }
   transcript(sessionId: string) {
     this.registry.require(sessionId);

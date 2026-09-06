@@ -21,4 +21,3 @@ export const setup = css({
   p: { _short: "4", base: "4", md: "8" },
   w: "full",
 });
-export const messageFlow = css({ alignSelf: "end" });

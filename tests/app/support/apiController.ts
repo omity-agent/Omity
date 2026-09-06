@@ -22,6 +22,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       sessions: [],
     }),
     cancelTool: notConfigured,
+    clearTemporaryFiles: notConfigured,
     composerDraft: notConfigured,
     control: notConfigured,
     createSession: notConfigured,

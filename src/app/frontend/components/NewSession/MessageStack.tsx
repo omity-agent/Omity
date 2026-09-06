@@ -1,15 +1,11 @@
 import { Bot, Trash2, UserRound } from "lucide-react";
-import {
-  composerActions,
-  composerControls,
-  composerFrame,
-  composerRole,
-} from "../Chat/Composer/layout";
-import { Button } from "../ParkUI";
+import { composerFrame, composerRole } from "../Chat/Composer/layout";
+import { useCallback, useMemo } from "react";
+import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
+import { IconButton } from "../ParkUI";
 import type { InitialMessagePair } from "../../../initialState";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
 import { css } from "styled-system/css";
-import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 export interface EditablePair extends InitialMessagePair {
@@ -110,7 +106,15 @@ function MessageEditor({
   onSubmit: () => void;
 }) {
   const { t } = useTranslation(),
-    RoleIcon = role === "user" ? UserRound : Bot;
+    RoleIcon = role === "user" ? UserRound : Bot,
+    footer = useMemo(
+      () => (
+        <span aria-label={label} className={composerRole} title={label}>
+          <RoleIcon aria-hidden size={20} />
+        </span>
+      ),
+      [label, RoleIcon],
+    );
   return (
     <div className={composerFrame}>
       <MarkdownEditor
@@ -121,18 +125,18 @@ function MessageEditor({
         placeholder=""
         value={value}
       />
-      <div className={composerActions}>
-        <div className={composerControls}>
-          {onRemove ? (
-            <Button onClick={onRemove} type="button" variant="outline">
-              <Trash2 size={14} /> {t("removeMessagePair")}
-            </Button>
-          ) : null}
-        </div>
-        <span aria-label={label} className={composerRole} title={label}>
-          <RoleIcon aria-hidden size={20} />
-        </span>
-      </div>
+      <ActionPanel footer={footer}>
+        {onRemove ? (
+          <IconButton
+            aria-label={t("removeMessagePair")}
+            onClick={onRemove}
+            title={t("removeMessagePair")}
+            type="button"
+          >
+            <Trash2 aria-hidden size={16} />
+          </IconButton>
+        ) : null}
+      </ActionPanel>
     </div>
   );
 }
