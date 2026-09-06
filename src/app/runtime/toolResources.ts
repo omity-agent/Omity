@@ -53,30 +53,12 @@ export class AppMcp {
     ) => Promise<LoadedMcp> = () => Promise.reject(new Error("App MCP 未配置会话快照加载器")),
   ) {}
   load(profiles: string[]) {
-    if (this.closing) {
-      return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
-    }
-    const key = JSON.stringify(profiles),
-      existing = this.loading.get(key);
-    if (existing) {
-      return existing;
-    }
-    const loading = this.loadFresh(key, () => this.initialize(profiles));
-    this.loading.set(key, loading);
-    return loading;
+    return this.loadResource(JSON.stringify(profiles), () => this.initialize(profiles));
   }
   loadSession(sessionId: string, profiles: string[], snapshot: McpToolSnapshot, cwd: string) {
-    if (this.closing) {
-      return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
-    }
-    const key = `session:${sessionId}`,
-      existing = this.loading.get(key);
-    if (existing) {
-      return existing;
-    }
-    const loading = this.loadFresh(key, () => this.initializeSnapshot(profiles, snapshot, cwd));
-    this.loading.set(key, loading);
-    return loading;
+    return this.loadResource(`session:${sessionId}`, () =>
+      this.initializeSnapshot(profiles, snapshot, cwd),
+    );
   }
   createSession(sessionId: string, profiles: string[], cwd: string) {
     if (this.closing) {
@@ -86,9 +68,7 @@ export class AppMcp {
     if (this.loading.has(key)) {
       throw new Error(`Session 已绑定 MCP：${sessionId}`);
     }
-    const loading = this.loadFresh(key, () => this.initialize(profiles, cwd));
-    this.loading.set(key, loading);
-    return loading;
+    return this.loadResource(key, () => this.initialize(profiles, cwd));
   }
   async discardSession(sessionId: string) {
     const key = `session:${sessionId}`,
@@ -122,12 +102,26 @@ export class AppMcp {
       throw new AggregateError(failures, "关闭 App MCP 资源失败");
     }
   }
-  private async loadFresh(key: string, initialize: () => Promise<LoadedMcp>) {
-    try {
-      return await initialize();
-    } catch (error) {
-      this.loading.delete(key);
-      throw error;
+  private loadResource(key: string, initialize: () => Promise<LoadedMcp>) {
+    if (this.closing) {
+      return Promise.reject(new Error("App 正在关闭，不能初始化 MCP"));
     }
+    const existing = this.loading.get(key);
+    if (existing) {
+      return existing;
+    }
+    const initializeOnce = async () => {
+        try {
+          return await Promise.try(initialize);
+        } catch (error) {
+          if (this.loading.get(key) === loading) {
+            this.loading.delete(key);
+          }
+          throw error;
+        }
+      },
+      loading = initializeOnce();
+    this.loading.set(key, loading);
+    return loading;
   }
 }

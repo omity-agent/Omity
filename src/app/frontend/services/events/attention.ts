@@ -3,12 +3,13 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { SessionInfo } from "../client";
 import type { SessionStatus } from "../../../../types";
 import { isEqual } from "es-toolkit";
+import mitt from "mitt";
 
 type Listener = () => void;
 const stores = new WeakMap<QueryClient, SessionAttentionStore>();
 export class SessionAttentionStore {
   private activeId?: string;
-  private readonly listeners = new Set<Listener>();
+  private readonly changes = mitt<{ unread: undefined }>();
   private statuses = new Map<string, SessionStatus>();
   private unread: ReadonlySet<string> = new Set();
   replace(sessions: Pick<SessionInfo, "id" | "status">[]) {
@@ -49,9 +50,9 @@ export class SessionAttentionStore {
     this.updateUnread(unread);
   }
   subscribe = (listener: Listener) => {
-    this.listeners.add(listener);
+    this.changes.on("unread", listener);
     return () => {
-      this.listeners.delete(listener);
+      this.changes.off("unread", listener);
     };
   };
   snapshot = () => this.unread;
@@ -60,9 +61,7 @@ export class SessionAttentionStore {
       return;
     }
     this.unread = unread;
-    for (const listener of this.listeners) {
-      listener();
-    }
+    this.changes.emit("unread");
   }
 }
 export function isRunningStatus(status: SessionStatus) {

@@ -4,15 +4,11 @@ import type { Context } from "hono";
 import type { DisplayEvent } from "./timeline";
 import type { SessionInfo } from "./sessionState";
 import { StateChannel } from "./events/stateChannel";
-import mitt from "mitt";
+import { once } from "node:events";
+import { setTimeout as sleep } from "node:timers/promises";
 
-interface Events {
-  [key: string]: unknown;
-  [key: symbol]: unknown;
-  wake: string;
-}
 export class AppEvents {
-  private readonly bus = mitt<Events>();
+  private readonly bus = new EventTarget();
   private readonly content = new ContentChannel();
   private readonly state = new StateChannel();
   notifySession(session: SessionInfo) {
@@ -31,29 +27,19 @@ export class AppEvents {
     this.content.notify(sessionId, event);
   }
   wake(sessionId: string) {
-    this.bus.emit("wake", sessionId);
+    this.bus.dispatchEvent(new Event(`wake:${sessionId}`));
   }
-  wait(sessionId: string, delayMs: number) {
-    const waiting = Promise.withResolvers<void>();
-    let settled = false;
-    const handler = (changedSessionId: string) => {
-        if (changedSessionId !== sessionId) {
-          return;
-        }
-        done();
-      },
-      done = () => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        clearTimeout(timer);
-        this.bus.off("wake", handler);
-        waiting.resolve();
-      };
-    this.bus.on("wake", handler);
-    const timer = setTimeout(done, delayMs);
-    return waiting.promise;
+  async wait(sessionId: string, delayMs: number) {
+    const controller = new AbortController(),
+      { signal } = controller;
+    try {
+      await Promise.race([
+        once(this.bus, `wake:${sessionId}`, { signal }),
+        sleep(delayMs, undefined, { signal }),
+      ]);
+    } finally {
+      controller.abort();
+    }
   }
   streamState(c: Context, getSessions: () => SessionInfo[]) {
     return this.state.stream(c, getSessions);

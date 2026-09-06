@@ -1,6 +1,7 @@
 import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
 import type { AskUserRequest } from "./askUser";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { raceSignal } from "race-signal";
 
 type AskUserAnswer =
   | { kind: "choice"; options: string[]; note: string }
@@ -19,37 +20,30 @@ export class AskUserRuntime {
       throw new Error(`ask_user 问题已在等待回答：${request.callId}`);
     }
     const deferred = Promise.withResolvers<AskUserAnswer>(),
-      pending: PendingQuestion = { request, resolve: deferred.resolve };
+      pending: PendingQuestion = { request, resolve: deferred.resolve },
+      cleanup = () => {
+        if (this.pending.get(key) === pending) {
+          this.pending.delete(key);
+          this.changed?.(sessionId);
+        }
+      };
     this.pending.set(key, pending);
     this.changed?.(sessionId);
-    const abort = () => {
-      if (this.pending.delete(key)) {
-        this.changed?.(sessionId);
-      }
-      deferred.reject(signal?.reason instanceof Error ? signal.reason : new Error("工具已终止"));
-    };
-    if (signal?.aborted) {
-      abort();
-    } else {
-      signal?.addEventListener("abort", abort, { once: true });
-    }
     try {
-      return await deferred.promise;
+      return await raceSignal(deferred.promise, signal, {
+        translateError: (aborted) => {
+          cleanup();
+          return aborted.reason instanceof Error ? aborted.reason : new Error("工具已终止");
+        },
+      });
     } finally {
-      signal?.removeEventListener("abort", abort);
-      if (this.pending.get(key) === pending) {
-        this.pending.delete(key);
-        this.changed?.(sessionId);
-      }
+      cleanup();
     }
   }
   answer(sessionId: string, callId: string, answer: unknown) {
     const key = this.key(sessionId, callId),
       pending = this.pending.get(key);
-    if (!pending) {
-      throw toolNotRunning(callId);
-    }
-    if (pending.answered) {
+    if (!pending || pending.answered) {
       throw toolNotRunning(callId);
     }
     const parsed = parseAnswer(pending.request, answer);

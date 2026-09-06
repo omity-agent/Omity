@@ -1,15 +1,10 @@
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
-import { highlightTree, tags } from "@lezer/highlight";
+import { highlightCode, tags } from "@lezer/highlight";
 import type { HighlightedCodeResult } from "../HighlightedCode/background/dispatch";
 import { commonmarkLanguage } from "@codemirror/lang-markdown";
 import { css } from "styled-system/css";
 import { escape as escapeHtml } from "es-toolkit";
 
-interface HighlightSpan {
-  classes: string;
-  end: number;
-  start: number;
-}
 const title = css({ color: "syntaxTitle", fontWeight: "bold" }),
   strong = css({ color: "syntaxNumber", fontWeight: "bold" }),
   emphasis = css({ color: "syntaxKeyword", fontStyle: "italic" }),
@@ -36,35 +31,23 @@ const title = css({ color: "syntaxTitle", fontWeight: "bold" }),
   ]);
 export const markdownSyntax = syntaxHighlighting(markdownHighlight);
 export function highlightMarkdownSource(code: string): HighlightedCodeResult {
-  const spans: HighlightSpan[] = [];
-  highlightTree(commonmarkLanguage.parser.parse(code), markdownHighlight, (start, end, classes) => {
-    spans.push({ classes, end, start });
-  });
-  const sourceLines = code.split("\n"),
-    lines: string[] = [];
-  let start = 0;
-  for (const line of sourceLines) {
-    lines.push(lineMarkup(code, start, start + line.length, spans));
-    start += line.length + 1;
-  }
+  const lines = [""];
+  highlightCode(
+    code,
+    commonmarkLanguage.parser.parse(code),
+    markdownHighlight,
+    (text, classes) => {
+      const escaped = escapeHtml(text);
+      lines[lines.length - 1] += classes ? `<span class="${classes}">${escaped}</span>` : escaped;
+    },
+    () => {
+      lines.push("");
+    },
+  );
   return {
     code,
     language: "markdown",
     lines,
-    sourceLines,
+    sourceLines: code.split("\n"),
   };
-}
-function lineMarkup(code: string, start: number, end: number, spans: HighlightSpan[]) {
-  let cursor = start,
-    markup = "";
-  for (const span of spans) {
-    if (span.end > start && span.start < end) {
-      const spanStart = Math.max(span.start, start),
-        spanEnd = Math.min(span.end, end);
-      markup += escapeHtml(code.slice(cursor, spanStart));
-      markup += `<span class="${span.classes}">${escapeHtml(code.slice(spanStart, spanEnd))}</span>`;
-      cursor = spanEnd;
-    }
-  }
-  return markup + escapeHtml(code.slice(cursor, end));
 }

@@ -1,39 +1,27 @@
+import { type ConsolaInstance, LogLevels, createConsola } from "consola/basic";
 import type { LogLevel } from "../../types";
-import { isPlainObject } from "es-toolkit";
+import { once } from "es-toolkit";
+import { serializeError } from "serialize-error";
 
-const priority: Record<LogLevel, number> = {
-    debug: 10,
-    error: 40,
-    info: 20,
-    warn: 30,
-  },
-  styles = {
-    blue: "\x1b[34m",
-    dim: "\x1b[2m",
-    green: "\x1b[32m",
-    red: "\x1b[31m",
-    reset: "\x1b[0m",
-    yellow: "\x1b[33m",
-  },
-  levelMeta: Record<LogLevel, { label: string; mark: string; color: string }> = {
-    debug: { color: styles.blue, label: "DEBUG", mark: "·" },
-    error: { color: styles.red, label: "ERROR", mark: "✖" },
-    info: { color: styles.green, label: "INFO ", mark: "●" },
-    warn: { color: styles.yellow, label: "WARN ", mark: "▲" },
-  };
 export class Logger {
   private indent = 0;
+  private readonly output: ConsolaInstance;
   constructor(
-    private readonly level: LogLevel,
+    level: LogLevel,
     private readonly silent = false,
-  ) {}
+  ) {
+    this.output = createConsola({
+      level: LogLevels[silent ? "silent" : level],
+      throttle: 0,
+    });
+  }
   child(title: string) {
     this.info(`┌─ ${title}`);
     this.indent += 1;
-    return () => {
-      this.indent = Math.max(0, this.indent - 1);
+    return once(() => {
+      this.indent -= 1;
       this.info(`└─ ${title}`);
-    };
+    });
   }
   debug(message: string, data?: unknown) {
     this.write("debug", message, data);
@@ -54,54 +42,12 @@ export class Logger {
     process.stdout.write(text);
   }
   private write(level: LogLevel, message: string, data?: unknown) {
-    if (this.silent) {
+    if (LogLevels[level] > this.output.level) {
       return;
     }
-    if (priority[level] < priority[this.level]) {
-      return;
-    }
-    const meta = levelMeta[level],
-      prefix = this.prefix(meta);
-    console.log(`${prefix}${"  ".repeat(this.indent)}${message}`);
-    for (const line of formatData(data)) {
-      console.log(`${this.continuationPrefix()}${"  ".repeat(this.indent)}${line}`);
-    }
-  }
-  private prefix(meta: { label: string; mark: string; color: string }) {
-    const time = styles.dim + formatTime(new Date()) + styles.reset,
-      level = meta.color + meta.label + styles.reset,
-      mark = meta.color + meta.mark + styles.reset;
-    return `${time} ${level} ${mark} `;
-  }
-  private continuationPrefix() {
-    return `${" ".repeat(13)} ${styles.dim}│${styles.reset} `;
-  }
-}
-function formatData(data: unknown): string[] {
-  if (data === undefined) {
-    return [];
-  }
-  if (isPlainObject(data)) {
-    return Object.entries(data).flatMap(([key, value]) => {
-      if (isScalar(value)) {
-        return [`${styles.dim}${key}${styles.reset}: ${formatScalar(value)}`];
-      }
-      const lines = [`${styles.dim}${key}${styles.reset}:`];
-      for (const line of JSON.stringify(value, null, 2).split("\n")) {
-        lines.push(`  ${line}`);
-      }
-      return lines;
+    this.output[level]({
+      args: data === undefined ? [] : [data instanceof Error ? serializeError(data) : data],
+      message: `${"  ".repeat(this.indent)}${message}`,
     });
   }
-  return JSON.stringify(data, null, 2).split("\n");
-}
-function formatTime(date: Date) {
-  const time = date.toISOString().slice(11, 23);
-  return `${time}Z`;
-}
-function isScalar(value: unknown) {
-  return value === null || ["string", "number", "boolean"].includes(typeof value);
-}
-function formatScalar(value: unknown) {
-  return typeof value === "string" ? value : JSON.stringify(value);
 }

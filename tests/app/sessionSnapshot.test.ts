@@ -1,4 +1,4 @@
-import { type AppMcp, createAppMcp } from "../../src/app/runtime/mcp";
+import { type AppMcp, createAppMcp } from "../../src/app/runtime/toolResources";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

@@ -20,7 +20,7 @@ import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
-import { createAppMcp } from "./runtime/mcp";
+import { createAppMcp } from "./runtime/toolResources";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";

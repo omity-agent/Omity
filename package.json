@@ -42,6 +42,7 @@
     "@uiw/react-codemirror": "latest",
     "ai": "latest",
     "birpc": "latest",
+    "consola": "latest",
     "deepmerge-ts": "latest",
     "dompurify": "latest",
     "dotenv": "latest",

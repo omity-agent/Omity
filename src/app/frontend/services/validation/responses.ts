@@ -1,6 +1,7 @@
 import { controlCommandSchema, sessionStatusSchema } from "../../../../types";
 import type { AttachmentSettings } from "../../../attachments/contract";
 import type { SessionInfo } from "../../../sessionState";
+import { askUserRequestSchema } from "../../../../infrastructure/toolbox/questionnaire";
 import { errorDetailsSchema } from "../../../../failures/details";
 import { z } from ".";
 
@@ -9,23 +10,9 @@ export {
   transcriptResponseSchema,
 } from "../../../timeline/contracts/records";
 export { streamEventSchema as eventSchema } from "../../../../types";
-const integer = z.number().int(),
-  askUserQuestionSchema = z.discriminatedUnion("kind", [
-    z.object({
-      callId: z.string(),
-      kind: z.literal("choice"),
-      multiple: z.boolean(),
-      options: z.array(z.string()),
-      question: z.string(),
-    }),
-    z.object({
-      callId: z.string(),
-      kind: z.literal("open_ended"),
-      question: z.string(),
-    }),
-  ]);
+const integer = z.number().int();
 export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
-  askUser: askUserQuestionSchema.nullable().optional(),
+  askUser: askUserRequestSchema.nullable().optional(),
   createdAt: integer,
   error: errorDetailsSchema.nullable(),
   id: z.string(),

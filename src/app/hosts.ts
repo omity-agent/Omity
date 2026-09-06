@@ -1,6 +1,6 @@
 import type { BrowserWarning, HostMode, SessionStatus, StreamEvent } from "../types";
 import { type ErrorDetails, captureError } from "../failures/details";
-import type { AppMcp } from "./runtime/mcp";
+import type { AppMcp } from "./runtime/toolResources";
 import type { ProcessOwner } from "../infrastructure/process/ownership";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { runHostSession } from "../host";

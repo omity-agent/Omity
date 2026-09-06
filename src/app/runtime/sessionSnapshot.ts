@@ -3,7 +3,7 @@ import {
   prioritizeSettingsProfile,
   settingsProfileNames,
 } from "../../infrastructure/configuration/settings/context";
-import type { AppMcp } from "./mcp";
+import type { AppMcp } from "./toolResources";
 import type { SessionSubmission } from "../attachments/contract";
 import { createAppSession } from "./sessionActions";
 import { createSessionDefinition } from "../../infrastructure/database/sessionDefinition";
