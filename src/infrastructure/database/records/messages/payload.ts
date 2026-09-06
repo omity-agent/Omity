@@ -41,8 +41,12 @@ function encodeToolMessage(message: ToolMessage, mode: MessageStorageMode): Stor
     largeOutputTokens = readLargeOutputTokens(message);
   return {
     content: message.content,
+    status: message.status ?? "success",
     toolCallId: message.tool_call_id,
     type: "tool",
+    ...(message.metadata?.["builtInTool"] === "update_title"
+      ? { builtInTool: "update_title" as const }
+      : {}),
     ...(message.metadata?.["customTool"] === true ? { custom: true } : {}),
     ...(largeOutputTokens === undefined ? {} : { largeOutputTokens }),
     ...(message.name ? { name: message.name } : {}),

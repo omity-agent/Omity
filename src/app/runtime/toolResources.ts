@@ -18,11 +18,9 @@ export function createAppMcp(
   level: LogLevel,
   context: SettingsContext,
   askUser: AskUserRuntime,
-  sessionChanged?: (sessionId: string) => void,
 ) {
   const options: LoadMcpOptions = {
       askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
-      sessionChanged,
     },
     sessionOptions = (cwd = root): LoadMcpOptions => ({ ...options, cwd });
   return new AppMcp(

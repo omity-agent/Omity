@@ -15,13 +15,38 @@ test.each([
   { content: "", type: "ai", usage: { cacheRead: 0, input: -1, output: 1 } },
   { content: "", type: "ai", usage: { cacheRead: 0, input: "1", output: 1 } },
   { content: "", type: "ai", usage: { cacheRead: 0, input: Number.MAX_SAFE_INTEGER, output: 1 } },
-  { content: "", toolCallId: 42, type: "tool" },
-  { content: "", largeOutputTokens: -1, toolCallId: "tool", type: "tool" },
-  { content: "", custom: "true", toolCallId: "tool", type: "tool" },
+  { content: "", status: "success", toolCallId: 42, type: "tool" },
+  { content: "", largeOutputTokens: -1, status: "success", toolCallId: "tool", type: "tool" },
+  { content: "", custom: "true", status: "success", toolCallId: "tool", type: "tool" },
+  { content: "", status: "unknown", toolCallId: "tool", type: "tool" },
+  { builtInTool: "unknown", content: "", status: "success", toolCallId: "tool", type: "tool" },
   { content: "", extra: true, type: "human" },
 ])("rejects corrupt stored messages instead of dropping fields: %j", (value) => {
   expect(() => decodeMessage(JSON.stringify(value))).toThrow();
 });
+test.each(["history", "recovery"] as const)(
+  "round-trips tool execution status and stable built-in identity in %s messages",
+  (mode) => {
+    for (const status of ["success", "error"] as const) {
+      const message = new ToolMessage({
+          content: "result",
+          id: "result",
+          metadata: { builtInTool: "update_title" },
+          name: "renamed_heading",
+          status,
+          tool_call_id: "call",
+        }),
+        inserted = messageInsert(message, mode),
+        restored = decodeMessage(inserted.messageJson, inserted.sourceId);
+      expect(restored).toMatchObject({
+        metadata: message.metadata,
+        name: message.name,
+        status,
+        tool_call_id: "call",
+      });
+    }
+  },
+);
 test("round-trips replay content, provider fields, usage and custom tool calls", () => {
   const message = new AIMessage({
     additional_kwargs: {

@@ -24,7 +24,6 @@ const description = z.string(),
   titlePreferences = metadata.extend({
     errors: z.strictObject({
       invalidLength: z.string().min(1),
-      missingSession: z.string().min(1),
     }),
     parameters: z.strictObject({
       title: parameter

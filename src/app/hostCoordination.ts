@@ -43,7 +43,7 @@ export function createControllerHosts(options: {
     controllerHostEvents(events, sessionInfo, changed),
     owner,
     settings.host.shutdownTimeoutMs,
-    createAppMcp(root, settings.logging.level, context, askUser, changed),
+    createAppMcp(root, settings.logging.level, context, askUser),
     context,
   );
 }

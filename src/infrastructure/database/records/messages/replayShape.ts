@@ -28,10 +28,12 @@ const content = z.union([
     usage: usage.optional(),
   }),
   tool = z.strictObject({
+    builtInTool: z.literal("update_title").optional(),
     content,
     custom: z.boolean().optional(),
     largeOutputTokens: tokens.optional(),
     name: z.string().optional(),
+    status: z.enum(["success", "error"]),
     structuredOutput: z.unknown().optional(),
     toolCallId: z.string(),
     type: z.literal("tool"),

@@ -27,15 +27,19 @@ export function decodeMessage(value: string, id?: string) {
     content: stored.content,
     id,
     metadata:
-      stored.custom !== true && stored.largeOutputTokens === undefined
+      stored.custom !== true &&
+      stored.largeOutputTokens === undefined &&
+      stored.builtInTool === undefined
         ? undefined
         : {
+            ...(stored.builtInTool === undefined ? {} : { builtInTool: stored.builtInTool }),
             ...(stored.custom === true ? { customTool: true } : {}),
             ...(stored.largeOutputTokens === undefined
               ? {}
               : { largeOutput: { tokens: stored.largeOutputTokens } }),
           },
     name: stored.name,
+    status: stored.status,
     tool_call_id: stored.toolCallId,
   });
 }

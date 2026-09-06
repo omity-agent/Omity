@@ -23,19 +23,19 @@ test.each(["当前会话标题", "random-session-id", "<script>alert(1)</script>
   "sidebar renders the title while navigation retains the session ID: %s",
   (title) => {
     const [group] = groupSessions([
-      {
-        createdAt: 1,
-        error: null,
-        id: "random-session-id",
-        status: "idle",
-        title,
-        updatedAt: 1,
-        workspace: "F:/workspace",
-      },
-    ]);
-    const markup = renderToStaticMarkup(
-      <SessionGroup group={group!} onSelect={noop} unreadIds={new Set()} />,
-    );
+        {
+          createdAt: 1,
+          error: null,
+          id: "random-session-id",
+          status: "idle",
+          title,
+          updatedAt: 1,
+          workspace: "F:/workspace",
+        },
+      ]),
+      markup = renderToStaticMarkup(
+        <SessionGroup group={group!} onSelect={noop} unreadIds={new Set()} />,
+      );
     expect(markup).toContain('href="#/sessions/random-session-id"');
     expect(markup).toContain(`title="${title.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}"`);
     expect(markup).not.toContain("<script>");

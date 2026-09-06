@@ -34,7 +34,6 @@ export const sessions = sqliteTable(
     definition: text("definition_json", { mode: "json" }).$type<SessionDefinition>().notNull(),
     id: text().primaryKey(),
     profiles: text("profiles_json", { mode: "json" }).$type<string[]>().notNull(),
-    title: text().notNull(),
     transcriptRevision: integer("transcript_revision").notNull().default(0),
     updatedAt: integer("updated_at").notNull(),
     workspace: text().notNull(),

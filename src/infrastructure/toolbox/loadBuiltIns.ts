@@ -1,10 +1,9 @@
 import { type AskUserRequest, createAskUserTools } from "./askUser";
 import type { BuiltInPreferences } from "./metadata";
-import { createTitleTool } from "./updateTitle";
+import { createTitleTool } from "./validateTitle";
 
 export interface BuiltInToolOptions {
   askUser?: (request: AskUserRequest, sessionId: string, signal?: AbortSignal) => Promise<unknown>;
-  sessionChanged?: (sessionId: string) => void;
 }
 export function loadBuiltInTools(settings: BuiltInPreferences, options: BuiltInToolOptions) {
   const tools = createAskUserTools(settings, (request, config) =>
@@ -13,7 +12,7 @@ export function loadBuiltInTools(settings: BuiltInPreferences, options: BuiltInT
       : Promise.reject(new Error("ask_user 工具没有可用的用户交互通道")),
   );
   if (settings.update_title?.enabled) {
-    tools.push(createTitleTool(settings.update_title, options.sessionChanged));
+    tools.push(createTitleTool(settings.update_title));
   }
   return tools;
 }

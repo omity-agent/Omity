@@ -30,11 +30,10 @@ toolboxes:
     parameters:
       title:
         description: ""
-        minLength: 5 # 标题长度下限。
+        minLength: 4 # 标题长度下限。
         maxLength: 30 # 标题长度上限。
     errors:
       invalidLength: 标题长度超出允许的可见字符范围
-      missingSession: 更新标题工具缺少当前会话 ID
 stdio:
   restart:
     delayMs: 1000

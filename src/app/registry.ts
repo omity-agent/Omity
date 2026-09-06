@@ -3,10 +3,12 @@ import {
   closeDatabase,
   configureReadonlyDatabase,
   queryGet,
+  runTransaction,
 } from "../infrastructure/database/connection";
 import { existsSync, readdirSync } from "node:fs";
 import type { Control } from "../types";
 import { Database } from "bun:sqlite";
+import { deriveSessionTitle } from "../infrastructure/database/records/messages/deriveTitle";
 import { resolve } from "node:path";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../errors";
@@ -27,7 +29,6 @@ export interface RegisteredSession {
 }
 interface SessionRow {
   id: string;
-  title: string;
   workspace: string;
   profiles_json: string;
   created_at: number;
@@ -38,7 +39,7 @@ interface SessionRow {
   error: string | null;
 }
 const sessionSelect = `
-	  SELECT s.id, s.title, s.workspace, s.profiles_json, s.created_at,
+	  SELECT s.id, s.workspace, s.profiles_json, s.created_at,
     MAX(
       s.updated_at,
       COALESCE(
@@ -117,18 +118,20 @@ function readSession(dbPath: string, id?: string, _validate = false) {
   });
   try {
     configureReadonlyDatabase(db);
-    const row = id
-      ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
-      : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);
-    if (!row) {
-      throw sessionNotFound(id ?? dbPath);
-    }
-    return toSession(row);
+    return runTransaction(db, () => {
+      const row = id
+        ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
+        : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);
+      if (!row) {
+        throw sessionNotFound(id ?? dbPath);
+      }
+      return toSession(row, deriveSessionTitle(db, row.id));
+    });
   } finally {
     closeDatabase(db);
   }
 }
-function toSession(row: SessionRow): RegisteredSession {
+function toSession(row: SessionRow, title: string): RegisteredSession {
   return {
     control: row.control,
     createdAt: row.created_at,
@@ -137,7 +140,7 @@ function toSession(row: SessionRow): RegisteredSession {
     paused: row.paused === 1,
     profiles: settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown),
     queueRunning: row.queue_running === 1,
-    title: row.title,
+    title,
     updatedAt: row.updated_at,
     workspace: row.workspace,
   };
