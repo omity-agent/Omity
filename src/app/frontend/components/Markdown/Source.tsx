@@ -1,60 +1,43 @@
-import { type CSSProperties, Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useMemo, useRef } from "react";
 import { HighlightedLine, codeLines } from "../HighlightedCode/lines";
-import { css, cx } from "styled-system/css";
+import { fitSourceHeight, observeSourceSpace } from "./fittedSource";
 import type { FilePathMatch } from "../../../../fileLinks/types";
+import { css } from "styled-system/css";
 import { highlightMarkdownSource } from "./syntax";
 import { source } from "./styles";
 
 const noFileLinks: FilePathMatch[] = [],
-  container = css({ position: "relative", w: "full" }),
-  measure = css({
-    "&[aria-hidden]": { lineHeight: "1px" },
-    left: 0,
-    pointerEvents: "none",
-    position: "absolute",
-    top: 0,
-    visibility: "hidden",
-    w: "full",
-  });
+  container = css({ inset: 0, overflow: "clip", position: "absolute" });
 export function MarkdownSource({
   content,
   fileLinks = noFileLinks,
-  targetHeight,
 }: {
   content: string;
   fileLinks?: FilePathMatch[];
-  targetHeight: number;
 }) {
   const lines = useMemo(() => codeLines(content, fileLinks), [content, fileLinks]),
     highlight = useMemo(() => highlightMarkdownSource(content), [content]),
-    measureReference = useRef<HTMLPreElement>(null),
-    [visualLines, setVisualLines] = useState<number>(),
-    lineHeight = targetHeight / (visualLines ?? Math.max(1, lines.length)),
-    style = useMemo<CSSProperties>(
-      () => ({ lineHeight: `${lineHeight.toString()}px` }),
-      [lineHeight],
-    );
+    sourceReference = useRef<HTMLPreElement>(null),
+    containerReference = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    const element = measureReference.current;
-    if (!element) {
+    const element = sourceReference.current,
+      parent = containerReference.current;
+    if (!element || !parent) {
       throw new Error("Markdown 源码测量元素未挂载");
     }
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setVisualLines(sourceVisualLines(entry.contentRect.height));
-      }
-    });
-    observer.observe(element);
-    return () => {
-      observer.disconnect();
-    };
+    fitSourceHeight(element, parent.getBoundingClientRect().height);
+  });
+  useLayoutEffect(() => {
+    const element = sourceReference.current,
+      parent = containerReference.current;
+    if (!element || !parent) {
+      throw new Error("Markdown 源码测量元素未挂载");
+    }
+    return observeSourceSpace(parent, element);
   }, []);
   return (
-    <div className={container}>
-      <pre aria-hidden className={cx(source, measure)} ref={measureReference}>
-        <code>{content}</code>
-      </pre>
-      <pre className={source} style={style}>
+    <div className={container} ref={containerReference}>
+      <pre className={source} ref={sourceReference}>
         <code>
           {lines.map((line, index) => (
             <Fragment key={line.start}>
@@ -71,7 +54,4 @@ export function MarkdownSource({
       </pre>
     </div>
   );
-}
-export function sourceVisualLines(measuredHeight: number) {
-  return Math.max(1, Math.round(measuredHeight));
 }

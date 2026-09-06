@@ -1,7 +1,7 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion -- These partial browser fixtures expose only the properties used by asynchronous measurement. */
+/* oxlint-disable typescript/no-unsafe-type-assertion -- These partial browser fixtures expose only the measured geometry. */
 import { expect, test } from "bun:test";
 import { Virtualizer } from "@tanstack/react-virtual";
-import { measureObservedItem } from "../../../src/app/frontend/services/scheduling/observedSize";
+import { measureItemHeight } from "../../../src/app/frontend/services/scheduling/scrollGeometry";
 import { transcriptWindow } from "../../../settings/rendering";
 
 function fixture() {
@@ -17,37 +17,28 @@ function fixture() {
       overscan: transcriptWindow.overscan,
       scrollToFn: () => undefined,
     }),
-    element = {
-      getAttribute: () => "998",
-      getBoundingClientRect() {
-        throw new Error("同步读取布局");
-      },
-    } as unknown as Element;
+    element = { getBoundingClientRect: () => ({ height: 345.5 }) } as unknown as Element;
   return { element, virtualizer };
 }
-test("unmeasured messages use estimates without forcing layout", () => {
-  const { element, virtualizer } = fixture();
-  expect(measureObservedItem(element, undefined, virtualizer)).toBe(
-    transcriptWindow.estimatedMessageHeight,
-  );
-  virtualizer.itemSizeCache.set("message-998", 345.5);
-  expect(measureObservedItem(element, undefined, virtualizer)).toBe(345.5);
+test("mounted and updated messages supply actual geometry before paint", () => {
+  const { element } = fixture();
+  expect(measureItemHeight(element, undefined)).toBe(345.5);
 });
 test("resize entries supply accurate fractional message heights", () => {
-  const { element, virtualizer } = fixture(),
+  const element = {
+      getBoundingClientRect() {
+        throw new Error("unexpected synchronous layout read");
+      },
+    } as unknown as Element,
     entry = {
       borderBoxSize: [{ blockSize: 542.25, inlineSize: 800 }],
     } as unknown as ResizeObserverEntry;
-  expect(measureObservedItem(element, entry, virtualizer)).toBe(542.25);
+  expect(measureItemHeight(element, entry)).toBe(542.25);
 });
 test("invalid resize entries fail explicitly", () => {
-  const { element, virtualizer } = fixture();
+  const { element } = fixture();
   expect(() =>
-    measureObservedItem(
-      element,
-      { borderBoxSize: [] } as unknown as ResizeObserverEntry,
-      virtualizer,
-    ),
+    measureItemHeight(element, { borderBoxSize: [] } as unknown as ResizeObserverEntry),
   ).toThrow("布局观察器未提供边框尺寸");
 });
 test("a long initial transcript only admits the latest viewport and overscan", () => {

@@ -137,9 +137,7 @@ export function Message({
                   <GitFork size={14} />
                 </IconButton>
               ) : null}
-              {visualRole === "user" || visualRole === "assistant" ? (
-                <CopyButton className={tone} value={item.content} />
-              ) : null}
+              {visualRole === "user" ? <CopyButton className={tone} value={item.content} /> : null}
             </span>
           </div>
         ) : null}

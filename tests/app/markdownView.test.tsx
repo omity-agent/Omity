@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { MarkdownView } from "../../src/app/frontend/components/MarkdownView";
 import { highlightMarkdownSource } from "../../src/app/frontend/components/Markdown/syntax";
 import { renderToStaticMarkup } from "react-dom/server";
-import { sourceVisualLines } from "../../src/app/frontend/components/Markdown/Source";
+import { sourceVisualLines } from "../../src/app/frontend/components/Markdown/fittedSource";
 
 describe("MarkdownView", () => {
   test("按用户输入语义保留段落内的单个换行", () => {

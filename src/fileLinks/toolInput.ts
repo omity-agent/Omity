@@ -2,7 +2,6 @@ import { parseDocument, stringify } from "yaml";
 
 interface ToolInputSource {
   input: unknown;
-  inputText?: string;
   rawInput?: string;
 }
 const recoverableEndErrors = new Set(["BAD_INDENT", "MISSING_CHAR"]);
@@ -10,11 +9,11 @@ export function formatToolInput(call: ToolInputSource) {
   if (call.rawInput !== undefined) {
     return call.rawInput;
   }
-  return stringify(parseInputText(call.inputText) ?? call.input, {
-    lineWidth: 0,
-  }).replace(/\n$/u, "");
+  return call.input === undefined
+    ? ""
+    : stringify(call.input, { lineWidth: 0 }).replace(/\n$/u, "");
 }
-function parseInputText(text?: string) {
+export function parseToolInput(text: string) {
   if (!text) {
     return undefined;
   }
@@ -31,6 +30,6 @@ function parseInputText(text?: string) {
         document.errors.every(
           (error) => recoverableEndErrors.has(error.code) && error.pos[0] >= text.length,
         );
-    return recoverable ? (document.toJS() as unknown) : text;
+    return recoverable ? (document.toJS() as unknown) : undefined;
   }
 }

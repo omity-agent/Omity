@@ -38,6 +38,7 @@ export const codeElement = css({
   fontSize: "inherit",
   lineHeight: "inherit",
   minW: "fit-content",
+  position: "relative",
   whiteSpace: "inherit",
 });
 export const virtualLine = css({

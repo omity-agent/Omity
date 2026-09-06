@@ -70,8 +70,7 @@ export function MarkdownView({
       handlePointerMove,
       onMenuOpenChange,
       regionReference,
-      renderedHeight,
-      style,
+      showSource,
     } = useSourceHover();
   return (
     <MarkdownContext.Provider value={normalized.context}>
@@ -81,23 +80,17 @@ export function MarkdownView({
         onPointerLeave={handlePointerLeave}
         onPointerMove={handlePointerMove}
         ref={regionReference}
-        style={style}
       >
-        {renderedHeight !== undefined ? (
+        <div aria-hidden={showSource} className={rendered} data-source-visible={showSource}>
+          <ReactMarkdown components={components} remarkPlugins={normalized.remarkPlugins}>
+            {normalized.content}
+          </ReactMarkdown>
+        </div>
+        {showSource ? (
           <FileLinkMenuOpenProvider value={onMenuOpenChange}>
-            <MarkdownSource
-              content={normalized.content}
-              fileLinks={normalized.fileLinks}
-              targetHeight={renderedHeight}
-            />
+            <MarkdownSource content={normalized.content} fileLinks={normalized.fileLinks} />
           </FileLinkMenuOpenProvider>
-        ) : (
-          <div className={rendered}>
-            <ReactMarkdown components={components} remarkPlugins={normalized.remarkPlugins}>
-              {normalized.content}
-            </ReactMarkdown>
-          </div>
-        )}
+        ) : null}
       </div>
     </MarkdownContext.Provider>
   );

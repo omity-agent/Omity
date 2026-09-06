@@ -1,5 +1,5 @@
+import { type ComponentProps, useCallback, useLayoutEffect, useRef } from "react";
 import { type VirtualItem, type Virtualizer } from "@tanstack/react-virtual";
-import type { ComponentProps } from "react";
 import { Message } from "../Chat/Message";
 import { css } from "styled-system/css";
 
@@ -30,8 +30,19 @@ export function WindowedSegment({
   virtualItem: VirtualItem;
   measure: Virtualizer<HTMLElement, Element>["measureElement"];
 }) {
+  const reference = useRef<HTMLDivElement>(null),
+    observe = useCallback(
+      (element: HTMLDivElement | null) => {
+        reference.current = element;
+        measure(element);
+      },
+      [measure],
+    );
+  useLayoutEffect(() => {
+    measure(reference.current);
+  });
   return (
-    <div className={row} data-index={virtualItem.index} data-last={last} ref={measure}>
+    <div className={row} data-index={virtualItem.index} data-last={last} ref={observe}>
       <Message
         canFork={canFork}
         forkDisabled={forkDisabled}

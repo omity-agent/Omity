@@ -6,12 +6,16 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
 import { css, cx } from "styled-system/css";
+import {
+  measureItemHeight,
+  scrollWithMeasuredExtent,
+} from "../../services/scheduling/scrollGeometry";
 import { DisclosureProvider } from "./disclosures";
 import type { TimelineMessage } from "../../../timeline";
 import { WindowedSegment } from "./WindowedSegment";
 import { findLatestDetails } from "../Chat/detailFocus";
-import { measureObservedItem } from "../../services/scheduling/observedSize";
 import { observePinnedViewport } from "./viewport";
 import { scroll } from "../../design";
 import { segmentTranscript } from "./segments";
@@ -38,6 +42,7 @@ export function Transcript({
   "use no memo";
   const messages = useDeferredValue(incomingMessages),
     segments = useMemo(() => segmentTranscript(messages), [messages]),
+    copies = useMessageCopies(segments),
     scrollRef = useRef<HTMLElement>(null),
     firstUserMessageId = messages.find((item) => item.role === "user")?.id,
     latestDetails = findLatestDetails(messages),
@@ -52,11 +57,12 @@ export function Transcript({
       getItemKey,
       getScrollElement: () => scrollRef.current,
       initialOffset: () => segments.length * transcriptWindow.estimatedMessageHeight,
-      measureElement: measureObservedItem,
+      measureElement: measureItemHeight,
       observeElementRect: observePinnedViewport,
+      onChange: copies.update,
       overscan: transcriptWindow.overscan,
       scrollEndThreshold: transcriptWindow.followThreshold,
-      useAnimationFrameWithResizeObserver: true,
+      scrollToFn: scrollWithMeasuredExtent,
       useFlushSync: false,
     });
   useLayoutEffect(() => {
@@ -96,6 +102,7 @@ export function Transcript({
               />
             );
           })}
+          <MessageCopies instance={virtualizer} registry={copies} segments={segments} />
         </div>
       </section>
     </DisclosureProvider>

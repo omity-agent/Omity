@@ -6,6 +6,7 @@ import type {
   TimelineMessage,
   TimelinePart,
 } from "../contracts/projection";
+import { type ToolPart, beginToolPart, extendToolPart, latestParsedInput } from "./callAssembly";
 import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
 import type { FileLinkUnit } from "../../../fileLinks/types";
 import { countTokens } from "../../../runtime/tokenizer";
@@ -19,15 +20,6 @@ type TextPart = {
     offset: number;
   };
 }["assistant_reasoning_delta" | "assistant_text_delta"];
-interface ToolPart {
-  args: string;
-  formal?: true;
-  freeform?: boolean;
-  id?: string;
-  index: number;
-  kind: "tool_call_delta";
-  name: string;
-}
 export interface StreamMessage {
   contentLength: number;
   firstEventId: number;
@@ -41,14 +33,7 @@ export function createStreamPart(
   message: StreamMessage,
 ): StreamPart {
   if (event.kind === "tool_call_delta") {
-    return {
-      args: event.value.argumentsDelta ?? "",
-      ...(event.value.freeform ? { freeform: true } : {}),
-      ...(event.value.idDelta ? { id: event.value.idDelta } : {}),
-      index: event.value.index,
-      kind: event.kind,
-      name: event.value.nameDelta ?? "",
-    };
+    return beginToolPart(event.value);
   }
   const offset =
     event.kind === "assistant_text_delta" ? message.contentLength : message.reasoningLength;
@@ -64,13 +49,7 @@ export function mergeStreamPart(
     throw new Error(`流片段 ${event.partId} 的类型发生变化`);
   }
   if (part.kind === "tool_call_delta" && event.kind === "tool_call_delta") {
-    if (part.index !== event.value.index) {
-      throw new Error(`工具流片段 ${event.partId} 的索引发生变化`);
-    }
-    part.args += event.value.argumentsDelta ?? "";
-    part.freeform ??= event.value.freeform;
-    part.id = appendDelta(part.id, event.value.idDelta);
-    part.name += event.value.nameDelta ?? "";
+    extendToolPart(part, event.value);
   } else if (part.kind !== "tool_call_delta" && event.kind !== "tool_call_delta") {
     part.content += event.value;
     updateLength(message, event.kind, event.value.length);
@@ -172,7 +151,7 @@ function displayCall(
   return {
     id: part.id ?? streamCallKey(messageId, partId),
     index: part.index,
-    input: {},
+    input: latestParsedInput(part),
     inputText,
     inputTokens: countTokens(inputText),
     messageId,
@@ -192,8 +171,4 @@ function updateLength(
   } else {
     message.reasoningLength += length;
   }
-}
-function appendDelta(current: string | undefined, incoming?: string) {
-  const value = (current ?? "") + (incoming ?? "");
-  return value || undefined;
 }

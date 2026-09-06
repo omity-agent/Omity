@@ -54,6 +54,7 @@ export const rendered = css({
   },
   "& ul": { listStyleType: "disc", mb: "3", pl: "5" },
   "& ul.contains-task-list": { listStyleType: "none", pl: 0 },
+  '&[data-source-visible="true"]': { visibility: "hidden" },
   lineHeight: "1.7",
   maxW: "full",
   minW: 0,
@@ -70,6 +71,7 @@ export const region = css({
   lineHeight: "1.7",
   maxW: "full",
   minW: 0,
+  position: "relative",
   w: "full",
 });
 export const source = css({

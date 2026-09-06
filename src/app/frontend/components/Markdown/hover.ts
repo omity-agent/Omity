@@ -1,27 +1,20 @@
-import { type PointerEvent, useCallback, useMemo, useRef, useState } from "react";
+import { type PointerEvent, useCallback, useRef, useState } from "react";
 
 export function useSourceHover() {
   const regionReference = useRef<HTMLDivElement>(null),
-    [renderedHeight, setRenderedHeight] = useState<number>(),
+    [showSource, setShowSource] = useState(false),
     [menuOpen, setMenuOpen] = useState(false),
-    style = useMemo(
-      () => (renderedHeight === undefined ? undefined : { height: renderedHeight }),
-      [renderedHeight],
-    ),
-    handlePointerEnter = useCallback(
-      (event: PointerEvent<HTMLDivElement>) => {
-        setRenderedHeight(event.currentTarget.getBoundingClientRect().height);
-      },
-      [setRenderedHeight],
-    ),
+    handlePointerEnter = useCallback(() => {
+      setShowSource(true);
+    }, [setShowSource]),
     handlePointerLeave = useCallback(() => {
       if (!menuOpen) {
-        setRenderedHeight(undefined);
+        setShowSource(false);
       }
-    }, [menuOpen, setRenderedHeight]),
+    }, [menuOpen, setShowSource]),
     handlePointerMove = useCallback(
       (event: PointerEvent<HTMLDivElement>) => {
-        if (renderedHeight === undefined || menuOpen) {
+        if (!showSource || menuOpen) {
           return;
         }
         const bounds = event.currentTarget.getBoundingClientRect();
@@ -31,19 +24,19 @@ export function useSourceHover() {
           event.clientY < bounds.top ||
           event.clientY > bounds.bottom
         ) {
-          setRenderedHeight(undefined);
+          setShowSource(false);
         }
       },
-      [menuOpen, renderedHeight, setRenderedHeight],
+      [menuOpen, showSource, setShowSource],
     ),
     onMenuOpenChange = useCallback(
       (open: boolean) => {
         setMenuOpen(open);
         if (!open && regionReference.current?.matches(":hover") !== true) {
-          setRenderedHeight(undefined);
+          setShowSource(false);
         }
       },
-      [setMenuOpen, setRenderedHeight],
+      [setMenuOpen, setShowSource],
     );
   return {
     handlePointerEnter,
@@ -51,7 +44,6 @@ export function useSourceHover() {
     handlePointerMove,
     onMenuOpenChange,
     regionReference,
-    renderedHeight,
-    style,
+    showSource,
   };
 }

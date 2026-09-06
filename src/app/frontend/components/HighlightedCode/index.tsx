@@ -1,4 +1,3 @@
-import { type CSSProperties, memo, useMemo, useRef } from "react";
 import { HighlightedLine, codeLines } from "./lines";
 import { type VirtualItem, useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -9,11 +8,15 @@ import {
   virtualLine,
   widthSizer,
 } from "../CodeBlock/styles";
+import {
+  measureItemHeight,
+  scrollWithMeasuredExtent,
+} from "../../services/scheduling/scrollGeometry";
+import { memo, useMemo, useRef } from "react";
 import { CopyButton } from "../Chat/CopyButton";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { codeWindow } from "../../../../../settings/rendering";
 import { cx } from "styled-system/css";
-import { measureObservedItem } from "../../services/scheduling/observedSize";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
 import { useFollowBottom } from "../Transcript/followBottom";
 import { useHighlight } from "./useHighlight";
@@ -56,27 +59,20 @@ function HighlightedCodeView({
     // oxlint-disable-next-line react/incompatible-library
     virtualizer = useVirtualizer({
       count: lines.length,
+      directDomUpdates: true,
       estimateSize: () => codeWindow.estimatedLineHeight,
       getScrollElement: () => blockRef.current,
-      measureElement: measureObservedItem,
+      measureElement: measureItemHeight,
       overscan: codeWindow.overscan,
-      useAnimationFrameWithResizeObserver: true,
+      scrollToFn: scrollWithMeasuredExtent,
       useFlushSync: false,
     }),
-    virtualLines = virtualizer.getVirtualItems(),
-    totalSize = virtualizer.getTotalSize(),
-    codeStyle = useMemo<CSSProperties>(
-      () => ({
-        height: `${totalSize.toString()}px`,
-        position: "relative",
-      }),
-      [totalSize],
-    );
+    virtualLines = virtualizer.getVirtualItems();
   return (
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
       <pre className={cx(block, className)} ref={blockRef} onScroll={onScroll}>
-        <code className={codeElement} style={codeStyle}>
+        <code className={codeElement} ref={virtualizer.containerRef}>
           <span aria-hidden className={widthSizer}>
             {widestLine}
           </span>
@@ -109,12 +105,8 @@ function CodeRow({
   line?: ReturnType<typeof codeLines>[number];
   measure: (element: Element | null) => void;
 }) {
-  const style = useMemo<CSSProperties>(
-    () => ({ transform: `translateY(${item.start.toString()}px)` }),
-    [item.start],
-  );
   return line ? (
-    <span className={virtualLine} data-index={item.index} ref={measure} style={style}>
+    <span className={virtualLine} data-index={item.index} ref={measure}>
       <HighlightedLine
         appendOnly={appendOnly}
         highlight={highlight}
