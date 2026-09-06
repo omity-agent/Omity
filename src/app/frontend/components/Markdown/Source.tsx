@@ -1,18 +1,21 @@
-import {
-  type CSSProperties,
-  Fragment,
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { type CSSProperties, Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { HighlightedLine, codeLines } from "../HighlightedCode/lines";
+import { css, cx } from "styled-system/css";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { highlightMarkdownSource } from "./syntax";
 import { source } from "./styles";
 
-const noFileLinks: FilePathMatch[] = [];
+const noFileLinks: FilePathMatch[] = [],
+  container = css({ position: "relative", w: "full" }),
+  measure = css({
+    "&[aria-hidden]": { lineHeight: "1px" },
+    left: 0,
+    pointerEvents: "none",
+    position: "absolute",
+    top: 0,
+    visibility: "hidden",
+    w: "full",
+  });
 export function MarkdownSource({
   content,
   fileLinks = noFileLinks,
@@ -24,63 +27,51 @@ export function MarkdownSource({
 }) {
   const lines = useMemo(() => codeLines(content, fileLinks), [content, fileLinks]),
     highlight = useMemo(() => highlightMarkdownSource(content), [content]),
-    sourceReference = useRef<HTMLPreElement>(null),
-    [lineHeight, setLineHeight] = useState<number>(),
+    measureReference = useRef<HTMLPreElement>(null),
+    [visualLines, setVisualLines] = useState<number>(),
+    lineHeight = targetHeight / (visualLines ?? Math.max(1, lines.length)),
     style = useMemo<CSSProperties>(
-      () => (lineHeight === undefined ? {} : { lineHeight: `${lineHeight.toString()}px` }),
+      () => ({ lineHeight: `${lineHeight.toString()}px` }),
       [lineHeight],
-    ),
-    fitHeight = useCallback(() => {
-      const element = sourceReference.current;
-      if (!element) {
-        return;
-      }
-      const previousLineHeight = element.style.lineHeight;
-      element.style.lineHeight = "";
-      const naturalLineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
-      if (!Number.isFinite(naturalLineHeight) || naturalLineHeight <= 0) {
-        throw new Error("Markdown 源码视图无法计算自然行高");
-      }
-      const fitted = fitSourceLineHeight(targetHeight, element.scrollHeight, naturalLineHeight);
-      element.style.lineHeight = previousLineHeight;
-      setLineHeight((current) =>
-        current !== undefined && Math.abs(current - fitted) < 0.01 ? current : fitted,
-      );
-    }, [setLineHeight, targetHeight]);
+    );
   useLayoutEffect(() => {
-    fitHeight();
-    const observer = new ResizeObserver(fitHeight),
-      container = sourceReference.current?.parentElement;
-    if (container) {
-      observer.observe(container);
+    const element = measureReference.current;
+    if (!element) {
+      throw new Error("Markdown 源码测量元素未挂载");
     }
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setVisualLines(sourceVisualLines(entry.contentRect.height));
+      }
+    });
+    observer.observe(element);
     return () => {
       observer.disconnect();
     };
-  }, [fitHeight]);
+  }, []);
   return (
-    <pre className={source} ref={sourceReference} style={style}>
-      <code>
-        {lines.map((line, index) => (
-          <Fragment key={line.start}>
-            <HighlightedLine
-              appendOnly={false}
-              highlight={highlight}
-              line={line}
-              lineIndex={index}
-            />
-            {index < lines.length - 1 ? "\n" : null}
-          </Fragment>
-        ))}
-      </code>
-    </pre>
+    <div className={container}>
+      <pre aria-hidden className={cx(source, measure)} ref={measureReference}>
+        <code>{content}</code>
+      </pre>
+      <pre className={source} style={style}>
+        <code>
+          {lines.map((line, index) => (
+            <Fragment key={line.start}>
+              <HighlightedLine
+                appendOnly={false}
+                highlight={highlight}
+                line={line}
+                lineIndex={index}
+              />
+              {index < lines.length - 1 ? "\n" : null}
+            </Fragment>
+          ))}
+        </code>
+      </pre>
+    </div>
   );
 }
-export function fitSourceLineHeight(
-  targetHeight: number,
-  naturalHeight: number,
-  naturalLineHeight: number,
-) {
-  const visualLines = Math.max(1, Math.round(naturalHeight / naturalLineHeight));
-  return targetHeight / visualLines;
+export function sourceVisualLines(measuredHeight: number) {
+  return Math.max(1, Math.round(measuredHeight));
 }

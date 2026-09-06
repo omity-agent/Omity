@@ -2,6 +2,7 @@ import { ChevronRight, type LucideIcon } from "lucide-react";
 import { Collapsible } from "@ark-ui/react/collapsible";
 import type { ReactNode } from "react";
 import { sva } from "styled-system/css";
+import { useDisclosure } from "../Transcript/disclosures";
 
 const frame = sva({
   base: {
@@ -91,6 +92,7 @@ export function Frame({
   expandedInitially,
   icon: Icon,
   label,
+  stateKey,
   title,
   tone,
 }: {
@@ -99,14 +101,17 @@ export function Frame({
   expandedInitially: boolean;
   icon: LucideIcon;
   label: string;
+  stateKey: string;
   title?: ReactNode;
   tone: "model" | "tool";
 }) {
-  const classes = frame({ tone });
+  const classes = frame({ tone }),
+    { open, onOpenChange } = useDisclosure(stateKey, expandedInitially);
   return (
     <Collapsible.Root
       className={classes.root}
-      defaultOpen={expandedInitially}
+      open={open}
+      onOpenChange={onOpenChange}
       lazyMount
       unmountOnExit
     >

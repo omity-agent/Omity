@@ -7,13 +7,11 @@ import { Composer } from "./Composer/index";
 import { FileLinkProvider } from "../FileLink/context";
 import type { FrontendSettings } from "../../services/client";
 import type { InitialSessionState } from "../../../initialState";
-import { Message } from "./Message";
 import { NewSessionPage } from "../NewSession";
 import type { OptimisticUser } from "../../services/transcript/optimistic";
-import { TranscriptScroll } from "../TranscriptScroll";
+import { Transcript } from "../Transcript";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
-import { findLatestDetails } from "./detailFocus";
 import { useMemo } from "react";
 import { useReasoningTranslation } from "../../services/translation/useReasoningTranslation";
 import { useTranslation } from "react-i18next";
@@ -107,8 +105,6 @@ export function ChatPage({
       queue,
       sessionStatus,
     }),
-    firstUserMessageId = view.find((item) => item.role === "user")?.id,
-    latestDetails = findLatestDetails(view),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
     userMessages = useMemo(
       () => view.filter((item) => item.role === "user").map((item) => item.content),
@@ -142,32 +138,19 @@ export function ChatPage({
   return (
     <div className={page}>
       <FileLinkProvider sessionId={activeId}>
-        <TranscriptScroll activeId={activeId}>
-          {view.length === 0 ? <div className={empty}>{t("noMessages")}</div> : null}
-          {view.map((item) => (
-            <Message
-              canFork={
-                allowFork && item.role === "user" && item.id > 0 && item.id !== firstUserMessageId
-              }
-              forkDisabled={actionPending || actionState.sessionActionDisabled}
-              item={item}
-              key={item.key}
-              liveTranslation={liveTranslation}
-              latestReasoningIndex={
-                item.key === latestDetails.reasoning?.messageKey
-                  ? latestDetails.reasoning.partIndex
-                  : undefined
-              }
-              latestToolIndex={
-                item.key === latestDetails.tool?.messageKey
-                  ? latestDetails.tool.partIndex
-                  : undefined
-              }
-              onFork={onFork}
-              onCancelTool={onCancelTool}
-            />
-          ))}
-        </TranscriptScroll>
+        {view.length === 0 ? (
+          <div className={empty}>{t("noMessages")}</div>
+        ) : (
+          <Transcript
+            allowFork={allowFork}
+            forkDisabled={actionPending || actionState.sessionActionDisabled}
+            key={activeId}
+            liveTranslation={liveTranslation}
+            messages={view}
+            onFork={onFork}
+            onCancelTool={onCancelTool}
+          />
+        )}
       </FileLinkProvider>
       <Composer
         attachmentSettings={attachmentSettings}

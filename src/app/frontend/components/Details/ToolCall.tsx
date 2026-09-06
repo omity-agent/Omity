@@ -83,6 +83,7 @@ export function ToolCall({
       expandedInitially={latest}
       icon={Wrench}
       label={`${t("toolCall")}: ${call.name}`}
+      stateKey={`tool:${call.id}:${latest ? "latest" : "settled"}`}
       title={call.name}
       tone="tool"
     >

@@ -1,22 +1,18 @@
 import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
 import { css, cva, cx } from "styled-system/css";
+import { Body } from "../Transcript/Body";
 import { CopyButton } from "./CopyButton";
 import { GitFork } from "lucide-react";
 import { IconButton } from "../ParkUI";
-import { MarkdownView } from "../MarkdownView";
-import { Reasoning } from "../Details/Reasoning";
-import { ToolCall } from "../Details/ToolCall";
 import { reportPromiseErrors } from "../../services/errors";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 const row = css({
+    '&[data-last="true"]': { mb: "4" },
     alignItems: "start",
-    containIntrinsicSize: "auto 12rem",
-    contentVisibility: "auto",
     display: "flex",
     gap: "2",
-    mb: "4",
     minW: 0,
     w: "full",
   }),
@@ -27,6 +23,8 @@ const row = css({
   }),
   message = cva({
     base: {
+      '&[data-first="false"]': { borderTopWidth: 0, pt: "3" },
+      '&[data-last="false"]': { borderBottomWidth: 0, pb: 0 },
       bg: "surface",
       borderColor: "line",
       borderWidth: "1px",
@@ -41,7 +39,7 @@ const row = css({
     },
     variants: {
       role: {
-        assistant: { maxW: { base: "full", sm: "2/3" } },
+        assistant: { maxW: { base: "full", sm: "2/3" }, w: "full" },
         tool: {},
         user: {
           bg: "surfaceRaised",
@@ -99,6 +97,7 @@ export function Message({
   latestToolIndex,
   onCancelTool,
   onFork,
+  partIndex,
 }: {
   canFork: boolean;
   forkDisabled: boolean;
@@ -108,72 +107,50 @@ export function Message({
   latestToolIndex?: number;
   onCancelTool: (toolCallId: string) => Promise<void>;
   onFork: (messageId: number) => Promise<void>;
+  partIndex?: number;
 }) {
   const { t } = useTranslation(),
     visualRole = item.role === "system" ? "user" : item.role,
+    first = partIndex === undefined || partIndex === 0,
+    last = partIndex === undefined || partIndex === item.parts.length - 1,
     tone = roleTone({ role: visualRole }),
     forkLabel = forkDisabled ? t("pauseBeforeFork") : t("fork"),
     handleFork = useCallback(() => {
       reportPromiseErrors(onFork(item.id));
     }, [item.id, onFork]);
   return (
-    <div className={cx(row, visualRole === "user" && inputRow)}>
-      <article className={message({ role: visualRole })}>
-        <div className={header}>
-          <span className={actions({ role: visualRole })}>
-            {canFork ? (
-              <IconButton
-                aria-label={forkLabel}
-                className={cx(forkButton, tone)}
-                disabled={forkDisabled}
-                onClick={handleFork}
-                title={forkLabel}
-                type="button"
-                variant="ghost"
-              >
-                <GitFork size={14} />
-              </IconButton>
-            ) : null}
-            {visualRole === "user" || visualRole === "assistant" ? (
-              <CopyButton className={tone} value={item.content} />
-            ) : null}
-          </span>
-        </div>
-        {item.parts.map((part, index) => {
-          if (part.type === "content") {
-            return (
-              <MarkdownView
-                content={part.content}
-                fileLinks={part.fileLinks}
-                key={`content-${index.toString()}`}
-                preserveLineBreaks={visualRole === "user"}
-              />
-            );
-          }
-          const latest =
-            index === (part.type === "reasoning" ? latestReasoningIndex : latestToolIndex);
-          if (part.type === "reasoning") {
-            return (
-              <Reasoning
-                fileLinks={part.fileLinks}
-                key={`reasoning-${index.toString()}-${latest ? "latest" : "settled"}`}
-                latest={latest}
-                liveTranslation={liveTranslation}
-                part={part}
-              />
-            );
-          }
-          return (
-            <ToolCall
-              call={part.call}
-              key={`${part.key}-${latest ? "latest" : "settled"}`}
-              latest={latest}
-              onCancel={onCancelTool}
-              output={part.output}
-              phase={part.phase}
-            />
-          );
-        })}
+    <div className={cx(row, visualRole === "user" && inputRow)} data-last={last}>
+      <article className={message({ role: visualRole })} data-first={first} data-last={last}>
+        {first ? (
+          <div className={header}>
+            <span className={actions({ role: visualRole })}>
+              {canFork ? (
+                <IconButton
+                  aria-label={forkLabel}
+                  className={cx(forkButton, tone)}
+                  disabled={forkDisabled}
+                  onClick={handleFork}
+                  title={forkLabel}
+                  type="button"
+                  variant="ghost"
+                >
+                  <GitFork size={14} />
+                </IconButton>
+              ) : null}
+              {visualRole === "user" || visualRole === "assistant" ? (
+                <CopyButton className={tone} value={item.content} />
+              ) : null}
+            </span>
+          </div>
+        ) : null}
+        <Body
+          item={item}
+          latestReasoningIndex={latestReasoningIndex}
+          latestToolIndex={latestToolIndex}
+          liveTranslation={liveTranslation}
+          onCancelTool={onCancelTool}
+          partIndex={partIndex}
+        />
       </article>
     </div>
   );

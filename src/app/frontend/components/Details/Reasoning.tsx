@@ -1,9 +1,9 @@
 import { MarkdownInline, MarkdownView } from "../MarkdownView";
 import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
-import { createElement, useLayoutEffect, useRef } from "react";
 import { BrainCircuit } from "lucide-react";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { Frame } from "./Frame";
+import { createElement } from "react";
 import { css } from "styled-system/css";
 import { useCollapsibleContext } from "@ark-ui/react/collapsible";
 import { useTranslation } from "react-i18next";
@@ -17,16 +17,26 @@ const content = css({
     pt: "3",
   }),
   summary = css({
-    display: "block",
+    display: "flex",
+    justifyContent: "flex-end",
+    minW: 0,
     overflow: "hidden",
+  }),
+  summaryText = css({
+    display: "block",
+    flexShrink: 0,
+    minW: "full",
+    w: "max-content",
     whiteSpace: "nowrap",
   });
 export function Reasoning({
   part,
+  detailKey,
   fileLinks,
   latest,
   liveTranslation,
 }: {
+  detailKey: string;
   fileLinks?: FilePathMatch[];
   latest: boolean;
   liveTranslation?: ReasoningTranslation;
@@ -40,6 +50,7 @@ export function Reasoning({
       expandedInitially={latest}
       icon={BrainCircuit}
       label={t("reasoning")}
+      stateKey={detailKey}
       title={title}
       tone="model"
     >
@@ -50,18 +61,14 @@ export function Reasoning({
   );
 }
 function ReasoningTitle({ label, reasoning }: { label: string; reasoning: string }) {
-  const { open } = useCollapsibleContext(),
-    summaryReference = useRef<HTMLSpanElement>(null);
-  useLayoutEffect(() => {
-    if (!open && summaryReference.current) {
-      summaryReference.current.scrollLeft = summaryReference.current.scrollWidth;
-    }
-  });
+  const { open } = useCollapsibleContext();
   return open ? (
     label
   ) : (
-    <span className={summary} ref={summaryReference}>
-      <MarkdownInline content={singleLineReasoning(reasoning)} />
+    <span className={summary}>
+      <span className={summaryText}>
+        <MarkdownInline content={singleLineReasoning(reasoning)} />
+      </span>
     </span>
   );
 }

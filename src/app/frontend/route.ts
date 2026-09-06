@@ -1,4 +1,4 @@
-import { type MouseEvent, useCallback, useEffect } from "react";
+import { type MouseEvent, startTransition, useCallback, useEffect } from "react";
 import { isEqual } from "es-toolkit";
 
 export function navigateLink(
@@ -83,7 +83,7 @@ export function usePageNavigator(setPage: (page: Page) => void) {
   return useCallback(
     (nextPage: Page, replace = false) => {
       writePage(nextPage, replace);
-      setPage(nextPage);
+      startTransition(() => setPage(nextPage));
     },
     [setPage],
   );
@@ -107,7 +107,7 @@ export function resolvePage(page: Page, sessions: { id: string }[], ready: boole
 export function usePageNavigation(page: Page, currentPage: Page, setPage: (page: Page) => void) {
   useEffect(() => {
     const syncPage = () => {
-      setPage(readPage());
+      startTransition(() => setPage(readPage()));
     };
     globalThis.addEventListener("popstate", syncPage);
     return () => {

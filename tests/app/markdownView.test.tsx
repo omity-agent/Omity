@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { MarkdownView } from "../../src/app/frontend/components/MarkdownView";
-import { fitSourceLineHeight } from "../../src/app/frontend/components/Markdown/Source";
 import { highlightMarkdownSource } from "../../src/app/frontend/components/Markdown/syntax";
 import { renderToStaticMarkup } from "react-dom/server";
+import { sourceVisualLines } from "../../src/app/frontend/components/Markdown/Source";
 
 describe("MarkdownView", () => {
   test("按用户输入语义保留段落内的单个换行", () => {
@@ -28,9 +28,12 @@ describe("MarkdownView", () => {
     expect(highlighted.lines[0]).toMatch(/<span class="[^"]+">#<\/span>/);
     expect(highlighted.lines[1]).toMatch(/<span class="[^"]+">https:\/\/example\.com<\/span>/);
   });
-  test("源码行高自动填满正常渲染高度", () => {
-    expect(fitSourceLineHeight(240, 120, 24)).toBe(48);
-    expect(fitSourceLineHeight(20, 0, 24)).toBe(20);
+  test("源码测量层的一像素行高转换为实际折行数", () => {
+    expect(sourceVisualLines(5)).toBe(5);
+    expect(sourceVisualLines(4.99999)).toBe(5);
+  });
+  test("空源码仍具有有限的行高", () => {
+    expect(sourceVisualLines(0)).toBe(1);
   });
   test("链接不透传解析节点并在新窗口安全打开", () => {
     const html = renderToStaticMarkup(<MarkdownView content="[示例](https://example.com/path)" />);

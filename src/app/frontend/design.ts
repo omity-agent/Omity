@@ -42,6 +42,6 @@ export const scroll = css({
   minH: 0,
   overflowY: "auto",
   overscrollBehavior: "contain",
-  p: { _short: "3", base: "4", md: "6" },
+  px: { _short: "3", base: "4", md: "6" },
   scrollbarGutter: "stable",
 });

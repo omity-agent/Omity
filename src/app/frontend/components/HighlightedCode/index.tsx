@@ -11,13 +11,14 @@ import {
 } from "../CodeBlock/styles";
 import { CopyButton } from "../Chat/CopyButton";
 import type { FilePathMatch } from "../../../../fileLinks/types";
+import { codeWindow } from "../../../../../settings/rendering";
 import { cx } from "styled-system/css";
+import { measureObservedItem } from "../../services/scheduling/observedSize";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
-import { useFollowBottom } from "../TranscriptScroll";
+import { useFollowBottom } from "../Transcript/followBottom";
 import { useHighlight } from "./useHighlight";
 
-const noFileLinks: FilePathMatch[] = [],
-  estimatedLineHeight = 24;
+const noFileLinks: FilePathMatch[] = [];
 function HighlightedCodeView({
   autoFollow,
   className,
@@ -55,10 +56,12 @@ function HighlightedCodeView({
     // oxlint-disable-next-line react/incompatible-library
     virtualizer = useVirtualizer({
       count: lines.length,
-      estimateSize: () => estimatedLineHeight,
+      estimateSize: () => codeWindow.estimatedLineHeight,
       getScrollElement: () => blockRef.current,
-      overscan: 8,
+      measureElement: measureObservedItem,
+      overscan: codeWindow.overscan,
       useAnimationFrameWithResizeObserver: true,
+      useFlushSync: false,
     }),
     virtualLines = virtualizer.getVirtualItems(),
     totalSize = virtualizer.getTotalSize(),
