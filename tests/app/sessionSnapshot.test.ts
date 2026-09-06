@@ -1,6 +1,7 @@
 import { type AppMcp, createAppMcp } from "../../src/app/runtime/toolResources";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
@@ -16,7 +17,6 @@ import { prepareHostSession } from "../../src/runtime/execution/sessionPreparati
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/sessions";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";
-import { writeToolboxConfiguration } from "../support/builtins";
 
 const roots: string[] = [],
   databases: AgentDatabase[] = [],
@@ -65,12 +65,17 @@ test("session prefix exposes instructions as a system message", async () => {
   db.close();
 });
 test("session snapshots lock only the model prefix while runtime configuration changes", async () => {
-  const root = createTestDirectory("session-snapshot");
+  const root = createTestDirectory("session-snapshot"),
+    builtIns = defaultBuiltIns(),
+    toolboxes = {
+      choice: { ...builtIns.choice!, enabled: true },
+      open_ended: { ...builtIns.open_ended!, enabled: true },
+    };
   roots.push(root);
   writeTestConfiguration(root, {
     hooksYaml: `hooks:
-  - { id: notify, enable: true, target: agent, when: after, runLimit: -1, mode: silent, tool: ask_user__open_ended, args: {} }
-  - { id: review, enable: false, target: agent, when: before, runLimit: -1, mode: silent, tool: ask_user__choice, args: {} }
+  - { id: notify, enable: true, target: agent, when: after, runLimit: -1, mode: silent, tool: ${JSON.stringify(toolboxes.open_ended.name)}, args: {} }
+  - { id: review, enable: false, target: agent, when: before, runLimit: -1, mode: silent, tool: ${JSON.stringify(toolboxes.choice.name)}, args: {} }
 `,
     modelYaml: `adapter: completions
 model: locked-model
@@ -83,7 +88,7 @@ timeoutMs: 1000
 `,
     systemPrompt: "locked prompt",
   });
-  writeToolboxConfiguration(root);
+  writeToolboxConfiguration(root, { toolboxes });
   const workspacePath = join(root, "workspace");
   mkdirSync(workspacePath);
   const context = createSettingsContext(root, join(root, "user-settings")),
@@ -121,6 +126,7 @@ timeoutMs: 3500
   );
   writeToolboxConfiguration(root, {
     stdio: { restart: { delayMs: 4321, maxAttempts: 7 } },
+    toolboxes,
   });
   expect(definition.prefix.systemPrompt).toBe("locked prompt\n\nuse skills");
   expect(definition.hookOverrides).toEqual({ notify: false, review: true });
@@ -134,7 +140,9 @@ timeoutMs: 3500
     reasoning_effort: "medium",
   });
   expect(definition.prefix.tools).not.toHaveProperty("configuration");
-  expect(definition.prefix.tools.tools.map(({ name }) => name)).toContain("ask_user__open_ended");
+  expect(definition.prefix.tools.tools.map(({ name }) => name)).toContain(
+    toolboxes.open_ended.name,
+  );
   const prepared = prepareHostSession({ kind: "load", sessionId: created.sessionId }, root, {
     cwd: workspacePath,
     settingsContext: context,
@@ -168,6 +176,6 @@ timeoutMs: 3500
     maxAttempts: 7,
   });
   expect(restored.tools.map(({ name }) => name)).toEqual(
-    expect.arrayContaining(["ask_user__choice", "ask_user__open_ended"]),
+    expect.arrayContaining([toolboxes.choice.name, toolboxes.open_ended.name]),
   );
 });

@@ -29,6 +29,7 @@ const retryableCodes = new Set([
   "UND_ERR_CONNECT_TIMEOUT",
   "UND_ERR_HEADERS_TIMEOUT",
   "UND_ERR_SOCKET",
+  "UNKNOWN_CERTIFICATE_VERIFICATION_ERROR",
   "stream_read_error",
 ]);
 export function isRetryableModelError(error: unknown): boolean {

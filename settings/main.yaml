@@ -31,6 +31,7 @@ frontend:
   draftSaveDelayMs: 500
   reasoningTranslation:
     enabled: true
+    highConfidenceThreshold: 0.8
     minimumIntervalMs: 1000
   transcriptSnapshotThrottleMs: 250
 

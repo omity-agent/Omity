@@ -140,18 +140,14 @@ test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
   expect(
     parseMcpConfiguration(
       {
-        toolDescriptionOverrides: { ask_user__open_ended: "open.md" },
-        toolNameOverrides: { ask_user__choice: "pick" },
+        toolDescriptionOverrides: { [settings.open_ended!.name]: "open.md" },
+        toolNameOverrides: { [settings.choice!.name]: "pick" },
         toolboxes,
       },
       "toolbox.yaml",
     ),
   ).toEqual({
-    freeformToolInputs: [],
-    mcpServers: {},
-    stdio: { restart: { delayMs: 1000, maxAttempts: 3 } },
-    toolDescriptionOverrides: {},
-    toolNameOverrides: {},
+    ...parseMcpConfiguration({}, "toolbox.yaml"),
     toolboxes,
   });
 });

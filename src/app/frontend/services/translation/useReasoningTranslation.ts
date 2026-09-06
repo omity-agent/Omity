@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 interface TranslationSettings {
   enabled: boolean;
+  highConfidenceThreshold: number;
   minimumIntervalMs: number;
 }
 interface LiveTranslation {
@@ -36,6 +37,7 @@ export function useReasoningTranslation(
     }
     const targetLanguage = preferredTranslationLanguage(),
       translation = new ReasoningTranslationCoordinator({
+        highConfidenceThreshold: settings.highConfidenceThreshold,
         minimumIntervalMs: settings.minimumIntervalMs,
         onTranslation: (result) => {
           setLiveTranslation({ sessionId, value: result });
@@ -51,7 +53,13 @@ export function useReasoningTranslation(
         coordinator.current = undefined;
       }
     };
-  }, [sessionId, settings?.enabled, settings?.minimumIntervalMs, t]);
+  }, [
+    sessionId,
+    settings?.enabled,
+    settings?.highConfidenceThreshold,
+    settings?.minimumIntervalMs,
+    t,
+  ]);
   useEffect(() => {
     if (part) {
       coordinator.current?.update(part);

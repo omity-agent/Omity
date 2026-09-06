@@ -9,24 +9,30 @@ import { createSettingsContext } from "../../../src/infrastructure/configuration
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
 import { loadBuiltInTools } from "../../../src/infrastructure/toolbox/loadBuiltIns";
+import { stringify } from "yaml";
 
-test("ask_user descriptions remain empty, including all parameter descriptions", () => {
-  const tools = loadBuiltInTools(defaultBuiltIns(), {});
-  for (const tool of tools.filter(({ name }) => name.startsWith("ask_user__"))) {
-    expect(tool.description).toBe("");
-    for (const parameter of Object.values(toolProperties(tool))) {
-      expect(parameter).toMatchObject({ description: "" });
+test("built-in names and descriptions follow configuration", () => {
+  const settings = defaultBuiltIns(),
+    enabled = Object.values(settings).filter((setting) => setting.enabled),
+    tools = loadBuiltInTools(settings, {});
+  expect(tools.map(({ name }) => name).toSorted()).toEqual(
+    enabled.map(({ name }) => name).toSorted(),
+  );
+  for (const setting of enabled) {
+    const tool = tools.find(({ name }) => name === setting.name)!;
+    expect(tool.description).toBe(setting.description);
+    for (const [name, parameter] of Object.entries(setting.parameters)) {
+      expect(toolProperties(tool)[name]).toMatchObject({ description: parameter.description });
     }
   }
-  expect(tools.map(({ name }) => name)).toEqual([
-    "ask_user__choice",
-    "ask_user__open_ended",
-    "update_title",
-  ]);
 });
 test("each built-in can be disabled independently", () => {
-  const settings = defaultBuiltIns();
   for (const key of ["choice", "open_ended", "update_title"] as const) {
+    const settings = defaultBuiltIns();
+    settings[key]!.enabled = true;
+    expect(loadBuiltInTools(settings, {}).some(({ name }) => name === settings[key]!.name)).toBe(
+      true,
+    );
     settings[key]!.enabled = false;
     expect(loadBuiltInTools(settings, {}).some(({ name }) => name === settings[key]!.name)).toBe(
       false,
@@ -37,32 +43,36 @@ test("each built-in can be disabled independently", () => {
 test("default and profile layers configure names, descriptions and validation together", async () => {
   const root = createTestDirectory("builtin-layers"),
     user = join(root, "user"),
-    profile = join(user, "profiles", "custom");
+    profile = join(user, "profiles", "custom"),
+    titleBounds = defaultBuiltIns().update_title!.parameters.title,
+    maximum = titleBounds.minLength + 5;
   mkdirSync(join(root, "settings"));
   mkdirSync(profile, { recursive: true });
   writeToolboxConfiguration(root, {
     toolboxes: {
       choice: {
         description: "默认描述",
+        enabled: true,
         name: "pick",
-        parameters: { question: { minLength: 3 } },
+        parameters: {
+          options: { minItems: 0 },
+          question: { minLength: 3 },
+        },
       },
     },
   });
   writeFileSync(join(user, "profile.yaml"), "- custom\n");
   writeFileSync(
     join(profile, "toolbox.yaml"),
-    `toolboxes:
-  choice:
-    description: 配置集描述
-    parameters:
-      question:
-        description: 配置集参数
-  update_title:
-    parameters:
-      title:
-        maxLength: 10
-`,
+    stringify({
+      toolboxes: {
+        choice: {
+          description: "配置集描述",
+          parameters: { question: { description: "配置集参数" } },
+        },
+        update_title: { parameters: { title: { maxLength: maximum } } },
+      },
+    }),
   );
   try {
     const configuration = readProfileMcpConfiguration(createSettingsContext(root, user))!,
@@ -74,8 +84,8 @@ test("default and profile layers configure names, descriptions and validation to
       minLength: 3,
     });
     expect(configuration.toolboxes.update_title!.parameters.title).toMatchObject({
-      maxLength: 10,
-      minLength: 2,
+      maxLength: maximum,
+      minLength: titleBounds.minLength,
     });
     expect(choice.invoke({ multiple: false, options: [], question: "短" })).rejects.toThrow();
   } finally {

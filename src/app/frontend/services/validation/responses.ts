@@ -32,6 +32,7 @@ export const bootstrapResponseSchema = z.object({
     draftSaveDelayMs: integer.nonnegative(),
     reasoningTranslation: z.object({
       enabled: z.boolean(),
+      highConfidenceThreshold: z.number().min(0).max(1),
       minimumIntervalMs: integer.nonnegative(),
     }),
     transcriptSnapshotThrottleMs: integer.nonnegative(),

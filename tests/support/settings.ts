@@ -16,7 +16,11 @@ export function testSettings(): Settings {
     },
     frontend: {
       draftSaveDelayMs: 1,
-      reasoningTranslation: { enabled: false, minimumIntervalMs: 1000 },
+      reasoningTranslation: {
+        enabled: false,
+        highConfidenceThreshold: 0.8,
+        minimumIntervalMs: 1000,
+      },
       transcriptSnapshotThrottleMs: 1,
     },
     hooks: [],

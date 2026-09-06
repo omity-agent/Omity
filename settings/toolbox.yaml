@@ -26,12 +26,12 @@ toolboxes:
   update_title:
     enabled: true
     name: update_title
-    description: 更新当前 Session 的标题。标题的功能是让用户能够在 Session 列表快速重新找到该 Session，所以标题应信息密度高，且能够代表整个对话轨迹。你应经常更新 Session 标题，确保其始终足够准确。默认标题为空，所以在本 Session 第一次对话结束前，你至少更新一次标题。
+    description: 更新当前 Session 的标题。标题的功能是让用户能够在 Session 列表快速重新找到该 Session，所以标题应简短且信息密度高，代表完整对话轨迹而不是末状态。标题不应包含逗号。你应经常更新 Session 标题，确保其始终足够贴切。在本 Session 第一次对话结束前，你至少更新一次标题。
     parameters:
       title:
         description: ""
-        minLength: 5 # 标题长度下限，含边界。
-        maxLength: 40 # 标题长度上限，含边界。
+        minLength: 5 # 标题长度下限。
+        maxLength: 30 # 标题长度上限。
     errors:
       invalidLength: 标题长度超出允许的可见字符范围
       missingSession: 更新标题工具缺少当前会话 ID

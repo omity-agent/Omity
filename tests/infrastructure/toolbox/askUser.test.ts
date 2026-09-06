@@ -6,25 +6,35 @@ import { defaultBuiltIns } from "../../support/builtins";
 
 test("ask_user tools keep their schemas and pass the tool call context", async () => {
   const requests: unknown[] = [],
-    tools = createAskUserTools(defaultBuiltIns(), async (request, config) => {
+    settings = defaultBuiltIns(),
+    choiceSettings = settings.choice!,
+    openSettings = settings.open_ended!,
+    question = "问".repeat(choiceSettings.parameters.question.minLength),
+    options = Array.from(
+      { length: Math.max(2, choiceSettings.parameters.options.minItems) },
+      (_, index) => String(index).padEnd(choiceSettings.parameters.options.minLength, "选"),
+    );
+  choiceSettings.enabled = true;
+  openSettings.enabled = true;
+  const tools = createAskUserTools(settings, async (request, config) => {
       requests.push({ request, sessionId: config.configurable?.["sessionId"] });
       return { accepted: true };
     }),
-    choice = tools.find((tool) => tool.name === "ask_user__choice"),
-    openEnded = tools.find((tool) => tool.name === "ask_user__open_ended");
+    choice = tools.find((tool) => tool.name === choiceSettings.name),
+    openEnded = tools.find((tool) => tool.name === openSettings.name);
   if (!choice || !openEnded) {
     throw new Error("ask_user 工具集缺少内置工具");
   }
-  expect(choice.description).toBe("");
-  expect(openEnded.description).toBe("");
+  expect(choice.description).toBe(choiceSettings.description);
+  expect(openEnded.description).toBe(openSettings.description);
   const choiceOutput = await choice.invoke(
-    { multiple: true, options: ["A", "B"], question: "选择" },
+    { multiple: true, options, question },
     {
       configurable: { sessionId: "session" },
       toolCall: {
         args: {},
         id: "choice-call",
-        name: "ask_user__choice",
+        name: choice.name,
         type: "tool_call",
       },
     },
@@ -38,20 +48,20 @@ test("ask_user tools keep their schemas and pass the tool call context", async (
       callId: "choice-call",
       kind: "choice",
       multiple: true,
-      options: ["A", "B"],
-      question: "选择",
+      options,
+      question,
     },
     sessionId: "session",
   });
   expect(
     openEnded.invoke(
-      { question: "请说明" },
+      { question: "问".repeat(openSettings.parameters.question.minLength) },
       {
         configurable: { sessionId: "session" },
         toolCall: {
           args: {},
           id: "open-call",
-          name: "ask_user__open_ended",
+          name: openEnded.name,
           type: "tool_call",
         },
       },

@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { mkdirSync, rmSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AppRegistry } from "../../src/app/registry";
@@ -13,7 +14,6 @@ import { join } from "node:path";
 import { projectSession } from "../../src/app/sessionState";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { testSettings } from "../support/settings";
-import { writeToolboxConfiguration } from "../support/builtins";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -23,12 +23,14 @@ afterEach(() => {
 });
 test("app-wired title tool broadcasts its persisted title and restores it after reopening", async () => {
   const root = createTestDirectory("title-broadcast"),
-    home = process.env["OMITY_HOME"];
+    home = process.env["OMITY_HOME"],
+    titleSettings = defaultBuiltIns().update_title!,
+    updatedTitle = "新".repeat(titleSettings.parameters.title.minLength);
   roots.push(root);
   process.env["OMITY_HOME"] = join(root, "data");
   try {
     mkdirSync(join(root, "settings"));
-    writeToolboxConfiguration(root);
+    writeToolboxConfiguration(root, { toolboxes: { update_title: { enabled: true } } });
     const id = "title-session",
       paths = sessionPaths(id),
       db = new AgentDatabase(paths.dbPath);
@@ -61,10 +63,10 @@ test("app-wired title tool broadcasts its persisted title and restores it after 
         snapshot = await reader.read();
       expect(decoder.decode(snapshot.value)).toContain('"title":"title-session"');
       const mcp = await hosts.mcp.load([]),
-        tool = mcp.tools.find(({ name }) => name === "update_title")!;
+        tool = mcp.tools.find(({ name }) => name === titleSettings.name)!;
       expect(
         await tool.invoke(
-          { title: "实时更新标题" },
+          { title: updatedTitle },
           {
             configurable: { sessionId: id },
           },
@@ -73,12 +75,12 @@ test("app-wired title tool broadcasts its persisted title and restores it after 
       const frame = await reader.read(),
         changed = decoder.decode(frame.value);
       expect(changed).toContain("event: session\n");
-      expect(changed).toContain('"title":"实时更新标题"');
+      expect(changed).toContain(`"title":${JSON.stringify(updatedTitle)}`);
       const sessionsResponse = await api.request("/api/sessions");
       expect(await sessionsResponse.json()).toMatchObject({
-        sessions: [{ id, title: "实时更新标题" }],
+        sessions: [{ id, title: updatedTitle }],
       });
-      expect(new AppRegistry().require(id).title).toBe("实时更新标题");
+      expect(new AppRegistry().require(id).title).toBe(updatedTitle);
       abort.abort();
       await reader.cancel();
     } finally {

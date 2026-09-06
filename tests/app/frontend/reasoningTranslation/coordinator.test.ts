@@ -11,6 +11,7 @@ test("translation coordinator only persists the final reasoning", async () => {
     ),
     coordinator = new ReasoningTranslationCoordinator({
       createTranslator,
+      highConfidenceThreshold: 0.8,
       minimumIntervalMs: 10,
       onTranslation: (translation) => {
         displayed.push(translation.source);
@@ -42,6 +43,7 @@ test("translation coordinator reuses a matching persisted translation", async ()
     ),
     coordinator = new ReasoningTranslationCoordinator({
       createTranslator,
+      highConfidenceThreshold: 0.8,
       minimumIntervalMs: 0,
       persist,
       targetLanguage: "zh-CN",
@@ -63,12 +65,13 @@ test("translation coordinator reuses a matching persisted translation", async ()
   expect(persist).not.toHaveBeenCalled();
   coordinator.close();
 });
-test("translation coordinator stops retrying after the translator becomes unavailable", async () => {
+test("unexpected errors stop only the current reasoning", async () => {
   const failure = new DOMException("Model not available", "NotSupportedError"),
     createTranslator = mock(() => Promise.reject(failure)),
     reportError = mock((_error: unknown) => undefined),
     coordinator = new ReasoningTranslationCoordinator({
       createTranslator,
+      highConfidenceThreshold: 0.8,
       minimumIntervalMs: 0,
       persist: () => Promise.resolve(),
       reportError,
@@ -80,5 +83,9 @@ test("translation coordinator stops retrying after the translator becomes unavai
   await Bun.sleep(0);
   expect(createTranslator).toHaveBeenCalledTimes(1);
   expect(reportError).toHaveBeenCalledTimes(1);
+  coordinator.update({ content: "next reasoning", messageId: "next", streaming: true });
+  await Bun.sleep(0);
+  expect(createTranslator).toHaveBeenCalledTimes(2);
+  expect(reportError).toHaveBeenCalledTimes(2);
   coordinator.close();
 });

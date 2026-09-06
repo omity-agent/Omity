@@ -134,6 +134,7 @@ const promptFileSchema = z
           reasoningTranslation: z
             .object({
               enabled: z.boolean(),
+              highConfidenceThreshold: z.number().min(0).max(1),
               minimumIntervalMs: z.number().int().nonnegative(),
             })
             .strict(),
