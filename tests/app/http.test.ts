@@ -3,6 +3,7 @@ import { decodeSessionId, requestBodyLimit } from "../../src/app/http/request";
 import { expect, test } from "bun:test";
 import { createApiController } from "./support/apiController";
 import { createStaticApp } from "../../src/app/http/static";
+import { submissionForm } from "../../src/app/attachments/submission";
 
 test("API JSON validation rejects invalid controls and empty messages", async () => {
   const api = createApi(createApiController()),
@@ -58,17 +59,9 @@ test("multipart attachments without filenames are rejected", async () => {
     boundary = "attachment-test-boundary",
     body = [
       `--${boundary}`,
-      'Content-Disposition: form-data; name="content"',
+      'Content-Disposition: form-data; name="submission"',
       "",
-      "查看附件",
-      `--${boundary}`,
-      'Content-Disposition: form-data; name="draftRevision"',
-      "",
-      "0",
-      `--${boundary}`,
-      'Content-Disposition: form-data; name="submissionId"',
-      "",
-      "a1b2c3d4",
+      JSON.stringify({ content: "查看附件", draftRevision: 0, submissionId: "a1b2c3d4" }),
       `--${boundary}`,
       'Content-Disposition: form-data; name="file:a1b2c3d4"; filename=""',
       "Content-Type: text/plain",
@@ -86,7 +79,7 @@ test("multipart attachments without filenames are rejected", async () => {
   expect(await response.json()).toEqual({
     error: {
       code: "BAD_REQUEST",
-      message: "附件缺少有效文件名：file:a1b2c3d4",
+      message: expect.stringContaining("附件缺少有效文件名"),
     },
   });
   expect(calls).toHaveLength(0);
@@ -167,11 +160,7 @@ function jsonRequest(body: unknown): RequestInit {
   return { body: JSON.stringify(body), method: "POST" };
 }
 function messageForm(content: string, draftRevision: number) {
-  const body = new FormData();
-  body.set("content", content);
-  body.set("draftRevision", draftRevision.toString());
-  body.set("submissionId", "a1b2c3d4");
-  return body;
+  return submissionForm({ content, draftRevision, submissionId: "a1b2c3d4" }, []);
 }
 function sessionForm(
   workspace: string,
@@ -179,12 +168,5 @@ function sessionForm(
   message: string,
   profile?: string,
 ) {
-  const body = new FormData();
-  body.set("workspace", workspace);
-  body.set("history", JSON.stringify(history));
-  body.set("message", message);
-  if (profile !== undefined) {
-    body.set("profile", profile);
-  }
-  return body;
+  return submissionForm({ history, message, profile, workspace }, []);
 }

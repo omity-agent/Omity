@@ -2,44 +2,17 @@ import {
   AIMessage,
   type BaseMessage,
   HumanMessage,
-  type MessageContent,
   type ToolCall,
   ToolMessage,
 } from "@langchain/core/messages";
+import type { StoredAi, StoredConversationMessage, StoredTool, StoredUsage } from "./replayShape";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { structuredToolOutput } from "../../../mcp/tools/structured";
 
 export type MessageStorageMode = "history" | "recovery";
-export interface StoredUsage {
-  cacheRead: number;
-  input: number;
-  output: number;
-}
-interface StoredHuman {
-  content: MessageContent;
-  type: "human";
-}
-export interface StoredAi {
-  aiSdkContent?: unknown;
-  content: MessageContent;
-  reasoning?: Record<string, unknown>;
-  toolCalls?: ToolCall[];
-  type: "ai";
-  usage?: StoredUsage;
-}
-export interface StoredTool {
-  content: MessageContent;
-  custom?: boolean;
-  largeOutputTokens?: number;
-  name?: string;
-  structuredOutput?: unknown;
-  toolCallId: string;
-  type: "tool";
-}
-export type StoredConversationMessage = StoredHuman | StoredAi | StoredTool;
 export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {
   if (HumanMessage.isInstance(message)) {
-    return { content: message.content, type: "human" } satisfies StoredHuman;
+    return { content: message.content, type: "human" } satisfies StoredConversationMessage;
   }
   if (AIMessage.isInstance(message)) {
     return encodeAiMessage(message);
@@ -76,7 +49,7 @@ function encodeToolMessage(message: ToolMessage, mode: MessageStorageMode): Stor
     ...(structuredOutput === undefined ? {} : { structuredOutput }),
   };
 }
-function storedToolCall(value: ToolCall): ToolCall {
+function storedToolCall(value: ToolCall) {
   return {
     args: value.args,
     name: value.name,

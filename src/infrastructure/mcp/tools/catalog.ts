@@ -14,7 +14,7 @@ import { McpClientPool } from "../client/pool";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./issues";
-import { disableAdapterRequestTimeout } from "../client/timeout";
+import { disableAdapterRequestTimeout } from "../client/requestPolicy";
 import { resolve } from "node:path";
 import { suppressTerminalError } from "../../../failures/output";
 

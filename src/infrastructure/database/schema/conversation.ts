@@ -2,7 +2,7 @@ import type { StreamEventKind, StreamEventValues } from "../../../types";
 import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { queue, sessions } from "./session";
 import type { FileLinkUnit } from "../../../fileLinks/types";
-import type { StoredConversationMessage } from "../records/messages/payload";
+import type { StoredConversationMessage } from "../records/messages/replayShape";
 import { sql } from "drizzle-orm";
 
 const streamEventKinds = [

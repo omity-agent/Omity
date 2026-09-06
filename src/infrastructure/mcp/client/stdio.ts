@@ -2,7 +2,7 @@ import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "@langchain/mcp-adapters";
 import { Writable } from "node:stream";
-import { disableClientRequestTimeout } from "./timeout";
+import { disableClientRequestTimeout } from "./requestPolicy";
 import { isPlainObject as isRecord } from "es-toolkit";
 
 const maximumStderrBytes = 64 * 1024;

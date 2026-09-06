@@ -6,11 +6,17 @@ import {
 import { dirname, join, resolve } from "node:path";
 import { existsSync, statSync } from "node:fs";
 import type { SettingsContext } from "./context";
+import { deepmergeCustom } from "deepmerge-ts";
 import { homedir } from "node:os";
-import { isPlainObject as isRecord } from "es-toolkit";
 import { config as loadDotenv } from "dotenv";
 import untildify from "untildify";
 
+const mergeSettings = deepmergeCustom({
+  filterValues: false,
+  mergeArrays: false,
+  mergeMaps: false,
+  mergeSets: false,
+});
 interface LayeredSettingsFile {
   path: string;
   value: unknown;
@@ -109,16 +115,4 @@ export function resolveLayeredSettingsText(
 function readSettingsLayer(path: string) {
   const file = readSettingsYamlFile(path);
   return file.empty ? {} : file.value;
-}
-function mergeSettings(defaults: unknown, overrides: unknown): unknown {
-  if (!isRecord(defaults) || !isRecord(overrides)) {
-    return overrides;
-  }
-  const keys = new Set([...Object.keys(defaults), ...Object.keys(overrides)]);
-  return Object.fromEntries(
-    [...keys].map((key) => [
-      key,
-      Object.hasOwn(overrides, key) ? mergeSettings(defaults[key], overrides[key]) : defaults[key],
-    ]),
-  );
 }

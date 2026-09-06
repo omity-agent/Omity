@@ -1,7 +1,7 @@
 import { type DisplayEvent, type TimelineMessage, buildTimeline } from "../../../timeline";
+import { keyBy, sortBy } from "es-toolkit";
 import type { FileLinkUnit } from "../../../../fileLinks/types";
 import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
-import { maxBy } from "es-toolkit";
 import { replaceEqualDeep } from "@tanstack/react-query";
 
 export type { TranscriptSnapshot } from "../../../timeline/contracts/records";
@@ -50,17 +50,14 @@ export function reconcileTranscript(
 }
 export function appendTranscriptEvents(current: TranscriptData, incoming: DisplayEvent[]) {
   const accepted = incoming.filter((event) => event.id > current.snapshotCursor),
-    events = appendOrMergeEvents(current.events, accepted, current.eventCursor);
+    events = appendOrMergeEvents(current.events, accepted);
   if (events.length === current.events.length) {
     return current;
   }
   return buildTranscript(
     {
       ...current,
-      eventCursor: Math.max(
-        current.eventCursor,
-        maxBy(accepted, (event) => event.id)?.id ?? current.eventCursor,
-      ),
+      eventCursor: Math.max(current.eventCursor, events.at(-1)?.id ?? 0),
       events,
       fileLinks: mergeFileLinks(
         current.fileLinks,
@@ -97,31 +94,25 @@ function buildTranscript(
   };
 }
 function mergeFileLinks(left: FileLinkUnit[], right: FileLinkUnit[]) {
-  return [
-    ...new Map(
-      [...left, ...right].map((unit) => [
-        `${unit.ownerId}\0${unit.surface}\0${unit.unitIndex.toString()}`,
-        unit,
-      ]),
-    ).values(),
-  ];
+  return Object.values(
+    keyBy(
+      [...left, ...right],
+      (unit) => `${unit.ownerId}\0${unit.surface}\0${unit.unitIndex.toString()}`,
+    ),
+  );
 }
 function mergeEvents(left: DisplayEvent[], right: DisplayEvent[]) {
-  return [...new Map([...left, ...right].map((event) => [event.id, event])).values()].toSorted(
-    (a, b) => a.id - b.id,
-  );
+  return sortBy(Object.values(keyBy([...left, ...right], (event) => event.id)), [
+    (event) => event.id,
+  ]);
 }
-function appendOrMergeEvents(
-  current: DisplayEvent[],
-  incoming: DisplayEvent[],
-  eventCursor: number,
-) {
-  const unique = [...new Map(incoming.map((event) => [event.id, event])).values()].toSorted(
-    (left, right) => left.id - right.id,
-  );
-  return unique.every((event) => event.id > eventCursor)
-    ? [...current, ...unique]
-    : mergeEvents(current, unique);
+function appendOrMergeEvents(current: DisplayEvent[], incoming: DisplayEvent[]) {
+  return incoming.every(
+    (event, index) =>
+      event.id > (index === 0 ? (current.at(-1)?.id ?? 0) : incoming[index - 1]!.id),
+  )
+    ? [...current, ...incoming]
+    : mergeEvents(current, incoming);
 }
 function optimisticMessages(current?: TranscriptData) {
   return current?.view.filter((item) => item.optimistic === true) ?? [];

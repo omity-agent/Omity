@@ -1,7 +1,7 @@
-import { parse, parseAllDocuments } from "yaml";
 import { homedir } from "node:os";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { join } from "node:path";
+import { parseAllDocuments } from "yaml";
 import { readFileSync } from "node:fs";
 
 const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/,
@@ -37,10 +37,22 @@ export function readSettingsYamlValue(path: string): unknown {
   return readSettingsYamlFile(path).value;
 }
 export function readSettingsYamlFile(path: string) {
-  const source = readFileSync(path, "utf8");
+  const documents = parseAllDocuments(readFileSync(path, "utf8")),
+    diagnostics = "empty" in documents ? [documents] : documents;
+  for (const { errors, warnings } of diagnostics) {
+    for (const warning of warnings) {
+      console.warn(`${path}: ${warning.message}`);
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors, `YAML 配置解析失败：${path}`);
+    }
+  }
+  if (documents.length > 1) {
+    throw new Error(`YAML 配置必须只包含一个文档：${path}`);
+  }
   return {
-    empty: "empty" in parseAllDocuments(source),
-    value: parse(source) as unknown,
+    empty: "empty" in documents,
+    value: ("empty" in documents ? null : documents[0]!.toJS()) as unknown,
   };
 }
 export function resolvePlaceholders(value: unknown, options: PlaceholderOptions): unknown {

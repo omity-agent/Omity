@@ -1,4 +1,5 @@
 import { type MouseEvent, useCallback, useEffect } from "react";
+import { isEqual } from "es-toolkit";
 
 export function navigateLink(
   event: Pick<
@@ -114,24 +115,9 @@ export function usePageNavigation(page: Page, currentPage: Page, setPage: (page:
     };
   }, [setPage]);
   useEffect(() => {
-    if (samePage(page, currentPage)) {
+    if (isEqual(page, currentPage)) {
       return;
     }
     writePage(currentPage, true);
   }, [currentPage, page]);
-}
-function samePage(left: Page, right: Page) {
-  if (left.kind !== right.kind) {
-    return false;
-  }
-  if (left.kind === "session" && right.kind === "session") {
-    return left.id === right.id;
-  }
-  if (left.kind === "fork" && right.kind === "fork") {
-    return (
-      left.sourceSessionId === right.sourceSessionId &&
-      left.beforeMessageId === right.beforeMessageId
-    );
-  }
-  return true;
 }

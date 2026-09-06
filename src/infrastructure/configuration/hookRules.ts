@@ -16,10 +16,9 @@ const argsSchema = z.record(z.string(), z.unknown()),
     tool: z.string().min(1),
     when: z.enum(["before", "after"]),
   },
-  hookSchema = z.object({ ...callFields, mode: z.enum(["silent", "takeover"]) }).strict(),
+  hookSchema = z.strictObject({ ...callFields, mode: z.enum(["silent", "takeover"]) }),
   hooksFileSchema = z
-    .object({ hooks: z.array(hookSchema) })
-    .strict()
+    .strictObject({ hooks: z.array(hookSchema) })
     .superRefine(({ hooks }, context) => {
       const ids = new Set<string>();
       for (const [index, hook] of hooks.entries()) {

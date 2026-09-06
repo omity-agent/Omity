@@ -10,11 +10,10 @@ import {
   fileLinkActionBody,
   forkMaterializationBody,
   readJson,
-  readMessageForm,
-  readSessionForm,
   reasoningTranslationBody,
   requestBodyLimit,
 } from "./request";
+import { readMessageForm, readSessionForm } from "./multipart";
 import type { AccessService } from "../access/service";
 import type { AppController } from "../controller";
 import { bodyLimit } from "hono/body-limit";

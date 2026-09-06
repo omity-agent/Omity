@@ -1,5 +1,4 @@
 import type { Control, Settings } from "../../../types";
-import { type PendingAttachment, appendAttachments } from "../../attachments/contract";
 import {
   answerResponseSchema,
   bootstrapResponseSchema,
@@ -16,8 +15,10 @@ import {
 } from "./validation/responses";
 import type { FileLinkAction } from "../../../fileLinks/types";
 import type { InitialSessionState } from "../../initialState";
+import type { PendingAttachment } from "../../attachments/contract";
 import type { ReasoningTranslation } from "../../timeline";
 import { request } from "./request";
+import { submissionForm } from "../../attachments/submission";
 import { z } from "./validation";
 
 export type { SessionInfo } from "../../sessionState";
@@ -32,19 +33,8 @@ export async function createSession(
   initialState: InitialSessionState,
   attachments: PendingAttachment[],
 ) {
-  const body = new FormData();
-  body.set("workspace", workspace);
-  if (profile !== undefined) {
-    body.set("profile", profile);
-  }
-  body.set("history", JSON.stringify(initialState.history));
-  if (initialState.hookOverrides !== undefined) {
-    body.set("hookOverrides", JSON.stringify(initialState.hookOverrides));
-  }
-  body.set("message", initialState.message);
-  appendAttachments(body, attachments);
   return request("api/sessions", sessionResponseSchema, {
-    body,
+    body: submissionForm({ ...initialState, profile, workspace }, attachments),
     method: "POST",
   });
 }
@@ -127,13 +117,8 @@ export async function sendMessage(
   submissionId: string,
   attachments: PendingAttachment[],
 ) {
-  const body = new FormData();
-  body.set("content", content);
-  body.set("draftRevision", draftRevision.toString());
-  body.set("submissionId", submissionId);
-  appendAttachments(body, attachments);
   return request(`api/sessions/${encodeURIComponent(sessionId)}/messages`, messageResponseSchema, {
-    body,
+    body: submissionForm({ content, draftRevision, submissionId }, attachments),
     method: "POST",
   });
 }

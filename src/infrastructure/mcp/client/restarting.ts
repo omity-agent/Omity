@@ -5,15 +5,16 @@ import {
   type StdioRestartPolicy,
 } from "./availability";
 import { captureError, summarizeError } from "../../../failures/details";
-import { interruptibleDelay, requestSignal, waitForSignal } from "./interruptible";
 import type { Logger } from "../../logging/logger";
 import type { StdioConnection } from "@langchain/mcp-adapters";
+import { raceSignal } from "race-signal";
+import { requestSignal } from "./requestPolicy";
+import { setTimeout as sleep } from "node:timers/promises";
 
 export class RestartingStdioClient {
   private readonly controller = new AbortController();
   private current?: ConnectedStdioClient;
   private lastFailure?: unknown;
-  private recoveryIdentity?: object;
   private recovering?: Promise<ConnectedStdioClient>;
   private restartAttempts = 0;
   private unavailable?: McpStdioUnavailableError;
@@ -59,7 +60,7 @@ export class RestartingStdioClient {
       this.restartAttempts = 0;
     }
     signal?.throwIfAborted();
-    const connection = this.current ?? (await waitForSignal(this.ensureRecovery(), signal));
+    const connection = this.current ?? (await raceSignal(this.ensureRecovery(), signal));
     try {
       const operation: unknown = connection.client[method];
       if (typeof operation !== "function") {
@@ -74,7 +75,7 @@ export class RestartingStdioClient {
         throw error;
       }
       const failure = this.recordClosure(connection, method, error);
-      await waitForSignal(this.ensureRecovery(), signal);
+      await raceSignal(this.ensureRecovery(), signal);
       throw failure;
     }
   }
@@ -134,14 +135,11 @@ export class RestartingStdioClient {
     if (this.recovering) {
       return this.recovering;
     }
-    const task = this.restart(),
-      identity = {},
-      recovery = this.manageRecovery(task, identity);
-    this.recoveryIdentity = identity;
+    const recovery = this.manageRecovery(this.restart());
     this.recovering = recovery;
     return recovery;
   }
-  private async manageRecovery(task: Promise<ConnectedStdioClient>, identity: object) {
+  private async manageRecovery(task: Promise<ConnectedStdioClient>) {
     try {
       return await task;
     } catch (error) {
@@ -153,16 +151,13 @@ export class RestartingStdioClient {
       }
       throw error;
     } finally {
-      if (this.recoveryIdentity === identity) {
-        this.recoveryIdentity = undefined;
-        this.recovering = undefined;
-      }
+      this.recovering = undefined;
     }
   }
   private async restart() {
     while (this.restartAttempts < this.policy.maxAttempts) {
       if (this.restartAttempts > 0) {
-        await interruptibleDelay(this.policy.delayMs, this.controller.signal);
+        await sleep(this.policy.delayMs, undefined, { signal: this.controller.signal });
       }
       this.controller.signal.throwIfAborted();
       const attempt = ++this.restartAttempts;

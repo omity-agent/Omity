@@ -1,5 +1,15 @@
 import { Protocol } from "@modelcontextprotocol/sdk/shared/protocol.js";
 
+export function requestSignal(args: unknown[]) {
+  const options = args.findLast(
+    (value): value is { signal: AbortSignal } =>
+      typeof value === "object" &&
+      value !== null &&
+      "signal" in value &&
+      value.signal instanceof AbortSignal,
+  );
+  return options?.signal;
+}
 const setupTimeoutMethod = "_setupTimeout";
 function skipRequestTimeout() {
   return undefined;

@@ -1,7 +1,7 @@
 import {
   disableAdapterRequestTimeout,
   disableClientRequestTimeout,
-} from "../../src/infrastructure/mcp/client/timeout";
+} from "../../src/infrastructure/mcp/client/requestPolicy";
 import { expect, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/client";
 import { Protocol } from "@modelcontextprotocol/sdk/shared/protocol.js";

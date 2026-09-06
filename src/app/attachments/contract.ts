@@ -1,34 +1,15 @@
 import { DomainError } from "../../errors";
-import type { InitialMessagePair } from "../initialState";
 import type { Settings } from "../../types";
 
+export type { MessageSubmission, SessionSubmission } from "./submission";
 export interface PendingAttachment {
   id: string;
   file: File;
-}
-export interface MessageSubmission {
-  content: string;
-  draftRevision: number;
-  attachments: PendingAttachment[];
-  submissionId: string;
-}
-export interface SessionSubmission {
-  workspace: string;
-  hookOverrides?: Record<string, boolean>;
-  profile?: string;
-  history: InitialMessagePair[];
-  message: string;
-  attachments: PendingAttachment[];
 }
 export type AttachmentSettings = Settings["attachments"];
 interface AttachmentMetadata {
   name: string;
   size: number;
-}
-export function appendAttachments(body: FormData, attachments: PendingAttachment[]) {
-  for (const { id, file } of attachments) {
-    body.append(`file:${id}`, file);
-  }
 }
 const placeholderPattern = /\{\{file:(?<id>[0-9a-z]{8}):(?<name>[^{}\r\n]+)\}\}/giu;
 export function attachmentPlaceholder(id: string, name: string) {

@@ -29,4 +29,4 @@ export const authenticationBody: z.ZodType<AuthenticationResponseJSON> = z.objec
     userHandle: z.string().optional(),
   }),
 });
-export const registrationOptionsBody = z.object({ ticket: z.string().min(1).optional() }).strict();
+export const registrationOptionsBody = z.strictObject({ ticket: z.string().min(1).optional() });
