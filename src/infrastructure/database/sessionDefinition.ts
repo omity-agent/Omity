@@ -4,9 +4,11 @@ import {
   snapshotMcpTools,
 } from "../mcp/tools/definitions";
 import type { ModelPrefixSettings, ModelSettings, Settings } from "../../types";
+import { DomainError } from "../../errors";
 import type { LoadedMcp } from "../mcp/tools/catalog";
 
 export interface SessionDefinition {
+  hookOverrides?: Record<string, boolean>;
   prefix: {
     model: ModelPrefixSettings | null;
     systemPrompt: string;
@@ -17,8 +19,16 @@ export function createSessionDefinition(
   settings: Settings,
   mcp: LoadedMcp,
   session: { cwd: string; session: string },
+  hookOverrides?: Record<string, boolean>,
 ): SessionDefinition {
+  const ids = new Set(settings.hooks.map(({ id }) => id));
+  for (const id of Object.keys(hookOverrides ?? {})) {
+    if (!ids.has(id)) {
+      throw new DomainError("HOOK_SELECTION_INVALID", `Hook 不存在：${id}`);
+    }
+  }
   return {
+    hookOverrides,
     prefix: {
       model: snapshotModel(settings.model),
       systemPrompt: settings.agent.systemPrompt,
@@ -39,12 +49,17 @@ export function applySessionDefinition(
   settings: Settings,
   definition: SessionDefinition,
 ): Settings {
+  const overrides = new Map(Object.entries(definition.hookOverrides ?? {}));
   return {
     ...settings,
     agent: {
       ...settings.agent,
       systemPrompt: definition.prefix.systemPrompt,
     },
+    hooks: settings.hooks.map((rule) => ({
+      ...rule,
+      enable: overrides.get(rule.id) ?? rule.enable,
+    })),
     model: restoreModel(settings.model, definition.prefix.model),
   };
 }

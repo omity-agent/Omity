@@ -1,11 +1,15 @@
 import { type PlaceholderOptions, readSettingsYaml } from "./placeholders";
 import type { HookRule } from "../../types";
+import type { SettingsContext } from "./settings/context";
 import { isHookOutputVariable } from "../../hooks/variables";
+import { readLayeredSettingsYaml } from "./settings/files";
 import { z } from "zod";
 
 const argsSchema = z.record(z.string(), z.unknown()),
   callFields = {
     args: argsSchema,
+    description: z.string().optional(),
+    enable: z.boolean().optional(),
     id: z.string().min(1),
     runLimit: z.number().int().min(-1),
     target: z.string().min(1),
@@ -43,4 +47,17 @@ export function loadHookRules(
 }
 export function parseHookRules(value: unknown): HookRule[] {
   return hooksFileSchema.parse(value).hooks;
+}
+export function loadConfiguredHookRules(
+  context: SettingsContext,
+  placeholders: Omit<PlaceholderOptions, "source"> = { deferSession: true },
+): HookRule[] {
+  const file = readLayeredSettingsYaml(context, "profile", "hooks.yaml", {
+    ...placeholders,
+    deferred: isHookOutputVariable,
+  });
+  if (!file) {
+    throw new Error("配置文件不存在：hooks.yaml");
+  }
+  return parseHookRules(file.value);
 }

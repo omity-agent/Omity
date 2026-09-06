@@ -33,20 +33,24 @@ export class HookRuntime {
       if (!Number.isInteger(rule.runLimit) || rule.runLimit < -1) {
         throw new Error(`Hook ${rule.id} 的 runLimit 必须是大于等于 -1 的整数`);
       }
-      this.requireTool(rule.tool, `Hook ${rule.id}`);
-      if (rule.target !== "agent") {
-        this.requireTool(rule.target, `Hook ${rule.id} 目标`);
+      if (rule.enable !== false) {
+        this.requireTool(rule.tool, `Hook ${rule.id}`);
+        if (rule.target !== "agent") {
+          this.requireTool(rule.target, `Hook ${rule.id} 目标`);
+        }
       }
     }
   }
   matching(target: string, when: HookWhen) {
-    return this.rules.filter((rule) => rule.target === target && rule.when === when);
+    return this.rules.filter(
+      (rule) => rule.enable !== false && rule.target === target && rule.when === when,
+    );
   }
   consume(hookId: string, limit: number) {
     return consumeHookUsage(this.db, this.sessionId, hookId, limit);
   }
   async execute(rule: HookRule, sourceId: string, threadId: string, options: HookExecutionOptions) {
-    if (!(await options.consume(rule.id, rule.runLimit))) {
+    if (rule.enable === false || !(await options.consume(rule.id, rule.runLimit))) {
       return null;
     }
     const details = hookCallDetails(rule, sourceId),

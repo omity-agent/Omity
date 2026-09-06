@@ -4,10 +4,9 @@ import { parseAgentSettings, parseMainSettings, parseModelSettings } from "./sch
 import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
 import type { Settings } from "../../../types";
 import { buildSkillsList } from "../../../skills";
-import { isHookOutputVariable } from "../../../hooks/variables";
+import { loadConfiguredHookRules } from "../hookRules";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../workspacePath";
-import { parseHookRules } from "../hookRules";
 import { readSettingsText } from "../placeholders";
 import { resolveConfiguredPath } from "../configuredPath";
 import { safeId } from "../sessionPaths";
@@ -33,10 +32,6 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
       deferSession: true,
       session: { cwd, session },
     },
-    hooks = requireLayeredYaml(context, "profile", "hooks.yaml", {
-      ...placeholders,
-      deferred: isHookOutputVariable,
-    }),
     skills = {
       ...agent.skills,
       directory: resolveConfiguredPath(configRoot, agent.skills.directory),
@@ -66,7 +61,7 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
         )
         .join("\n\n"),
     },
-    hooks: parseHookRules(hooks.value),
+    hooks: loadConfiguredHookRules(context, placeholders),
     model,
     skills,
     toolExecution: agent.toolExecution,

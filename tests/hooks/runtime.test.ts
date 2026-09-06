@@ -2,12 +2,62 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { DynamicStructuredTool } from "@langchain/core/tools";
+import type { HookRule } from "../../src/types";
 import { HookRuntime } from "../../src/hooks/runtime";
 import { Logger } from "../../src/infrastructure/logging/logger";
 import { toModelMessages } from "../../src/agent/aiMessages";
 import { z } from "zod";
 
 afterEach(cleanupDatabaseDirs);
+test("disabled Hooks neither require tools nor match, execute, or consume usage", async () => {
+  const rule: HookRule = {
+      args: {},
+      enable: false,
+      id: "disabled",
+      mode: "silent",
+      runLimit: 1,
+      target: "missing-target",
+      tool: "missing-tool",
+      when: "before",
+    },
+    db = makeDb();
+  try {
+    db.resetSession("disabled-hooks", workspace);
+    const hooks = new HookRuntime(
+      [rule],
+      [],
+      db.db,
+      new Logger("error", true),
+      "disabled-hooks",
+      workspace,
+    );
+    expect(hooks.matching(rule.target, rule.when)).toEqual([]);
+    expect(
+      await hooks.execute(rule, "message", "thread", {
+        consume: unexpected,
+        invoke: unexpected,
+        toolOutputs: [],
+      }),
+    ).toBeNull();
+    expect(hooks.consume(rule.id, rule.runLimit)).toBeTrue();
+    expect(
+      () =>
+        new HookRuntime(
+          [{ ...rule, enable: true }],
+          [],
+          db.db,
+          new Logger("error", true),
+          "disabled-hooks",
+          workspace,
+        ),
+    ).toThrow("不存在的 MCP 工具");
+  } finally {
+    db.close();
+  }
+});
+function unexpected(): never {
+  throw new Error("禁用 Hook 不应调用工具或消耗计数");
+}
 test("HookRuntime enforces Drizzle-backed limits and resolves arguments", async () => {
   const received: unknown[] = [],
     tool = new DynamicStructuredTool({

@@ -9,6 +9,8 @@ export function useSessionCreation({
   attachmentsRef,
   clearDraft,
   flushDraft,
+  hookOverrides,
+  hooksReady,
   message,
   onCreate,
   pairs,
@@ -17,6 +19,8 @@ export function useSessionCreation({
   attachmentsRef: RefObject<PendingAttachments>;
   clearDraft: () => void;
   flushDraft: () => Promise<void>;
+  hookOverrides: Record<string, boolean>;
+  hooksReady: boolean;
   message: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   pairs: EditablePair[];
@@ -34,6 +38,7 @@ export function useSessionCreation({
   }, [clearDraft, flushDraft]);
   const submit = async () => {
       const valid =
+        hooksReady &&
         workspace.trim().length > 0 &&
         message.trim().length > 0 &&
         pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0);
@@ -46,6 +51,7 @@ export function useSessionCreation({
         await createRef.current(
           {
             history: pairs.map(({ user, assistant }) => ({ assistant, user })),
+            hookOverrides,
             message,
           },
           attachmentsRef.current.values(message),

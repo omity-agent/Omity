@@ -8,6 +8,7 @@ import {
   createSettingsContext,
 } from "../infrastructure/configuration/settings/context";
 import { controllerHostEvents, controllerSessionInfo } from "./controllerHostEvents";
+import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { readSessionDraft, writeSessionDraft } from "./composerDraft";
@@ -20,7 +21,6 @@ import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
 import { createAppMcp } from "./runtime/mcp";
-import { createSnapshotSession } from "./runtime/sessionSnapshot";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
@@ -81,6 +81,7 @@ export class AppController {
   sessions() {
     return this.registry.list().map((session) => this.sessionInfo(session));
   }
+  hookOptions = (profile?: string) => sessionHookOptions(this.settingsContext, profile);
   assertSession(sessionId: string) {
     this.registry.require(sessionId);
   }

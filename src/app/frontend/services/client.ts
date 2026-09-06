@@ -38,6 +38,9 @@ export async function createSession(
     body.set("profile", profile);
   }
   body.set("history", JSON.stringify(initialState.history));
+  if (initialState.hookOverrides !== undefined) {
+    body.set("hookOverrides", JSON.stringify(initialState.hookOverrides));
+  }
   body.set("message", initialState.message);
   appendAttachments(body, attachments);
   return request("api/sessions", sessionResponseSchema, {

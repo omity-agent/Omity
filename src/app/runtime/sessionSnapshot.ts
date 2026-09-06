@@ -7,9 +7,15 @@ import type { AppMcp } from "./mcp";
 import type { SessionSubmission } from "../attachments/contract";
 import { createAppSession } from "./sessionActions";
 import { createSessionDefinition } from "../../infrastructure/database/sessionDefinition";
+import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 
+export function sessionHookOptions(context: SettingsContext, profile?: string) {
+  return loadConfiguredHookRules(prioritizeSettingsProfile(context, profile)).map(
+    ({ id, enable, description }) => ({ description, enable: enable ?? true, id }),
+  );
+}
 export async function createSnapshotSession(options: {
   baseContext: SettingsContext;
   mcp: AppMcp;
@@ -30,6 +36,7 @@ export async function createSnapshotSession(options: {
       (sessionId, workspace) => {
         reservedSessionId = sessionId;
         return captureSessionSnapshot({
+          hookOverrides: options.submission.hookOverrides,
           mcp: options.mcp,
           profiles,
           root: options.root,
@@ -54,6 +61,7 @@ async function discardFailedSession(mcp: AppMcp, sessionId: string | undefined, 
   }
 }
 async function captureSessionSnapshot(options: {
+  hookOverrides?: Record<string, boolean>;
   mcp: AppMcp;
   profiles: string[];
   root: string;
@@ -67,9 +75,14 @@ async function captureSessionSnapshot(options: {
       settingsContext: options.settingsContext,
     }),
     mcp = await options.mcp.createSession(options.sessionId, options.profiles, options.workspace),
-    definition = createSessionDefinition(settings, mcp, {
-      cwd: options.workspace,
-      session: resolveSessionPaths(options.sessionId).dir,
-    });
+    definition = createSessionDefinition(
+      settings,
+      mcp,
+      {
+        cwd: options.workspace,
+        session: resolveSessionPaths(options.sessionId).dir,
+      },
+      options.hookOverrides,
+    );
   return { definition, settings };
 }

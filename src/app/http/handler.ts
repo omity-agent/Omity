@@ -24,6 +24,7 @@ import { writeReasoningTranslation } from "../reasoningTranslation";
 export type ApiController = Pick<
   AppController,
   | "bootstrap"
+  | "hookOptions"
   | "activateFileLink"
   | "sessions"
   | "pickWorkspace"
@@ -60,6 +61,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.use("/api/sessions/:sessionId/transcript", compress());
   app.get("/api/bootstrap", (c) => c.json(controller.bootstrap()));
+  app.get("/api/hooks", (c) => c.json({ hooks: controller.hookOptions(c.req.query("profile")) }));
   app.get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }));
   app.get("/api/events/state", (c) =>
     controller.events.streamState(c, () => controller.sessions()),

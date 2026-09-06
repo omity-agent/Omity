@@ -6,6 +6,7 @@ export interface InitialMessagePair {
 }
 export interface InitialSessionState {
   history: InitialMessagePair[];
+  hookOverrides?: Record<string, boolean>;
   message: string;
 }
 export function initialHistory(history: InitialMessagePair[]) {

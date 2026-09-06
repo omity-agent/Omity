@@ -14,8 +14,10 @@ import type { InitialSessionState } from "../../../initialState";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
 import { PendingAttachments } from "../Chat/Composer/attachments";
 import { ProfilePicker } from "./ProfilePicker";
+import { Toggles } from "./options/Toggles";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { claimShortId } from "../../../../infrastructure/randomId";
+import { useHookSelection } from "./options/selection";
 import { useNewSessionDraft } from "./draft";
 import { useSessionCreation } from "./creation";
 import { useTranslation } from "react-i18next";
@@ -46,6 +48,7 @@ export function NewSessionPage({
   onWorkspaceChange: (workspace: string) => void;
 }) {
   const { t } = useTranslation(),
+    hookSelection = useHookSelection(selectedProfile),
     {
       clear: clearDraft,
       content: message,
@@ -82,6 +85,8 @@ export function NewSessionPage({
       attachmentsRef,
       clearDraft,
       flushDraft,
+      hookOverrides: hookSelection.overrides,
+      hooksReady: hookSelection.ready,
       message,
       onCreate,
       pairs,
@@ -129,6 +134,7 @@ export function NewSessionPage({
               selected={selectedProfile}
               onChange={onProfileChange}
             />
+            <Toggles disabled={submitting} selection={hookSelection} />
           </div>
           <div className={messageFlow}>
             <MessageStack
@@ -149,7 +155,7 @@ export function NewSessionPage({
               <div className={composerActions}>
                 <div className={composerControls}>
                   <Button
-                    disabled={draftLoading || !complete || submitting}
+                    disabled={draftLoading || !hookSelection.ready || !complete || submitting}
                     type="submit"
                     variant="outline"
                   >

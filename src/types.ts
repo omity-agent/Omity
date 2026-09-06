@@ -47,6 +47,8 @@ export type HookWhen = "before" | "after";
 export type HookTrigger = `${string}:${HookWhen}`;
 export interface HookRule {
   id: string;
+  enable?: boolean;
+  description?: string;
   target: string;
   when: HookWhen;
   runLimit: number;

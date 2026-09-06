@@ -14,6 +14,7 @@ export interface MessageSubmission {
 }
 export interface SessionSubmission {
   workspace: string;
+  hookOverrides?: Record<string, boolean>;
   profile?: string;
   history: InitialMessagePair[];
   message: string;

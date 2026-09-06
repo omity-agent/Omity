@@ -25,6 +25,7 @@ const nonEmptyMessage = z.string().refine((value) => value.trim().length > 0),
   }),
   sessionFieldsSchema = z.object({
     history: historySchema,
+    hookOverrides: z.record(z.string().min(1), z.boolean()).optional(),
     message: nonEmptyMessage,
     profile: settingsProfileNameSchema.optional(),
     workspace: z.string().trim().min(1).max(32_767),
@@ -93,6 +94,9 @@ export async function readMessageForm(request: HonoRequest): Promise<MessageSubm
 export async function readSessionForm(request: HonoRequest): Promise<SessionSubmission> {
   const form = await readFormData(request),
     fields = {
+      hookOverrides: form.has("hookOverrides")
+        ? parseJsonField(form, "hookOverrides", "Hook 开关")
+        : undefined,
       message: singleText(form, "message"),
       profile: optionalText(form, "profile"),
       workspace: singleText(form, "workspace"),
@@ -104,7 +108,7 @@ export async function readSessionForm(request: HonoRequest): Promise<SessionSubm
   }
   const attachments = readAttachments(
     form,
-    new Set(["workspace", "profile", "message", "history"]),
+    new Set(["workspace", "profile", "message", "history", "hookOverrides"]),
   );
   return { ...result.data, attachments };
 }

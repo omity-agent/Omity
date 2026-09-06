@@ -1,4 +1,5 @@
 export type DomainErrorCode =
+  | "HOOK_SELECTION_INVALID"
   | "ASK_USER_ANSWER_INVALID"
   | "CONTROL_NOT_READY"
   | "SESSION_NOT_FOUND"

@@ -1,7 +1,7 @@
 import { type AppMcp, createAppMcp } from "../../src/app/runtime/mcp";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
 import { HumanMessage } from "@langchain/core/messages";
@@ -67,6 +67,10 @@ test("session snapshots lock only the model prefix while runtime configuration c
   const root = createTestDirectory("session-snapshot");
   roots.push(root);
   writeTestConfiguration(root, {
+    hooksYaml: `hooks:
+  - { id: notify, enable: true, target: agent, when: after, runLimit: -1, mode: silent, tool: ask_user__open_ended, args: {} }
+  - { id: review, enable: false, target: agent, when: before, runLimit: -1, mode: silent, tool: ask_user__choice, args: {} }
+`,
     modelYaml: `adapter: completions
 model: locked-model
 apiKeyEnv: INITIAL_KEY
@@ -93,6 +97,7 @@ timeoutMs: 1000
       submission: {
         attachments: [],
         history: [],
+        hookOverrides: { notify: false, review: true },
         message: "hello",
         workspace: workspacePath,
       },
@@ -128,6 +133,10 @@ toolboxes:
 `,
   );
   expect(definition.prefix.systemPrompt).toBe("locked prompt\n\nuse skills");
+  expect(definition.hookOverrides).toEqual({ notify: false, review: true });
+  expect(readFileSync(join(root, "settings", "hooks.yaml"), "utf8")).toContain(
+    "id: notify, enable: true",
+  );
   expect(definition.prefix.model).toEqual({
     adapter: "completions",
     baseURL: "https://locked.example.test",
@@ -142,6 +151,10 @@ toolboxes:
   });
   databases.push(prepared.db);
   expect(prepared.settings.agent.systemPrompt).toBe(definition.prefix.systemPrompt);
+  expect(prepared.settings.hooks.map(({ id, enable }) => ({ enable, id }))).toEqual([
+    { enable: false, id: "notify" },
+    { enable: true, id: "review" },
+  ]);
   expect(prepared.settings.model).toEqual({
     adapter: "completions",
     apiKeyEnv: "CURRENT_KEY",
