@@ -19,9 +19,14 @@ test("the new session action exposes a native link", () => {
   );
   expect(markup).toMatch(/<a[^>]+href="#\/new"/u);
 });
-test.each(["当前会话标题", "random-session-id", "<script>alert(1)</script>"])(
+test.each([
+  { displayed: "当前会话标题", title: "当前会话标题" },
+  { displayed: "RANDOM-SESSION-ID", title: "random-session-id" },
+  { displayed: "Fix API regression", title: "Fix API regression" },
+  { displayed: "&lt;script&gt;alert(1)&lt;/script&gt;", title: "<script>alert(1)</script>" },
+])(
   "sidebar renders the title while navigation retains the session ID: %s",
-  (title) => {
+  ({ displayed, title }) => {
     const [group] = groupSessions([
         {
           createdAt: 1,
@@ -37,7 +42,10 @@ test.each(["当前会话标题", "random-session-id", "<script>alert(1)</script>
         <SessionGroup group={group!} onSelect={noop} unreadIds={new Set()} />,
       );
     expect(markup).toContain('href="#/sessions/random-session-id"');
-    expect(markup).toContain(`title="${title.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}"`);
+    expect(markup).toContain(`title="${displayed}"`);
+    expect(markup).toContain(`aria-label="${displayed}"`);
+    expect(markup).toContain(`>${displayed}</span>`);
+    expect(markup).not.toContain(">#</span>");
     expect(markup).not.toContain("<script>");
   },
 );

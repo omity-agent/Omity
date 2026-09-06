@@ -21,6 +21,7 @@ import {
 } from "./groupStyles";
 import { navigateLink, pagePath } from "../../route";
 import { ChevronDown } from "lucide-react";
+import { OverflowCaption } from "./OverflowCaption";
 import { RelativeTime } from "./RelativeTime";
 import { Status } from "./Status";
 import { cx } from "styled-system/css";
@@ -41,6 +42,7 @@ interface SessionItemProps {
 }
 function SessionItem({ active, language, onSelect, session, unread }: SessionItemProps) {
   const { t } = useTranslation(),
+    title = session.title === session.id ? session.id.toUpperCase() : session.title,
     handleSelect = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => {
         navigateLink(event, () => onSelect(session.id));
@@ -51,17 +53,17 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
     <div className={cx("group", item, active && selected)}>
       <LinkButton
         aria-current={active ? "page" : undefined}
-        aria-label={unread ? `${session.title}, ${t("sessionStoppedUnread")}` : session.title}
+        aria-label={unread ? `${title}, ${t("sessionStoppedUnread")}` : title}
         className={row}
         href={pagePath({ id: session.id, kind: "session" })}
         onClick={handleSelect}
-        title={unread ? `${session.title} · ${t("sessionStoppedUnread")}` : session.title}
+        title={unread ? `${title} · ${t("sessionStoppedUnread")}` : title}
         variant="ghost"
       >
-        <span aria-hidden="true">#</span>
-        <span className={cx(caption, active && selectedCaption, unread && unreadCaption)}>
-          {session.title}
-        </span>
+        <OverflowCaption
+          className={cx(caption, active && selectedCaption, unread && unreadCaption)}
+          text={title}
+        />
         <Status compact error={session.error} status={session.status} />
         <RelativeTime className={time} locale={language} updatedAt={session.updatedAt} />
       </LinkButton>

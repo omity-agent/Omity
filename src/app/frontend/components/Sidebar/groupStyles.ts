@@ -81,7 +81,7 @@ export const row = css({
   display: "grid",
   fontSize: "xs",
   gap: "2",
-  gridTemplateColumns: "auto minmax(0, 1fr) auto auto",
+  gridTemplateColumns: "minmax(0, 1fr) auto auto",
   h: "8",
   justifyContent: "stretch",
   minH: { _coarse: "11" },
@@ -90,10 +90,12 @@ export const row = css({
   w: "full",
 });
 export const caption = css({
+  alignItems: "center",
   color: "mutedStrong",
+  display: "flex",
   letterSpacing: "0.04em",
+  minW: 0,
   overflow: "hidden",
-  textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
 export const selectedCaption = css({
@@ -105,6 +107,7 @@ export const unreadCaption = css({
   _after: {
     color: "statusModel",
     content: '"●"',
+    flexShrink: 0,
     fontSize: "2xs",
     ml: "1.5",
   },
