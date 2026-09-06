@@ -1,7 +1,7 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import { type SessionInfo, deleteSession, pickWorkspacePath, setControl } from "./services/client";
 import { layout, main, sidebar } from "./design";
-import { readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
+import { pageSessionId, readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
 import { removeSession, useBootstrap } from "./services/queries";
 import { AccessGate } from "./components/Access/AccessGate";
 import { ChatPage } from "./components/Chat/ChatPage";
@@ -61,7 +61,7 @@ function AuthenticatedApp() {
       navigate,
       page: pendingFork,
       snapshotThrottleMs: bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
-      sourceSessionId: sourceSession?.id,
+      sourceSessionId: pageSessionId(currentPage),
     }),
     {
       create: createNewSession,

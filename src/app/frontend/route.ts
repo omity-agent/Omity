@@ -94,6 +94,12 @@ export function sessionPage(id: string): Page {
 export function forkPage(sourceSessionId: string, beforeMessageId: number): ForkPage {
   return { beforeMessageId, kind: "fork", sourceSessionId };
 }
+export function pageSessionId(page: Page) {
+  if (page.kind === "new") {
+    return undefined;
+  }
+  return page.kind === "session" ? page.id : page.sourceSessionId;
+}
 export function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
   if (!ready) {
     return page;
@@ -101,7 +107,7 @@ export function resolvePage(page: Page, sessions: { id: string }[], ready: boole
   if (page.kind === "new") {
     return page;
   }
-  const sessionId = page.kind === "session" ? page.id : page.sourceSessionId;
+  const sessionId = pageSessionId(page);
   return sessions.some((session) => session.id === sessionId) ? page : ({ kind: "new" } as const);
 }
 export function usePageNavigation(page: Page, currentPage: Page, setPage: (page: Page) => void) {

@@ -1,6 +1,9 @@
 /* oxlint-disable typescript/no-unsafe-type-assertion -- The fixture only implements the fitted element's geometry and style. */
 import { expect, test } from "bun:test";
-import { fitSourceHeight, observeSourceSpace } from "../../../src/app/frontend/components/Markdown/fittedSource";
+import {
+  fitSourceHeight,
+  observeSourceSpace,
+} from "../../../src/app/frontend/components/Markdown/fittedSource";
 
 test("fits rendered source before paint without publishing a provisional line height", () => {
   const writes: string[] = [];
@@ -29,8 +32,8 @@ test("source fitting follows parent height growth even when its width is unchang
   let resize: ResizeObserverCallback | undefined,
     disconnected = false;
   class Observer {
-    constructor(callback: ResizeObserverCallback) {
-      resize = callback;
+    constructor(onResize: ResizeObserverCallback) {
+      resize = onResize;
     }
     observe() {}
     disconnect() {
@@ -43,11 +46,14 @@ test("source fitting follows parent height growth even when its width is unchang
         getBoundingClientRect: () => ({ height: 200, width: 400 }),
       } as unknown as HTMLElement,
       source = {
-        style: { lineHeight: "10px" },
         getBoundingClientRect: () => ({ height: 20 }),
+        style: { lineHeight: "10px" },
       } as unknown as HTMLElement,
       stop = observeSourceSpace(parent, source);
-    resize?.(
+    if (!resize) {
+      throw new Error("ResizeObserver 替身未收到回调");
+    }
+    resize(
       [{ contentRect: { height: 400, width: 400 } }] as unknown as ResizeObserverEntry[],
       {} as ResizeObserver,
     );

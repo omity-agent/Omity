@@ -4,6 +4,8 @@ import { Body } from "../../../src/app/frontend/components/Transcript/Body";
 import { renderToStaticMarkup } from "react-dom/server";
 import { segmentTranscript } from "../../../src/app/frontend/components/Transcript/segments";
 
+const ignoreToolCancellation = () => Promise.resolve();
+
 function assistant(parts: TimelinePart[]): TimelineMessage {
   return { content: "answer", createdAt: 0, id: 1, key: "assistant-1", parts, role: "assistant" };
 }
@@ -43,7 +45,7 @@ test("segment identity is namespaced by message", () => {
 test("a mounted body does not render the other 161 parts of its message", () => {
   const message = assistant(Array.from({ length: 162 }, (_, index) => content(index))),
     html = renderToStaticMarkup(
-      <Body item={message} partIndex={80} onCancelTool={async () => {}} />,
+      <Body item={message} partIndex={80} onCancelTool={ignoreToolCancellation} />,
     );
   expect(html).toContain("fragment_80_end");
   expect(html).not.toContain("fragment_79_end");
