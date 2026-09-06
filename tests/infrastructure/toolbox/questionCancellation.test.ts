@@ -42,11 +42,12 @@ async function rejection(promise: Promise<unknown>) {
   }
   throw new Error("预期问题被取消");
 }
-test("共享问题契约同时覆盖两种工具并拒绝空白字段", () => {
+test("共享问题契约校验传输类型，不重复施加工具配置中的长度限制", () => {
   expect(askUserRequestSchema.parse(question)).toEqual(question);
   expect(
-    askUserRequestSchema.safeParse({ ...question, kind: "choice", multiple: false, options: [""] })
+    askUserRequestSchema.safeParse({ ...question, kind: "choice", multiple: false, options: [1] })
       .success,
   ).toBeFalse();
-  expect(askUserRequestSchema.safeParse({ ...question, question: "" }).success).toBeFalse();
+  expect(askUserRequestSchema.safeParse({ ...question, question: 1 }).success).toBeFalse();
+  expect(askUserRequestSchema.safeParse({ ...question, question: "" }).success).toBeTrue();
 });

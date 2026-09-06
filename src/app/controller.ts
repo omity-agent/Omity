@@ -7,20 +7,19 @@ import {
   availableSettingsProfiles,
   createSettingsContext,
 } from "../infrastructure/configuration/settings/context";
-import { controllerHostEvents, controllerSessionInfo } from "./controllerHostEvents";
+import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { AppEvents } from "./events";
-import { AppHosts } from "./hosts";
+import type { AppHosts } from "./hosts";
 import type { AppInstanceOwner } from "./runtime/instanceLock";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
-import { createAppMcp } from "./runtime/toolResources";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
@@ -49,22 +48,16 @@ export class AppController {
     this.registry = new AppRegistry();
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
-    const owner = options.owner ?? appOwner(),
-      mcp = createAppMcp(appRoot, this.settings.logging.level, this.settingsContext, this.askUser);
-    this.hosts = new AppHosts(
-      appRoot,
-      controllerHostEvents(
-        this.events,
-        (id) => this.sessionInfo(this.registry.require(id)),
-        (id) => {
-          this.publishChange(id);
-        },
-      ),
-      owner,
-      this.settings.host.shutdownTimeoutMs,
-      mcp,
-      this.settingsContext,
-    );
+    this.hosts = createControllerHosts({
+      askUser: this.askUser,
+      changed: (id) => this.publishChange(id),
+      context: this.settingsContext,
+      events: this.events,
+      owner: options.owner ?? appOwner(),
+      root: appRoot,
+      sessionInfo: (id) => this.sessionInfo(this.registry.require(id)),
+      settings: this.settings,
+    });
   }
   close = () => this.hosts.close();
   bootstrap() {

@@ -43,11 +43,14 @@ export function omitDisabledToolboxConfiguration(value: unknown): unknown {
   };
 }
 function disabledToolboxToolNames(value: Record<string, unknown>) {
-  const { toolboxes } = value,
-    askUser = isRecord(toolboxes) ? toolboxes["ask_user"] : undefined;
-  return isRecord(askUser) && askUser["enabled"] === false
-    ? new Set(["ask_user__choice", "ask_user__open_ended"])
-    : new Set<string>();
+  const { toolboxes } = value;
+  return new Set(
+    (isRecord(toolboxes) ? Object.values(toolboxes) : []).flatMap((tool) =>
+      isRecord(tool) && tool["enabled"] === false && typeof tool["name"] === "string"
+        ? [tool["name"]]
+        : [],
+    ),
+  );
 }
 function collectToolboxAliases(value: unknown, disabled: Set<string>) {
   const aliases = new Set(disabled);

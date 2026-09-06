@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+import { SessionGroup } from "../../../src/app/frontend/components/Sidebar/SessionGroup";
 import { Sidebar } from "../../../src/app/frontend/components/Sidebar";
+import { groupSessions } from "../../../src/app/frontend/components/Sidebar/sessions";
 import { navigateLink } from "../../../src/app/frontend/route";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -17,6 +19,28 @@ test("the new session action exposes a native link", () => {
   );
   expect(markup).toMatch(/<a[^>]+href="#\/new"/u);
 });
+test.each(["当前会话标题", "random-session-id", "<script>alert(1)</script>"])(
+  "sidebar renders the title while navigation retains the session ID: %s",
+  (title) => {
+    const [group] = groupSessions([
+      {
+        createdAt: 1,
+        error: null,
+        id: "random-session-id",
+        status: "idle",
+        title,
+        updatedAt: 1,
+        workspace: "F:/workspace",
+      },
+    ]);
+    const markup = renderToStaticMarkup(
+      <SessionGroup group={group!} onSelect={noop} unreadIds={new Set()} />,
+    );
+    expect(markup).toContain('href="#/sessions/random-session-id"');
+    expect(markup).toContain(`title="${title.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}"`);
+    expect(markup).not.toContain("<script>");
+  },
+);
 test.each([
   { button: 1 },
   { ctrlKey: true },

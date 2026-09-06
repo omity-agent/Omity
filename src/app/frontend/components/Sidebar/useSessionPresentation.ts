@@ -1,6 +1,6 @@
-import { sessionLabel, statusLabelKey } from "./sessions";
 import { useEffect, useMemo } from "react";
 import type { SessionInfo } from "../../services/client";
+import { statusLabelKey } from "./sessions";
 import { useTranslation } from "react-i18next";
 
 export function useSessionPresentation(
@@ -24,7 +24,7 @@ export function useSessionPresentation(
   useEffect(() => {
     const brand = t("brand");
     document.title = activeSession
-      ? `${t(statusLabelKey(activeSession.status))} · #${sessionLabel(activeSession.id)} · ${brand}`
+      ? `${t(statusLabelKey(activeSession.status))} · ${activeSession.title} · ${brand}`
       : brand;
     return () => {
       document.title = brand;

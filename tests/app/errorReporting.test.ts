@@ -166,6 +166,7 @@ function session(error: ErrorDetails | null): SessionInfo {
     error,
     id: "session",
     status: error ? "error" : "idle",
+    title: "session",
     updatedAt: 1,
     workspace: "F:/workspace",
   };

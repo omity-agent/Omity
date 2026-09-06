@@ -81,5 +81,5 @@ function session(
   updatedAt: number,
   createdAt = updatedAt,
 ): SessionInfo {
-  return { createdAt, error: null, id, status, updatedAt, workspace };
+  return { createdAt, error: null, id, status, title: id, updatedAt, workspace };
 }

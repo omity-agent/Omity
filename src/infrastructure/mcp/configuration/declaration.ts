@@ -1,3 +1,4 @@
+import { builtInPreferencesSchema } from "../../toolbox/metadata";
 import { normalizeMcpServers } from "./connections";
 import { z } from "zod";
 
@@ -7,12 +8,7 @@ const nonEmpty = z.string().min(1),
   }),
   toolName = nonEmpty.refine((name) => name !== "agent", {
     error: "MCP 工具不能命名为 agent",
-  }),
-  toolboxesSchema = z
-    .strictObject({
-      ask_user: z.strictObject({ enabled: z.boolean() }).default({ enabled: true }),
-    })
-    .default({ ask_user: { enabled: true } });
+  });
 export const toolboxSchema = z.strictObject({
   freeformToolInputs: names.nullish().transform((value) => value ?? []),
   mcpServers: z.record(z.string(), z.unknown()).default({}).transform(normalizeMcpServers),
@@ -32,5 +28,5 @@ export const toolboxSchema = z.strictObject({
     .record(z.string(), toolName)
     .nullish()
     .transform((value) => value ?? {}),
-  toolboxes: toolboxesSchema,
+  toolboxes: builtInPreferencesSchema.default({}),
 });

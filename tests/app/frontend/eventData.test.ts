@@ -12,6 +12,7 @@ test("state events require an epoch and sequence ID", () => {
     error: null,
     id: "session",
     status: "idle",
+    title: "session",
     updatedAt: 1,
     workspace: "F:/workspace",
   });
@@ -19,6 +20,7 @@ test("state events require an epoch and sequence ID", () => {
   expect(() => readSessionEvent(message(data, "4"))).toThrow("ID 无效");
   expect(readSessionEvent(message(data, "123e4567-e89b-42d3-a456-426614174000:1"))).toMatchObject({
     id: "session",
+    title: "session",
   });
 });
 test("state events validate structured session errors", () => {

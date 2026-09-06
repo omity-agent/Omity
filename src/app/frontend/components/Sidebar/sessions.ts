@@ -35,9 +35,6 @@ export function workspaceLabel(workspace: string) {
   const parts = workspace.split(/[\\/]+/u).filter(Boolean);
   return parts.at(-1) ?? workspace;
 }
-export function sessionLabel(id: string) {
-  return id.slice(-6).toUpperCase();
-}
 export function formatUpdatedAt(updatedAt: number, locale: string, now = Date.now()) {
   const elapsedSeconds = Math.max(0, Math.floor(now / 1000) - updatedAt),
     formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });

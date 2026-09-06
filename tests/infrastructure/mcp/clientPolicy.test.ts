@@ -79,10 +79,7 @@ test("configured MCP cwd overrides the session workspace default", async () => {
   mkdirSync(workspace);
   writeFileSync(
     join(settings, "toolbox.yaml"),
-    `toolboxes:
-  ask_user:
-    enabled: false
-mcpServers:
+    `mcpServers:
   default:
     command: ${JSON.stringify(process.execPath)}
     env:

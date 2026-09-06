@@ -1,17 +1,21 @@
 import { type AskUserRequest, createAskUserTools } from "./askUser";
+import type { BuiltInPreferences } from "./metadata";
+import { createTitleTool } from "./updateTitle";
 
 export interface BuiltInToolOptions {
   askUser?: (request: AskUserRequest, sessionId: string, signal?: AbortSignal) => Promise<unknown>;
+  sessionChanged?: (sessionId: string) => void;
 }
-export function loadBuiltInTools(askUserEnabled: boolean, options: BuiltInToolOptions) {
-  if (!askUserEnabled) {
-    return [];
-  }
-  return createAskUserTools((request, config) =>
+export function loadBuiltInTools(settings: BuiltInPreferences, options: BuiltInToolOptions) {
+  const tools = createAskUserTools(settings, (request, config) =>
     options.askUser
       ? options.askUser(request, requireSessionId(config), config.signal)
       : Promise.reject(new Error("ask_user 工具没有可用的用户交互通道")),
   );
+  if (settings.update_title?.enabled) {
+    tools.push(createTitleTool(settings.update_title, options.sessionChanged));
+  }
+  return tools;
 }
 function requireSessionId(config: { configurable?: Record<string, unknown> }) {
   const sessionId = config.configurable?.["sessionId"];

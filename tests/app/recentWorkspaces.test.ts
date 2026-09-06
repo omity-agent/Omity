@@ -13,6 +13,7 @@ function session(workspace: string, index: number): SessionInfo {
     error: null,
     id: index.toString(),
     status: "idle",
+    title: index.toString(),
     updatedAt: index,
     workspace,
   };

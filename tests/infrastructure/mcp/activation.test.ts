@@ -3,6 +3,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
+import { defaultBuiltIns } from "../../support/builtins";
 import { join } from "node:path";
 import { loadMcp } from "../../../src/infrastructure/mcp/tools/catalog";
 import { normalizeMcpServers } from "../../../src/infrastructure/mcp/configuration/connections";
@@ -100,11 +101,7 @@ freeformToolInputs: [open, search]
       toolNameOverrides: {
         web__search: "search",
       },
-      toolboxes: {
-        ask_user: {
-          enabled: true,
-        },
-      },
+      toolboxes: {},
     });
   } finally {
     rmSync(root, { recursive: true });
@@ -116,10 +113,7 @@ test("disabled MCP servers are not started", async () => {
   mkdirSync(settings);
   writeFileSync(
     join(settings, "toolbox.yaml"),
-    `toolboxes:
-  ask_user:
-    enabled: false
-mcpServers:
+    `mcpServers:
   disabled:
     enabled: false
     command: \${MISSING_DISABLED_MCP_COMMAND}
@@ -138,12 +132,17 @@ mcpServers:
   }
 });
 test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
+  const settings = defaultBuiltIns(),
+    toolboxes = {
+      choice: { ...settings.choice!, enabled: false },
+      open_ended: { ...settings.open_ended!, enabled: false },
+    };
   expect(
     parseMcpConfiguration(
       {
         toolDescriptionOverrides: { ask_user__open_ended: "open.md" },
         toolNameOverrides: { ask_user__choice: "pick" },
-        toolboxes: { ask_user: { enabled: false } },
+        toolboxes,
       },
       "toolbox.yaml",
     ),
@@ -153,6 +152,6 @@ test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
     stdio: { restart: { delayMs: 1000, maxAttempts: 3 } },
     toolDescriptionOverrides: {},
     toolNameOverrides: {},
-    toolboxes: { ask_user: { enabled: false } },
+    toolboxes,
   });
 });

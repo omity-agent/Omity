@@ -32,6 +32,7 @@ test("frontend sends individual Hook choices through multipart session creation"
       error: null,
       id: "new-session",
       status: "idle" as const,
+      title: "new-session",
       updatedAt: 1,
       workspace: "F:/workspace",
     },

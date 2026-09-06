@@ -15,6 +15,7 @@ import { userDataDirectory } from "../infrastructure/configuration/settings/file
 
 export interface RegisteredSession {
   id: string;
+  title: string;
   workspace: string;
   profiles: string[];
   createdAt: number;
@@ -26,6 +27,7 @@ export interface RegisteredSession {
 }
 interface SessionRow {
   id: string;
+  title: string;
   workspace: string;
   profiles_json: string;
   created_at: number;
@@ -36,7 +38,7 @@ interface SessionRow {
   error: string | null;
 }
 const sessionSelect = `
-	  SELECT s.id, s.workspace, s.profiles_json, s.created_at,
+	  SELECT s.id, s.title, s.workspace, s.profiles_json, s.created_at,
     MAX(
       s.updated_at,
       COALESCE(
@@ -135,6 +137,7 @@ function toSession(row: SessionRow): RegisteredSession {
     paused: row.paused === 1,
     profiles: settingsProfileNamesSchema.parse(JSON.parse(row.profiles_json) as unknown),
     queueRunning: row.queue_running === 1,
+    title: row.title,
     updatedAt: row.updated_at,
     workspace: row.workspace,
   };

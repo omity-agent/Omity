@@ -1,8 +1,8 @@
 import { type SessionDefinition, emptySessionDefinition } from "../sessionDefinition";
+import { eq, sql } from "drizzle-orm";
 import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
-import { eq } from "drizzle-orm";
 import { sessionDatabase } from "../connection";
 import { sessions } from "../schema";
 
@@ -27,6 +27,7 @@ export function createSessionRecord(
         definition,
         id: sessionId,
         profiles: [...profiles],
+        title: sessionId,
         transcriptRevision: 0,
         updatedAt: now,
         workspace,
@@ -50,6 +51,14 @@ export function hasSessionRecord(db: Database, sessionId: string) {
       .where(eq(sessions.id, sessionId))
       .get(),
   );
+}
+export function writeTitleRecord(db: Database, sessionId: string, title: string) {
+  requireSessionRecord(db, sessionId);
+  sessionDatabase(db)
+    .update(sessions)
+    .set({ title, updatedAt: sql`MAX(${sessions.updatedAt}, unixepoch())` })
+    .where(eq(sessions.id, sessionId))
+    .run();
 }
 export function requireSessionRecord(db: Database, sessionId: string) {
   if (!hasSessionRecord(db, sessionId)) {

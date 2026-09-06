@@ -36,7 +36,7 @@ export function parseMcpConfiguration(parsed: unknown, path: string) {
 }
 export type McpConfiguration = ReturnType<typeof parseMcpConfiguration>;
 export function emptyMcpConfiguration(): McpConfiguration {
-  return parseMcpConfiguration({ toolboxes: { ask_user: { enabled: false } } }, "内置空 MCP 配置");
+  return parseMcpConfiguration({}, "内置空 MCP 配置");
 }
 function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
   if (

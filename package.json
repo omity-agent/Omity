@@ -47,7 +47,7 @@
     "dompurify": "latest",
     "dotenv": "latest",
     "drizzle-orm": "rc",
-    "es-toolkit": "latest",
+    "es-toolkit": "dev",
     "fast-json-stable-stringify": "latest",
     "gpt-tokenizer": "latest",
     "gray-matter": "latest",

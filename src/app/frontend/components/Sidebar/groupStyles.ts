@@ -89,18 +89,19 @@ export const row = css({
   textAlign: "left",
   w: "full",
 });
-export const fingerprint = css({
+export const caption = css({
   color: "mutedStrong",
   letterSpacing: "0.04em",
   overflow: "hidden",
   textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 });
-export const selectedFingerprint = css({
+export const selectedCaption = css({
   color: "text",
   fontWeight: "bold",
   letterSpacing: "0.08em",
 });
-export const unreadFingerprint = css({
+export const unreadCaption = css({
   _after: {
     color: "statusModel",
     content: '"●"',

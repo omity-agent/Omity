@@ -84,6 +84,7 @@ test("session metadata retains hook switches and validates profile paths", async
           error: null,
           id: "test",
           status: "idle",
+          title: "test",
           updatedAt: 1,
           workspace: "F:/workspace",
         });

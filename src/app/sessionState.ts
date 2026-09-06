@@ -6,6 +6,7 @@ import type { SessionStatus } from "../types";
 
 export interface SessionInfo {
   id: string;
+  title: string;
   workspace: string;
   createdAt: number;
   updatedAt: number;
@@ -23,6 +24,7 @@ export function projectSession(
     askUser,
     createdAt: session.createdAt,
     id: session.id,
+    title: session.title,
     updatedAt: session.updatedAt,
     workspace: session.workspace,
     ...resolveSessionState(session, activity, hostError),

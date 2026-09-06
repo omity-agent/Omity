@@ -75,7 +75,7 @@ async function loadMcpConfiguration(
   snapshot?: McpToolSnapshot,
 ) {
   const names = Object.keys(configuration.mcpServers),
-    builtInTools = loadBuiltInTools(configuration.toolboxes.ask_user.enabled, options);
+    builtInTools = loadBuiltInTools(configuration.toolboxes, options);
   validateConfiguredServers(
     configuration,
     names,

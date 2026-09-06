@@ -94,6 +94,7 @@ test("session creation validates and forwards the complete initial state", async
           error: null,
           id: "new-session",
           status: "idle",
+          title: "new-session",
           updatedAt: 1,
           workspace: "F:/workspace",
         });

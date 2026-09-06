@@ -12,6 +12,7 @@ test("fork creation is exposed only through the explicit materialization endpoin
           error: null,
           id: "materialized",
           status: "idle",
+          title: "materialized",
           updatedAt: 1,
           workspace: "F:/workspace",
         });

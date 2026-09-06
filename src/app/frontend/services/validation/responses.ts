@@ -17,6 +17,7 @@ export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
   error: errorDetailsSchema.nullable(),
   id: z.string(),
   status: sessionStatusSchema,
+  title: z.string(),
   updatedAt: integer,
   workspace: z.string(),
 });

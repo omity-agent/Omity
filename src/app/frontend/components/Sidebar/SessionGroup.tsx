@@ -1,11 +1,11 @@
 import { Button, LinkButton } from "../ParkUI";
-import { type SessionGroup as Group, isRunning, sessionLabel, workspaceLabel } from "./sessions";
+import { type SessionGroup as Group, isRunning, workspaceLabel } from "./sessions";
 import { type MouseEvent, useCallback, useState } from "react";
 import {
+  caption,
   chevron,
   collapsedChevron,
   counts,
-  fingerprint,
   header,
   historyToggle,
   item,
@@ -13,10 +13,10 @@ import {
   row,
   runningCount,
   selected,
-  selectedFingerprint,
+  selectedCaption,
   sessions,
   time,
-  unreadFingerprint,
+  unreadCaption,
   workspaceName,
 } from "./groupStyles";
 import { navigateLink, pagePath } from "../../route";
@@ -51,18 +51,16 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
     <div className={cx("group", item, active && selected)}>
       <LinkButton
         aria-current={active ? "page" : undefined}
-        aria-label={unread ? `${session.id}, ${t("sessionStoppedUnread")}` : session.id}
+        aria-label={unread ? `${session.title}, ${t("sessionStoppedUnread")}` : session.title}
         className={row}
         href={pagePath({ id: session.id, kind: "session" })}
         onClick={handleSelect}
-        title={unread ? `${session.id} · ${t("sessionStoppedUnread")}` : session.id}
+        title={unread ? `${session.title} · ${t("sessionStoppedUnread")}` : session.title}
         variant="ghost"
       >
         <span aria-hidden="true">#</span>
-        <span
-          className={cx(fingerprint, active && selectedFingerprint, unread && unreadFingerprint)}
-        >
-          {sessionLabel(session.id)}
+        <span className={cx(caption, active && selectedCaption, unread && unreadCaption)}>
+          {session.title}
         </span>
         <Status compact error={session.error} status={session.status} />
         <RelativeTime className={time} locale={language} updatedAt={session.updatedAt} />

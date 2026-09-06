@@ -16,6 +16,7 @@ import { prepareHostSession } from "../../src/runtime/execution/sessionPreparati
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/sessions";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";
+import { writeToolboxConfiguration } from "../support/builtins";
 
 const roots: string[] = [],
   databases: AgentDatabase[] = [],
@@ -82,10 +83,7 @@ timeoutMs: 1000
 `,
     systemPrompt: "locked prompt",
   });
-  writeFileSync(
-    join(root, "settings", "toolbox.yaml"),
-    "toolboxes:\n  ask_user:\n    enabled: true\n",
-  );
+  writeToolboxConfiguration(root);
   const workspacePath = join(root, "workspace");
   mkdirSync(workspacePath);
   const context = createSettingsContext(root, join(root, "user-settings")),
@@ -121,17 +119,9 @@ retryDelayMs: 2500
 timeoutMs: 3500
 `,
   );
-  writeFileSync(
-    join(root, "settings", "toolbox.yaml"),
-    `stdio:
-  restart:
-    delayMs: 4321
-    maxAttempts: 7
-toolboxes:
-  ask_user:
-    enabled: true
-`,
-  );
+  writeToolboxConfiguration(root, {
+    stdio: { restart: { delayMs: 4321, maxAttempts: 7 } },
+  });
   expect(definition.prefix.systemPrompt).toBe("locked prompt\n\nuse skills");
   expect(definition.hookOverrides).toEqual({ notify: false, review: true });
   expect(readFileSync(join(root, "settings", "hooks.yaml"), "utf8")).toContain(

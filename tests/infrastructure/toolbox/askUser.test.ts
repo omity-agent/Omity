@@ -2,10 +2,11 @@ import { expect, test } from "bun:test";
 import { AskUserRuntime } from "../../../src/infrastructure/toolbox/runtime";
 import { ToolMessage } from "@langchain/core/messages";
 import { createAskUserTools } from "../../../src/infrastructure/toolbox/askUser";
+import { defaultBuiltIns } from "../../support/builtins";
 
 test("ask_user tools keep their schemas and pass the tool call context", async () => {
   const requests: unknown[] = [],
-    tools = createAskUserTools(async (request, config) => {
+    tools = createAskUserTools(defaultBuiltIns(), async (request, config) => {
       requests.push({ request, sessionId: config.configurable?.["sessionId"] });
       return { accepted: true };
     }),
@@ -14,6 +15,8 @@ test("ask_user tools keep their schemas and pass the tool call context", async (
   if (!choice || !openEnded) {
     throw new Error("ask_user 工具集缺少内置工具");
   }
+  expect(choice.description).toBe("");
+  expect(openEnded.description).toBe("");
   const choiceOutput = await choice.invoke(
     { multiple: true, options: ["A", "B"], question: "选择" },
     {
