@@ -1,4 +1,4 @@
-import { ChevronRight, type LucideIcon } from "lucide-react";
+import { ChevronUp, type LucideIcon } from "lucide-react";
 import { Collapsible } from "@ark-ui/react/collapsible";
 import type { ReactNode } from "react";
 import { sva } from "styled-system/css";
@@ -19,7 +19,7 @@ const frame = sva({
       overflow: "hidden",
     },
     disclosure: {
-      'button[data-state="open"] &': { transform: "rotate(90deg)" },
+      'button[data-state="open"] &': { transform: "rotate(180deg)" },
       color: "muted",
       flexShrink: 0,
       transition: "transform 120ms ease",
@@ -36,7 +36,6 @@ const frame = sva({
     icon: { flexShrink: 0 },
     root: {
       "& pre": { m: 0, maxW: "full" },
-      borderLeftWidth: "2px",
       color: "muted",
       fontSize: "sm",
       maxW: "full",
@@ -77,11 +76,9 @@ const frame = sva({
     tone: {
       model: {
         icon: { color: "statusModel" },
-        root: { borderLeftColor: "statusModel" },
       },
       tool: {
         icon: { color: "statusTool" },
-        root: { borderLeftColor: "statusTool" },
       },
     },
   },
@@ -115,15 +112,15 @@ export function Frame({
       lazyMount
       unmountOnExit
     >
+      <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
       <div className={classes.header}>
         <Collapsible.Trigger aria-label={label} className={classes.trigger}>
-          <ChevronRight className={classes.disclosure} size={12} />
+          <ChevronUp aria-hidden className={classes.disclosure} size={12} />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
         </Collapsible.Trigger>
         {accessory ? <div className={classes.accessory}>{accessory}</div> : null}
       </div>
-      <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
     </Collapsible.Root>
   );
 }
