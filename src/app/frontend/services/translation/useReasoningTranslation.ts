@@ -1,9 +1,11 @@
 import type { ReasoningTranslation, TimelineMessage, TimelinePart } from "../../../timeline";
 import { browserTranslationSupported, preferredTranslationLanguage } from "./browser";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef } from "react";
 import { ReasoningTranslationCoordinator } from "./coordinator";
 import { reportError } from "../errors";
 import { saveReasoningTranslation } from "../client";
+import { transcriptKey } from "../transcript/query";
 import { useTranslation } from "react-i18next";
 
 interface TranslationSettings {
@@ -11,20 +13,22 @@ interface TranslationSettings {
   highConfidenceThreshold: number;
   minimumIntervalMs: number;
 }
-interface LiveTranslation {
-  sessionId: string;
-  value: ReasoningTranslation;
-}
 let unsupportedWarningPrinted = false;
+export const reasoningTranslationKey = (sessionId: string) =>
+  [...transcriptKey(sessionId), "reasoningTranslation"] as const;
 export function useReasoningTranslation(
   sessionId: string,
   view: TimelineMessage[],
   settings?: TranslationSettings,
 ) {
   const { t } = useTranslation(),
+    queryClient = useQueryClient(),
     coordinator = useRef<ReasoningTranslationCoordinator | undefined>(undefined),
     part = useMemo(() => translationCandidate(view), [view]),
-    [liveTranslation, setLiveTranslation] = useState<LiveTranslation | undefined>();
+    { data: liveTranslation } = useQuery<ReasoningTranslation>({
+      queryFn: skipToken,
+      queryKey: reasoningTranslationKey(sessionId),
+    });
   useEffect(() => {
     coordinator.current?.close();
     coordinator.current = undefined;
@@ -40,7 +44,7 @@ export function useReasoningTranslation(
         highConfidenceThreshold: settings.highConfidenceThreshold,
         minimumIntervalMs: settings.minimumIntervalMs,
         onTranslation: (result) => {
-          setLiveTranslation({ sessionId, value: result });
+          queryClient.setQueryData(reasoningTranslationKey(sessionId), result);
         },
         persist: (result) => saveReasoningTranslation(sessionId, result),
         reportError,
@@ -54,6 +58,7 @@ export function useReasoningTranslation(
       }
     };
   }, [
+    queryClient,
     sessionId,
     settings?.enabled,
     settings?.highConfidenceThreshold,
@@ -66,10 +71,10 @@ export function useReasoningTranslation(
     }
   }, [part]);
   return settings?.enabled &&
-    liveTranslation?.sessionId === sessionId &&
+    liveTranslation &&
     part &&
-    isUsableLiveTranslation(liveTranslation.value, part)
-    ? liveTranslation.value
+    isUsableLiveTranslation(liveTranslation, part)
+    ? liveTranslation
     : undefined;
 }
 function warnUnsupportedBrowser(message: string) {
