@@ -1,4 +1,4 @@
-import { type Virtualizer, elementScroll } from "@tanstack/react-virtual";
+import { type VirtualItem, type Virtualizer, elementScroll } from "@tanstack/react-virtual";
 
 export function measureItemHeight(element: Element, entry: ResizeObserverEntry | undefined) {
   if (entry) {
@@ -21,4 +21,18 @@ export function scrollWithMeasuredExtent<T extends HTMLElement>(
     container.style.height = `${instance.getTotalSize().toString()}px`;
   }
   elementScroll(offset, options, instance);
+}
+export function shouldAnchorResize(
+  item: VirtualItem,
+  instance: Virtualizer<HTMLElement, Element>,
+  anchorEnd: boolean,
+) {
+  const offset = (instance.scrollOffset ?? 0) + instance.scrollAdjustments;
+  if (!instance.itemSizeCache.has(item.key)) {
+    return item.start < offset;
+  }
+  if (anchorEnd && item.end > offset && item.start < offset + (instance.scrollRect?.height ?? 0)) {
+    return true;
+  }
+  return item.end <= offset && instance.scrollDirection !== "backward";
 }

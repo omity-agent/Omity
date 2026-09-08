@@ -11,6 +11,7 @@ import { css, cx } from "styled-system/css";
 import {
   measureItemHeight,
   scrollWithMeasuredExtent,
+  shouldAnchorResize,
 } from "../../services/scheduling/scrollGeometry";
 import { DisclosureProvider } from "./disclosures";
 import type { TimelineMessage } from "../../../timeline";
@@ -65,6 +66,11 @@ export function Transcript({
       scrollToFn: scrollWithMeasuredExtent,
       useFlushSync: false,
     });
+  virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (item, _delta, instance) => {
+    const segment = segments[item.index]!,
+      part = segment.partIndex === undefined ? undefined : segment.message.parts[segment.partIndex];
+    return shouldAnchorResize(item, instance, part?.type === "reasoning" || part?.type === "tool");
+  };
   useLayoutEffect(() => {
     virtualizer.scrollToEnd();
   }, [virtualizer]);
