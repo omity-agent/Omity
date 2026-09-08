@@ -16,6 +16,6 @@ export function observeSourceSpace(parent: HTMLElement, element: HTMLElement) {
   observer.observe(parent);
   return () => observer.disconnect();
 }
-export function sourceVisualLines(measuredHeight: number) {
+function sourceVisualLines(measuredHeight: number) {
   return Math.max(1, Math.round(measuredHeight));
 }

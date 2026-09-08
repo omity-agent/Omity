@@ -5,6 +5,7 @@ import { createSettingsContext } from "../../src/infrastructure/configuration/se
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
 import { parseHookRules } from "../../src/infrastructure/configuration/hookRules";
+import { resolveHookSelection } from "../../src/app/frontend/components/NewSession/options/selection";
 import { sessionHookOptions } from "../../src/app/runtime/sessionSnapshot";
 import { stringify } from "yaml";
 
@@ -17,15 +18,6 @@ const rule: HookRule = {
   tool: "notify",
   when: "after",
 };
-test("Hook enable and description are optional and preserve explicit values", () => {
-  expect(parseHookRules({ hooks: [rule] })).toEqual([rule]);
-  expect(
-    parseHookRules({ hooks: [{ ...rule, description: "完成后通知", enable: false }] }),
-  ).toEqual([{ ...rule, description: "完成后通知", enable: false }]);
-  expect(
-    parseHookRules({ hooks: [{ ...rule, description: "", enable: true }] })[0]?.enable,
-  ).toBeTrue();
-});
 test.each([
   { enable: "false" },
   { enable: null },
@@ -69,4 +61,20 @@ test("Hook options follow profile priority without exposing arguments or requiri
   } finally {
     rmSync(root, { force: true, recursive: true });
   }
+});
+test("Hook selections preserve false and exclude IDs from other profiles", () => {
+  const hooks = [
+      { enable: true, id: "notify" },
+      { enable: false, id: "review" },
+    ],
+    values = new Map([
+      ["notify", false],
+      ["review", true],
+      ["other-profile", true],
+    ]);
+  expect(resolveHookSelection(hooks, values)).toEqual([
+    { enable: false, id: "notify" },
+    { enable: true, id: "review" },
+  ]);
+  expect(resolveHookSelection(hooks, new Map())).toEqual(hooks);
 });

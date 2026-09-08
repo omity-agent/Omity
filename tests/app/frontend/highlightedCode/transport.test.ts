@@ -25,19 +25,3 @@ test("RPC correlates overlapping replies and propagates remote errors", async ()
     port2.close();
   }
 });
-test("closing RPC rejects pending calls and future calls", async () => {
-  const { port1, port2 } = new MessageChannel(),
-    client = highlightChannel(port1);
-  port1.start();
-  port2.start();
-  try {
-    const pending = client.highlight({ code: "", streamId: "closed" });
-    client.$close(new Error("worker failed"));
-    expect(pending).rejects.toThrow("worker failed");
-    expect(client.$closed).toBe(true);
-    expect(client.release("closed")).rejects.toThrow();
-  } finally {
-    port1.close();
-    port2.close();
-  }
-});

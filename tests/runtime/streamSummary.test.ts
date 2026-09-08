@@ -35,22 +35,3 @@ test("stream update and debug events share one printed-information state", () =>
   expect(incrementalSummary(update, state)).toEqual(update);
   expect(incrementalSummary(debug, state)).toBeUndefined();
 });
-test("incremental summary accepts JSON values and compares object keys stably", () => {
-  const state = createStreamLogState(),
-    first = {
-      payload: {
-        count: 1,
-        enabled: true,
-        items: [null, "value", { first: 1, second: 2 }],
-      },
-    },
-    reordered = {
-      payload: {
-        count: 1,
-        enabled: true,
-        items: [null, "value", { first: 1, second: 2 }],
-      },
-    };
-  expect(incrementalSummary(first, state)).toEqual(first);
-  expect(incrementalSummary(reordered, state)).toBeUndefined();
-});

@@ -29,10 +29,6 @@ export function readSettingsText(path: string, options: Omit<PlaceholderOptions,
   }
   return value;
 }
-export function readSettingsYaml(path: string, options: Omit<PlaceholderOptions, "source"> = {}) {
-  const { value } = readSettingsYamlFile(path);
-  return resolvePlaceholders(value, { ...options, source: path });
-}
 export function readSettingsYamlValue(path: string): unknown {
   return readSettingsYamlFile(path).value;
 }

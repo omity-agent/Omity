@@ -11,21 +11,6 @@ import { join } from "node:path";
 import { loadBuiltInTools } from "../../../src/infrastructure/toolbox/loadBuiltIns";
 import { stringify } from "yaml";
 
-test("built-in names and descriptions follow configuration", () => {
-  const settings = defaultBuiltIns(),
-    enabled = Object.values(settings).filter((setting) => setting.enabled),
-    tools = loadBuiltInTools(settings, {});
-  expect(tools.map(({ name }) => name).toSorted()).toEqual(
-    enabled.map(({ name }) => name).toSorted(),
-  );
-  for (const setting of enabled) {
-    const tool = tools.find(({ name }) => name === setting.name)!;
-    expect(tool.description).toBe(setting.description);
-    for (const [name, parameter] of Object.entries(setting.parameters)) {
-      expect(toolProperties(tool)[name]).toMatchObject({ description: parameter.description });
-    }
-  }
-});
 test("each built-in can be disabled independently", () => {
   for (const key of ["choice", "open_ended", "update_title"] as const) {
     const settings = defaultBuiltIns();

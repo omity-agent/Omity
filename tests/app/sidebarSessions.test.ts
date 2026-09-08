@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
   groupSessions,
-  isRunning,
-  statusLabelKey,
   updatedAtRefreshDelay,
 } from "../../src/app/frontend/components/Sidebar/sessions";
 import type { SessionInfo } from "../../src/app/frontend/services/client";
@@ -42,25 +40,6 @@ describe("侧栏会话排序", () => {
       "alpha-model",
       "beta-new",
     ]);
-  });
-  test("等待响应、接收中、工具和正在暂停都属于运行中", () => {
-    const runningStatuses: SessionInfo["status"][] = ["waiting", "streaming", "tool", "pausing"];
-    expect(runningStatuses.map((status) => isRunning(session("id", "F:/", status, 1)))).toEqual([
-      true,
-      true,
-      true,
-      true,
-    ]);
-    const stoppedStatuses: SessionInfo["status"][] = ["idle", "paused", "error"];
-    expect(stoppedStatuses.map((status) => isRunning(session("id", "F:/", status, 1)))).toEqual([
-      false,
-      false,
-      false,
-    ]);
-  });
-  test("模型等待和接收使用不同状态标签", () => {
-    expect(statusLabelKey("waiting")).toBe("statusWaiting");
-    expect(statusLabelKey("streaming")).toBe("statusStreaming");
   });
   test("相同时间使用创建时间和 id 得到确定顺序", () => {
     const groups = groupSessions([

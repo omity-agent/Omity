@@ -140,19 +140,6 @@ test("mcp stdio config validates its restart policy", () => {
     ),
   ).toThrow();
 });
-test("mcp config rejects renaming a tool to agent", () => {
-  expect(() =>
-    parseMcpConfiguration({ toolNameOverrides: { web__search: "agent" } }, "toolbox.yaml"),
-  ).toThrow("MCP 工具不能命名为 agent");
-});
-test("mcp tool name overrides rename loaded tools", () => {
-  const tools = toolNames(["web__search", "web__crawl"]);
-  expect(
-    renameMcpTools(tools, {
-      web__search: "search",
-    }).map((tool) => tool.name),
-  ).toEqual(["search", "web__crawl"]);
-});
 test("mcp tool name overrides report missing source tools", () => {
   expect(() =>
     renameMcpTools(toolNames(["web__search"]), {

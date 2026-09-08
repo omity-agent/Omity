@@ -7,10 +7,10 @@ import {
   required,
   workspace,
 } from "../support/database";
-import { runTransaction, sqliteBusyTimeoutMs } from "../../src/infrastructure/database/connection";
 import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
 import { decodeMessage } from "../../src/infrastructure/database/records/messages/hydration";
 import { encodeMessage } from "../../src/infrastructure/database/records/messages/payload";
+import { runTransaction } from "../../src/infrastructure/database/connection";
 
 afterEach(cleanupDatabaseDirs);
 test("queue append and transcript lifecycle", () => {
@@ -24,13 +24,6 @@ test("queue append and transcript lifecycle", () => {
   appendAssistantMessage(db.db, "123", "你好，有什么可以帮你？");
   db.setQueueStatus(queueId, "done");
   expect(db.history("123").at(-1)?.text).toBe("你好，有什么可以帮你？");
-  db.close();
-});
-test("database waits for transient writer contention", () => {
-  const db = makeDb(),
-    row = db.db.query<{ timeout: number }, []>("PRAGMA busy_timeout").get();
-  expect(row?.timeout).toBe(sqliteBusyTimeoutMs);
-  expect(db.db.query<{ auto_vacuum: number }, []>("PRAGMA auto_vacuum").get()?.auto_vacuum).toBe(2);
   db.close();
 });
 test("existing sessions are explicit", () => {

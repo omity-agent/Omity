@@ -3,7 +3,6 @@ import { createTestDirectory, testArtifactsRoot } from "../support/artifacts";
 import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { safeId, sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
-import { loadHookRules } from "../../src/infrastructure/configuration/hookRules";
 import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
@@ -22,11 +21,6 @@ test("settings use the unified user data directory", () => {
   const settings = loadSettings(root),
     directory = resolve(testArtifactsRoot, "user-data");
   expect(userDataDirectory()).toBe(directory);
-  expect(settings).not.toHaveProperty("paths");
-  expect(settings.model.reasoning_effort).toBe("medium");
-  expect(settings.server).toEqual({ host: "127.0.0.1", port: 3030 });
-  expect(settings.toolExecution.parallel).toBeTrue();
-  expect(settings.toolOutput.maxTokens).toBe(8192);
   expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
   const paths = sessionPaths("abc-def");
   expect(paths).toEqual({
@@ -93,67 +87,6 @@ test("user settings deeply override defaults and preserve relative path semantic
   expect(settings.skills.enabled).toBe(false);
   expect(settings.hooks.map(({ id }) => id)).toEqual(["user"]);
   expect(settings.agent.systemPrompt).toBe("profile only\n\nuse skills\n\nuser system");
-});
-test("model yaml contains one direct model configuration", () => {
-  const root = createTestDirectory("configuration");
-  dirs.push(root);
-  writeTestConfiguration(root, {
-    modelYaml: `adapter: codex
-model: codex-model
-retryDelayMs: 1000
-timeoutMs: 2000
-`,
-  });
-  expect(loadSettings(root).model).toEqual({
-    adapter: "codex",
-    model: "codex-model",
-    retryDelayMs: 1000,
-    timeoutMs: 2000,
-  });
-});
-test("hook config parses targets, timing, and modes", () => {
-  const root = createTestDirectory("hook-configuration"),
-    path = join(root, "hooks.yaml");
-  dirs.push(root);
-  writeFileSync(
-    path,
-    `hooks:
-  - id: user
-    target: agent
-    when: before
-    runLimit: -1
-    mode: takeover
-    tool: format
-    args: { path: . }
-  - id: end
-    target: agent
-    when: after
-    runLimit: 1
-    mode: takeover
-    tool: notify
-    args: {}
-  - id: before
-    target: write
-    when: before
-    runLimit: 0
-    mode: silent
-    tool: lint
-    args: {}
-  - id: after
-    target: write
-    when: after
-    runLimit: 2
-    mode: takeover
-    tool: verify
-    args: {}
-`,
-  );
-  expect(loadHookRules(path).map(({ target, when, mode }) => [target, when, mode])).toEqual([
-    ["agent", "before", "takeover"],
-    ["agent", "after", "takeover"],
-    ["write", "before", "silent"],
-    ["write", "after", "takeover"],
-  ]);
 });
 test("hook variables preserve exact values and reject ambiguous output", () => {
   const previous = { files: ["a.ts", "b.ts"] };

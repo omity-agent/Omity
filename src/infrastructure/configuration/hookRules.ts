@@ -1,5 +1,5 @@
-import { type PlaceholderOptions, readSettingsYaml } from "./placeholders";
 import type { HookRule } from "../../types";
+import type { PlaceholderOptions } from "./placeholders";
 import type { SettingsContext } from "./settings/context";
 import { isHookOutputVariable } from "../../hooks/variables";
 import { readLayeredSettingsYaml } from "./settings/files";
@@ -32,18 +32,6 @@ const argsSchema = z.record(z.string(), z.unknown()),
         ids.add(hook.id);
       }
     });
-export function loadHookRules(
-  path: string,
-  placeholders: Omit<PlaceholderOptions, "source"> = {
-    deferSession: true,
-  },
-): HookRule[] {
-  const parsed = readSettingsYaml(path, {
-    ...placeholders,
-    deferred: isHookOutputVariable,
-  });
-  return hooksFileSchema.parse(parsed).hooks;
-}
 export function parseHookRules(value: unknown): HookRule[] {
   return hooksFileSchema.parse(value).hooks;
 }

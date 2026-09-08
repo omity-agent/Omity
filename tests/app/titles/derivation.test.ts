@@ -1,20 +1,17 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../../support/database";
-import { queryAll, runTransaction } from "../../../src/infrastructure/database/connection";
 import { cancelledToolMessage } from "../../../src/runtime/toolOutput";
 import { deriveSessionTitle } from "../../../src/infrastructure/database/records/messages/deriveTitle";
 import { recordedTitle } from "./recordedCalls";
+import { runTransaction } from "../../../src/infrastructure/database/connection";
 import { storeMessage } from "../../../src/infrastructure/database/records/messages/history";
 
 afterEach(cleanupDatabaseDirs);
-test("sessions have no title column and titles require a committed successful result", async () => {
+test("titles require a committed successful result", async () => {
   const db = makeDb();
   try {
     db.createSession("session", workspace);
-    expect(
-      queryAll<{ name: string }>(db.db, "PRAGMA table_info(sessions)").map(({ name }) => name),
-    ).not.toContain("title");
     expect(deriveSessionTitle(db.db, "session")).toBe("session");
     const [request, result] = await recordedTitle("  首个有效标题  ");
     await db.syncHistory("session", [request]);

@@ -118,6 +118,6 @@ export function upsertSessionList(sessions: SessionInfo[], session: SessionInfo)
     (left, right) => right.updatedAt - left.updatedAt || right.createdAt - left.createdAt,
   );
 }
-export function withoutSession(sessions: SessionInfo[], sessionId: string) {
+function withoutSession(sessions: SessionInfo[], sessionId: string) {
   return sessions.filter(({ id }) => id !== sessionId);
 }

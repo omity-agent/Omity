@@ -6,7 +6,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { addSession } from "./queries";
 import { createSession } from "./client";
 
-export function resolveNewSessionWorkspace(sourceWorkspace: string | undefined, cwd: string) {
+function resolveNewSessionWorkspace(sourceWorkspace: string | undefined, cwd: string) {
   return sourceWorkspace ?? cwd;
 }
 export function useNewSession({

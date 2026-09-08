@@ -56,7 +56,7 @@ export function Toggles({
     </Field.Root>
   );
 }
-export function HookToggle({
+function HookToggle({
   hook,
   disabled,
   onChange,

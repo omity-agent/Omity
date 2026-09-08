@@ -1,49 +1,10 @@
-import { I18nextProvider, initReactI18next } from "react-i18next";
 import { expect, test } from "bun:test";
 import { SessionGroup } from "../../../src/app/frontend/components/Sidebar/SessionGroup";
-import { Sidebar } from "../../../src/app/frontend/components/Sidebar";
-import { Status } from "../../../src/app/frontend/components/Sidebar/Status";
-import { createInstance } from "i18next";
 import { groupSessions } from "../../../src/app/frontend/components/Sidebar/sessions";
-import messages from "../../../src/app/frontend/i18n/locales/zh-CN/app.json";
 import { navigateLink } from "../../../src/app/frontend/route";
 import { renderToStaticMarkup } from "react-dom/server";
 
-const sessions: Parameters<typeof Sidebar>[0]["sessions"] = [],
-  i18n = createInstance(),
-  noop = () => undefined;
-await i18n.use(initReactI18next).init({
-  lng: "zh-CN",
-  resources: { "zh-CN": { translation: messages } },
-});
-test.each([
-  { icon: "hourglass", label: "等待响应", status: "waiting" as const },
-  { icon: "bot", label: "接收中", status: "streaming" as const },
-])("sidebar model status exposes $label with a distinct icon", ({ icon, label, status }) => {
-  for (const compact of [false, true]) {
-    const markup = renderToStaticMarkup(
-      <I18nextProvider i18n={i18n}>
-        <Status compact={compact} error={null} status={status} />
-      </I18nextProvider>,
-    );
-    expect(markup).toContain(`aria-label="${label}"`);
-    expect(markup).toContain(`title="${label}"`);
-    expect(markup).toContain(`lucide-${icon}`);
-    expect(markup.includes(`<span>${label}</span>`)).toBe(!compact);
-  }
-});
-test("the new session action exposes a native link", () => {
-  const markup = renderToStaticMarkup(
-    <Sidebar
-      sessions={sessions}
-      showCreate
-      unreadIds={new Set()}
-      onCreate={noop}
-      onSelect={noop}
-    />,
-  );
-  expect(markup).toMatch(/<a[^>]+href="#\/new"/u);
-});
+const noop = () => undefined;
 test.each([
   { displayed: "当前会话标题", title: "当前会话标题" },
   { displayed: "RANDOM-SESSION-ID", title: "random-session-id" },

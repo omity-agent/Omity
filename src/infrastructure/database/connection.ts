@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrateSessionDatabase } from "./migrations";
 import { rmSync } from "node:fs";
 
-export const sqliteBusyTimeoutMs = 5000;
+const sqliteBusyTimeoutMs = 5000;
 export function openSessionDatabase(path: string, root = process.cwd()) {
   const db = new Database(path, { create: true, strict: true });
   try {

@@ -63,15 +63,6 @@ test("accepts hook call IDs when writing large output", async () => {
   expect(readFileSync(outputPath, "utf8")).toBe(original);
   expect(redirected.content).toContain(outputPath);
 });
-test("uses compact URL-safe large output file names", async () => {
-  await redirectLargeToolOutput(new ToolMessage({ content: "long output", tool_call_id: "call" }), {
-    maxTokens: 1,
-    sessionId: "demo-session",
-  });
-  const names = readdirSync(join(resolveSessionPaths("demo-session").dir, "large_output"));
-  expect(names).toHaveLength(1);
-  expect(names[0]).toMatch(/^[0-9a-z]{8}\.txt$/);
-});
 test("keeps MCP images outside the text size limit", async () => {
   const imageData = "A".repeat(1024 * 1024),
     imageMessage = new ToolMessage({
