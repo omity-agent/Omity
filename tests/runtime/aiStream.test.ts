@@ -1,11 +1,18 @@
-import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
+import { afterEach, expect, mock, test } from "bun:test";
+import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
+import {
+  completeActiveStream,
+  createStreamLogState,
+  discardActiveStream,
+} from "../../src/runtime/stream";
 import { recordAiStreamPart, recordToolStarted } from "../../src/runtime/aiStream";
 import { streamTimelineMessages, toolCallLifecycle } from "../../src/app/timeline/streamEvents";
 import { AIMessage } from "@langchain/core/messages";
+import type { AiStreamEvent } from "../../src/agent/model/request";
 import { Logger } from "../../src/infrastructure/logging/logger";
 import type { StreamEvent } from "../../src/types";
-import { createStreamLogState } from "../../src/runtime/stream";
+import { agentFixture } from "./support/agentFixture";
+import { processQueue } from "../../src/runtime/queue";
 import { testSettings } from "../support/settings";
 
 afterEach(cleanupDatabaseDirs);
@@ -79,6 +86,60 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     phase: "running",
     type: "tool",
   });
+  db.close();
+});
+const contentParts: AiStreamEvent["part"][] = [
+  { id: "part", text: "answer", type: "text-delta" },
+  { id: "part", text: "thinking", type: "reasoning-delta" },
+  { delta: "{}", id: "part", type: "tool-input-delta" },
+  { input: {}, toolCallId: "part", toolName: "echo", type: "tool-call" },
+];
+test.each(contentParts)("only meaningful model content starts receiving: $type", async (part) => {
+  const { context, db } = agentFixture(),
+    activity = mock(),
+    state = createStreamLogState();
+  db.resetSession("target", workspace);
+  const queueId = db.appendUser("target", "run"),
+    emptyParts: AiStreamEvent["part"][] = [
+      { type: "start" },
+      { id: "part", type: "text-start" },
+      { id: "part", text: "", type: "text-delta" },
+      { id: "part", type: "reasoning-start" },
+      { id: "part", text: "", type: "reasoning-delta" },
+      { id: "part", toolName: "echo", type: "tool-input-start" },
+      { delta: "", id: "part", type: "tool-input-delta" },
+    ];
+  context.observer = { activity, token: () => undefined };
+  for (const empty of emptyParts) {
+    await recordAiStreamPart(context, queueId, { part: empty }, state);
+    expect(activity).not.toHaveBeenCalled();
+  }
+  await recordAiStreamPart(context, queueId, { part }, state);
+  await recordAiStreamPart(context, queueId, { part }, state);
+  expect(activity.mock.calls).toEqual([["target", "streaming"]]);
+  completeActiveStream(state);
+  expect(state.modelResponding).toBe(false);
+  await recordAiStreamPart(context, queueId, { part }, state);
+  expect(activity).toHaveBeenCalledTimes(2);
+  discardActiveStream(context, state, queueId);
+  expect(state.modelResponding).toBe(false);
+  await recordAiStreamPart(context, queueId, { part }, state);
+  expect(activity).toHaveBeenCalledTimes(3);
+  db.close();
+});
+test("a graph run reports waiting, receiving and completion in order", async () => {
+  const { context, db } = agentFixture(),
+    activity = mock();
+  db.resetSession("target", workspace);
+  db.appendUser("target", "run");
+  context.observer = { activity, token: () => undefined };
+  await processQueue(context, required(db.nextQueue("target")));
+  expect(db.nextQueue("target")).toBeNull();
+  expect(activity.mock.calls).toEqual([
+    ["target", "waiting"],
+    ["target", "streaming"],
+    ["target", "idle"],
+  ]);
   db.close();
 });
 function timeline(events: StreamEvent[]) {

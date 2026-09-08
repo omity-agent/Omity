@@ -18,7 +18,7 @@ test("state SSE starts with a versioned snapshot and sends versioned mutations",
       createdAt: 1,
       error: null,
       id: "test",
-      status: "model" as const,
+      status: "waiting" as const,
       title: "test",
       updatedAt: 2,
       workspace: "F:/workspace",
@@ -27,6 +27,10 @@ test("state SSE starts with a versioned snapshot and sends versioned mutations",
   const changed = await frames.next();
   expect(changed).toContain(`event: session\ndata: ${JSON.stringify(session)}\n`);
   expect(eventId(changed)).not.toBe(snapshotId);
+  controller.events.notifySession({ ...session, status: "streaming" });
+  const streaming = await frames.next();
+  expect(streaming).toContain('"status":"streaming"');
+  expect(eventId(streaming)).not.toBe(eventId(changed));
   controller.events.notifySession({ ...session, title: "新的会话标题" });
   const renamed = await frames.next();
   expect(renamed).toContain('"title":"新的会话标题"');

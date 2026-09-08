@@ -1,6 +1,6 @@
+import { type AiStreamEvent, hasModelContent } from "../agent/model/request";
 import { acceptMessageId, sequentialPart, toolPart } from "./stream/parts";
 import { appendReasoningDelta, flushReasoning } from "./content";
-import type { AiStreamEvent } from "../agent/model/request";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
@@ -18,6 +18,10 @@ export async function recordAiStreamPart(
   event: AiStreamEvent,
   state: StreamLogState,
 ) {
+  if (!state.modelResponding && hasModelContent(event.part)) {
+    state.modelResponding = true;
+    ctx.observer?.activity?.(ctx.sessionId, "streaming");
+  }
   const chunk = toUIMessageChunk(event.part);
   if (chunk?.type === "reasoning-end") {
     const value = flushReasoning(state.parts.reasoning);

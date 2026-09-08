@@ -92,7 +92,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
           return undefined;
         } else {
           buffered.push(event);
-          if (isFirstModelChunk(part) && !selectWinner(id, buffered)) {
+          if (hasModelContent(part) && !selectWinner(id, buffered)) {
             return undefined;
           }
         }
@@ -135,7 +135,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
     void monitorAttempt(id, controller);
   }
 }
-function isFirstModelChunk(part: TextStreamPart<ToolSet>) {
+export function hasModelContent(part: TextStreamPart<ToolSet>) {
   switch (part.type) {
     case "file":
     case "reasoning-file":

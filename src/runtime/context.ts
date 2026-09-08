@@ -1,4 +1,4 @@
-import type { BrowserWarning, SessionStatus, Settings, StreamEvent } from "../types";
+import type { BrowserWarning, HostActivity, Settings, StreamEvent } from "../types";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { BaseMessage } from "@langchain/core/messages";
 import type { BunSqliteSaver } from "../checkpointer";
@@ -18,7 +18,7 @@ type GraphStreamOptions = Omit<
   interruptBefore: string[];
 };
 export interface HostObserver {
-  activity?: (sessionId: string, status: Extract<SessionStatus, "tool" | "model" | "idle">) => void;
+  activity?: (sessionId: string, status: HostActivity) => void;
   changed?: (sessionId: string) => void;
   transcript?: (sessionId: string, event: StreamEvent) => void;
   token: (sessionId: string, queueId: number, text: string) => void;

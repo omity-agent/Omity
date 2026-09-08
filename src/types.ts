@@ -16,16 +16,30 @@ export type {
 } from "./infrastructure/configuration/settings/definition";
 export const controlSchema = z.enum(["running", "step", "pause", "cancel", "pause_cancel"]),
   controlCommandSchema = controlSchema.exclude(["pause_cancel"]),
-  sessionStatusSchema = z.enum(["tool", "model", "idle", "pausing", "paused", "error"]),
+  sessionStatusSchema = z.enum([
+    "tool",
+    "waiting",
+    "streaming",
+    "idle",
+    "pausing",
+    "paused",
+    "error",
+  ]),
   queueStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
   logLevelSchema = z.enum(["debug", "info", "warn", "error"]),
   reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
   modelApiSchema = z.enum(["responses", "completions"]);
 export type Control = z.infer<typeof controlSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
+export type HostActivity = Extract<SessionStatus, "tool" | "waiting" | "streaming" | "idle">;
 export type QueueStatus = z.infer<typeof queueStatusSchema>;
 export type LogLevel = z.infer<typeof logLevelSchema>;
 export type ModelApi = z.infer<typeof modelApiSchema>;
+export function isRunningStatus(status: SessionStatus | undefined) {
+  return (
+    status === "waiting" || status === "streaming" || status === "pausing" || status === "tool"
+  );
+}
 export interface BrowserWarning {
   code: "model_api_unavailable";
   details: {

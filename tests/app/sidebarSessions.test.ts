@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   groupSessions,
   isRunning,
+  statusLabelKey,
   updatedAtRefreshDelay,
 } from "../../src/app/frontend/components/Sidebar/sessions";
 import type { SessionInfo } from "../../src/app/frontend/services/client";
@@ -19,12 +20,12 @@ describe("侧栏会话排序", () => {
     expect(groups[0]?.runningCount).toBe(1);
     expect(groups[0]?.updatedAt).toBe(2);
   });
-  test("运行工作区和运行会话优先，同时保持工作区聚类", () => {
+  test.each(["waiting", "streaming"] as const)("运行工作区和 %s 会话优先", (status) => {
     const input = [
         session("history-new", "F:/history", "idle", 900),
         session("alpha-old", "F:/alpha", "idle", 100),
         session("beta-tool", "F:/beta", "tool", 300),
-        session("alpha-model", "F:/alpha", "model", 200),
+        session("alpha-model", "F:/alpha", status, 200),
         session("beta-new", "F:/beta", "idle", 800),
       ],
       groups = groupSessions(input);
@@ -42,9 +43,11 @@ describe("侧栏会话排序", () => {
       "beta-new",
     ]);
   });
-  test("只有模型和工具状态属于运行中", () => {
-    const runningStatuses: SessionInfo["status"][] = ["model", "tool"];
+  test("等待响应、接收中、工具和正在暂停都属于运行中", () => {
+    const runningStatuses: SessionInfo["status"][] = ["waiting", "streaming", "tool", "pausing"];
     expect(runningStatuses.map((status) => isRunning(session("id", "F:/", status, 1)))).toEqual([
+      true,
+      true,
       true,
       true,
     ]);
@@ -54,6 +57,10 @@ describe("侧栏会话排序", () => {
       false,
       false,
     ]);
+  });
+  test("模型等待和接收使用不同状态标签", () => {
+    expect(statusLabelKey("waiting")).toBe("statusWaiting");
+    expect(statusLabelKey("streaming")).toBe("statusStreaming");
   });
   test("相同时间使用创建时间和 id 得到确定顺序", () => {
     const groups = groupSessions([

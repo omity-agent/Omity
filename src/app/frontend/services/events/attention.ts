@@ -1,7 +1,7 @@
+import { type SessionStatus, isRunningStatus } from "../../../../types";
 import { useEffect, useSyncExternalStore } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { SessionInfo } from "../client";
-import type { SessionStatus } from "../../../../types";
 import { isEqual } from "es-toolkit";
 import mitt from "mitt";
 
@@ -63,9 +63,6 @@ export class SessionAttentionStore {
     this.unread = unread;
     this.changes.emit("unread");
   }
-}
-export function isRunningStatus(status: SessionStatus) {
-  return status === "model" || status === "pausing" || status === "tool";
 }
 export function sessionAttentionStore(queryClient: QueryClient) {
   const existing = stores.get(queryClient);

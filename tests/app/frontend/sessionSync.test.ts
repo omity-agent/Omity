@@ -4,9 +4,9 @@ import type { SessionInfo } from "../../../src/app/sessionState";
 import { readSessionEvent } from "../../../src/app/frontend/services/events/data";
 import { stateEvents } from "../../../src/app/frontend/services/client";
 
-test("session upserts are idempotent across SSE and HTTP responses", () => {
+test.each(["waiting", "streaming"] as const)("session upserts are idempotent for %s", (status) => {
   const idle = session("idle", 1),
-    running = session("model", 2),
+    running = session(status, 2),
     sessions = upsertSessionList(upsertSessionList([idle], running), running);
   expect(sessions).toEqual([running]);
 });

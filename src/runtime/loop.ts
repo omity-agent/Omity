@@ -38,7 +38,7 @@ export async function hostLoop(ctx: HostContext) {
       }
       await waitForWake(ctx, ctx.settings.host.pollMs);
     } else {
-      ctx.observer?.activity?.(ctx.sessionId, "model");
+      ctx.observer?.activity?.(ctx.sessionId, "waiting");
       await processQueue(ctx, item);
     }
   }

@@ -1,16 +1,23 @@
-import { expect, spyOn, test } from "bun:test";
+import { expect, mock, spyOn, test } from "bun:test";
 import { waitBeforeModelRetry } from "../../src/runtime/retry";
 
 test("model retry warnings are sent to the browser observer", async () => {
   const terminalWarning = spyOn(console, "warn").mockReturnValue(undefined),
+    activity = mock(),
     warnings: unknown[] = [],
     ctx = {
       controller: new AbortController(),
       db: { control: () => "running" as const },
-      observer: { warning: (_sessionId: string, warning: unknown) => warnings.push(warning) },
+      observer: {
+        activity,
+        warning: (_sessionId: string, warning: unknown) => warnings.push(warning),
+      },
       sessionId: "session",
       settings: { model: { retryDelayMs: 1 } },
-      wake: (delayMs: number) => Bun.sleep(delayMs),
+      wake: (delayMs: number) => {
+        expect(activity).toHaveBeenCalledWith("session", "waiting");
+        return Bun.sleep(delayMs);
+      },
     };
   try {
     await waitBeforeModelRetry(ctx, { items: [{ id: 7 }] }, new Error("upstream unavailable"), 2, {
@@ -22,6 +29,7 @@ test("model retry warnings are sent to the browser observer", async () => {
     terminalWarning.mockRestore();
   }
   expect(terminalWarning).not.toHaveBeenCalled();
+  expect(activity).toHaveBeenCalledTimes(1);
   expect(warnings).toHaveLength(1);
   expect(warnings[0]).toMatchObject({
     code: "model_api_unavailable",

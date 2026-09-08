@@ -147,7 +147,7 @@ async function announceOperation(
   operation: AgentOperation,
   messages: Parameters<typeof recordToolStarted>[1],
 ) {
-  ctx.observer?.activity?.(ctx.sessionId, operation === "tools" ? "tool" : "model");
+  ctx.observer?.activity?.(ctx.sessionId, operation === "tools" ? "tool" : "waiting");
   if (operation === "tools") {
     await recordToolStarted(ctx, messages, queueId);
   }

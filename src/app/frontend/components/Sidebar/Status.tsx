@@ -2,6 +2,7 @@ import {
   Bot,
   Circle,
   CircleAlert,
+  Hourglass,
   LoaderCircle,
   type LucideIcon,
   Pause,
@@ -10,6 +11,7 @@ import {
 import { css, cva, cx } from "styled-system/css";
 import type { ErrorDetails } from "../../../../failures/details";
 import type { SessionStatus } from "../../../../types";
+import { statusLabelKey } from "./sessions";
 import { useTranslation } from "react-i18next";
 
 const indicator = cva({
@@ -24,21 +26,23 @@ const indicator = cva({
       status: {
         error: { color: "statusError" },
         idle: { color: "statusIdle" },
-        model: { color: "statusModel" },
         paused: { color: "statusPaused" },
         pausing: { color: "statusPaused" },
+        streaming: { color: "statusModel" },
         tool: { color: "statusTool" },
+        waiting: { color: "statusModel" },
       },
     },
   }),
   activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" }),
-  statusMeta: Record<SessionStatus, { icon: LucideIcon; label: string; active?: boolean }> = {
-    error: { icon: CircleAlert, label: "statusError" },
-    idle: { icon: Circle, label: "statusIdle" },
-    model: { active: true, icon: Bot, label: "statusModel" },
-    paused: { icon: Pause, label: "statusPaused" },
-    pausing: { active: true, icon: LoaderCircle, label: "statusPausing" },
-    tool: { active: true, icon: Wrench, label: "statusTool" },
+  statusMeta: Record<SessionStatus, { icon: LucideIcon; active?: boolean }> = {
+    error: { icon: CircleAlert },
+    idle: { icon: Circle },
+    paused: { icon: Pause },
+    pausing: { active: true, icon: LoaderCircle },
+    streaming: { active: true, icon: Bot },
+    tool: { active: true, icon: Wrench },
+    waiting: { active: true, icon: Hourglass },
   };
 export function Status({
   compact = false,
@@ -52,7 +56,7 @@ export function Status({
   const { t } = useTranslation(),
     meta = statusMeta[status],
     Icon = meta.icon,
-    label = t(meta.label),
+    label = t(statusLabelKey(status)),
     description = status === "error" && error ? `${label}: ${error.message}` : label;
   return (
     <span

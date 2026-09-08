@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import type { SessionInfo } from "../../services/client";
+import { isRunningStatus } from "../../../../types";
 import { statusLabelKey } from "./sessions";
 import { useTranslation } from "react-i18next";
 
@@ -12,9 +13,7 @@ export function useSessionPresentation(
     displayedSessions = useMemo(
       () =>
         sessions.map((session) =>
-          pausing &&
-          session.id === activeId &&
-          (session.status === "model" || session.status === "tool")
+          pausing && session.id === activeId && isRunningStatus(session.status)
             ? { ...session, status: "pausing" as const }
             : session,
         ),

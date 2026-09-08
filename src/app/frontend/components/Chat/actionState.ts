@@ -1,4 +1,9 @@
-import type { Control, QueueStatus, SessionStatus } from "../../../../types";
+import {
+  type Control,
+  type QueueStatus,
+  type SessionStatus,
+  isRunningStatus,
+} from "../../../../types";
 import { pauseRequested, resolvePausePhase } from "../../../pauseState";
 
 export type ChatControlState = "pause" | "pausing" | "resume" | "stepping";
@@ -32,11 +37,7 @@ export function deriveChatActionState({
 }: ChatActionInput): ChatActionState {
   const queueRunning = queue.some(({ status }) => status === "running"),
     queuePaused = queue.some(({ status }) => status === "paused"),
-    sessionActive =
-      queueRunning ||
-      sessionStatus === "model" ||
-      sessionStatus === "tool" ||
-      sessionStatus === "pausing",
+    sessionActive = queueRunning || isRunningStatus(sessionStatus),
     pausePhase = resolvePausePhase({
       paused: queuePaused || sessionStatus === "paused",
       requested: pausing || pauseRequested(control) || sessionStatus === "pausing",

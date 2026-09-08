@@ -70,7 +70,7 @@ const matrix: MatrixCase[] = [
     name: "persisted pause request before the running queue reaches a boundary",
     pausing: true,
     queue: ["running"],
-    sessionStatus: "model",
+    sessionStatus: "waiting",
   },
   {
     control: "pause",
@@ -92,7 +92,7 @@ const matrix: MatrixCase[] = [
     expected: state("pausing", false, true),
     name: "pause request received from another client while the queue is running",
     queue: ["running"],
-    sessionStatus: "model",
+    sessionStatus: "waiting",
   },
   {
     control: "running",
@@ -100,7 +100,7 @@ const matrix: MatrixCase[] = [
     name: "locally pending pause",
     pausing: true,
     queue: ["running"],
-    sessionStatus: "model",
+    sessionStatus: "waiting",
   },
   {
     control: "running",
@@ -115,7 +115,7 @@ const matrix: MatrixCase[] = [
     expected: state("pause", false, true),
     name: "active model without a queue",
     queue: [],
-    sessionStatus: "model",
+    sessionStatus: "waiting",
   },
   {
     control: "running",
@@ -136,10 +136,18 @@ const matrix: MatrixCase[] = [
     expected: state("stepping", false, true),
     name: "running single step cannot be paused",
     queue: ["running"],
-    sessionStatus: "model",
+    sessionStatus: "waiting",
   },
 ];
-test.each(matrix)("derives chat actions for $name", (entry) => {
+const cases = matrix.flatMap((entry) =>
+  entry.sessionStatus === "waiting"
+    ? [
+        entry,
+        { ...entry, name: `${entry.name} while streaming`, sessionStatus: "streaming" as const },
+      ]
+    : [entry],
+);
+test.each(cases)("derives chat actions for $name", (entry) => {
   expect(
     deriveChatActionState({
       control: entry.control,

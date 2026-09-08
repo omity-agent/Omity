@@ -11,9 +11,23 @@ test("initial stopped sessions do not request attention", () => {
   store.replace([session("paused")]);
   expect([...store.snapshot()]).toEqual([]);
 });
-test("an unviewed session requests attention when it stops", () => {
+test.each(["waiting", "streaming"] as const)(
+  "an unviewed %s session requests attention when it stops",
+  (status) => {
+    const store = new SessionAttentionStore();
+    store.replace([session(status)]);
+    store.upsert(session("idle"));
+    expect([...store.snapshot()]).toEqual(["session"]);
+  },
+);
+test("model response and retry transitions do not mark a session unread", () => {
   const store = new SessionAttentionStore();
-  store.replace([session("model")]);
+  store.replace([session("waiting")]);
+  store.upsert(session("streaming"));
+  expect([...store.snapshot()]).toEqual([]);
+  store.upsert(session("waiting"));
+  expect([...store.snapshot()]).toEqual([]);
+  store.upsert(session("streaming"));
   store.upsert(session("idle"));
   expect([...store.snapshot()]).toEqual(["session"]);
 });
@@ -34,15 +48,15 @@ test("viewing and resuming clear session attention", () => {
 });
 test("a reconnect snapshot does not report pauses caused by server shutdown", () => {
   const store = new SessionAttentionStore();
-  store.replace([session("model")]);
+  store.replace([session("streaming")]);
   store.replace([session("paused")]);
   expect([...store.snapshot()]).toEqual([]);
 });
 test("a reconnect snapshot clears attention for a resumed session", () => {
   const store = new SessionAttentionStore();
-  store.replace([session("model")]);
+  store.replace([session("streaming")]);
   store.upsert(session("paused"));
-  store.replace([session("model")]);
+  store.replace([session("waiting")]);
   expect([...store.snapshot()]).toEqual([]);
 });
 test("注意力存储按 QueryClient 实例隔离并复用", () => {
@@ -55,7 +69,7 @@ test("未读变化只通知有效订阅者且不重复通知相同快照", () =>
   const store = new SessionAttentionStore(),
     listener = mock(),
     unsubscribe = store.subscribe(listener);
-  store.replace([session("model")]);
+  store.replace([session("streaming")]);
   store.upsert(session("idle"));
   store.upsert(session("idle"));
   expect(listener).toHaveBeenCalledTimes(1);

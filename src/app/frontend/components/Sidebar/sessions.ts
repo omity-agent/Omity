@@ -1,6 +1,5 @@
+import { type SessionStatus, isRunningStatus } from "../../../../types";
 import type { SessionInfo } from "../../services/client";
-import type { SessionStatus } from "../../../../types";
-import { isRunningStatus } from "../../services/events/attention";
 import { maxBy } from "es-toolkit";
 
 const minuteMs = 60_000,
@@ -20,10 +19,11 @@ export function statusLabelKey(status: SessionStatus) {
   return {
     error: "statusError",
     idle: "statusIdle",
-    model: "statusModel",
     paused: "statusPaused",
     pausing: "statusPausing",
+    streaming: "statusStreaming",
     tool: "statusTool",
+    waiting: "statusWaiting",
   }[status];
 }
 export function groupSessions(sessions: SessionInfo[]): SessionGroup[] {

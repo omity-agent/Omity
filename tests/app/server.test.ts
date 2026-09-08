@@ -111,27 +111,30 @@ test("app instance lock rejects a second server for the same data directory", ()
   lock.release();
   expect(existsSync(join(directory, "app.lock"))).toBe(false);
 });
-test("session status prioritizes errors and pauses over host activity", () => {
-  const running = {
-      control: "running" as const,
-      error: null,
-      paused: false,
-      queueRunning: true,
-    },
-    failure = captureError(new Error("Run failed"));
-  expect(resolveSessionStatus(running, "model", null)).toBe("model");
-  expect(resolveSessionStatus(running, "tool", failure)).toBe("error");
-  expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
-  expect(resolveSessionStatus({ ...running, error: failure }, "model", null)).toBe("error");
-  expect(resolveSessionStatus({ ...running, control: "pause" }, "model", null)).toBe("pausing");
-  expect(
-    resolveSessionStatus({ ...running, control: "pause", queueRunning: false }, "idle", null),
-  ).toBe("paused");
-  expect(
-    resolveSessionStatus({ ...running, paused: true, queueRunning: false }, "idle", null),
-  ).toBe("paused");
-  expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
-});
+test.each(["waiting", "streaming"] as const)(
+  "session errors and pauses override %s",
+  (activity) => {
+    const running = {
+        control: "running" as const,
+        error: null,
+        paused: false,
+        queueRunning: true,
+      },
+      failure = captureError(new Error("Run failed"));
+    expect(resolveSessionStatus(running, activity, null)).toBe(activity);
+    expect(resolveSessionStatus(running, "tool", failure)).toBe("error");
+    expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
+    expect(resolveSessionStatus({ ...running, error: failure }, activity, null)).toBe("error");
+    expect(resolveSessionStatus({ ...running, control: "pause" }, activity, null)).toBe("pausing");
+    expect(
+      resolveSessionStatus({ ...running, control: "pause", queueRunning: false }, "idle", null),
+    ).toBe("paused");
+    expect(
+      resolveSessionStatus({ ...running, paused: true, queueRunning: false }, "idle", null),
+    ).toBe("paused");
+    expect(resolveSessionStatus({ ...running, paused: true }, "tool", null)).toBe("tool");
+  },
+);
 test("session state exposes host errors before queue errors", () => {
   const runError = captureError(new Error("Run failed")),
     hostError = captureError(new Error("Host failed")),
@@ -141,11 +144,11 @@ test("session state exposes host errors before queue errors", () => {
       paused: true,
       queueRunning: false,
     };
-  expect(resolveSessionState(session, "model", hostError)).toEqual({
+  expect(resolveSessionState(session, "waiting", hostError)).toEqual({
     error: hostError,
     status: "error",
   });
-  expect(resolveSessionState(session, "model", null)).toEqual({
+  expect(resolveSessionState(session, "streaming", null)).toEqual({
     error: runError,
     status: "error",
   });

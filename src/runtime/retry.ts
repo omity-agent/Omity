@@ -8,7 +8,7 @@ interface RetriedRun {
 interface RetryContext {
   controller: AbortController;
   db: Pick<HostContext["db"], "control">;
-  observer?: Pick<NonNullable<HostContext["observer"]>, "warning">;
+  observer?: Pick<NonNullable<HostContext["observer"]>, "activity" | "warning">;
   sessionId: string;
   settings: {
     model: Pick<HostContext["settings"]["model"], "retryDelayMs">;
@@ -28,6 +28,7 @@ export async function waitBeforeModelRetry(
   attempt: number,
   controls: RetryControls,
 ) {
+  ctx.observer?.activity?.(ctx.sessionId, "waiting");
   const delayMs = ctx.settings.model.retryDelayMs,
     warning: BrowserWarning = {
       code: "model_api_unavailable",
