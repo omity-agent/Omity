@@ -8,6 +8,9 @@ export const frontendBuild = {
   emptyOutDir: true,
   outDir: frontendOutput,
   rolldownOptions: {
+    checks: {
+      pluginTimings: false,
+    },
     output: {
       codeSplitting: {
         groups: [
@@ -31,6 +34,9 @@ export const frontendPlugins = [vocabularyChunks(200_000)];
 export const highlightWorker = {
   format: "es",
   rolldownOptions: {
+    checks: {
+      pluginTimings: false,
+    },
     output: {
       codeSplitting: {
         groups: [
