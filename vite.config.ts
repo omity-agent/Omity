@@ -1,4 +1,5 @@
 import { dirname, resolve } from "node:path";
+import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import { defineConfig } from "vite";
@@ -7,7 +8,9 @@ import { fileURLToPath } from "node:url";
 const root = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   base: "./",
+  build: frontendBuild,
   plugins: [
+    ...frontendPlugins,
     react(),
     babel({
       presets: [reactCompilerPreset()],
@@ -23,4 +26,5 @@ export default defineConfig({
   server: {
     strictPort: false,
   },
+  worker: highlightWorker,
 });
