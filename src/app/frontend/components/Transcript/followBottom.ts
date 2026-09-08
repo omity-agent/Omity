@@ -5,6 +5,9 @@ type ScrollViewport = Pick<HTMLElement, "clientHeight" | "scrollHeight" | "scrol
 export class FollowBottomController {
   private following = true;
   private previousTop?: number;
+  get isFollowing() {
+    return this.following;
+  }
   align(element: ScrollViewport) {
     if (!this.following) {
       return;

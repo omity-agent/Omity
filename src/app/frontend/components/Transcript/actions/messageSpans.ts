@@ -1,5 +1,4 @@
 import type { TimelineMessage } from "../../../../timeline";
-import type { VirtualItem } from "@tanstack/react-virtual";
 import type { segmentTranscript } from "../segments";
 
 export interface MessageSpan {
@@ -20,13 +19,11 @@ export function messageSpans(segments: ReturnType<typeof segmentTranscript>) {
   return spans;
 }
 export function visibleCopies(
-  items: VirtualItem[],
-  segments: ReturnType<typeof segmentTranscript>,
+  range: { first: number; last: number },
   spans: Map<string, MessageSpan>,
 ) {
-  const keys = new Set(items.map((item) => segments[item.index]!.message.key));
-  return [...keys].flatMap((key) => {
-    const span = spans.get(key);
-    return span?.message.role === "assistant" ? [span] : [];
-  });
+  return [...spans.values()].filter(
+    (span) =>
+      span.message.role === "assistant" && span.first <= range.last && span.last >= range.first,
+  );
 }

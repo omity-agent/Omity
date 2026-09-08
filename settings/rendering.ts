@@ -1,9 +1,8 @@
 export const transcriptWindow = {
-  estimatedMessageHeight: 192,
+  bufferSize: 384,
   followThreshold: 48,
-  overscan: 2,
 };
 export const codeWindow = {
+  bufferSize: 192,
   estimatedLineHeight: 24,
-  overscan: 8,
 };

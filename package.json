@@ -38,7 +38,6 @@
     "@tanstack/pacer": "latest",
     "@tanstack/react-pacer": "latest",
     "@tanstack/react-query": "latest",
-    "@tanstack/react-virtual": "latest",
     "@uiw/react-codemirror": "latest",
     "ai": "latest",
     "birpc": "latest",
@@ -73,6 +72,7 @@
     "serialize-error": "latest",
     "shiki": "latest",
     "untildify": "latest",
+    "virtua": "latest",
     "yaml": "next",
     "zod": "latest",
     "zod-form-data": "latest"
@@ -102,8 +102,7 @@
     "vite": "latest"
   },
   "patchedDependencies": {
-    "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch",
-    "@tanstack/virtual-core@3.17.9": "patches/@tanstack%2Fvirtual-core@3.17.9.patch"
+    "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch"
   },
   "trustedDependencies": [
     "@parcel/watcher",

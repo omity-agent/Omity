@@ -41,13 +41,9 @@ export const codeElement = css({
   position: "relative",
   whiteSpace: "inherit",
 });
-export const virtualLine = css({
+export const sourceLine = css({
   display: "block",
-  left: 0,
   minH: "1lh",
-  position: "absolute",
-  top: 0,
-  w: "full",
   whiteSpace: "inherit",
 });
 export const widthSizer = css({

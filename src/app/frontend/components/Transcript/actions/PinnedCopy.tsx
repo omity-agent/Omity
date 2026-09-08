@@ -1,11 +1,10 @@
 import { type MessageSpan, messageSpans, visibleCopies } from "./messageSpans";
-import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
+import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "../../Chat/CopyButton";
-import type { Virtualizer } from "@tanstack/react-virtual";
+import type { VirtualizerHandle } from "virtua";
 import { css } from "styled-system/css";
 import type { segmentTranscript } from "../segments";
 
-type MessageWindow = Virtualizer<HTMLElement, Element>;
 interface MountedCopy {
   element: HTMLDivElement;
   span: MessageSpan;
@@ -38,28 +37,31 @@ const boundary = css({
     top: "0",
   }),
   button = css({ bg: "surface", color: "statusModel", pointerEvents: "auto" });
-function placeCopy(instance: MessageWindow, { element, span }: MountedCopy) {
-  const first = instance.measurementsCache[span.first],
-    last = instance.measurementsCache[span.last];
-  if (first && last) {
-    element.style.top = `${first.start.toString()}px`;
-    element.style.height = `${(last.end - first.start).toString()}px`;
-  }
+function placeCopy(instance: VirtualizerHandle, { element, span }: MountedCopy) {
+  const first = instance.getItemOffset(span.first),
+    end = instance.getItemOffset(span.last) + instance.getItemSize(span.last);
+  element.style.top = `${first.toString()}px`;
+  element.style.height = `${(end - first).toString()}px`;
 }
 export function useMessageCopies(segments: ReturnType<typeof segmentTranscript>) {
-  "use no memo";
   const mounted = useRef(new Map<string, MountedCopy>()),
     spans = useMemo(() => messageSpans(segments), [segments]),
+    [range, setRange] = useState({ first: 0, last: -1 }),
     update = useCallback(
-      (instance: MessageWindow) => {
+      (instance: VirtualizerHandle) => {
         for (const copy of mounted.current.values()) {
           placeCopy(instance, copy);
         }
+        const first = instance.findItemIndex(instance.scrollOffset),
+          last = instance.findItemIndex(instance.scrollOffset + instance.viewportSize);
+        setRange((current) =>
+          current.first === first && current.last === last ? current : { first, last },
+        );
       },
-      [mounted],
+      [mounted, setRange],
     ),
     register = useCallback(
-      (instance: MessageWindow, element: HTMLDivElement, span: MessageSpan) => {
+      (instance: VirtualizerHandle, element: HTMLDivElement, span: MessageSpan) => {
         const copy = { element, span };
         mounted.current.set(span.message.key, copy);
         placeCopy(instance, copy);
@@ -69,23 +71,25 @@ export function useMessageCopies(segments: ReturnType<typeof segmentTranscript>)
       },
       [mounted],
     );
-  return { register, spans, update };
+  return { range, register, spans, update };
 }
 export function MessageCopies({
-  instance,
+  handleRef,
   registry,
   segments,
 }: {
-  instance: MessageWindow;
+  handleRef: RefObject<VirtualizerHandle | null>;
   registry: ReturnType<typeof useMessageCopies>;
   segments: ReturnType<typeof segmentTranscript>;
 }) {
   useLayoutEffect(() => {
-    registry.update(instance);
+    if (handleRef.current) {
+      registry.update(handleRef.current);
+    }
   });
-  return visibleCopies(instance.getVirtualItems(), segments, registry.spans).map((span) => (
+  return visibleCopies(registry.range, registry.spans).map((span) => (
     <PinnedCopy
-      instance={instance}
+      handleRef={handleRef}
       key={span.message.key}
       last={span.last === segments.length - 1}
       register={registry.register}
@@ -94,24 +98,25 @@ export function MessageCopies({
   ));
 }
 function PinnedCopy({
-  instance,
+  handleRef,
   last,
   register,
   span,
 }: {
-  instance: MessageWindow;
+  handleRef: RefObject<VirtualizerHandle | null>;
   last: boolean;
   register: ReturnType<typeof useMessageCopies>["register"];
   span: MessageSpan;
 }) {
   const reference = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    const element = reference.current;
-    if (!element) {
+    const element = reference.current,
+      instance = handleRef.current;
+    if (!element || !instance) {
       throw new Error("消息复制按钮缺少定位容器");
     }
     return register(instance, element, span);
-  }, [instance, register, span]);
+  }, [handleRef, register, span]);
   return (
     <div
       className={boundary}
