@@ -1,4 +1,5 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
+import { FlowItem, FlowWindow } from "./scrolling/FlowWindow";
 import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
 import { Virtualizer, type VirtualizerHandle } from "virtua";
 import { css, cx } from "styled-system/css";
@@ -53,8 +54,10 @@ export function Transcript({
       <section className={cx(scroll, viewport)} ref={scrollRef}>
         <div className={content} ref={contentRef}>
           <Virtualizer
+            as={FlowWindow}
             bufferSize={transcriptWindow.bufferSize}
             data={segments}
+            item={FlowItem}
             ref={handleRef}
             scrollRef={scrollRef}
           >

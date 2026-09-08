@@ -1,10 +1,20 @@
+import {
+  FlowItem,
+  FlowWindow,
+} from "../../../src/app/frontend/components/Transcript/scrolling/FlowWindow";
 import type { TimelineMessage, TimelinePart } from "../../../src/app/timeline";
 import { expect, test } from "bun:test";
 import { Body } from "../../../src/app/frontend/components/Transcript/Body";
+import type { CSSProperties } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { segmentTranscript } from "../../../src/app/frontend/components/Transcript/segments";
 
-const ignoreToolCancellation = () => Promise.resolve();
+const ignoreToolCancellation = () => Promise.resolve(),
+  placement = {
+    detail: { position: "absolute", top: 500 },
+    following: { position: "absolute", top: 540 },
+    window: { height: 3000, position: "relative" },
+  } satisfies Record<string, CSSProperties>;
 
 function assistant(parts: TimelinePart[]): TimelineMessage {
   return { content: "answer", createdAt: 0, id: 1, key: "assistant-1", parts, role: "assistant" };
@@ -51,4 +61,21 @@ test("a mounted body does not render the other 161 parts of its message", () => 
   expect(html).not.toContain("fragment_79_end");
   expect(html).not.toContain("fragment_81_end");
   expect(html.match(/<p>/g)).toHaveLength(1);
+});
+test("mounted segments flow together instead of retaining stale absolute offsets on expansion", () => {
+  const html = renderToStaticMarkup(
+    <FlowWindow style={placement.window}>
+      <FlowItem index={10} style={placement.detail}>
+        detail
+      </FlowItem>
+      <FlowItem index={11} style={placement.following}>
+        following text
+      </FlowItem>
+    </FlowWindow>,
+  );
+  expect(html).toContain("flex-direction:column");
+  expect(html).toContain("--window-offset:500px");
+  expect(html).toContain("--window-offset:540px");
+  expect(html).not.toContain("position:absolute");
+  expect(html).not.toContain("top:");
 });
