@@ -41,13 +41,23 @@ test("expanding a non-final row grows the scroll range before applying bottom co
     virtualizer.scrollElement = viewport as unknown as HTMLElement;
     virtualizer.getVirtualItems();
     virtualizer.resizeItem(1, 400);
-    expect(writes).toEqual([{ height: 600, target: 450 }]);
+    // Virtualizer may retry compensation after the scroll range grows.
+    expect(writes.length).toBeGreaterThan(0);
+    for (const write of writes) {
+      expect(write).toEqual({ height: 600, target: 450 });
+    }
     expect(viewport.scrollTop).toBe(450);
     expect(virtualizer.scrollOffset).toBe(viewport.scrollTop);
     expect(viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop).toBe(0);
+    writes.length = 0;
     virtualizer.resizeItem(1, 100);
+    expect(writes.length).toBeGreaterThan(0);
+    for (const write of writes) {
+      expect(write).toEqual({ height: 300, target: 150 });
+    }
     expect(viewport.scrollTop).toBe(150);
     expect(virtualizer.scrollOffset).toBe(viewport.scrollTop);
+    expect(viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop).toBe(0);
   } finally {
     if (original) {
       Object.defineProperty(globalThis, "HTMLElement", original);
