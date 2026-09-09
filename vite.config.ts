@@ -1,5 +1,5 @@
 import { dirname, resolve } from "node:path";
-import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling";
+import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling.ts";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import { defineConfig } from "vite";

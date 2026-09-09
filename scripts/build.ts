@@ -36,6 +36,7 @@ async function buildApplication() {
   const frontendPublicDirectory = await prepareMagikaAssets(frontendPublicCache);
   await build({
     configFile: resolve(root, "vite.config.ts"),
+    logLevel: "warn",
     publicDir: frontendPublicDirectory,
   });
   await mkdir(resolve(root, "dist"), { recursive: true });

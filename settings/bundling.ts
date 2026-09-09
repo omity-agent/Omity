@@ -1,4 +1,4 @@
-import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyChunks";
+import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyChunks.ts";
 import type { UserConfig } from "vite";
 import { resolve } from "node:path";
 
@@ -33,21 +33,4 @@ export const frontendBuild = {
 export const frontendPlugins = [vocabularyChunks(200_000)];
 export const highlightWorker = {
   format: "es",
-  rolldownOptions: {
-    checks: {
-      pluginTimings: false,
-    },
-    output: {
-      codeSplitting: {
-        groups: [
-          {
-            name: "inference",
-            test: /[/\\]node_modules[/\\]@tensorflow[/\\]/,
-          },
-        ],
-        maxSize: 350_000,
-      },
-      strictExecutionOrder: true,
-    },
-  },
 } satisfies UserConfig["worker"];
