@@ -23,14 +23,14 @@ export function FlowWindow({ children, ref, style }: CustomContainerComponentPro
     </div>
   );
 }
-export function FlowItem({ children, ref, style }: CustomItemComponentProps) {
+export function FlowItem({ children, index, ref, style }: CustomItemComponentProps) {
   const { top, ...geometry } = style;
   if (typeof top !== "number") {
     throw new Error("对话虚拟行缺少垂直偏移量");
   }
   const placement = rowStyle(geometry, top);
   return (
-    <div className={row} ref={ref} style={placement}>
+    <div className={row} data-transcript-index={index} ref={ref} style={placement}>
       {children}
     </div>
   );

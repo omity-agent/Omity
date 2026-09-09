@@ -26,10 +26,13 @@ export class FollowBottomController {
     const { scrollHeight, scrollTop, clientHeight } = element,
       maximumTop = Math.max(0, scrollHeight - clientHeight),
       previousTop = Math.min(this.previousTop ?? maximumTop, maximumTop);
-    if (maximumTop - scrollTop <= transcriptWindow.followThreshold) {
-      this.following = true;
-    } else if (scrollTop < previousTop - 1) {
+    if (scrollTop < previousTop) {
       this.following = false;
+    } else if (
+      scrollTop > previousTop &&
+      maximumTop - scrollTop <= transcriptWindow.followThreshold
+    ) {
+      this.following = true;
     }
     this.previousTop = scrollTop;
   }

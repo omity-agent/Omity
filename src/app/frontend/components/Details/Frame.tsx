@@ -103,12 +103,13 @@ export function Frame({
   tone: "model" | "tool";
 }) {
   const classes = frame({ tone }),
-    { open, onOpenChange } = useDisclosure(stateKey, expandedInitially);
+    { open, onOpenChange, registerDetail } = useDisclosure(stateKey, expandedInitially);
   return (
     <Collapsible.Root
       className={classes.root}
       open={open}
       onOpenChange={onOpenChange}
+      ref={registerDetail}
       lazyMount
       unmountOnExit
     >

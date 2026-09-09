@@ -54,6 +54,25 @@ test("manual upward scrolling pauses following until the user returns to the bot
   controller.align(viewport);
   expect(viewport.scrollTop).toBe(2900);
 });
+test("gentle upward scrolling leaves the bottom even inside the follow threshold", () => {
+  const controller = new FollowBottomController(),
+    viewport = { clientHeight: 600, scrollHeight: 2400, scrollTop: 0 };
+  controller.align(viewport);
+  viewport.scrollTop -= 0.5;
+  controller.update(viewport);
+  controller.update(viewport);
+  controller.align(viewport);
+  expect(viewport.scrollTop).toBe(1799.5);
+  expect(controller.isFollowing).toBe(false);
+  viewport.scrollTop -= 8;
+  controller.update(viewport);
+  controller.align(viewport);
+  expect(viewport.scrollTop).toBe(1791.5);
+  viewport.scrollTop += 8;
+  controller.update(viewport);
+  controller.align(viewport);
+  expect(viewport.scrollTop).toBe(1800);
+});
 test("alignment completes all geometry reads before the scroll write", () => {
   const operations: string[] = [],
     viewport = {

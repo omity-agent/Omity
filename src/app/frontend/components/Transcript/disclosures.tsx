@@ -1,22 +1,42 @@
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-const DisclosureContext = createContext<Map<string, boolean> | undefined>(undefined);
-export function DisclosureProvider({ children }: { children: ReactNode }) {
-  const states = useMemo(() => new Map<string, boolean>(), []);
-  return <DisclosureContext.Provider value={states}>{children}</DisclosureContext.Provider>;
+type RegisterDetail = (element: HTMLDivElement) => () => void;
+const DisclosureContext = createContext<
+  { registerDetail: RegisterDetail; states: RefObject<Map<string, boolean>> } | undefined
+>(undefined);
+export function DisclosureProvider({
+  children,
+  registerDetail,
+}: {
+  children: ReactNode;
+  registerDetail: RegisterDetail;
+}) {
+  const states = useRef(new Map<string, boolean>()),
+    value = useMemo(() => ({ registerDetail, states }), [registerDetail, states]);
+  return <DisclosureContext.Provider value={value}>{children}</DisclosureContext.Provider>;
 }
 export function useDisclosure(stateKey: string, expandedInitially: boolean) {
-  const states = useContext(DisclosureContext);
-  if (!states) {
+  const context = useContext(DisclosureContext);
+  if (!context) {
     throw new Error("详情组件缺少会话展开状态上下文");
   }
-  const [open, setOpen] = useState(() => states.get(stateKey) ?? expandedInitially),
+  const { registerDetail, states } = context,
+    [open, setOpen] = useState(() => states.current.get(stateKey) ?? expandedInitially),
     onOpenChange = useCallback(
       (details: { open: boolean }) => {
-        states.set(stateKey, details.open);
+        states.current.set(stateKey, details.open);
         setOpen(details.open);
       },
       [setOpen, stateKey, states],
     );
-  return { onOpenChange, open };
+  return { onOpenChange, open, registerDetail };
 }

@@ -41,16 +41,15 @@ export function Transcript({
     contentRef = useRef<HTMLDivElement>(null),
     handleRef = useRef<VirtualizerHandle>(null),
     firstUserMessageId = messages.find((item) => item.role === "user")?.id,
-    latestDetails = findLatestDetails(messages);
-  useTranscriptScroll({
-    contentRef,
-    handleRef,
-    onLayout: copies.update,
-    scrollRef,
-    segments,
-  });
+    latestDetails = findLatestDetails(messages),
+    registerDetail = useTranscriptScroll({
+      contentRef,
+      handleRef,
+      onLayout: copies.update,
+      scrollRef,
+    });
   return (
-    <DisclosureProvider>
+    <DisclosureProvider registerDetail={registerDetail}>
       <section className={cx(scroll, viewport)} ref={scrollRef}>
         <div className={content} ref={contentRef}>
           <Virtualizer

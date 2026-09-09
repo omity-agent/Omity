@@ -1,28 +1,20 @@
-import { type DetailFooter, captureDetailFooters, detailScrollAdjustment } from "./detailFooters";
-import { type RefObject, useEffectEvent, useLayoutEffect } from "react";
-import { FollowBottomController } from "../followBottom";
+import { type RefObject, useCallback, useEffectEvent, useLayoutEffect, useRef } from "react";
+import { ReadingAnchor } from "./ReadingAnchor";
 import type { VirtualizerHandle } from "virtua";
-import type { segmentTranscript } from "../segments";
 
 export function useTranscriptScroll({
   contentRef,
   handleRef,
   onLayout,
   scrollRef,
-  segments,
 }: {
   contentRef: RefObject<HTMLDivElement | null>;
   handleRef: RefObject<VirtualizerHandle | null>;
   onLayout: (handle: VirtualizerHandle) => void;
   scrollRef: RefObject<HTMLElement | null>;
-  segments: ReturnType<typeof segmentTranscript>;
 }) {
-  const capture = useEffectEvent((handle: VirtualizerHandle, element: HTMLElement) =>
-      captureDetailFooters(handle, segments, element.scrollTop, element.clientHeight),
-    ),
-    adjustment = useEffectEvent((footers: DetailFooter[], handle: VirtualizerHandle, top: number) =>
-      detailScrollAdjustment(footers, handle, segments, top),
-    ),
+  const details = useRef(new Set<HTMLDivElement>()),
+    observerRef = useRef<ResizeObserver | null>(null),
     notify = useEffectEvent(onLayout);
   useLayoutEffect(() => {
     const element = scrollRef.current,
@@ -31,64 +23,61 @@ export function useTranscriptScroll({
     if (!element || !content || !handle) {
       throw new Error("对话列表缺少滚动容器");
     }
-    const following = new FollowBottomController();
-    let footers: DetailFooter[] = [],
-      previousTop = element.scrollTop,
-      compensationTarget: number | undefined,
-      disposed = false;
-    const snapshot = () => {
-        const compensated =
-            compensationTarget !== undefined &&
-            Math.abs(element.scrollTop - compensationTarget) < 1,
-          current = capture(handle, element);
-        if (compensated) {
-          for (const footer of current) {
-            const previous = footers.find(({ key }) => key === footer.key);
-            if (previous) {
-              footer.bottom = previous.bottom;
-            }
-          }
-        }
-        compensationTarget = undefined;
-        previousTop = element.scrollTop;
-        footers = current;
-        notify(handle);
-      },
+    let disposed = false;
+    const layout = new ReadingAnchor(element, content, handle, details.current, () =>
+        notify(handle),
+      ),
       resize = () => {
-        if (following.isFollowing) {
-          following.align(element);
-        } else {
-          const delta = adjustment(footers, handle, element.scrollTop);
-          if (delta !== 0) {
-            compensationTarget = element.scrollTop + delta;
-            handle.scrollTo(compensationTarget);
-            notify(handle);
-            return;
-          }
-        }
-        snapshot();
+        notify(handle);
+        layout.stabilize();
       },
       scroll = () => {
-        if (element.scrollTop === previousTop) {
+        if (!layout.scroll()) {
           return;
         }
-        following.update(element);
         // Virtua's scroll observer may run after this listener.
         queueMicrotask(() => {
           if (!disposed) {
-            snapshot();
+            layout.capture();
+            notify(handle);
           }
         });
       },
-      observer = new ResizeObserver(resize);
+      observer = new ResizeObserver(resize),
+      mutations = new MutationObserver((records) => {
+        if (records.some((record) => record.target !== content)) {
+          layout.stabilize();
+        }
+      });
+    observerRef.current = observer;
+    for (const detail of details.current) {
+      observer.observe(detail);
+    }
     observer.observe(content);
     observer.observe(element);
+    // Nested virtualizers can change height after this frame's resize delivery.
+    mutations.observe(content, {
+      attributeFilter: ["style", "hidden"],
+      childList: true,
+      subtree: true,
+    });
     element.addEventListener("scroll", scroll, { passive: true });
     resize();
     return () => {
       disposed = true;
       observer.disconnect();
+      mutations.disconnect();
+      layout.release();
+      observerRef.current = null;
       element.removeEventListener("scroll", scroll);
     };
   }, [contentRef, handleRef, scrollRef]);
+  return useCallback((element: HTMLDivElement) => {
+    details.current.add(element);
+    observerRef.current?.observe(element);
+    return () => {
+      details.current.delete(element);
+      observerRef.current?.unobserve(element);
+    };
+  }, []);
 }
