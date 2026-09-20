@@ -23,31 +23,56 @@ test("MCP adapter clients initialize sequentially", async () => {
           return toolClient(name);
         },
       },
-      ["first", "second"],
+      { first: {}, second: {} },
     );
   await Bun.sleep(0);
   expect(requested).toEqual(["first"]);
   firstReady.resolve();
-  expect(await loading).toHaveLength(2);
+  const tools = await loading;
+  expect(tools.map(({ name }) => name)).toEqual(["first__tool", "second__tool"]);
   expect(requested).toEqual(["first", "second"]);
 });
-test("server-wide defer loading survives tool renaming and is frozen in snapshots", async () => {
+test.each([true, false])(
+  "defer loading and snapshots support server prefixes: %s",
+  async (prefix) => {
+    const first = toolClient("first"),
+      callTool = mock(() => Promise.resolve({ content: [{ text: "ok", type: "text" as const }] }));
+    first.callTool = callTool;
+    const tools = await loadServerTools(
+      { getClient: async (name) => (name === "first" ? first : toolClient(name)) },
+      {
+        first: { defer_loading: true, prefixToolNameWithServerName: prefix },
+        second: {},
+      },
+    );
+    expect(tools.map(({ name }) => name)).toEqual([
+      prefix ? "first__tool" : "tool",
+      "second__tool",
+    ]);
+    renameMcpTools(tools, { [prefix ? "first__tool" : "tool"]: "renamed" });
+    await tools[0]!.invoke({});
+    expect(callTool).toHaveBeenCalledWith({ arguments: {}, name: "tool" });
+    const definitions = modelToolDefinitions(tools, new Map());
+    expect(definitions.map(({ deferLoading, name }) => ({ deferLoading, name }))).toEqual([
+      { deferLoading: true, name: "renamed" },
+      { deferLoading: undefined, name: "second__tool" },
+    ]);
+    for (const tool of tools) {
+      tool.extras = { defer_loading: tool.name !== "renamed" };
+    }
+    applyMcpToolSnapshot(tools, { tools: definitions });
+    expect(modelToolDefinitions(tools, new Map())).toEqual(definitions);
+  },
+);
+test("unprefixed tools from different servers cannot silently overwrite each other", async () => {
   const tools = await loadServerTools(
     { getClient: async (name) => toolClient(name) },
-    ["first", "second"],
-    new Set(["first"]),
+    {
+      first: { prefixToolNameWithServerName: false },
+      second: { prefixToolNameWithServerName: false },
+    },
   );
-  renameMcpTools(tools, { first__tool: "renamed" });
-  const definitions = modelToolDefinitions(tools, new Map());
-  expect(definitions.map(({ deferLoading, name }) => ({ deferLoading, name }))).toEqual([
-    { deferLoading: true, name: "renamed" },
-    { deferLoading: undefined, name: "second__tool" },
-  ]);
-  for (const tool of tools) {
-    tool.extras = { defer_loading: tool.name !== "renamed" };
-  }
-  applyMcpToolSnapshot(tools, { tools: definitions });
-  expect(modelToolDefinitions(tools, new Map())).toEqual(definitions);
+  expect(() => renameMcpTools(tools, {})).toThrow("MCP 工具名称重复：tool");
 });
 test("all App consumers share one MCP lifecycle", async () => {
   const initialized = Promise.withResolvers<LoadedMcp>(),

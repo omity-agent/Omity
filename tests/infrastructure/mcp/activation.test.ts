@@ -49,6 +49,24 @@ test("MCP config rejects non-boolean enabled flags", () => {
     }),
   ).toThrow();
 });
+test("disabled unprefixed servers do not claim other tools by their server name", () => {
+  const configuration = parseMcpConfiguration(
+    {
+      freeformToolInputs: ["search"],
+      mcpServers: {
+        web: { enabled: false, prefixToolNameWithServerName: false },
+        web__search: { command: "search", prefixToolNameWithServerName: false },
+      },
+      toolDescriptionOverrides: { search: "search.md" },
+      toolNameOverrides: { web__search: "search" },
+    },
+    "toolbox.yaml",
+  );
+  expect(Object.keys(configuration.mcpServers)).toEqual(["web__search"]);
+  expect(configuration.toolNameOverrides).toEqual({ web__search: "search" });
+  expect(configuration.toolDescriptionOverrides).toEqual({ search: "search.md" });
+  expect(configuration.freeformToolInputs).toEqual(["search"]);
+});
 test("profile toolbox settings can disable a repository server", () => {
   const root = createTestDirectory("mcp-disabled-override"),
     userSettings = join(root, "user-settings");

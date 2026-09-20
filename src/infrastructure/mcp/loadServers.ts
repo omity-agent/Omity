@@ -7,21 +7,20 @@ export async function loadServerTools(
   client: {
     getClient: (name: string) => Promise<object | undefined>;
   },
-  names: string[],
-  deferredServers: ReadonlySet<string> = new Set(),
+  servers: McpConfiguration["mcpServers"],
 ) {
   const tools: StructuredToolInterface[] = [];
-  for (const name of names) {
+  for (const [name, configuration] of Object.entries(servers)) {
     const serverClient = await client.getClient(name);
     if (serverClient === undefined) {
       throw new Error(`MCP 服务器客户端未建立：${name}`);
     }
     const serverTools = await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
-      prefixToolNameWithServerName: true,
+      prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
       throwOnLoadError: false,
       useStandardContentBlocks: true,
     });
-    if (deferredServers.has(name)) {
+    if (configuration.defer_loading) {
       for (const tool of serverTools) {
         tool.extras = { ...tool.extras, defer_loading: true };
       }

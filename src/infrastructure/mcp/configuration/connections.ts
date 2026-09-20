@@ -3,17 +3,23 @@ import { z } from "zod";
 export const mcpServerSchema = z.looseObject({
   defer_loading: z.boolean().optional(),
   enabled: z.boolean().optional(),
+  prefixToolNameWithServerName: z.boolean().optional(),
 });
 const stdioSchema = z.looseObject({
   args: z.array(z.string()).default([]),
   command: z.string(),
 });
-export function normalizeMcpServers(
-  servers: Record<string, unknown>,
-): Record<string, Record<string, unknown> & { defer_loading?: boolean }> {
+export function normalizeMcpServers(servers: Record<string, unknown>): Record<
+  string,
+  Record<string, unknown> & {
+    defer_loading?: boolean;
+    prefixToolNameWithServerName?: boolean;
+  }
+> {
   return Object.fromEntries(
     Object.entries(servers).flatMap(([name, server]) => {
-      const { defer_loading, enabled, ...connection } = mcpServerSchema.parse(server);
+      const { defer_loading, enabled, prefixToolNameWithServerName, ...connection } =
+        mcpServerSchema.parse(server);
       return enabled === false
         ? []
         : [
@@ -22,6 +28,9 @@ export function normalizeMcpServers(
               {
                 ...normalizeConnection(connection),
                 ...(defer_loading === undefined ? {} : { defer_loading }),
+                ...(prefixToolNameWithServerName === undefined
+                  ? {}
+                  : { prefixToolNameWithServerName }),
               },
             ],
           ];

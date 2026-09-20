@@ -112,16 +112,13 @@ async function connectMcp(
     const connections = Object.fromEntries(
         Object.entries(configuration.mcpServers).map(([name, connection]) => [
           name,
-          omit(connection, ["defer_loading"]),
+          omit(connection, ["defer_loading", "prefixToolNameWithServerName"]),
         ]),
-      ),
-      deferredServers = new Set(
-        names.filter((name) => configuration.mcpServers[name]?.defer_loading),
       ),
       connectedPool = new McpClientPool(connections, configuration.stdio.restart, logger, cwd);
     pool = connectedPool;
     const namedTools = renameMcpTools(
-        [...builtInTools, ...(await loadServerTools(connectedPool, names, deferredServers))],
+        [...builtInTools, ...(await loadServerTools(connectedPool, configuration.mcpServers))],
         configuration.toolNameOverrides,
       ),
       configured = snapshot

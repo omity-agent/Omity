@@ -4,6 +4,8 @@ import { z } from "zod";
 
 test.each([
   ["mcpServers", { search: { command: "search", defer_loading: "true" } }],
+  ["mcpServers", { search: { command: "search", prefixToolNameWithServerName: "false" } }],
+  ["mcpServers", { search: { command: "search", prefixToolNameWithServerName: null } }],
   ["toolNameOverrides", "search"],
   ["toolNameOverrides", { search: "" }],
   ["toolNameOverrides", { search: "agent" }],
@@ -27,6 +29,25 @@ test.each([
     throw new Error("Expected structured validation failure");
   }
   expect(failure.issues.some((issue) => issue.path[0] === field)).toBe(true);
+});
+test("MCP prefix preferences are preserved independently for stdio and HTTP servers", () => {
+  const configuration = parseMcpConfiguration(
+    {
+      mcpServers: {
+        local: { command: "local", prefixToolNameWithServerName: false },
+        remote: { prefixToolNameWithServerName: true, url: "https://example.com/mcp" },
+      },
+    },
+    "toolbox.yaml",
+  );
+  expect(configuration.mcpServers["local"]).toMatchObject({
+    command: "local",
+    prefixToolNameWithServerName: false,
+  });
+  expect(configuration.mcpServers["remote"]).toMatchObject({
+    prefixToolNameWithServerName: true,
+    url: "https://example.com/mcp",
+  });
 });
 test("missing or null customizations normalize to independent empty containers", () => {
   const omitted = parseMcpConfiguration({}, "toolbox.yaml"),

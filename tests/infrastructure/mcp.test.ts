@@ -154,6 +154,10 @@ test("mcp tool name overrides report renamed conflicts", () => {
     }),
   ).toThrow("MCP 工具重命名后名称冲突：web__crawl");
 });
+test("unprefixed reserved tool names must be renamed", () => {
+  expect(() => renameMcpTools(toolNames(["agent"]), {})).toThrow("MCP 工具不能命名为 agent");
+  expect(renameMcpTools(toolNames(["agent"]), { agent: "assistant" })[0]?.name).toBe("assistant");
+});
 test.each(["constructor", "toString", "__proto__"])(
   "tool names do not read inherited overrides: %s",
   (name) => {

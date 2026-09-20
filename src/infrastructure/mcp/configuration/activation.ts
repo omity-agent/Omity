@@ -14,7 +14,10 @@ export function omitDisabledToolboxConfiguration(value: unknown): unknown {
   if (disabledServers.size === 0 && disabledToolboxTools.size === 0) {
     return value;
   }
-  const serverNames = Object.keys(servers).toSorted((left, right) => right.length - left.length),
+  const serverNames = Object.entries(servers)
+      .filter(([, server]) => !isRecord(server) || server["prefixToolNameWithServerName"] !== false)
+      .map(([name]) => name)
+      .toSorted((left, right) => right.length - left.length),
     serverAliases = collectServerAliases(value["toolNameOverrides"], serverNames, disabledServers),
     toolboxAliases = collectToolboxAliases(value["toolNameOverrides"], disabledToolboxTools);
   return {

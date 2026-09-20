@@ -42,6 +42,10 @@ stdio:
     delayMs: 1000
     maxAttempts: 3
 # MCP 服务器可设置 defer_loading: true，作用于其全部工具（默认 false）。
+# 服务器可设置 prefixToolNameWithServerName: false，使用原始工具名；
+# 默认为 true，工具名为“服务器名__工具名”。
+# toolNameOverrides 的源名称使用此前缀设置生效后的工具名；
+# toolDescriptionOverrides 和 freeformToolInputs 使用重命名后的工具名。
 mcpServers: {}
 toolNameOverrides: {}
 toolDescriptionOverrides: {}

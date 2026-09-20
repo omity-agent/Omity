@@ -17,6 +17,9 @@ export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpT
   const finalNames = new Set<string>();
   for (const tool of tools) {
     const name = names.get(tool.name) ?? tool.name;
+    if (name === "agent") {
+      throw new Error("MCP 工具不能命名为 agent");
+    }
     if (finalNames.has(name)) {
       throw new Error(`MCP 工具重命名后名称冲突：${name}`);
     }

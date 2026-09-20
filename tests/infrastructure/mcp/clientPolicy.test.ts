@@ -71,7 +71,7 @@ test("MCP loading propagates captured stderr", async () => {
     rmSync(root, { force: true, recursive: true });
   }
 });
-test("configured MCP cwd overrides the session workspace default", async () => {
+test("configured MCP cwd and tool prefix are scoped to their server", async () => {
   const root = createTestDirectory("mcp-cwd"),
     settings = join(root, "settings"),
     workspace = join(root, "workspace");
@@ -90,6 +90,7 @@ test("configured MCP cwd overrides the session workspace default", async () => {
   configured:
     command: ${JSON.stringify(process.execPath)}
     cwd: ${JSON.stringify(root)}
+    prefixToolNameWithServerName: false
     env:
       OMITY_TEST_REPORT_CWD: "1"
     args:
@@ -111,7 +112,7 @@ test("configured MCP cwd overrides the session workspace default", async () => {
       }),
       expect.objectContaining({
         description: root,
-        name: "configured__cwd",
+        name: "cwd",
       }),
     ]);
   } finally {
