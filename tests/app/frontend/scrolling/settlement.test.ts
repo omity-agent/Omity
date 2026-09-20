@@ -59,6 +59,32 @@ test("collapse at the bottom updates overlay bounds before following the new bot
   expect(viewport.scrollTop).toBe(1340);
   expect(detail.getBoundingClientRect().bottom).toBe(bottom);
 });
+test.each([false, true])(
+  "collapse away from the bottom accounts for overlay-induced scroll clamping (delayed cache: %s)",
+  (delayed) => {
+    const { content, detail, layout, state, viewport } = layoutFixture({ following: true });
+    viewport.scrollTop -= 20;
+    layout.scroll();
+    layout.capture();
+    const { bottom } = detail.getBoundingClientRect(),
+      top = viewport.scrollTop;
+    state.height = 40;
+    if (delayed) {
+      layout.stabilize();
+      expect(detail.getBoundingClientRect().bottom).toBe(bottom);
+    }
+    state.cachedRow = 40;
+    state.total = 1940;
+    state.contentHeight = 1940;
+    layout.stabilize();
+    expect(viewport.scrollTop).toBe(top - 60);
+    expect(content.style.translate).toBe("");
+    expect(detail.getBoundingClientRect().bottom).toBe(bottom);
+    expect(layout.scroll()).toBe(false);
+    layout.stabilize();
+    expect(viewport.scrollTop).toBe(top - 60);
+  },
+);
 test("a virtualizer correction is not applied twice", () => {
   const { detail, layout, settle, state, viewport } = layoutFixture(),
     { bottom } = detail.getBoundingClientRect();

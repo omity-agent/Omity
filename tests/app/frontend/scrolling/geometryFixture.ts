@@ -44,6 +44,10 @@ export function layoutFixture({ following = false } = {}) {
     },
     layout = new ReadingAnchor(viewport, content, geometry, details, () => {
       state.scrollHeight = state.contentHeight;
+      viewport.scrollTop = Math.min(
+        viewport.scrollTop,
+        Math.max(0, viewport.scrollHeight - viewport.clientHeight),
+      );
     });
   if (!following) {
     viewport.scrollTop = 300;

@@ -49,19 +49,22 @@ export class ReadingAnchor {
       if (!row) {
         throw new Error("详情卡片缺少虚拟行");
       }
-      const delta =
+      const measureDelta = () =>
         element.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top - bottom;
       if (!this.isMeasured(row)) {
         // Keep the visual anchor without scrolling through an outdated size cache.
-        content.style.translate = `0 ${(-delta).toString()}px`;
+        content.style.translate = `0 ${(-measureDelta()).toString()}px`;
         return;
       }
-      // Copy overlays also contribute to scrollHeight and must settle before scrolling.
+      // Settling copy overlays can clamp scrollTop, so measure the remaining delta afterwards.
       this.onLayout();
       if (this.following.isFollowing) {
         this.following.align(viewport);
-      } else if (delta !== 0) {
-        viewport.scrollTop += delta;
+      } else {
+        const delta = measureDelta();
+        if (delta !== 0) {
+          viewport.scrollTop += delta;
+        }
       }
     } else {
       this.following.align(viewport);
