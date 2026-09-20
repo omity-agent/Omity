@@ -36,11 +36,12 @@ export function buildTimeline(
   reasoningTranslations: ReasoningTranslation[] = [],
 ): TimelineMessage[] {
   const outputs = new Map(
-      messages.flatMap((item) =>
-        item.role === "tool" && item.toolCallId
+      messages.flatMap((item) => [
+        ...Object.entries(item.toolOutputs ?? {}),
+        ...(item.role === "tool" && item.toolCallId
           ? [[item.toolCallId, item as DisplayToolOutput] as const]
-          : [],
-      ),
+          : []),
+      ]),
     ),
     persistedToolCalls = messages.flatMap((item) => item.toolCalls),
     lifecycle = toolCallLifecycle(events, outputs),

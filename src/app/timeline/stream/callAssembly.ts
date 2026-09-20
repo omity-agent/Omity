@@ -11,9 +11,10 @@ export interface ToolPart {
   index: number;
   kind: "tool_call_delta";
   name: string;
+  providerExecuted?: true;
 }
 export function beginToolPart(delta: ToolDelta): ToolPart {
-  const args = delta.argumentsDelta ?? "";
+  const args = delta.argumentsText ?? delta.argumentsDelta ?? "";
   return {
     args,
     argumentEnds: args ? [args.length] : [],
@@ -22,21 +23,28 @@ export function beginToolPart(delta: ToolDelta): ToolPart {
     index: delta.index,
     kind: "tool_call_delta",
     name: delta.nameDelta ?? "",
+    ...(delta.providerExecuted ? { providerExecuted: true } : {}),
   };
 }
 export function extendToolPart(part: ToolPart, delta: ToolDelta) {
   if (part.index !== delta.index) {
     throw new Error("工具流片段的索引发生变化");
   }
-  part.args += delta.argumentsDelta ?? "";
+  if (delta.argumentsText !== undefined) {
+    part.args = delta.argumentsText;
+    part.argumentEnds = part.args ? [part.args.length] : [];
+  } else {
+    part.args += delta.argumentsDelta ?? "";
+    if (delta.argumentsDelta) {
+      part.argumentEnds.push(part.args.length);
+    }
+  }
   part.freeform ??= delta.freeform;
+  part.providerExecuted ??= delta.providerExecuted;
   if (delta.idDelta) {
     part.id = (part.id ?? "") + delta.idDelta;
   }
   part.name += delta.nameDelta ?? "";
-  if (delta.argumentsDelta) {
-    part.argumentEnds.push(part.args.length);
-  }
 }
 export function latestParsedInput(part: ToolPart) {
   if (part.freeform) {

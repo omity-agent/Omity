@@ -4,8 +4,23 @@ import { contentToText } from "./content";
 import { countTokens } from "./tokenizer";
 import { extractToolImages } from "./multimodal";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { stringify } from "yaml";
 
 export type { ToolOutputSnapshot } from "../types";
+export function textOutputSnapshot(content: string): ToolOutputSnapshot {
+  return { content, images: [], outputTokens: countTokens(content) };
+}
+export function displayToolInput(value: unknown) {
+  return isRecord(value) && Object.hasOwn(value, "arguments") && Object.hasOwn(value, "call_id")
+    ? value["arguments"]
+    : value;
+}
+export function toolValueText(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+export function toolOutputText(value: unknown): string {
+  return typeof value === "string" ? value : stringify(value, { lineWidth: 0 }).replace(/\n$/u, "");
+}
 export function cancelledToolMessage(callId: string, durationMs: number, name?: string) {
   return new ToolMessage({
     content: `工具运行 ${formatDuration(durationMs)} 后被用户手动终止。`,

@@ -26,10 +26,12 @@ export const streamEventSchema = z.discriminatedUnion("kind", [
     kind: z.literal("tool_call_delta"),
     value: z.object({
       argumentsDelta: z.string().optional(),
+      argumentsText: z.string().optional(),
       freeform: z.boolean().optional(),
       idDelta: z.string().optional(),
       index: z.number().int().nonnegative(),
       nameDelta: z.string().optional(),
+      providerExecuted: z.literal(true).optional(),
     }),
   }),
   streamEventBaseSchema.extend({

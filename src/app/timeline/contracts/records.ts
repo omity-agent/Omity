@@ -4,6 +4,11 @@ import { errorDetailsSchema } from "../../../failures/details";
 import { z } from "zod";
 
 const integer = z.number().int(),
+  toolOutputSchema = z.object({
+    content: z.string(),
+    images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
+    outputTokens: integer.nonnegative().optional(),
+  }),
   toolCallSchema = z.object({
     fileLinks: z.array(filePathMatchSchema).optional(),
     id: z.string(),
@@ -13,6 +18,7 @@ const integer = z.number().int(),
     inputTokens: integer.nonnegative(),
     messageId: z.string().optional(),
     name: z.string(),
+    providerExecuted: z.literal(true).optional(),
     rawInput: z.string().optional(),
     temporary: z.literal(true).optional(),
   }),
@@ -33,6 +39,7 @@ const integer = z.number().int(),
     sourceId: z.string().optional(),
     toolCallId: z.string().optional(),
     toolCalls: z.array(toolCallSchema),
+    toolOutputs: z.record(z.string(), toolOutputSchema).optional(),
     usage: tokenUsageSchema.optional(),
   }),
   queueSchema = z.object({

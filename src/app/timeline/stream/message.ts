@@ -156,6 +156,7 @@ function displayCall(
     inputTokens: countTokens(inputText),
     messageId,
     name: part.name || "tool",
+    ...(part.providerExecuted ? { providerExecuted: true } : {}),
     ...(part.formal ? {} : { temporary: true }),
     ...(part.freeform ? { rawInput: inputText } : {}),
     ...optionalStreamLinks(units.flatMap((unit) => unit.matches)),

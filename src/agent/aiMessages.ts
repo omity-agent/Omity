@@ -87,7 +87,7 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   }
   return input;
 }
-function assistantContent(message: AIMessage): StoredAiSdkPart[] {
+export function assistantContent(message: AIMessage): StoredAiSdkPart[] {
   const stored = message.additional_kwargs["aiSdkContent"];
   if (stored !== undefined) {
     const parsed = assistantModelMessageSchema.safeParse({ content: stored, role: "assistant" });

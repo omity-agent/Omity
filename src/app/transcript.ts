@@ -1,19 +1,19 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
-import { type DisplayMessage, type DisplayToolCall } from "./timeline";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
-import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import type { DisplayMessage } from "./timeline";
 import type { QueueStatus } from "../types";
+import { extractToolActivity } from "./timeline/tool/extraction";
 import { extractToolImages } from "../runtime/multimodal";
 import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks";
 import { loadReasoningTranslations } from "../infrastructure/database/records/reasoningTranslations";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
+import { modelTokenUsage } from "./timeline/tokenCounts";
 import { openStoredSession } from "../storedSessions";
 import { parseError } from "../failures/details";
 import { prependInstructions } from "./timeline/build/instructions";
-import { rawFreeformInput } from "../runtime/freeform";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
 import { toolOutputTokens } from "../runtime/toolOutput";
 
@@ -108,8 +108,8 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     queueId: row.queue_id,
     reasoning: messageReasoning(message),
     role,
-    toolCallId: extractToolCallId(message),
-    toolCalls: extractToolCalls(message),
+    ...(ToolMessage.isInstance(message) ? { toolCallId: message.tool_call_id } : {}),
+    ...extractToolActivity(message),
     ...(ToolMessage.isInstance(message)
       ? { outputTokens: toolOutputTokens(message, content) }
       : {}),
@@ -128,53 +128,4 @@ function messageRole(message: BaseMessage): DisplayMessage["role"] {
     return "tool";
   }
   throw new Error(`不支持显示消息类型：${message.type}`);
-}
-function extractToolCalls(message: BaseMessage): DisplayToolCall[] {
-  const calls = readRecordArray(message, "tool_calls");
-  return calls.map((call, index) => {
-    const input = call["args"] ?? call["input"] ?? call,
-      callId = stringField(call, "id"),
-      id = callId ?? `tool-${index.toString()}`,
-      freeform = call["isCustomTool"] === true,
-      toolCall: DisplayToolCall = {
-        id,
-        index,
-        input,
-        inputTokens: toolInputTokens(call, input),
-        name: stringField(call, "name") ?? "tool",
-      };
-    if (!callId) {
-      toolCall.temporary = true;
-    }
-    if (message.id) {
-      toolCall.messageId = message.id;
-    }
-    if (freeform) {
-      toolCall.rawInput = rawFreeformInput(input);
-    }
-    return toolCall;
-  });
-}
-function extractToolCallId(message: BaseMessage) {
-  const value = readRecord(message, "tool_call_id");
-  return typeof value === "string" ? value : undefined;
-}
-function readRecordArray(message: BaseMessage, key: string) {
-  const value = hasProperty(message, key) ? message[key] : undefined;
-  return Array.isArray(value) ? value.filter(isRecord) : [];
-}
-function readRecord(message: BaseMessage, key: string) {
-  return hasProperty(message, key) ? message[key] : undefined;
-}
-function stringField(record: Record<string, unknown>, key: string) {
-  return typeof record[key] === "string" ? record[key] : undefined;
-}
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-function hasProperty<Key extends PropertyKey>(
-  value: object,
-  key: Key,
-): value is object & Record<Key, unknown> {
-  return key in value;
 }

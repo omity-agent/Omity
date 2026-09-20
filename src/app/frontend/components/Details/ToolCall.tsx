@@ -64,7 +64,7 @@ export function ToolCall({
   phase: ToolCallPhase;
 }) {
   const { t } = useTranslation(),
-    cancellable = canCancelToolCall(phase),
+    cancellable = canCancelToolCall(phase, call.providerExecuted),
     running = phase === "running",
     showOutput = output !== undefined || running,
     showOutputCode = output
@@ -115,6 +115,7 @@ export function ToolCall({
                 className={codeBlock}
                 code={output?.content ?? ""}
                 fileLinkMatches={output?.fileLinks}
+                language={call.providerExecuted ? "yaml" : undefined}
               />
             ) : null}
             {output && output.images.length > 0 ? (

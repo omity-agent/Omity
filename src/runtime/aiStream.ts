@@ -1,11 +1,12 @@
 import { type AiStreamEvent, hasModelContent } from "../agent/model/request";
-import { acceptMessageId, sequentialPart, toolPart } from "./stream/parts";
+import { acceptMessageId, sequentialPart } from "./stream/parts";
 import { appendReasoningDelta, flushReasoning } from "./content";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
 import { findToolStreamIdentity } from "../infrastructure/database/records/toolStreamIdentity";
 import { pendingToolBatch } from "../agent/graph/toolBatch";
+import { recordInvocation } from "./stream/invocations";
 import { toUIMessageChunk } from "ai";
 
 type AiStreamContext = Pick<
@@ -58,39 +59,8 @@ export async function recordAiStreamPart(
       }
       ctx.observer?.token(ctx.sessionId, queueId, chunk.delta);
     }
-  } else if (chunk?.type === "tool-input-start") {
-    if (chunk.providerExecuted) {
-      state.serverToolIds.add(chunk.toolCallId);
-      return;
-    }
-    ctx.toolExecutions?.announce(chunk.toolCallId);
-    const messageId = streamMessageId(state, chunk.toolCallId),
-      index = toolIndex(state, chunk.toolCallId);
-    await ctx.db.appendStream(ctx.sessionId, {
-      kind: "tool_call_delta",
-      messageId,
-      partId: toolPart(state.parts, index),
-      queueId,
-      value: {
-        ...(event.freeform ? { freeform: true } : {}),
-        idDelta: chunk.toolCallId,
-        index,
-        nameDelta: chunk.toolName,
-      },
-    });
-  } else if (chunk?.type === "tool-input-delta") {
-    if (state.serverToolIds.has(chunk.toolCallId)) {
-      return;
-    }
-    const messageId = streamMessageId(state, chunk.toolCallId),
-      index = toolIndex(state, chunk.toolCallId);
-    await ctx.db.appendStream(ctx.sessionId, {
-      kind: "tool_call_delta",
-      messageId,
-      partId: toolPart(state.parts, index),
-      queueId,
-      value: { argumentsDelta: chunk.inputTextDelta, index },
-    });
+  } else {
+    await recordInvocation(ctx, queueId, event, state);
   }
 }
 export async function recordToolStarted(
@@ -123,13 +93,4 @@ function streamMessageId(state: StreamLogState, partId: string) {
     throw new Error("AI SDK 流缺少稳定消息 ID");
   }
   return messageId;
-}
-function toolIndex(state: StreamLogState, callId: string) {
-  const existing = state.aiToolIndexes.get(callId);
-  if (existing !== undefined) {
-    return existing;
-  }
-  const index = state.aiToolIndexes.size;
-  state.aiToolIndexes.set(callId, index);
-  return index;
 }

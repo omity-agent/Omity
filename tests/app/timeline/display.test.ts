@@ -152,6 +152,8 @@ test("pending tool calls remain cancellable at a pause boundary", () => {
   expect(canCancelToolCall("running")).toBe(true);
   expect(canCancelToolCall("streaming")).toBe(false);
   expect(canCancelToolCall("completed")).toBe(false);
+  expect(canCancelToolCall("pending", true)).toBe(false);
+  expect(canCancelToolCall("running", true)).toBe(false);
 });
 test("grouped assistant messages retain the latest token usage", () => {
   const usage = {

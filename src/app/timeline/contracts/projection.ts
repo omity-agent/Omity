@@ -12,8 +12,8 @@ export type {
 } from "./records";
 export type DisplayRole = DisplayMessage["role"];
 export type ToolCallPhase = "streaming" | "pending" | "running" | "completed";
-export function canCancelToolCall(phase: ToolCallPhase) {
-  return phase === "pending" || phase === "running";
+export function canCancelToolCall(phase: ToolCallPhase, providerExecuted = false) {
+  return !providerExecuted && (phase === "pending" || phase === "running");
 }
 export type DisplayEvent = StreamEvent;
 export type DisplayToolOutput = ToolOutputSnapshot & { fileLinks?: FilePathMatch[] };
