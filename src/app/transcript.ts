@@ -4,19 +4,17 @@ import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persis
 import { contentToText, messageReasoning } from "../runtime/content";
 import { modelTokenUsage, toolInputTokens } from "./timeline/tokenCounts";
 import { queryAll, runTransaction } from "../infrastructure/database/connection";
-import { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { QueueStatus } from "../types";
-import { existsSync } from "node:fs";
-import { extractToolImages } from "../runtime/modelImages";
+import { extractToolImages } from "../runtime/multimodal";
 import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks";
 import { loadReasoningTranslations } from "../infrastructure/database/records/reasoningTranslations";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
+import { openStoredSession } from "../storedSessions";
 import { parseError } from "../failures/details";
 import { prependInstructions } from "./timeline/build/instructions";
 import { rawFreeformInput } from "../runtime/freeform";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
-import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
-import { sessionNotFound } from "../errors";
 import { toolOutputTokens } from "../runtime/toolOutput";
 
 interface MessageRow {
@@ -36,19 +34,8 @@ interface QueueRow {
   submission_id: string | null;
 }
 export function loadSessionTranscript(sessionId: string) {
-  return withSessionDatabase(sessionId, (db) => loadTranscript(db, sessionId));
-}
-function withSessionDatabase<T>(sessionId: string, read: (db: AgentDatabase) => T) {
-  const paths = resolveSessionPaths(sessionId);
-  if (!existsSync(paths.dbPath)) {
-    throw sessionNotFound(sessionId);
-  }
-  const db = new AgentDatabase(paths.dbPath);
-  try {
-    return read(db);
-  } finally {
-    db.close();
-  }
+  using db = openStoredSession(sessionId);
+  return loadTranscript(db, sessionId);
 }
 export function loadTranscript(db: AgentDatabase, sessionId: string) {
   return runTransaction(db.db, () => {

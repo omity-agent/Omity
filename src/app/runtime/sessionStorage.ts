@@ -10,6 +10,7 @@ import { UserMessageStorage } from "../../infrastructure/database/userMessages";
 import { contentToText } from "../../runtime/content";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/initialConversation";
+import { openStoredSession } from "../../storedSessions";
 import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
 
 export function createSessionStorage(
@@ -20,10 +21,10 @@ export function createSessionStorage(
   message: string,
   definition: SessionDefinition = emptySessionDefinition(),
 ) {
-  const paths = sessionPaths(sessionId),
-    db = new AgentDatabase(paths.dbPath);
+  const paths = sessionPaths(sessionId);
   let initialized = false;
   try {
+    using db = new AgentDatabase(paths.dbPath);
     db.createSession(sessionId, workspace, profiles, definition);
     initializeConversation(db.db, sessionId, initialHistory(history), message);
     new UserMessageStorage(paths.userMessagesDir).writeAll([
@@ -32,7 +33,6 @@ export function createSessionStorage(
     ]);
     initialized = true;
   } finally {
-    db.close();
     if (!initialized) {
       removeDatabaseDirectory(paths.dir);
     }
@@ -51,14 +51,11 @@ export function forkSessionStorage({
   profiles: string[];
   beforeMessageId: number;
 }) {
-  const sourcePaths = resolveSessionPaths(sourceSessionId),
-    targetPaths = sessionPaths(targetSessionId);
-  let created = false,
-    source: AgentDatabase | undefined,
-    target: AgentDatabase | undefined;
+  const targetPaths = sessionPaths(targetSessionId);
+  let created = false;
   try {
-    source = new AgentDatabase(sourcePaths.dbPath);
-    target = new AgentDatabase(targetPaths.dbPath);
+    using source = openStoredSession(sourceSessionId),
+      target = new AgentDatabase(targetPaths.dbPath);
     forkDatabaseBeforeMessage({
       beforeMessageId,
       profiles,
@@ -76,16 +73,8 @@ export function forkSessionStorage({
     );
     created = true;
   } finally {
-    try {
-      try {
-        target?.close();
-      } finally {
-        source?.close();
-      }
-    } finally {
-      if (!created) {
-        removeDatabaseDirectory(targetPaths.dir);
-      }
+    if (!created) {
+      removeDatabaseDirectory(targetPaths.dir);
     }
   }
 }

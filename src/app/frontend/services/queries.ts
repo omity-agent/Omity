@@ -6,9 +6,8 @@ import {
   readSessionsEvent,
   readWarningEvent,
 } from "./events/data";
-import { reportBrowserWarning, reportSessionErrors } from "./events/reporting";
+import { reportBrowserWarning, reportSessionErrors, subscribeEvents } from "./events/delivery";
 import { useEffect, useRef } from "react";
-import { reportError } from "./errors";
 import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
@@ -27,32 +26,10 @@ export function useBootstrap() {
       },
       queryKey: bootstrapKey,
     });
-  useEffect(() => {
-    const events = stateEvents(),
-      replace = (event: Event) => {
-        try {
-          const sessions = readSessionsEvent(event);
-          attention.replace(sessions);
-          streamedSessions.current = sessions;
-          updateCachedSessions(queryClient, () => sessions);
-        } catch (error) {
-          reportError(error);
-        }
-      },
-      upsert = (event: Event) => {
-        try {
-          const session = readSessionEvent(event);
-          attention.upsert(session);
-          if (streamedSessions.current) {
-            streamedSessions.current = upsertSessionList(streamedSessions.current, session);
-          }
-          updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
-        } catch (error) {
-          reportError(error);
-        }
-      },
-      remove = (event: Event) => {
-        try {
+  useEffect(
+    () =>
+      subscribeEvents(stateEvents(), {
+        deleted(event) {
           const sessionId = readDeletedEvent(event);
           attention.remove(sessionId);
           if (streamedSessions.current) {
@@ -60,25 +37,27 @@ export function useBootstrap() {
           }
           updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
           queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
-        } catch (error) {
-          reportError(error);
-        }
-      },
-      warning = (event: Event) => {
-        try {
+        },
+        session(event) {
+          const session = readSessionEvent(event);
+          attention.upsert(session);
+          if (streamedSessions.current) {
+            streamedSessions.current = upsertSessionList(streamedSessions.current, session);
+          }
+          updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
+        },
+        sessions(event) {
+          const sessions = readSessionsEvent(event);
+          attention.replace(sessions);
+          streamedSessions.current = sessions;
+          updateCachedSessions(queryClient, () => sessions);
+        },
+        warning(event) {
           reportBrowserWarning(readWarningEvent(event));
-        } catch (error) {
-          reportError(error);
-        }
-      };
-    events.addEventListener("sessions", replace);
-    events.addEventListener("session", upsert);
-    events.addEventListener("deleted", remove);
-    events.addEventListener("warning", warning);
-    return () => {
-      events.close();
-    };
-  }, [attention, queryClient]);
+        },
+      }),
+    [attention, queryClient],
+  );
   useEffect(() => {
     if (!query.data) {
       return;
@@ -89,20 +68,11 @@ export function useBootstrap() {
 }
 export function addSession(queryClient: QueryClient, session: SessionInfo) {
   sessionAttentionStore(queryClient).upsert(session);
-  queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) =>
-    current ? { ...current, sessions: upsertSessionList(current.sessions, session) } : current,
-  );
+  updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
 }
 export function removeSession(queryClient: QueryClient, sessionId: string) {
   sessionAttentionStore(queryClient).remove(sessionId);
-  queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) =>
-    current
-      ? {
-          ...current,
-          sessions: withoutSession(current.sessions, sessionId),
-        }
-      : current,
-  );
+  updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
   queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
 }
 function updateCachedSessions(

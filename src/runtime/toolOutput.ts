@@ -2,7 +2,7 @@ import { ToolMessage } from "@langchain/core/messages";
 import type { ToolOutputSnapshot } from "../types";
 import { contentToText } from "./content";
 import { countTokens } from "./tokenizer";
-import { extractToolImages } from "./modelImages";
+import { extractToolImages } from "./multimodal";
 import { isPlainObject as isRecord } from "es-toolkit";
 
 export type { ToolOutputSnapshot } from "../types";

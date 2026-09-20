@@ -22,7 +22,7 @@ import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
 import { closeControllerResources } from "./runtime/shutdown";
-import { deleteHostSession } from "../sessionStorage";
+import { deleteHostSession } from "../storedSessions";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSessionTranscript } from "./transcript";
 import { loadSettings } from "../infrastructure/configuration/settings/load";

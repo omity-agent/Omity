@@ -10,10 +10,9 @@ import {
 } from "@langchain/langgraph-checkpoint";
 import { type CheckpointRow, configIdentity, listQuery, selectCheckpoint } from "./sql";
 import type { Database, SQLQueryBindings } from "bun:sqlite";
-import { queryAll, queryGet, runTransaction } from "../infrastructure/database/connection";
+import { cachedQuery, queryAll, runTransaction } from "../infrastructure/database/connection";
 import { CheckpointDecoder } from "./decoding";
 import type { RunnableConfig } from "@langchain/core/runnables";
-import { deleteThreadData } from "./lifecycle";
 
 export class BunSqliteSaver extends BaseCheckpointSaver {
   private readonly decoder = new CheckpointDecoder();
@@ -22,7 +21,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
   }
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
     const { checkpointId, checkpointNs, threadId } = configIdentity(config),
-      row = queryGet<CheckpointRow>(this.db, selectCheckpoint(), threadId, checkpointNs);
+      row = cachedQuery<CheckpointRow>(this.db, selectCheckpoint()).get(threadId, checkpointNs);
     if (!row) {
       return undefined;
     }
@@ -54,12 +53,10 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
       throw new Error("checkpoint 与 metadata 的序列化类型不一致");
     }
     runTransaction(this.db, () => {
-      const current = queryGet<{ checkpoint_id: string }>(
+      const current = cachedQuery<{ checkpoint_id: string }>(
         this.db,
         "SELECT checkpoint_id FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?",
-        identity.threadId,
-        identity.checkpointNs,
-      );
+      ).get(identity.threadId, identity.checkpointNs);
       if (current && current.checkpoint_id !== identity.checkpointId) {
         throw new Error(`checkpoint head 冲突：${current.checkpoint_id}`);
       }
@@ -112,12 +109,10 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
         }),
       );
     runTransaction(this.db, () => {
-      const current = queryGet<{ checkpoint_id: string }>(
+      const current = cachedQuery<{ checkpoint_id: string }>(
         this.db,
         "SELECT checkpoint_id FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?",
-        identity.threadId,
-        identity.checkpointNs,
-      );
+      ).get(identity.threadId, identity.checkpointNs);
       if (current?.checkpoint_id !== checkpointId) {
         throw new Error(`checkpoint pending write 已过期：${checkpointId}`);
       }
@@ -134,4 +129,8 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
   async deleteThread(threadId: string) {
     runTransaction(this.db, () => deleteThreadData(this.db, threadId));
   }
+}
+export function deleteThreadData(db: Database, threadId: string) {
+  db.query("DELETE FROM checkpoint_writes WHERE thread_id = ?").run(threadId);
+  db.query("DELETE FROM checkpoints WHERE thread_id = ?").run(threadId);
 }

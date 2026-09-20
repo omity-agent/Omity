@@ -52,13 +52,17 @@ export function fromModelMessages(
 function storedAssistantContent(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
   return typeof content === "string"
     ? [{ text: content, type: "text" as const }]
-    : content.filter(
-        (part): part is StoredAiSdkPart =>
-          part.type === "text" ||
-          part.type === "reasoning" ||
-          part.type === "tool-result" ||
-          (part.type === "tool-call" && part.providerExecuted === true),
-      );
+    : content.filter(isStoredAssistantPart);
+}
+export function isStoredAssistantPart(
+  part: Exclude<Extract<ModelMessage, { role: "assistant" }>["content"], string>[number],
+): part is StoredAiSdkPart {
+  return (
+    part.type === "text" ||
+    part.type === "reasoning" ||
+    part.type === "tool-result" ||
+    (part.type === "tool-call" && part.providerExecuted === true)
+  );
 }
 function assistantText(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
   if (typeof content === "string") {

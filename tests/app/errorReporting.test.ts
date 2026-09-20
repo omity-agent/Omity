@@ -7,7 +7,7 @@ import {
 import { expect, spyOn, test } from "bun:test";
 import type { SessionInfo } from "../../src/app/frontend/services/client";
 import { reportError } from "../../src/app/frontend/services/errors";
-import { reportSessionErrors } from "../../src/app/frontend/services/events/reporting";
+import { reportSessionErrors } from "../../src/app/frontend/services/events/delivery";
 
 test("session errors are logged once until they clear", () => {
   const log = spyOn(console, "error").mockReturnValue(undefined),

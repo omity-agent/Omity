@@ -83,6 +83,35 @@ test("content SSE uses the persisted cursor and sends ordered target deltas", as
   abort.abort();
   await frames.cancel();
 });
+test("content subscriptions stay isolated across sessions and independent within a session", async () => {
+  const controller = createApiController(),
+    api = createApi(controller),
+    first = sseFrames(await api.request("/api/sessions/test/events/content")),
+    second = sseFrames(await api.request("/api/sessions/test/events/content")),
+    other = sseFrames(await api.request("/api/sessions/other/events/content"));
+  try {
+    await Promise.all([first.next(), second.next(), other.next()]);
+    controller.events.invalidateTranscript("test", 10);
+    controller.events.invalidateTranscript("other", 20);
+    expect(await first.next()).toContain('data: {"eventCursor":10}');
+    expect(await second.next()).toContain('data: {"eventCursor":10}');
+    expect(await other.next()).toContain('data: {"eventCursor":20}');
+    await first.cancel();
+    controller.events.invalidateTranscript("test", 11);
+    expect(await second.next()).toContain('data: {"eventCursor":11}');
+    await second.cancel();
+    const reopened = sseFrames(await api.request("/api/sessions/test/events/content"));
+    try {
+      await reopened.next();
+      controller.events.invalidateTranscript("test", 12);
+      expect(await reopened.next()).toContain('data: {"eventCursor":12}');
+    } finally {
+      await reopened.cancel();
+    }
+  } finally {
+    await Promise.all([first.cancel(), second.cancel(), other.cancel()]);
+  }
+});
 function sseFrames(response: Response) {
   const reader = response.body?.getReader();
   if (!reader) {

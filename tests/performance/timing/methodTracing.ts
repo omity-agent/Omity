@@ -1,7 +1,7 @@
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
 import { AppController } from "../../../src/app/controller";
 import { AppRegistry } from "../../../src/app/registry";
-import { BunSqliteSaver } from "../../../src/checkpointer";
+import { BunSqliteSaver } from "../../../src/checkpointer/saver";
 import { Database } from "bun:sqlite";
 import { FileLinkIndexer } from "../../../src/infrastructure/database/fileLinkIndexer";
 import { FunctionTracing } from "./functionTracing";

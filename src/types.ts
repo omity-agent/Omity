@@ -1,6 +1,6 @@
-import type { ErrorDetails } from "./failures/details";
 import { z } from "zod";
 
+export type { BrowserWarning } from "./app/events/contracts";
 export { streamEventSchema } from "./infrastructure/database/schema/streamEvent";
 export type {
   StreamEvent,
@@ -39,17 +39,6 @@ export function isRunningStatus(status: SessionStatus | undefined) {
   return (
     status === "waiting" || status === "streaming" || status === "pausing" || status === "tool"
   );
-}
-export interface BrowserWarning {
-  code: "model_api_unavailable";
-  details: {
-    attempt: number;
-    delayMs: number;
-    error: ErrorDetails;
-    queueId: number;
-    sessionId: string;
-  };
-  message: string;
 }
 export interface HostMode {
   kind: "new" | "load" | "overwrite";

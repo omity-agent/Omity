@@ -1,7 +1,7 @@
 import { appendSessionMessage, setSessionControl } from "../client";
 import type { CliCommand } from "./parser";
 import type { HostMode } from "../types";
-import { deleteHostSession } from "../sessionStorage";
+import { deleteHostSession } from "../storedSessions";
 import { openBrowser } from "../app/launch";
 import { runHost } from "../host";
 import { startAppServer } from "../app/server";

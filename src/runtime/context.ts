@@ -1,7 +1,7 @@
 import type { BrowserWarning, HostActivity, Settings, StreamEvent } from "../types";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { BaseMessage } from "@langchain/core/messages";
-import type { BunSqliteSaver } from "../checkpointer";
+import type { BunSqliteSaver } from "../checkpointer/saver";
 import type { Logger } from "../infrastructure/logging/logger";
 import type { ToolExecutions } from "../agent/toolExecutions";
 import type { buildGraph } from "../agent";
@@ -69,15 +69,6 @@ async function abortableSleep(delayMs: number, signal: AbortSignal) {
     }
   }
 }
-interface RuntimeGraphState extends Record<string, unknown> {
-  next: string[];
-  tasks: (Record<string, unknown> & { name: string })[];
-  values: Record<string, unknown> & {
-    hookPendingUserIds?: string[];
-    hookPlan?: unknown;
-    messages: BaseMessage[];
-  };
-}
 const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(value)),
   graphStateSchema = z.looseObject({
     next: z.array(z.string()),
@@ -88,7 +79,7 @@ const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(va
       messages: z.array(messageSchema),
     }),
   });
-export function readGraphState(value: unknown): RuntimeGraphState {
+export function readGraphState(value: unknown) {
   const parsed = graphStateSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error("LangGraph 状态无效", { cause: parsed.error });

@@ -1,9 +1,9 @@
 import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
+import { cachedQuery } from "../../../src/infrastructure/database/connection";
 import { deriveSessionTitle } from "../../../src/infrastructure/database/records/messages/deriveTitle";
 import { forkDatabaseBeforeMessage } from "../../../src/app/fork";
-import { queryGet } from "../../../src/infrastructure/database/connection";
 import { recordedTitle } from "./recordedCalls";
 
 afterEach(cleanupDatabaseDirs);
@@ -76,12 +76,10 @@ function forkAt(
   position: number,
 ) {
   const { id } = required(
-    queryGet<{ id: number }>(
+    cachedQuery<{ id: number }>(
       source.db,
       "SELECT id FROM messages WHERE session_id = ? AND position = ?",
-      "source",
-      position,
-    ),
+    ).get("source", position),
   );
   forkDatabaseBeforeMessage({
     beforeMessageId: id,

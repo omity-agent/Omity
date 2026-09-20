@@ -1,7 +1,7 @@
 import { Annotation, END, START, StateGraph, task } from "@langchain/langgraph";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb } from "../support/database";
-import { BunSqliteSaver } from "../../src/checkpointer";
+import { BunSqliteSaver } from "../../src/checkpointer/saver";
 
 afterEach(cleanupDatabaseDirs);
 test("Bun saver resumes a completed task without repeating its side effect", async () => {

@@ -1,24 +1,13 @@
-import { eventSchema, sessionInfoSchema } from "../validation/responses";
-import type { BrowserWarning } from "../../../../types";
-import { errorDetailsSchema } from "../../../../failures/details";
-import { z } from "../validation";
+import {
+  deletedEventSchema,
+  sessionInfoSchema,
+  sessionsEventSchema,
+  syncEventSchema,
+  warningEventSchema,
+} from "../../../events/contracts";
+import { eventSchema } from "../validation/responses";
+import type { z } from "../validation";
 
-const sessionsEventSchema = z.object({
-    sessions: z.array(sessionInfoSchema),
-  }),
-  deletedEventSchema = z.object({ sessionId: z.string() }),
-  warningEventSchema: z.ZodType<BrowserWarning> = z.object({
-    code: z.literal("model_api_unavailable"),
-    details: z.object({
-      attempt: z.number().int().positive(),
-      delayMs: z.number().int().positive(),
-      error: errorDetailsSchema,
-      queueId: z.number().int().positive(),
-      sessionId: z.string().min(1),
-    }),
-    message: z.string().min(1),
-  }),
-  syncEventSchema = z.object({ eventCursor: z.number().int().nonnegative() });
 export function readSessionsEvent(event: Event) {
   readStateEventId(event, "sessions");
   return readEventData(event, sessionsEventSchema, "sessions").sessions;

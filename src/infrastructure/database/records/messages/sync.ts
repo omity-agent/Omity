@@ -23,8 +23,8 @@ export function prepareMessageSync(db: Database, sessionId: string, messages: Ba
     changedAt = firstChangedIndex(
       existing,
       items.map((item) => item.stored),
-    );
-  const changed = changedAt !== items.length || changedAt !== existing.length;
+    ),
+    changed = changedAt !== items.length || changedAt !== existing.length;
   return {
     changed,
     commit: () => {

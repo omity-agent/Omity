@@ -5,17 +5,13 @@ import {
   type MessageContent,
   ToolMessage,
 } from "@langchain/core/messages";
-import {
-  extractToolImages,
-  prepareModelImageMessages,
-  toolContentText,
-} from "../runtime/modelImages";
+import { type ModelMessage, assistantModelMessageSchema } from "ai";
+import { type StoredAiSdkPart, isStoredAssistantPart } from "./fromAiMessages";
 import { isJSONValue, isPlainObject } from "es-toolkit";
 import type { ModelApi } from "../types";
-import type { ModelMessage } from "ai";
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
-import type { StoredAiSdkPart } from "./fromAiMessages";
 import { isProviderOptions } from "./toolProviderOptions";
+import { modelToolOutput } from "../runtime/multimodal";
 
 type AssistantPart = Exclude<
   Extract<ModelMessage, { role: "assistant" }>["content"],
@@ -26,7 +22,7 @@ export function toModelMessages(
   messages: BaseMessage[],
   api: ModelApi = "completions",
 ): ModelMessage[] {
-  return prepareModelImageMessages(messages, api).map((message): ModelMessage => {
+  return messages.map((message): ModelMessage => {
     if (HumanMessage.isInstance(message)) {
       return { content: textContent(message.content), role: "user" };
     }
@@ -43,7 +39,7 @@ export function toModelMessages(
       return {
         content: [
           {
-            output: toolOutput(message.content, api),
+            output: modelToolOutput(message.content, api),
             toolCallId: message.tool_call_id,
             toolName: message.name ?? "tool",
             type: "tool-result",
@@ -81,24 +77,6 @@ function toolProviderOptions(message: AIMessage, callId: string): ProviderOption
   }
   return byCall[callId];
 }
-function toolOutput(content: BaseMessage["content"], api: ModelApi) {
-  const images = api !== "completions" ? extractToolImages(content) : [],
-    text = toolContentText(content);
-  if (images.length === 0) {
-    return { type: "text" as const, value: text };
-  }
-  return {
-    type: "content" as const,
-    value: [
-      ...(text ? [{ text, type: "text" as const }] : []),
-      ...images.map(({ mimeType, src }) => ({
-        data: { type: "url" as const, url: new URL(src) },
-        mediaType: mimeType,
-        type: "file" as const,
-      })),
-    ],
-  };
-}
 function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   if (Reflect.get(call, "isCustomTool") !== true) {
     return call.args;
@@ -112,39 +90,19 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
 function assistantContent(message: AIMessage): StoredAiSdkPart[] {
   const stored = message.additional_kwargs["aiSdkContent"];
   if (stored !== undefined) {
-    if (!Array.isArray(stored) || !stored.every(isStoredAiSdkPart)) {
+    const parsed = assistantModelMessageSchema.safeParse({ content: stored, role: "assistant" });
+    if (
+      !parsed.success ||
+      typeof parsed.data.content === "string" ||
+      !parsed.data.content.every(isStoredAssistantPart) ||
+      parsed.data.content.some((part) => part.type === "tool-call" && !isJSONValue(part.input))
+    ) {
       throw new Error("会话保存的 AI SDK 内容格式无效");
     }
-    return stored;
+    return parsed.data.content;
   }
   const text = textContent(message.content);
   return text ? [{ text, type: "text" }] : [];
-}
-function isStoredAiSdkPart(value: unknown): value is StoredAiSdkPart {
-  if (
-    !isPlainObject(value) ||
-    (value["providerOptions"] !== undefined && !isProviderOptions(value["providerOptions"]))
-  ) {
-    return false;
-  }
-  if (value["type"] === "text" || value["type"] === "reasoning") {
-    return typeof value["text"] === "string";
-  }
-  if (typeof value["toolCallId"] !== "string" || typeof value["toolName"] !== "string") {
-    return false;
-  }
-  if (value["type"] === "tool-call") {
-    return value["providerExecuted"] === true && isJSONValue(value["input"]);
-  }
-  const { output } = value;
-  return (
-    value["type"] === "tool-result" &&
-    isPlainObject(output) &&
-    (output["type"] === "json" || output["type"] === "error-json"
-      ? isJSONValue(output["value"])
-      : (output["type"] === "text" || output["type"] === "error-text") &&
-        typeof output["value"] === "string")
-  );
 }
 function textContent(content: MessageContent) {
   if (typeof content === "string") {

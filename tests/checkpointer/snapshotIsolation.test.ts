@@ -1,7 +1,7 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDatabases, makeDb, required } from "../support/database";
-import { BunSqliteSaver } from "../../src/checkpointer";
+import { BunSqliteSaver } from "../../src/checkpointer/saver";
 import { emptyCheckpoint } from "@langchain/langgraph-checkpoint";
 import { z } from "zod";
 

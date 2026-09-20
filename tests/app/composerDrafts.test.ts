@@ -4,11 +4,14 @@ import {
   readSessionDraft,
   writeSessionDraft,
 } from "../../src/app/composerDraft";
+import { existsSync, rmSync } from "node:fs";
+import {
+  resolveSessionPaths,
+  sessionPaths,
+} from "../../src/infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { basename } from "node:path";
 import { createTestDirectory } from "../support/artifacts";
-import { rmSync } from "node:fs";
-import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -66,6 +69,16 @@ test("an explicitly empty draft is distinct from an absent draft", () => {
   expect(readSessionDraft(fixture.sessionId)).toEqual({ content: null, revision: 0 });
   writeSessionDraft(fixture.sessionId, "", 1);
   expect(readSessionDraft(fixture.sessionId)).toEqual({ content: "", revision: 1 });
+});
+test("draft operations reject a missing session without creating storage", () => {
+  const root = createTestDirectory("missing-draft");
+  dirs.push(root);
+  const sessionId = basename(root),
+    paths = resolveSessionPaths(sessionId);
+  expect(() => readSessionDraft(sessionId)).toThrow(`会话不存在：${sessionId}`);
+  expect(() => writeSessionDraft(sessionId, "draft", 1)).toThrow(`会话不存在：${sessionId}`);
+  expect(() => clearSessionDraft(sessionId, 1)).toThrow(`会话不存在：${sessionId}`);
+  expect(existsSync(paths.dir)).toBe(false);
 });
 function createSession() {
   const root = createTestDirectory("composer-drafts");

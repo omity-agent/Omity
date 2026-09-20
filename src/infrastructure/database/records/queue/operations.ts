@@ -1,30 +1,26 @@
-import { type ErrorDetails, stringifyError } from "../../../../failures/details";
 import type { QueueItem, QueueStatus } from "../../../../types";
-import { type QueueRow, toQueueItem } from "./rowMapping";
+import { and, eq, sql } from "drizzle-orm";
+import { cachedQuery, sessionDatabase } from "../../connection";
 import type { Database } from "bun:sqlite";
 import { DomainError } from "../../../../errors";
+import type { ErrorDetails } from "../../../../failures/details";
 import { insertUserMessage } from "../messages/history";
-import { queryGet } from "../../connection";
+import { queue } from "../../schema";
+import { requireSessionRecord } from "../sessions";
 
-const queueSelect = `
-  SELECT q.id, q.root_id, COALESCE(q.content, '') AS content,
-    q.status, m.id AS user_message_id
-  FROM queue q
-  LEFT JOIN messages m ON m.queue_id = q.id`;
 export function appendUserQueue(
   db: Database,
   sessionId: string,
   content: string,
   submissionId?: string,
 ) {
-  const activeRun = queryGet<{ root_id: number }>(
+  const activeRun = cachedQuery<{ root_id: number }>(
     db,
     `SELECT root_id FROM queue
      WHERE session_id = ? AND root_id IS NOT NULL
        AND status IN ('pending', 'running', 'paused')
      ORDER BY root_id LIMIT 1`,
-    sessionId,
-  );
+  ).get(sessionId);
   if (activeRun) {
     return appendToRun(db, sessionId, activeRun.root_id, content, submissionId);
   }
@@ -36,52 +32,6 @@ export function appendUserQueue(
     queueId = Number(result.lastInsertRowid);
   db.run("UPDATE queue SET root_id = ? WHERE id = ?", [queueId, queueId]);
   return queueId;
-}
-export function pendingAppendRows(db: Database, sessionId: string): QueueItem[] {
-  const query = db.prepare<QueueRow, [string]>(
-    `${queueSelect}
-     WHERE q.session_id = ? AND q.status = 'pending' ORDER BY q.id`,
-  );
-  try {
-    return query.all(sessionId).map(toQueueItem);
-  } finally {
-    query.finalize();
-  }
-}
-export function consumedRunRows(
-  db: Database,
-  sessionId: string,
-  runId: number | null,
-): QueueItem[] {
-  if (runId === null) {
-    return [];
-  }
-  const query = db.prepare<QueueRow, [string, number]>(
-    `${queueSelect}
-     WHERE q.session_id = ? AND q.root_id = ?
-       AND m.id IS NOT NULL
-       AND q.status IN ('pending', 'running', 'paused')
-     ORDER BY q.id`,
-  );
-  try {
-    return query.all(sessionId, runId).map(toQueueItem);
-  } finally {
-    query.finalize();
-  }
-}
-export function nextQueueRow(db: Database, sessionId: string): QueueItem | null {
-  const query = db.prepare<QueueRow, [string]>(
-    `${queueSelect}
-     WHERE q.session_id = ? AND q.status IN ('pending', 'running', 'paused')
-     ORDER BY q.id LIMIT 1`,
-  );
-  let row: QueueRow | null;
-  try {
-    row = query.get(sessionId);
-  } finally {
-    query.finalize();
-  }
-  return row ? toQueueItem(row) : null;
 }
 export function startQueueRecord(db: Database, sessionId: string, item: QueueItem) {
   if (item.userMessageId !== null) {
@@ -120,20 +70,34 @@ export function setQueueStatusRecord(
   status: QueueStatus,
   error?: ErrorDetails,
 ) {
-  if (status === "paused" && error === undefined) {
-    db.run("UPDATE queue SET status = ? WHERE id = ?", [status, queueId]);
-    return;
-  }
-  db.run("UPDATE queue SET status = ?, error = ? WHERE id = ?", [
-    status,
-    error ? stringifyError(error) : null,
-    queueId,
-  ]);
+  sessionDatabase(db)
+    .update(queue)
+    .set({ error: error ?? (status === "paused" ? undefined : null), status })
+    .where(eq(queue.id, queueId))
+    .run();
+}
+export function pauseRunRecord(
+  db: Database,
+  sessionId: string,
+  runId: number,
+  error?: ErrorDetails,
+) {
+  requireSessionRecord(db, sessionId);
+  return sessionDatabase(db)
+    .update(queue)
+    .set({ error, status: "paused" })
+    .where(
+      and(
+        eq(queue.sessionId, sessionId),
+        eq(queue.rootId, runId),
+        sql`(${queue.status} IN ('running', 'paused')
+          OR (${queue.status} = 'pending' AND ${queue.id} = ${queue.rootId}))`,
+      ),
+    )
+    .run().changes;
 }
 export function queueStatusRecord(db: Database, queueId: number) {
-  const row = queryGet<{ status: QueueStatus }>(
-    db,
-    "SELECT status FROM queue WHERE id = ?",
+  const row = cachedQuery<{ status: QueueStatus }>(db, "SELECT status FROM queue WHERE id = ?").get(
     queueId,
   );
   if (!row) {

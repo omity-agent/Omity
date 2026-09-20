@@ -1,6 +1,7 @@
-import { type CSSProperties, type ReactNode, useMemo } from "react";
+import { type CSSProperties, useMemo } from "react";
 import { FileLinkMenu } from "./Menu";
 import type { FilePathMatch } from "../../../../fileLinks/types";
+import { chunkBy } from "es-toolkit";
 
 interface HighlightToken {
   className?: string;
@@ -100,34 +101,19 @@ function nonOverlapping(matches: FilePathMatch[]) {
     });
 }
 function groupPieces(pieces: HighlightPiece[]) {
-  const result: ReactNode[] = [];
-  for (let index = 0; index < pieces.length;) {
-    const piece = pieces[index];
-    if (!piece) {
-      break;
-    }
-    const { link } = piece;
-    if (!link) {
-      result.push(tokenNode(piece, index));
-      index += 1;
-    } else {
-      const children: ReactNode[] = [];
-      for (;;) {
-        const current = pieces[index];
-        if (!current?.link || current.link.kind !== link.kind || current.link.path !== link.path) {
-          break;
-        }
-        children.push(tokenNode(current, index));
-        index += 1;
-      }
-      result.push(
+  return chunkBy(pieces, ({ link }) => link && `${link.kind}:${link.path}`).flatMap(
+    (group, index) => {
+      const { link } = group[0]!,
+        children = group.map(tokenNode);
+      return link ? (
         <FileLinkMenu key={`path-${index.toString()}`} kind={link.kind} path={link.path}>
           {children}
-        </FileLinkMenu>,
+        </FileLinkMenu>
+      ) : (
+        children
       );
-    }
-  }
-  return result;
+    },
+  );
 }
 function tokenNode(token: HighlightPiece, index: number) {
   return (

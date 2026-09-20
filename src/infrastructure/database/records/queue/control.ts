@@ -1,7 +1,7 @@
 import { readControlRecord, requireSessionRecord } from "../sessions";
 import type { Database } from "bun:sqlite";
+import { cachedQuery } from "../../connection";
 import { controlNotReady } from "../../../../errors";
-import { queryGet } from "../../connection";
 
 export function requestStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
@@ -35,14 +35,12 @@ export function requestStepControlRecord(db: Database, sessionId: string) {
   throw controlNotReady("step");
 }
 function hasSteppableRunRecord(db: Database, sessionId: string) {
-  const row = queryGet<{ ready: number }>(
+  const row = cachedQuery<{ ready: number }>(
     db,
     `SELECT
        EXISTS(SELECT 1 FROM queue WHERE session_id = ? AND status = 'paused')
        AND NOT EXISTS(SELECT 1 FROM queue WHERE session_id = ? AND status = 'running')
        AS ready`,
-    sessionId,
-    sessionId,
-  );
+  ).get(sessionId, sessionId);
   return row?.ready === 1;
 }

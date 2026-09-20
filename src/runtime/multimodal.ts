@@ -1,4 +1,3 @@
-import { type BaseMessage, type ContentBlock, ToolMessage } from "@langchain/core/messages";
 import type { ModelApi } from "../types";
 import { isPlainObject as isRecord } from "es-toolkit";
 
@@ -6,10 +5,27 @@ interface ToolImage {
   src: string;
   mimeType: string;
 }
-export function prepareModelImageMessages(messages: BaseMessage[], api: ModelApi): BaseMessage[] {
-  return api !== "completions"
-    ? prepareMultimodalMessages(messages)
-    : prepareCompletionsMessages(messages);
+export function modelToolOutput(content: unknown, api: ModelApi) {
+  const images = extractToolImages(content),
+    text = toolContentText(content);
+  if (images.length === 0) {
+    return { type: "text" as const, value: text };
+  }
+  if (api === "completions") {
+    const notice = `工具返回了 ${images.length.toString()} 张图片，但 Completions API 不支持工具返回图片给模型。`;
+    return { type: "text" as const, value: [text, notice].filter(Boolean).join("\n\n") };
+  }
+  return {
+    type: "content" as const,
+    value: [
+      ...(text ? [{ text, type: "text" as const }] : []),
+      ...images.map(({ mimeType, src }) => ({
+        data: { type: "url" as const, url: new URL(src) },
+        mediaType: mimeType,
+        type: "file" as const,
+      })),
+    ],
+  };
 }
 export function extractToolImages(content: unknown): ToolImage[] {
   const parsed = parseStructuredString(content);
@@ -28,7 +44,7 @@ export function extractToolImages(content: unknown): ToolImage[] {
   const image = readImage(content);
   return image ? [image] : [];
 }
-export function toolContentText(content: unknown): string {
+function toolContentText(content: unknown): string {
   const parsed = parseStructuredString(content);
   if (parsed !== content) {
     return toolContentText(parsed);
@@ -65,55 +81,6 @@ export function toolContentText(content: unknown): string {
     return "";
   }
   return JSON.stringify(content);
-}
-function prepareMultimodalMessages(messages: BaseMessage[]) {
-  return messages.map((message) => {
-    if (!ToolMessage.isInstance(message)) {
-      return message;
-    }
-    const images = extractToolImages(message.content);
-    if (images.length === 0) {
-      return message;
-    }
-    const text = toolContentText(message.content),
-      content: ContentBlock[] = [
-        ...(text ? [{ text, type: "input_text" }] : []),
-        ...images.map(({ src }) => ({
-          detail: "auto",
-          image_url: src,
-          type: "input_image",
-        })),
-      ];
-    return copyToolMessage(message, content);
-  });
-}
-function prepareCompletionsMessages(messages: BaseMessage[]) {
-  return messages.map((message) => {
-    if (!ToolMessage.isInstance(message)) {
-      return message;
-    }
-    const imageCount = extractToolImages(message.content).length;
-    if (imageCount === 0) {
-      return message;
-    }
-    const text = toolContentText(message.content),
-      notice = `工具返回了 ${imageCount.toString()} 张图片，但 Completions API 不支持工具返回图片给模型。`;
-    return copyToolMessage(message, [text, notice].filter((part) => part.length > 0).join("\n\n"));
-  });
-}
-function copyToolMessage(message: ToolMessage, content: ContentBlock[] | string) {
-  const copy = new ToolMessage({
-    artifact: message.artifact,
-    content,
-    id: message.id,
-    metadata: message.metadata,
-    name: message.name,
-    response_metadata: message.response_metadata,
-    status: message.status,
-    tool_call_id: message.tool_call_id,
-  });
-  copy.additional_kwargs = message.additional_kwargs;
-  return copy;
 }
 function readImage(value: Record<string, unknown>): ToolImage | null {
   if (value["type"] === "image") {

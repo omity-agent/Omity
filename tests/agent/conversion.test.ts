@@ -97,3 +97,35 @@ test("AI SDK sends a text notice when Completions cannot consume tool images", (
     },
   ]);
 });
+test.each(["responses", "messages"] as const)(
+  "%s converts serialized MCP image content without rewriting the source message",
+  (api) => {
+    const content = JSON.stringify({
+        content: [
+          { text: "screenshot", type: "text" },
+          { data: "AAAA", mimeType: "image/png", type: "image" },
+        ],
+      }),
+      message = new ToolMessage({ content, name: "screenshot", tool_call_id: "image-call" });
+    expect(toModelMessages([message], api)).toMatchObject([
+      {
+        content: [
+          {
+            output: {
+              type: "content",
+              value: [
+                { text: "screenshot", type: "text" },
+                {
+                  data: { type: "url", url: new URL("data:image/png;base64,AAAA") },
+                  mediaType: "image/png",
+                  type: "file",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+    expect(message.content).toBe(content);
+  },
+);

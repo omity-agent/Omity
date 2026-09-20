@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { BunSqliteSaver } from "../../src/checkpointer";
+import { BunSqliteSaver } from "../../src/checkpointer/saver";
 import { HookRuntime } from "../../src/hooks/runtime";
 import type { HostContext } from "../../src/runtime/context";
 import { Logger } from "../../src/infrastructure/logging/logger";

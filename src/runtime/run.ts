@@ -3,7 +3,7 @@ import type { ErrorDetails } from "../failures/details";
 import type { HostContext } from "./context";
 import type { QueueItem } from "../types";
 import { contentToText } from "./content";
-import { deleteThreadData } from "../checkpointer";
+import { deleteThreadData } from "../checkpointer/saver";
 import { runTransaction } from "../infrastructure/database/connection";
 
 export class CanceledRunError extends Error {

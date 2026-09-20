@@ -3,17 +3,9 @@ import { pauseRequested, resolvePausePhase } from "./pauseState";
 import type { AskUserRequest } from "../infrastructure/toolbox/askUser";
 import type { ErrorDetails } from "../failures/details";
 import type { RegisteredSession } from "./registry";
+import type { SessionInfo } from "./events/contracts";
 
-export interface SessionInfo {
-  id: string;
-  title: string;
-  workspace: string;
-  createdAt: number;
-  updatedAt: number;
-  status: SessionStatus;
-  error: ErrorDetails | null;
-  askUser?: AskUserRequest | null;
-}
+export type { SessionInfo } from "./events/contracts";
 export function projectSession(
   session: RegisteredSession,
   activity: HostActivity,

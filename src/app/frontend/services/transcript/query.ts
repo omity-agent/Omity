@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DisplayEvent } from "../../../timeline";
 import { FrameBatcher } from "../scheduling/frameBatcher";
 import { reportError } from "../errors";
+import { subscribeEvents } from "../events/delivery";
 import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
 
 export type { TranscriptData } from "./cache";
@@ -66,26 +67,17 @@ export function useSessionTranscript(
     if (!sessionId || snapshotThrottleMs === undefined) {
       return undefined;
     }
-    const events = contentEvents(sessionId),
-      delta = (event: Event) => {
-        try {
-          const incoming = readTranscriptEvent(event);
-          deltas.add(incoming);
-        } catch (error) {
-          reportError(error);
-        }
-      };
-    events.addEventListener("sync", (event) => {
-      try {
+    const close = subscribeEvents(contentEvents(sessionId), {
+      delta(event) {
+        deltas.add(readTranscriptEvent(event));
+      },
+      sync(event) {
         readContentSyncEvent(event);
         void refresh.maybeExecute(sessionId);
-      } catch (error) {
-        reportError(error);
-      }
+      },
     });
-    events.addEventListener("delta", delta);
     return () => {
-      events.close();
+      close();
       deltas.cancel();
       refresh.cancel();
       refresh.abort();

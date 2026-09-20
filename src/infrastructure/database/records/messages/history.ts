@@ -1,6 +1,6 @@
 import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, messageInsert, messageRowsToChatMessages } from "./serialization";
-import { queryAll, queryGet } from "../../connection";
+import { cachedQuery, queryAll } from "../../connection";
 import type { Database } from "bun:sqlite";
 import { randomUUID } from "node:crypto";
 
@@ -94,7 +94,7 @@ export function storePreparedMessage(
   queueId?: number,
   createdAt?: number,
 ) {
-  const row = queryGet<{ id: number }>(
+  const row = cachedQuery<{ id: number }>(
     db,
     `INSERT INTO messages
        (session_id, source_id, message_json, queue_id, position, created_at)
@@ -104,6 +104,7 @@ export function storePreparedMessage(
        queue_id = COALESCE(excluded.queue_id, messages.queue_id),
        position = COALESCE(excluded.position, messages.position)
      RETURNING id`,
+  ).get(
     sessionId,
     item.sourceId,
     item.messageJson,
@@ -117,11 +118,10 @@ export function storePreparedMessage(
   return row.id;
 }
 function nextPosition(db: Database, sessionId: string) {
-  const row = queryGet<{ position: number }>(
+  const row = cachedQuery<{ position: number }>(
     db,
     "SELECT COALESCE(MAX(position), -1) + 1 AS position FROM messages WHERE session_id = ?",
-    sessionId,
-  );
+  ).get(sessionId);
   if (!row) {
     throw new Error("无法分配消息位置");
   }

@@ -2,20 +2,10 @@ import {
   type ReasoningTranslation,
   storeReasoningTranslation,
 } from "../infrastructure/database/records/reasoningTranslations";
-import { AgentDatabase } from "../infrastructure/database/agentDatabase";
-import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
+import { openStoredSession } from "../storedSessions";
 
-type ReasoningTranslationSubmission = ReasoningTranslation;
-export function writeReasoningTranslation(
-  sessionId: string,
-  submission: ReasoningTranslationSubmission,
-) {
-  const { dbPath } = resolveSessionPaths(sessionId),
-    database = new AgentDatabase(dbPath);
-  try {
-    storeReasoningTranslation(database.db, sessionId, submission);
-  } finally {
-    database.close();
-  }
+export function writeReasoningTranslation(sessionId: string, submission: ReasoningTranslation) {
+  using database = openStoredSession(sessionId);
+  storeReasoningTranslation(database.db, sessionId, submission);
   return submission;
 }

@@ -1,10 +1,12 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite";
+import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { parse, resolve } from "node:path";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrateSessionDatabase } from "./migrations";
 import { rmSync } from "node:fs";
 
-const sqliteBusyTimeoutMs = 5000;
+const sqliteBusyTimeoutMs = 5000,
+  databases = new WeakMap<Database, SQLiteBunDatabase>(),
+  transactions = new WeakMap<Database, (operation: () => void) => void>();
 export function openSessionDatabase(path: string, root = process.cwd()) {
   const db = new Database(path, { create: true, strict: true });
   try {
@@ -28,40 +30,31 @@ export function configureReadonlyDatabase(db: Database) {
   db.run("PRAGMA foreign_keys = ON");
 }
 export function sessionDatabase(db: Database) {
-  return drizzle({ client: db });
+  return databases.getOrInsertComputed(db, (client) => drizzle({ client }));
 }
 export function closeDatabase(db: Database) {
   db.close(true);
 }
 export function queryAll<Row>(db: Database, sql: string, ...params: SQLQueryBindings[]) {
-  return db.query<Row, SQLQueryBindings[]>(sql).all(...params);
+  return cachedQuery<Row>(db, sql).all(...params);
 }
-export function queryGet<Row>(db: Database, sql: string, ...params: SQLQueryBindings[]) {
-  return queryAll<Row>(db, sql, ...params)[0] ?? null;
+export function cachedQuery<Row>(db: Database, sql: string) {
+  return db.query<Row, SQLQueryBindings[]>(sql);
 }
 export function runTransaction<T>(db: Database, operation: () => T): T {
-  if (!db.inTransaction) {
-    db.run("BEGIN");
-    try {
-      const result = operation();
-      db.run("COMMIT");
-      return result;
-    } catch (error) {
-      db.run("ROLLBACK");
-      throw error;
-    }
-  }
-  const savepoint = "omity_nested";
-  db.run(`SAVEPOINT ${savepoint}`);
-  try {
-    const result = operation();
-    db.run(`RELEASE ${savepoint}`);
-    return result;
-  } catch (error) {
-    db.run(`ROLLBACK TO ${savepoint}`);
-    db.run(`RELEASE ${savepoint}`);
-    throw error;
-  }
+  let result!: T;
+  transactions.getOrInsertComputed(
+    db,
+    createTransaction,
+  )(() => {
+    result = operation();
+  });
+  return result;
+}
+function createTransaction(db: Database) {
+  return db.transaction((operation: () => void) => {
+    operation();
+  });
 }
 export function reclaimDatabasePages(db: Database) {
   db.run("PRAGMA busy_timeout = 0");

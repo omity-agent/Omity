@@ -3,31 +3,29 @@ import type { Context } from "hono";
 import type { DisplayEvent } from "../timeline";
 import mitt from "mitt";
 
-type ScopedEvent = OutboundEvent & { sessionId: string };
 export class ContentChannel {
-  private readonly bus = mitt<{ broadcast: ScopedEvent }>();
+  private readonly bus = mitt<Record<`session:${string}`, OutboundEvent>>();
   notify(sessionId: string, event: DisplayEvent) {
-    this.bus.emit("broadcast", {
+    this.bus.emit(`session:${sessionId}`, {
       data: event,
       event: "delta",
       id: event.id.toString(),
-      sessionId,
     });
   }
   invalidate(sessionId: string, eventCursor: number) {
-    this.bus.emit("broadcast", { ...contentSync(eventCursor), sessionId });
+    this.bus.emit(`session:${sessionId}`, contentSync(eventCursor));
   }
   stream(c: Context, sessionId: string, getEventCursor: () => number) {
     return eventStream(c, (write) => {
-      const forward = (value: ScopedEvent) => {
-        if (value.sessionId === sessionId) {
-          write(value);
-        }
-      };
-      this.bus.on("broadcast", forward);
-      write(contentSync(getEventCursor()));
+      const key = `session:${sessionId}` as const,
+        snapshot = contentSync(getEventCursor());
+      this.bus.on(key, write);
+      write(snapshot);
       return () => {
-        this.bus.off("broadcast", forward);
+        this.bus.off(key, write);
+        if (this.bus.all.get(key)?.length === 0) {
+          this.bus.all.delete(key);
+        }
       };
     });
   }

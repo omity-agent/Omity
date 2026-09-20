@@ -20,8 +20,9 @@ export class StateChannel {
   }
   stream(c: Context, getSessions: () => SessionInfo[]) {
     return eventStream(c, (write) => {
+      const snapshot = this.version("sessions", { sessions: getSessions() });
       this.bus.on("broadcast", write);
-      write(this.version("sessions", { sessions: getSessions() }));
+      write(snapshot);
       return () => {
         this.bus.off("broadcast", write);
       };

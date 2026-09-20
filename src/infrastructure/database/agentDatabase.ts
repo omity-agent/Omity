@@ -7,14 +7,7 @@ import {
   reclaimDatabasePages,
   runTransaction,
 } from "./connection";
-import {
-  consumedRunRows,
-  nextQueueRow,
-  pendingAppendRows,
-  queueStatusRecord,
-  setQueueStatusRecord,
-  startQueueRecord,
-} from "./records/queue/operations";
+import { consumedRunRows, nextQueueRow, pendingAppendRows } from "./records/queue/readWorkItems";
 import {
   createSessionRecord,
   hasSessionRecord,
@@ -33,6 +26,11 @@ import {
   streamEventCursor,
 } from "./records/streamEvents";
 import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
+import {
+  queueStatusRecord,
+  setQueueStatusRecord,
+  startQueueRecord,
+} from "./records/queue/operations";
 import { readToolCancellation, requestToolCancellation } from "./records/toolCancellations";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
@@ -55,6 +53,9 @@ export class AgentDatabase extends RecoverableDatabase {
   }
   close() {
     closeDatabase(this.db);
+  }
+  [Symbol.dispose]() {
+    this.close();
   }
   onChange(notify: (event: StreamEvent) => void) {
     this.notify = notify;

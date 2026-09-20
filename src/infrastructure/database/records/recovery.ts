@@ -6,7 +6,6 @@ import {
   releaseHostLeaseRecord,
   renewHostLeaseRecord,
 } from "./hostLeases";
-import { activeQueueRows, pauseRunRecord } from "./queue/runs";
 import {
   consumeStepControlRecord,
   readControlRecord,
@@ -15,6 +14,8 @@ import {
 } from "./sessions";
 import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../failures/details";
+import { activeQueueRows } from "./queue/readWorkItems";
+import { pauseRunRecord } from "./queue/operations";
 import { pruneUnreferencedMessages } from "./messages/history";
 import { runTransaction } from "../connection";
 
@@ -80,13 +81,9 @@ function cancelActiveRuns(
      WHERE session_id = ? AND status IN ('pending', 'running', 'paused')`,
     [sessionId],
   );
-  const removeEvent = db.prepare("DELETE FROM events WHERE queue_id = ?");
-  try {
-    for (const item of active) {
-      removeEvent.run(item.id);
-    }
-  } finally {
-    removeEvent.finalize();
+  const removeEvent = db.query("DELETE FROM events WHERE queue_id = ?");
+  for (const item of active) {
+    removeEvent.run(item.id);
   }
   pruneUnreferencedMessages(db, sessionId);
 }

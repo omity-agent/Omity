@@ -1,8 +1,6 @@
-import { controlCommandSchema, sessionStatusSchema } from "../../../../types";
 import type { AttachmentSettings } from "../../../attachments/contract";
-import type { SessionInfo } from "../../../sessionState";
-import { askUserRequestSchema } from "../../../../infrastructure/toolbox/questionnaire";
-import { errorDetailsSchema } from "../../../../failures/details";
+import { controlCommandSchema } from "../../../../types";
+import { sessionInfoSchema } from "../../../events/contracts";
 import { z } from ".";
 
 export {
@@ -10,21 +8,11 @@ export {
   transcriptResponseSchema,
 } from "../../../timeline/contracts/records";
 export { streamEventSchema as eventSchema } from "../../../../types";
-const integer = z.number().int();
-export const sessionInfoSchema: z.ZodType<SessionInfo> = z.object({
-  askUser: askUserRequestSchema.nullable().optional(),
-  createdAt: integer,
-  error: errorDetailsSchema.nullable(),
-  id: z.string(),
-  status: sessionStatusSchema,
-  title: z.string(),
-  updatedAt: integer,
-  workspace: z.string(),
-});
-const attachmentSettingsSchema: z.ZodType<AttachmentSettings> = z.object({
-  allowedSuffixes: z.array(z.string()),
-  maxSizeBytes: integer.nonnegative(),
-});
+const integer = z.number().int(),
+  attachmentSettingsSchema: z.ZodType<AttachmentSettings> = z.object({
+    allowedSuffixes: z.array(z.string()),
+    maxSizeBytes: integer.nonnegative(),
+  });
 export const bootstrapResponseSchema = z.object({
   attachments: attachmentSettingsSchema,
   cwd: z.string(),

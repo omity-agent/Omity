@@ -1,3 +1,4 @@
+import { cachedQuery, queryAll, runTransaction } from "../infrastructure/database/connection";
 import { queueMessageId, storeMessage } from "../infrastructure/database/records/messages/history";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Database } from "bun:sqlite";
@@ -8,7 +9,6 @@ import { isPlainObject as isRecord } from "es-toolkit";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
 import { randomUUID } from "node:crypto";
 import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
-import { runTransaction } from "../infrastructure/database/connection";
 import { writeComposerDraftRecord } from "../infrastructure/database/records/composerDrafts";
 
 interface MessageRow {
@@ -62,18 +62,13 @@ function assertForkPoint(db: Database, sessionId: string, messageId: number) {
   if (!Number.isSafeInteger(messageId) || messageId <= 0) {
     throw new Error(`Fork 消息 ID 无效：${messageId.toString()}`);
   }
-  const query = db.prepare<MessageRow, [string, number]>(
+  const row = cachedQuery<MessageRow>(
+    db,
     `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at,
        m.queue_id, q.root_id
 	     FROM messages m LEFT JOIN queue q ON q.id = m.queue_id
 	     WHERE m.session_id = ? AND m.id = ? AND m.position IS NOT NULL`,
-  );
-  let row: MessageRow | null;
-  try {
-    row = query.get(sessionId, messageId);
-  } finally {
-    query.finalize();
-  }
+  ).get(sessionId, messageId);
   if (!row) {
     throw new DomainError("FORK_MESSAGE_NOT_FOUND", `Fork 消息不存在：${messageId.toString()}`);
   }
@@ -83,17 +78,15 @@ function assertForkPoint(db: Database, sessionId: string, messageId: number) {
   return row;
 }
 function forkMessages(db: Database, sessionId: string, beforePosition: number) {
-  const query = db.prepare<MessageRow, [string, number]>(
+  return queryAll<MessageRow>(
+    db,
     `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at,
        m.queue_id, q.root_id
 	     FROM messages m LEFT JOIN queue q ON q.id = m.queue_id
 	     WHERE m.session_id = ? AND m.position < ? ORDER BY m.position`,
+    sessionId,
+    beforePosition,
   );
-  try {
-    return query.all(sessionId, beforePosition);
-  } finally {
-    query.finalize();
-  }
 }
 function insertMessages(db: Database, sessionId: string, messages: MessageRow[]) {
   const lastUserIndex = messages.findLastIndex(

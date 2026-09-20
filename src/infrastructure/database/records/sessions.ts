@@ -2,6 +2,7 @@ import { type SessionDefinition, emptySessionDefinition } from "../sessionDefini
 import { sessionConflict, sessionNotFound } from "../../../errors";
 import type { Control } from "../../../types";
 import type { Database } from "bun:sqlite";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { eq } from "drizzle-orm";
 import { sessionDatabase } from "../connection";
 import { sessions } from "../schema";
@@ -14,12 +15,8 @@ export function createSessionRecord(
   definition: SessionDefinition = emptySessionDefinition(),
   initialControl: Control = "running",
 ) {
-  if (hasSessionRecord(db, sessionId)) {
-    throw sessionConflict(sessionId);
-  }
-  try {
-    const now = Math.floor(Date.now() / 1000);
-    sessionDatabase(db)
+  const now = Math.floor(Date.now() / 1000),
+    inserted = sessionDatabase(db)
       .insert(sessions)
       .values({
         control: initialControl,
@@ -31,14 +28,10 @@ export function createSessionRecord(
         updatedAt: now,
         workspace,
       })
-      .run();
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("UNIQUE")) {
-      throw sessionConflict(sessionId);
-    }
-    throw error;
-  }
-  if (!hasSessionRecord(db, sessionId)) {
+      .onConflictDoNothing({ target: sessions.id })
+      .returning({ id: sessions.id })
+      .all();
+  if (inserted.length === 0) {
     throw sessionConflict(sessionId);
   }
 }
@@ -57,40 +50,13 @@ export function requireSessionRecord(db: Database, sessionId: string) {
   }
 }
 export function readWorkspaceRecord(db: Database, sessionId: string) {
-  requireSessionRecord(db, sessionId);
-  const row = sessionDatabase(db)
-    .select({ workspace: sessions.workspace })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get();
-  if (!row) {
-    throw sessionNotFound(sessionId);
-  }
-  return row.workspace;
+  return readSessionField(db, sessionId, sessions.workspace);
 }
 export function readProfilesRecord(db: Database, sessionId: string) {
-  requireSessionRecord(db, sessionId);
-  const row = sessionDatabase(db)
-    .select({ profiles: sessions.profiles })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get();
-  if (!row) {
-    throw sessionNotFound(sessionId);
-  }
-  return row.profiles;
+  return readSessionField(db, sessionId, sessions.profiles);
 }
 export function readDefinitionRecord(db: Database, sessionId: string) {
-  requireSessionRecord(db, sessionId);
-  const row = sessionDatabase(db)
-    .select({ definition: sessions.definition })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get();
-  if (!row) {
-    throw sessionNotFound(sessionId);
-  }
-  return row.definition;
+  return readSessionField(db, sessionId, sessions.definition);
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
@@ -119,28 +85,29 @@ export function touchQueueSessionRecord(db: Database, queueId: number) {
   }
 }
 export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
-  requireSessionRecord(db, sessionId);
-  const row = sessionDatabase(db)
-    .select({ revision: sessions.transcriptRevision })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get();
-  if (!row || !Number.isSafeInteger(row.revision)) {
+  const revision = readSessionField(db, sessionId, sessions.transcriptRevision);
+  if (!Number.isSafeInteger(revision)) {
     throw new Error(`Transcript 版本无效：${sessionId}`);
   }
-  return row.revision;
+  return revision;
 }
 export function readControlRecord(db: Database, sessionId: string): Control {
-  requireSessionRecord(db, sessionId);
+  return readSessionField(db, sessionId, sessions.control);
+}
+function readSessionField<Column extends SQLiteColumn>(
+  db: Database,
+  sessionId: string,
+  column: Column,
+) {
   const row = sessionDatabase(db)
-    .select({ control: sessions.control })
+    .select({ value: column })
     .from(sessions)
     .where(eq(sessions.id, sessionId))
     .get();
   if (!row) {
     throw sessionNotFound(sessionId);
   }
-  return row.control;
+  return row.value;
 }
 export function writeControlRecord(db: Database, sessionId: string, control: Control) {
   requireSessionRecord(db, sessionId);

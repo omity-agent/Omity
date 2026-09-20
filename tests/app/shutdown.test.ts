@@ -80,7 +80,7 @@ test("shutdown closes active HTTP streams", async () => {
 }, 3000);
 test("waking an app host does not retain its polling timer", async () => {
   await expectChildExit(`
-    import { AppEvents } from "./src/app/events.ts";
+    import { AppEvents } from "./src/app/events";
     const events = new AppEvents();
     const waiting = events.wait("test", 60_000);
     events.wake("test");
@@ -89,7 +89,7 @@ test("waking an app host does not retain its polling timer", async () => {
 });
 test("closing app hosts does not retain the graceful shutdown deadline", async () => {
   await expectChildExit(`
-    import { AppHosts } from "./src/app/hosts.ts";
+    import { AppHosts } from "./src/app/hosts";
     const hosts = new AppHosts(
       "",
       {

@@ -18,7 +18,7 @@ import {
 } from "../../infrastructure/mcp/tools/definitions";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
 import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
-import { BunSqliteSaver } from "../../checkpointer";
+import { BunSqliteSaver } from "../../checkpointer/saver";
 import type { Database } from "bun:sqlite";
 import type { HookRuntime } from "../../hooks/runtime";
 import type { HookToolOutput } from "../../hooks/storage/outputs";

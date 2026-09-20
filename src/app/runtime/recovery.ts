@@ -1,7 +1,6 @@
-import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import type { AppInstanceOwner } from "./instanceLock";
+import { openStoredSession } from "../../storedSessions";
 import { recoverHostSession } from "../../runtime/execution/recovery";
-import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 
 interface RecoverableSession {
   id: string;
@@ -11,35 +10,25 @@ export function recoverAppSessions(
   abandonedOwner?: AppInstanceOwner,
 ) {
   return sessions.map((session) => {
-    const path = resolveSessionPaths(session.id).dbPath,
-      db = new AgentDatabase(path);
-    try {
-      return {
-        sessionId: session.id,
-        ...recoverHostSession(
-          db,
-          session.id,
-          abandonedOwner
-            ? {
-                instanceId: abandonedOwner.token,
-                kind: "app",
-                pid: abandonedOwner.pid,
-              }
-            : undefined,
-        ),
-      };
-    } finally {
-      db.close();
-    }
+    using db = openStoredSession(session.id);
+    return {
+      sessionId: session.id,
+      ...recoverHostSession(
+        db,
+        session.id,
+        abandonedOwner
+          ? {
+              instanceId: abandonedOwner.token,
+              kind: "app",
+              pid: abandonedOwner.pid,
+            }
+          : undefined,
+      ),
+    };
   });
 }
 export function hasLiveHostLease(sessionId: string) {
-  const path = resolveSessionPaths(sessionId).dbPath,
-    db = new AgentDatabase(path);
-  try {
-    const lease = db.hostLease(sessionId);
-    return lease !== null && lease.expiresAt > Date.now();
-  } finally {
-    db.close();
-  }
+  using db = openStoredSession(sessionId);
+  const lease = db.hostLease(sessionId);
+  return lease !== null && lease.expiresAt > Date.now();
 }

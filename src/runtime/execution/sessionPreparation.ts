@@ -13,6 +13,7 @@ import { applySessionDefinition } from "../../infrastructure/database/sessionDef
 import { existsSync } from "node:fs";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
+import { openStoredSession } from "../../storedSessions";
 import { readDefinitionRecord } from "../../infrastructure/database/records/sessions";
 import { recoverHostSession } from "./recovery";
 import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
@@ -26,8 +27,11 @@ export function prepareHostSession(
     baseContext = options.settingsContext ?? createSettingsContext(root);
   if (mode.kind === "load") {
     const paths = resolveSessionPaths(mode.sessionId),
-      db = openLoadedDatabase(paths.dbPath, mode, options.recoverInterrupted ?? false);
+      db = openStoredSession(mode.sessionId);
     try {
+      if (options.recoverInterrupted) {
+        recoverHostSession(db, mode.sessionId);
+      }
       const profiles = db.profiles(mode.sessionId),
         definition = readDefinitionRecord(db.db, mode.sessionId),
         settingsContext = selectSettingsProfiles(baseContext, profiles),
@@ -67,22 +71,4 @@ function prepareWritableSession(mode: HostMode) {
     removeDatabaseDirectory(planned.dir);
   }
   return sessionPaths(mode.sessionId);
-}
-function openLoadedDatabase(path: string, mode: HostMode, recoverInterrupted: boolean) {
-  if (!existsSync(path)) {
-    throw sessionNotFound(mode.sessionId);
-  }
-  const db = new AgentDatabase(path);
-  try {
-    if (!db.hasSession(mode.sessionId)) {
-      throw sessionNotFound(mode.sessionId);
-    }
-    if (recoverInterrupted) {
-      recoverHostSession(db, mode.sessionId);
-    }
-    return db;
-  } catch (error) {
-    db.close();
-    throw error;
-  }
 }

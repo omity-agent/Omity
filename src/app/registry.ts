@@ -1,8 +1,7 @@
 import { type ErrorDetails, parseError } from "../failures/details";
 import {
-  closeDatabase,
+  cachedQuery,
   configureReadonlyDatabase,
-  queryGet,
   runTransaction,
 } from "../infrastructure/database/connection";
 import { existsSync, readdirSync } from "node:fs";
@@ -113,23 +112,19 @@ function readSession(dbPath: string, id?: string) {
   if (!existsSync(dbPath)) {
     throw sessionNotFound(id ?? dbPath);
   }
-  const db = new Database(dbPath, {
+  using db = new Database(dbPath, {
     create: false,
     readonly: true,
     strict: true,
   });
-  try {
-    configureReadonlyDatabase(db);
-    return readSessionRecord(db, id);
-  } finally {
-    closeDatabase(db);
-  }
+  configureReadonlyDatabase(db);
+  return readSessionRecord(db, id);
 }
 function readSessionRecord(db: Database, id?: string) {
   return runTransaction(db, () => {
     const row = id
-      ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
-      : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);
+      ? cachedQuery<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`).get(id)
+      : cachedQuery<SessionRow>(db, `${sessionSelect} LIMIT 1`).get();
     if (!row) {
       throw sessionNotFound(id ?? db.filename);
     }

@@ -1,10 +1,10 @@
 import type { Database } from "bun:sqlite";
-import { queryGet } from "../../connection";
+import { cachedQuery } from "../../connection";
 import { storedConversationSchema } from "./replayShape";
 import { z } from "zod";
 
 export function deriveSessionTitle(db: Database, sessionId: string) {
-  const row = queryGet<{ message_json: string; call_index: number }>(
+  const row = cachedQuery<{ message_json: string; call_index: number }>(
     db,
     `WITH completed AS MATERIALIZED (
        SELECT position,
@@ -27,9 +27,7 @@ export function deriveSessionTitle(db: Database, sessionId: string) {
            AND result.tool_name = json_extract(call.value, '$.name')
        )
      ORDER BY request.position DESC, CAST(call.key AS INTEGER) DESC LIMIT 1`,
-    sessionId,
-    sessionId,
-  );
+  ).get(sessionId, sessionId);
   if (!row) {
     return sessionId;
   }

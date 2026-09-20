@@ -142,7 +142,11 @@ test("pauseRun is atomic, preserves pending work and omitted errors", () => {
      WHEN OLD.id = ${appended.toString()} AND NEW.status = 'paused'
      BEGIN SELECT RAISE(ABORT, 'injected failure'); END`,
   );
-  expect(() => db.pauseRun("123", root)).toThrow("injected failure");
+  expect(() => db.pauseRun("123", root)).toThrow(
+    expect.objectContaining({
+      cause: expect.objectContaining({ message: "injected failure" }),
+    }),
+  );
   expect(db.control("123")).toBe("running");
   expect(db.activeQueue("123").map(({ status }) => status)).toEqual([
     "running",
