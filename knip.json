@@ -4,5 +4,11 @@
   "ignoreDependencies": ["@typescript-eslint/parser", "drizzle-kit"],
   "includeEntryExports": true,
   "ignoreExportsUsedInFile": false,
-  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "tests/**/*.{ts,tsx}", "*.config.ts"]
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.ts",
+    "settings/**/*.ts",
+    "tests/**/*.{ts,tsx}",
+    "*.config.ts"
+  ]
 }
