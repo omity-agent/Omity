@@ -11,6 +11,9 @@ export function decodeMessage(value: string, id?: string) {
     return new AIMessage({
       additional_kwargs: {
         ...(stored.aiSdkContent ? { aiSdkContent: stored.aiSdkContent } : {}),
+        ...(stored.aiSdkToolProviderOptions
+          ? { aiSdkToolProviderOptions: stored.aiSdkToolProviderOptions }
+          : {}),
         ...(stored.reasoning ? { reasoning: stored.reasoning } : {}),
       },
       content: stored.content,

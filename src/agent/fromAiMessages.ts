@@ -6,7 +6,6 @@ import {
   type UsageMetadata,
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
-import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { omitToolItemIds } from "./toolProviderOptions";
 
@@ -53,10 +52,12 @@ export function fromModelMessages(
 function storedAssistantContent(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
   return typeof content === "string"
     ? [{ text: content, type: "text" as const }]
-    : content.flatMap((part) =>
-        part.type === "text" || part.type === "reasoning"
-          ? [{ providerOptions: part.providerOptions, text: part.text, type: part.type }]
-          : [],
+    : content.filter(
+        (part): part is StoredAiSdkPart =>
+          part.type === "text" ||
+          part.type === "reasoning" ||
+          part.type === "tool-result" ||
+          (part.type === "tool-call" && part.providerExecuted === true),
       );
 }
 function assistantText(content: Extract<ModelMessage, { role: "assistant" }>["content"]) {
@@ -71,6 +72,7 @@ function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["conten
   }
   return content
     .filter((part) => part.type === "tool-call")
+    .filter((part) => !part.providerExecuted)
     .map((part) => {
       if (typeof part.input === "string") {
         return {
@@ -97,7 +99,7 @@ function toolProviderOptions(content: Extract<ModelMessage, { role: "assistant" 
     return undefined;
   }
   const entries = content.flatMap((part) => {
-    if (part.type !== "tool-call" || !part.providerOptions) {
+    if (part.type !== "tool-call" || part.providerExecuted || !part.providerOptions) {
       return [];
     }
     const providerOptions = omitToolItemIds(part.providerOptions);
@@ -129,8 +131,7 @@ function outputText(output: ToolResult["output"]) {
   }
   return output.value.flatMap((part) => ("text" in part ? [part.text] : [])).join("");
 }
-export interface StoredAiSdkPart {
-  providerOptions?: ProviderOptions;
-  text: string;
-  type: "reasoning" | "text";
-}
+export type StoredAiSdkPart = Extract<
+  Exclude<Extract<ModelMessage, { role: "assistant" }>["content"], string>[number],
+  { type: "reasoning" | "text" | "tool-call" | "tool-result" }
+>;

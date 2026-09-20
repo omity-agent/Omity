@@ -10,11 +10,12 @@ import {
   prepareModelImageMessages,
   toolContentText,
 } from "../runtime/modelImages";
-import { isJSONObject, isPlainObject } from "es-toolkit";
+import { isJSONValue, isPlainObject } from "es-toolkit";
 import type { ModelApi } from "../types";
 import type { ModelMessage } from "ai";
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 import type { StoredAiSdkPart } from "./fromAiMessages";
+import { isProviderOptions } from "./toolProviderOptions";
 
 type AssistantPart = Exclude<
   Extract<ModelMessage, { role: "assistant" }>["content"],
@@ -81,7 +82,7 @@ function toolProviderOptions(message: AIMessage, callId: string): ProviderOption
   return byCall[callId];
 }
 function toolOutput(content: BaseMessage["content"], api: ModelApi) {
-  const images = api === "responses" ? extractToolImages(content) : [],
+  const images = api !== "completions" ? extractToolImages(content) : [],
     text = toolContentText(content);
   if (images.length === 0) {
     return { type: "text" as const, value: text };
@@ -110,20 +111,39 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
 }
 function assistantContent(message: AIMessage): StoredAiSdkPart[] {
   const stored = message.additional_kwargs["aiSdkContent"];
-  if (Array.isArray(stored) && stored.every(isStoredAiSdkPart)) {
+  if (stored !== undefined) {
+    if (!Array.isArray(stored) || !stored.every(isStoredAiSdkPart)) {
+      throw new Error("会话保存的 AI SDK 内容格式无效");
+    }
     return stored;
   }
   const text = textContent(message.content);
   return text ? [{ text, type: "text" }] : [];
 }
 function isStoredAiSdkPart(value: unknown): value is StoredAiSdkPart {
+  if (
+    !isPlainObject(value) ||
+    (value["providerOptions"] !== undefined && !isProviderOptions(value["providerOptions"]))
+  ) {
+    return false;
+  }
+  if (value["type"] === "text" || value["type"] === "reasoning") {
+    return typeof value["text"] === "string";
+  }
+  if (typeof value["toolCallId"] !== "string" || typeof value["toolName"] !== "string") {
+    return false;
+  }
+  if (value["type"] === "tool-call") {
+    return value["providerExecuted"] === true && isJSONValue(value["input"]);
+  }
+  const { output } = value;
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    (value.type === "text" || value.type === "reasoning") &&
-    "text" in value &&
-    typeof value.text === "string"
+    value["type"] === "tool-result" &&
+    isPlainObject(output) &&
+    (output["type"] === "json" || output["type"] === "error-json"
+      ? isJSONValue(output["value"])
+      : (output["type"] === "text" || output["type"] === "error-text") &&
+        typeof output["value"] === "string")
   );
 }
 function textContent(content: MessageContent) {
@@ -139,7 +159,4 @@ function textContent(content: MessageContent) {
           : [],
     )
     .join("");
-}
-function isProviderOptions(value: unknown): value is ProviderOptions {
-  return isPlainObject(value) && Object.values(value).every(isJSONObject);
 }

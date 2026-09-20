@@ -94,6 +94,41 @@ const contentParts: AiStreamEvent["part"][] = [
   { delta: "{}", id: "part", type: "tool-input-delta" },
   { input: {}, toolCallId: "part", toolName: "echo", type: "tool-call" },
 ];
+test("hosted search stream never announces a pending local execution", async () => {
+  const { context, db } = agentFixture(),
+    state = createStreamLogState(),
+    events: StreamEvent[] = [];
+  db.resetSession("target", workspace);
+  const queueId = db.appendUser("target", "search");
+  db.onChange((event) => events.push(event));
+  await recordAiStreamPart(
+    context,
+    queueId,
+    {
+      part: {
+        id: "hosted",
+        providerExecuted: true,
+        toolName: "tool_search",
+        type: "tool-input-start",
+      },
+    },
+    state,
+  );
+  await recordAiStreamPart(
+    context,
+    queueId,
+    {
+      part: { delta: '{"paths":["find_file"]}', id: "hosted", type: "tool-input-delta" },
+    },
+    state,
+  );
+  expect(events).toEqual([]);
+  expect(state.aiToolIndexes.size).toBe(0);
+  expect(state.serverToolIds.has("hosted")).toBe(true);
+  completeActiveStream(state);
+  expect(state.serverToolIds.size).toBe(0);
+  db.close();
+});
 test.each(contentParts)("only meaningful model content starts receiving: $type", async (part) => {
   const { context, db } = agentFixture(),
     activity = mock(),

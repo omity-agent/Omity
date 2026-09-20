@@ -3,6 +3,7 @@ import { parseMcpConfiguration } from "../../../src/infrastructure/mcp/configura
 import { z } from "zod";
 
 test.each([
+  ["mcpServers", { search: { command: "search", defer_loading: "true" } }],
   ["toolNameOverrides", "search"],
   ["toolNameOverrides", { search: "" }],
   ["toolNameOverrides", { search: "agent" }],

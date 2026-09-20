@@ -8,6 +8,7 @@ export async function loadServerTools(
     getClient: (name: string) => Promise<object | undefined>;
   },
   names: string[],
+  deferredServers: ReadonlySet<string> = new Set(),
 ) {
   const tools: StructuredToolInterface[] = [];
   for (const name of names) {
@@ -15,13 +16,17 @@ export async function loadServerTools(
     if (serverClient === undefined) {
       throw new Error(`MCP 服务器客户端未建立：${name}`);
     }
-    tools.push(
-      ...(await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
-        prefixToolNameWithServerName: true,
-        throwOnLoadError: false,
-        useStandardContentBlocks: true,
-      })),
-    );
+    const serverTools = await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
+      prefixToolNameWithServerName: true,
+      throwOnLoadError: false,
+      useStandardContentBlocks: true,
+    });
+    if (deferredServers.has(name)) {
+      for (const tool of serverTools) {
+        tool.extras = { ...tool.extras, defer_loading: true };
+      }
+    }
+    tools.push(...serverTools);
   }
   return tools;
 }

@@ -4,6 +4,7 @@ const description = z.string(),
   count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   parameter = z.strictObject({ description, minLength: count }),
   metadata = z.strictObject({
+    defer_loading: z.boolean().optional(),
     description,
     enabled: z.boolean(),
     name: z

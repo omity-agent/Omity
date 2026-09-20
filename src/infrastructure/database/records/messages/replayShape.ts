@@ -1,5 +1,11 @@
+import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
+import { isProviderOptions } from "../../../../agent/toolProviderOptions";
 import { z } from "zod";
 
+export const toolProviderOptionsSchema = z.record(
+  z.string(),
+  z.custom<SharedV4ProviderOptions>(isProviderOptions),
+);
 const content = z.union([
     z.string(),
     z.array(z.looseObject({ id: z.string().optional(), type: z.string() })),
@@ -21,6 +27,7 @@ const content = z.union([
   human = z.strictObject({ content, type: z.literal("human") }),
   ai = z.strictObject({
     aiSdkContent: z.unknown().optional(),
+    aiSdkToolProviderOptions: toolProviderOptionsSchema.optional(),
     content,
     reasoning: z.record(z.string(), z.unknown()).optional(),
     toolCalls: z.array(toolCall).optional(),

@@ -106,9 +106,13 @@ export async function streamAiModel(options: ModelRequestOptions) {
       const step = await result.finalStep,
         messages = fromModelMessages(step.response.messages, step.response.id, step.usage),
         response = messages.findLast((message) => AIMessage.isInstance(message));
-      if (!response || (!response.tool_calls?.length && !response.text)) {
+      if (
+        !response ||
+        (!response.tool_calls?.length && !response.text && step.rawFinishReason !== "pause_turn")
+      ) {
         throw new ModelEmptyResponseError();
       }
+      response.response_metadata["rawFinishReason"] = step.rawFinishReason;
       return response;
     } finally {
       attempts.delete(id);

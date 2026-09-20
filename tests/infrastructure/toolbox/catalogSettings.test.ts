@@ -9,6 +9,7 @@ import { createSettingsContext } from "../../../src/infrastructure/configuration
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
 import { loadBuiltInTools } from "../../../src/infrastructure/toolbox/loadBuiltIns";
+import { modelToolDefinitions } from "../../../src/infrastructure/mcp/tools/definitions";
 import { stringify } from "yaml";
 
 test("each built-in can be disabled independently", () => {
@@ -24,6 +25,25 @@ test("each built-in can be disabled independently", () => {
     );
   }
   expect(loadBuiltInTools({}, {})).toEqual([]);
+});
+test("built-in defer flags apply independently and reject non-boolean configuration", () => {
+  const toolboxes = defaultBuiltIns();
+  toolboxes.choice!.defer_loading = true;
+  toolboxes.open_ended!.defer_loading = false;
+  toolboxes.update_title!.enabled = false;
+  const configuration = parseMcpConfiguration({ toolboxes }, "toolbox.yaml"),
+    definitions = modelToolDefinitions(loadBuiltInTools(configuration.toolboxes, {}), new Map());
+  expect(definitions.filter(({ deferLoading }) => deferLoading).map(({ name }) => name)).toEqual([
+    toolboxes.choice!.name,
+  ]);
+  expect(() =>
+    parseMcpConfiguration(
+      {
+        toolboxes: { choice: { ...toolboxes.choice, defer_loading: "true" } },
+      },
+      "toolbox.yaml",
+    ),
+  ).toThrow();
 });
 test("default and profile layers configure names, descriptions and validation together", async () => {
   const root = createTestDirectory("builtin-layers"),

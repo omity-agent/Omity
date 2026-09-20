@@ -3,6 +3,7 @@ import { createStreamPartState } from "./stream/parts";
 
 export { incrementalSummary } from "./stream/debug";
 export interface StreamLogState {
+  serverToolIds: Set<string>;
   aiToolIndexes: Map<string, number>;
   modelResponding: boolean;
   parts: ReturnType<typeof createStreamPartState>;
@@ -16,6 +17,7 @@ export function createStreamLogState(): StreamLogState {
     parts: createStreamPartState(),
     seenFacts: new Set(),
     seenStructures: new Set(),
+    serverToolIds: new Set(),
   };
 }
 export function discardActiveStream(ctx: HostContext, state: StreamLogState, queueId: number) {
@@ -24,6 +26,7 @@ export function discardActiveStream(ctx: HostContext, state: StreamLogState, que
   completeActiveStream(state);
 }
 export function completeActiveStream(state: StreamLogState) {
+  state.serverToolIds.clear();
   state.aiToolIndexes.clear();
   state.modelResponding = false;
   state.parts = createStreamPartState();

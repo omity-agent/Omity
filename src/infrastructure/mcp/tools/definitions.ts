@@ -5,6 +5,7 @@ import { configureFreeformMcpTools } from "./freeform";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
 export interface ModelToolDefinition {
+  deferLoading?: boolean;
   description: string;
   freeform: boolean;
   inputSchema: ReturnType<typeof toJsonSchema>;
@@ -27,6 +28,7 @@ export function modelToolDefinitions(
   freeformToolParameters: ReadonlyMap<string, string>,
 ): ModelToolDefinition[] {
   return tools.map((tool) => ({
+    ...(tool.extras?.["defer_loading"] === true ? { deferLoading: true } : {}),
     description: tool.description,
     freeform: freeformToolParameters.has(tool.name),
     inputSchema: toJsonSchema(tool.schema),
@@ -41,9 +43,11 @@ export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot:
       throw new Error(`会话冻结的 MCP 工具定义包含重复项：${definition.name}`);
     }
     frozenNames.add(definition.name);
-    if (!toolsByName.has(definition.name)) {
+    const tool = toolsByName.get(definition.name);
+    if (!tool) {
       throw new Error(`会话冻结的 MCP 工具不存在：${definition.name}`);
     }
+    tool.extras = { ...tool.extras, defer_loading: definition.deferLoading === true };
   }
   const freeformToolParameters = configureFreeformMcpTools(
     tools,

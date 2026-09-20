@@ -7,8 +7,8 @@ interface ToolImage {
   mimeType: string;
 }
 export function prepareModelImageMessages(messages: BaseMessage[], api: ModelApi): BaseMessage[] {
-  return api === "responses"
-    ? prepareResponsesMessages(messages)
+  return api !== "completions"
+    ? prepareMultimodalMessages(messages)
     : prepareCompletionsMessages(messages);
 }
 export function extractToolImages(content: unknown): ToolImage[] {
@@ -66,7 +66,7 @@ export function toolContentText(content: unknown): string {
   }
   return JSON.stringify(content);
 }
-function prepareResponsesMessages(messages: BaseMessage[]) {
+function prepareMultimodalMessages(messages: BaseMessage[]) {
   return messages.map((message) => {
     if (!ToolMessage.isInstance(message)) {
       return message;

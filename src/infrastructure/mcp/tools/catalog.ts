@@ -15,6 +15,7 @@ import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./issues";
 import { disableAdapterRequestTimeout } from "../client/requestPolicy";
+import { omit } from "es-toolkit";
 import { resolve } from "node:path";
 import { suppressTerminalError } from "../../../failures/output";
 
@@ -108,15 +109,19 @@ async function connectMcp(
   let pool: McpClientPool | undefined;
   try {
     disableAdapterRequestTimeout();
-    const connectedPool = new McpClientPool(
-      configuration.mcpServers,
-      configuration.stdio.restart,
-      logger,
-      cwd,
-    );
+    const connections = Object.fromEntries(
+        Object.entries(configuration.mcpServers).map(([name, connection]) => [
+          name,
+          omit(connection, ["defer_loading"]),
+        ]),
+      ),
+      deferredServers = new Set(
+        names.filter((name) => configuration.mcpServers[name]?.defer_loading),
+      ),
+      connectedPool = new McpClientPool(connections, configuration.stdio.restart, logger, cwd);
     pool = connectedPool;
     const namedTools = renameMcpTools(
-        [...builtInTools, ...(await loadServerTools(connectedPool, names))],
+        [...builtInTools, ...(await loadServerTools(connectedPool, names, deferredServers))],
         configuration.toolNameOverrides,
       ),
       configured = snapshot

@@ -14,6 +14,12 @@ export function loadBuiltInTools(settings: BuiltInPreferences, options: BuiltInT
   if (settings.update_title?.enabled) {
     tools.push(createTitleTool(settings.update_title));
   }
+  for (const preferences of Object.values(settings)) {
+    const tool = tools.find(({ name }) => name === preferences.name);
+    if (tool && preferences.defer_loading) {
+      tool.extras = { ...tool.extras, defer_loading: true };
+    }
+  }
   return tools;
 }
 function requireSessionId(config: { configurable?: Record<string, unknown> }) {

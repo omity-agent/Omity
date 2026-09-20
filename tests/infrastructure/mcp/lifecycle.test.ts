@@ -1,9 +1,14 @@
 import { type LoadedMcp, loadServerTools } from "../../../src/infrastructure/mcp/tools/catalog";
+import {
+  applyMcpToolSnapshot,
+  emptyMcpToolSnapshot,
+  modelToolDefinitions,
+} from "../../../src/infrastructure/mcp/tools/definitions";
 import { expect, mock, test } from "bun:test";
 import { AppMcp } from "../../../src/app/runtime/toolResources";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
-import { emptyMcpToolSnapshot } from "../../../src/infrastructure/mcp/tools/definitions";
+import { renameMcpTools } from "../../../src/infrastructure/mcp/tools/descriptions";
 
 test("MCP adapter clients initialize sequentially", async () => {
   const firstReady = Promise.withResolvers<void>(),
@@ -25,6 +30,24 @@ test("MCP adapter clients initialize sequentially", async () => {
   firstReady.resolve();
   expect(await loading).toHaveLength(2);
   expect(requested).toEqual(["first", "second"]);
+});
+test("server-wide defer loading survives tool renaming and is frozen in snapshots", async () => {
+  const tools = await loadServerTools(
+    { getClient: async (name) => toolClient(name) },
+    ["first", "second"],
+    new Set(["first"]),
+  );
+  renameMcpTools(tools, { first__tool: "renamed" });
+  const definitions = modelToolDefinitions(tools, new Map());
+  expect(definitions.map(({ deferLoading, name }) => ({ deferLoading, name }))).toEqual([
+    { deferLoading: true, name: "renamed" },
+    { deferLoading: undefined, name: "second__tool" },
+  ]);
+  for (const tool of tools) {
+    tool.extras = { defer_loading: tool.name !== "renamed" };
+  }
+  applyMcpToolSnapshot(tools, { tools: definitions });
+  expect(modelToolDefinitions(tools, new Map())).toEqual(definitions);
 });
 test("all App consumers share one MCP lifecycle", async () => {
   const initialized = Promise.withResolvers<LoadedMcp>(),

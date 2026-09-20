@@ -1,5 +1,5 @@
+import { mcpServerSchema, normalizeMcpServers } from "./connections";
 import { builtInPreferencesSchema } from "../../toolbox/metadata";
-import { normalizeMcpServers } from "./connections";
 import { z } from "zod";
 
 const nonEmpty = z.string().min(1),
@@ -11,7 +11,7 @@ const nonEmpty = z.string().min(1),
   });
 export const toolboxSchema = z.strictObject({
   freeformToolInputs: names.nullish().transform((value) => value ?? []),
-  mcpServers: z.record(z.string(), z.unknown()).default({}).transform(normalizeMcpServers),
+  mcpServers: z.record(z.string(), mcpServerSchema).default({}).transform(normalizeMcpServers),
   stdio: z
     .strictObject({
       restart: z.strictObject({

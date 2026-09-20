@@ -1,5 +1,9 @@
+import { isJSONObject, isPlainObject } from "es-toolkit";
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 
+export function isProviderOptions(value: unknown): value is ProviderOptions {
+  return isPlainObject(value) && Object.values(value).every(isJSONObject);
+}
 export function omitToolItemIds(value: ProviderOptions): ProviderOptions | undefined {
   const providers = Object.entries(value).flatMap(([provider, options]) => {
     const entries = Object.entries(options).filter(([key]) => key !== "itemId");

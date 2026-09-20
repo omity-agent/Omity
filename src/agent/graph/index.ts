@@ -28,6 +28,7 @@ import type { ToolExecutions } from "../toolExecutions";
 import { aiModelTools } from "../model/tools";
 import { createHookNode } from "../../hooks/graph/node";
 import { createToolInvoker } from "../toolExecution";
+import { modelApi } from "../model/provider";
 import { streamAiModel } from "../model/request";
 
 const AgentState = Annotation.Root({
@@ -78,7 +79,7 @@ export function buildGraph(
 export function createAgentGraph(options: GraphOptions) {
   const freeform = options.freeformToolParameters ?? new Map(),
     definitions = options.toolDefinitions ?? modelToolDefinitions(options.tools, freeform),
-    modelTools = aiModelTools(definitions),
+    modelTools = aiModelTools(definitions, modelApi(options.settings)),
     invokeTool = createToolInvoker(options.tools, {
       freeformToolParameters: freeform,
       sessionId: options.hooks.sessionId,
@@ -119,7 +120,9 @@ export function createAgentGraph(options: GraphOptions) {
       return {
         hookPlan: response.tool_calls?.length
           ? toolPlan(response)
-          : agentPlan("after", [response.id!]),
+          : response.response_metadata["rawFinishReason"] === "pause_turn"
+            ? null
+            : agentPlan("after", [response.id!]),
         messages: [response],
       };
     },

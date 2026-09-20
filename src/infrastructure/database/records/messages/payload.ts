@@ -5,8 +5,15 @@ import {
   type ToolCall,
   ToolMessage,
 } from "@langchain/core/messages";
-import type { StoredAi, StoredConversationMessage, StoredTool, StoredUsage } from "./replayShape";
+import {
+  type StoredAi,
+  type StoredConversationMessage,
+  type StoredTool,
+  type StoredUsage,
+  toolProviderOptionsSchema,
+} from "./replayShape";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { omitToolItemIds } from "../../../../agent/toolProviderOptions";
 import { structuredToolOutput } from "../../../mcp/tools/structured";
 
 export type MessageStorageMode = "history" | "recovery";
@@ -30,6 +37,20 @@ function encodeAiMessage(message: AIMessage): StoredAi {
     type: "ai",
     ...("aiSdkContent" in message.additional_kwargs
       ? { aiSdkContent: message.additional_kwargs["aiSdkContent"] }
+      : {}),
+    ...("aiSdkToolProviderOptions" in message.additional_kwargs
+      ? {
+          aiSdkToolProviderOptions: Object.fromEntries(
+            Object.entries(
+              toolProviderOptionsSchema.parse(
+                message.additional_kwargs["aiSdkToolProviderOptions"],
+              ),
+            ).flatMap(([id, options]) => {
+              const cleaned = omitToolItemIds(options);
+              return cleaned ? [[id, cleaned]] : [];
+            }),
+          ),
+        }
       : {}),
     ...(message.tool_calls?.length ? { toolCalls: message.tool_calls.map(storedToolCall) } : {}),
     ...(reasoning === undefined ? {} : { reasoning }),

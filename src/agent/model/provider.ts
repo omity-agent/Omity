@@ -1,14 +1,42 @@
 import type { ModelApi, Settings } from "../../types";
+import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { codexClientFields } from "../../infrastructure/openai/codexAuthentication";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 
 export function buildAiModel(settings: Settings) {
+  if (modelApi(settings) === "messages") {
+    return createAnthropic(providerOptions(settings))(settings.model.model);
+  }
   const provider = createOpenAI(providerOptions(settings));
   return modelApi(settings) === "completions"
     ? provider.chat(settings.model.model)
     : provider.responses(settings.model.model);
 }
-export function aiRequestOptions(settings: Settings, sessionId: string) {
+export function aiRequestOptions(
+  settings: Settings,
+  sessionId: string,
+): {
+  instructions?: string;
+  providerOptions: SharedV4ProviderOptions;
+} {
+  if (modelApi(settings) === "messages") {
+    const effort = settings.model.reasoning_effort;
+    if (effort === "minimal") {
+      throw new Error("Messages API 不支持 reasoning_effort: minimal");
+    }
+    return {
+      instructions: settings.agent.systemPrompt,
+      providerOptions: {
+        anthropic:
+          effort === undefined
+            ? {}
+            : effort === "none"
+              ? { thinking: { type: "disabled" } }
+              : { effort, thinking: { display: "summarized", type: "adaptive" } },
+      },
+    };
+  }
   const openai = {
     forceReasoning: settings.model.reasoning_effort !== undefined,
     include: ["reasoning.encrypted_content"],
@@ -32,7 +60,7 @@ export function aiRequestOptions(settings: Settings, sessionId: string) {
       };
 }
 export function modelApi(settings: Settings): ModelApi {
-  return settings.model.adapter === "completions" ? "completions" : "responses";
+  return settings.model.adapter === "codex" ? "responses" : settings.model.adapter;
 }
 function providerOptions(settings: Settings) {
   if (settings.model.adapter === "codex") {

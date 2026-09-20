@@ -1,15 +1,30 @@
 import { z } from "zod";
 
-const serverSchema = z.looseObject({ enabled: z.boolean().optional() }),
-  stdioSchema = z.looseObject({
-    args: z.array(z.string()).default([]),
-    command: z.string(),
-  });
-export function normalizeMcpServers(servers: Record<string, unknown>): Record<string, unknown> {
+export const mcpServerSchema = z.looseObject({
+  defer_loading: z.boolean().optional(),
+  enabled: z.boolean().optional(),
+});
+const stdioSchema = z.looseObject({
+  args: z.array(z.string()).default([]),
+  command: z.string(),
+});
+export function normalizeMcpServers(
+  servers: Record<string, unknown>,
+): Record<string, Record<string, unknown> & { defer_loading?: boolean }> {
   return Object.fromEntries(
     Object.entries(servers).flatMap(([name, server]) => {
-      const { enabled, ...connection } = serverSchema.parse(server);
-      return enabled === false ? [] : [[name, normalizeConnection(connection)]];
+      const { defer_loading, enabled, ...connection } = mcpServerSchema.parse(server);
+      return enabled === false
+        ? []
+        : [
+            [
+              name,
+              {
+                ...normalizeConnection(connection),
+                ...(defer_loading === undefined ? {} : { defer_loading }),
+              },
+            ],
+          ];
     }),
   );
 }

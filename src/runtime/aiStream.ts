@@ -59,6 +59,10 @@ export async function recordAiStreamPart(
       ctx.observer?.token(ctx.sessionId, queueId, chunk.delta);
     }
   } else if (chunk?.type === "tool-input-start") {
+    if (chunk.providerExecuted) {
+      state.serverToolIds.add(chunk.toolCallId);
+      return;
+    }
     ctx.toolExecutions?.announce(chunk.toolCallId);
     const messageId = streamMessageId(state, chunk.toolCallId),
       index = toolIndex(state, chunk.toolCallId);
@@ -75,6 +79,9 @@ export async function recordAiStreamPart(
       },
     });
   } else if (chunk?.type === "tool-input-delta") {
+    if (state.serverToolIds.has(chunk.toolCallId)) {
+      return;
+    }
     const messageId = streamMessageId(state, chunk.toolCallId),
       index = toolIndex(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
