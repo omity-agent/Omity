@@ -8,6 +8,7 @@
   "module": "src/cli.ts",
   "scripts": {
     "build": "bun scripts/build.ts",
+    "benchmark:mcp": "bun scripts/build.ts --benchmark-mcp",
     "omity": "bun src/cli.ts",
     "check": "oxlint --fix --fix-suggestions --format=agent && oxfmt && bun scripts/build.ts --test"
   },

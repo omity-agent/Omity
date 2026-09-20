@@ -23,10 +23,15 @@ try {
   const [node, script, command] = process.argv;
   void node;
   void script;
-  if (command !== undefined && command !== "--test") {
+  if (command !== undefined && command !== "--test" && command !== "--benchmark-mcp") {
     throw new Error(`未知构建参数：${command}`);
   }
-  const run = command === "--test" ? runTests : buildApplication;
+  const run =
+    command === "--test"
+      ? runTests
+      : command === "--benchmark-mcp"
+        ? runMcpBenchmark
+        : buildApplication;
   await run();
 } finally {
   await rm(migrationsRoot, { force: true, recursive: true });
@@ -117,6 +122,17 @@ async function flattenMigration(database: (typeof databases)[number]) {
 }
 async function runTests() {
   const child = Bun.spawn([process.execPath, "test"], {
+      cwd: root,
+      stderr: "inherit",
+      stdout: "inherit",
+    }),
+    exitCode = await child.exited;
+  if (exitCode !== 0) {
+    throw new Error(`测试失败，退出码：${exitCode.toString()}`);
+  }
+}
+async function runMcpBenchmark() {
+  const child = Bun.spawn([process.execPath, "run", "tests/performance/runLatency.ts"], {
       cwd: root,
       stderr: "inherit",
       stdout: "inherit",
