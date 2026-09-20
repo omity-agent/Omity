@@ -11,6 +11,7 @@ const classes = switchRecipe({ size: "sm" }),
   list = css({ display: "grid", gap: "3" }),
   row = css({
     alignItems: "start",
+    colorPalette: "neutral",
     cursor: "pointer",
     gap: "3",
     minW: 0,

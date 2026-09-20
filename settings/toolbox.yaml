@@ -11,14 +11,14 @@ toolboxes:
         description: ""
         itemDescription: ""
         minLength: 1 # 每个选项的最小字符串长度。
-        minItems: 0 # 允许不提供选项，仅由用户填写备注。
+        minItems: 2
       question:
         description: ""
         minLength: 1
   open_ended:
     enabled: true
     name: ask_user__open_ended
-    description: ""
+    description: "每次只许问一个问题。如果有多个问题请分别调用，而不是写进单个 question。"
     parameters:
       question:
         description: ""
