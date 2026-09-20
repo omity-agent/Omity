@@ -31,21 +31,10 @@ export function sessionDatabase(db: Database) {
   return drizzle({ client: db });
 }
 export function closeDatabase(db: Database) {
-  const clearQueryCache: unknown = Reflect.get(db, "clearQueryCache");
-  if (typeof clearQueryCache !== "function") {
-    throw new Error("当前 Bun SQLite 不支持清理查询缓存");
-  }
-  Reflect.apply(clearQueryCache, db, []);
-  Bun.gc(true);
   db.close(true);
 }
 export function queryAll<Row>(db: Database, sql: string, ...params: SQLQueryBindings[]) {
-  const query = db.prepare<Row, SQLQueryBindings[]>(sql);
-  try {
-    return query.all(...params);
-  } finally {
-    query.finalize();
-  }
+  return db.query<Row, SQLQueryBindings[]>(sql).all(...params);
 }
 export function queryGet<Row>(db: Database, sql: string, ...params: SQLQueryBindings[]) {
   return queryAll<Row>(db, sql, ...params)[0] ?? null;

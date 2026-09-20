@@ -10,7 +10,6 @@ import {
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
 import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
-import { loadSessionEventCursor, loadSessionTranscript } from "./transcript";
 import { readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { AppEvents } from "./events";
 import type { AppHosts } from "./hosts";
@@ -18,11 +17,14 @@ import type { AppInstanceOwner } from "./runtime/instanceLock";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
+import { RetainedRegistry } from "./runtime/resources/retainedRegistry";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
+import { closeControllerResources } from "./runtime/shutdown";
 import { deleteHostSession } from "../sessionStorage";
 import { enqueueMessageWithAttachments } from "./attachments/message";
+import { loadSessionTranscript } from "./transcript";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { materializeAppFork } from "./runtime/sessionActions";
 import { setSessionControl } from "../client";
@@ -30,7 +32,7 @@ import { setSessionControl } from "../client";
 export class AppController {
   readonly events: AppEvents;
   private readonly settings: Settings;
-  private readonly registry: AppRegistry;
+  private readonly registry: RetainedRegistry;
   private readonly hosts: AppHosts;
   private readonly askUser: AskUserRuntime;
   private readonly settingsContext: SettingsContext;
@@ -46,7 +48,7 @@ export class AppController {
     this.settings = loadSettings(appRoot, { settingsContext: this.settingsContext });
     const discovered = new AppRegistry();
     recoverAppSessions(discovered.list(), options.abandonedOwner);
-    this.registry = new AppRegistry();
+    this.registry = new RetainedRegistry();
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
     this.hosts = createControllerHosts({
@@ -60,7 +62,7 @@ export class AppController {
       settings: this.settings,
     });
   }
-  close = () => this.hosts.close();
+  close = () => closeControllerResources(this.hosts, this.registry);
   bootstrap() {
     return {
       attachments: this.settings.attachments,
@@ -160,6 +162,7 @@ export class AppController {
   async deleteSession(sessionId: string) {
     this.registry.require(sessionId);
     await this.hosts.stop(sessionId);
+    this.registry.release(sessionId);
     deleteHostSession(sessionId);
     this.hosts.clearError(sessionId);
     this.registry.remove(sessionId);
@@ -175,8 +178,7 @@ export class AppController {
     return loadSessionTranscript(sessionId);
   }
   eventCursor(sessionId: string) {
-    this.registry.require(sessionId);
-    return loadSessionEventCursor(sessionId);
+    return this.registry.eventCursor(sessionId);
   }
   private ensureHost(session: RegisteredSession) {
     if (!this.hosts.has(session.id) && hasLiveHostLease(session.id)) {

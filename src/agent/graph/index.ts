@@ -2,6 +2,7 @@ import {
   Annotation,
   type BaseCheckpointSaver,
   END,
+  type LangGraphRunnableConfig,
   MessagesAnnotation,
   START,
   StateGraph,
@@ -27,6 +28,7 @@ import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "../toolExecutions";
 import { aiModelTools } from "../model/tools";
 import { createHookNode } from "../../hooks/graph/node";
+import { createResultRouter } from "./resultRouting";
 import { createToolInvoker } from "../toolExecution";
 import { modelApi } from "../model/provider";
 import { streamAiModel } from "../model/request";
@@ -115,28 +117,40 @@ export function createAgentGraph(options: GraphOptions) {
       (call) => Promise.resolve(invokeToolTask(call)),
       { parallelToolCalls: options.settings.toolExecution.parallel },
     ),
-    callModel = async (state: GraphState) => {
+    routeResult = createResultRouter(
+      runHooks,
+      options.hooks.rules.some((rule) => rule.enable !== false),
+    ),
+    callModel = async (state: GraphState, config: LangGraphRunnableConfig) => {
       const response = await requestModel(state.messages);
-      return {
-        hookPlan: response.tool_calls?.length
-          ? toolPlan(response)
-          : response.response_metadata["rawFinishReason"] === "pause_turn"
-            ? null
-            : agentPlan("after", [response.id!]),
-        messages: [response],
-      };
+      return routeResult(
+        state,
+        {
+          hookPlan: response.tool_calls?.length
+            ? toolPlan(response)
+            : response.response_metadata["rawFinishReason"] === "pause_turn"
+              ? null
+              : agentPlan("after", [response.id!]),
+          messages: [response],
+        },
+        config,
+      );
     },
-    callTool = async (state: GraphState) => ({
-      messages: await invokeToolBatchTask(
-        pendingToolBatch(state.messages, options.settings.toolExecution.parallel),
-      ),
-    });
+    callTool = async (state: GraphState, config: LangGraphRunnableConfig) =>
+      routeResult(
+        state,
+        {
+          hookPlan: state.hookPlan,
+          messages: await invokeToolBatchTask(
+            pendingToolBatch(state.messages, options.settings.toolExecution.parallel),
+          ),
+        },
+        config,
+      );
   return new StateGraph(AgentState)
     .addNode(hookNode, runHooks, { ends: [hookNode, modelNode, toolsNode, END] })
-    .addNode(modelNode, callModel)
-    .addNode(toolsNode, callTool)
+    .addNode(modelNode, callModel, { ends: [hookNode, toolsNode] })
+    .addNode(toolsNode, callTool, { ends: [hookNode, modelNode, toolsNode] })
     .addEdge(START, hookNode)
-    .addEdge(modelNode, hookNode)
-    .addEdge(toolsNode, hookNode)
     .compile({ checkpointer: options.checkpointer });
 }

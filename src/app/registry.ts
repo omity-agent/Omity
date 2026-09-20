@@ -85,8 +85,10 @@ export class AppRegistry {
     }
     return session;
   }
-  refresh(id: string) {
-    const session = readSession(resolveSessionPaths(id).dbPath, id, false);
+  refresh(id: string, db?: Database) {
+    const session = db
+      ? readSessionRecord(db, id)
+      : readSession(resolveSessionPaths(id).dbPath, id);
     this.sessions.set(id, session);
     return session;
   }
@@ -102,12 +104,12 @@ function scanSessions(sessionsDir: string) {
   }
   return readdirSync(sessionsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => readSession(resolveSessionPaths(entry.name).dbPath, undefined, true));
+    .map((entry) => readSession(resolveSessionPaths(entry.name).dbPath));
 }
 function compareSessions(left: RegisteredSession, right: RegisteredSession) {
   return right.updatedAt - left.updatedAt || right.createdAt - left.createdAt;
 }
-function readSession(dbPath: string, id?: string, _validate = false) {
+function readSession(dbPath: string, id?: string) {
   if (!existsSync(dbPath)) {
     throw sessionNotFound(id ?? dbPath);
   }
@@ -118,18 +120,21 @@ function readSession(dbPath: string, id?: string, _validate = false) {
   });
   try {
     configureReadonlyDatabase(db);
-    return runTransaction(db, () => {
-      const row = id
-        ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
-        : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);
-      if (!row) {
-        throw sessionNotFound(id ?? dbPath);
-      }
-      return toSession(row, deriveSessionTitle(db, row.id));
-    });
+    return readSessionRecord(db, id);
   } finally {
     closeDatabase(db);
   }
+}
+function readSessionRecord(db: Database, id?: string) {
+  return runTransaction(db, () => {
+    const row = id
+      ? queryGet<SessionRow>(db, `${sessionSelect} WHERE s.id = ?`, id)
+      : queryGet<SessionRow>(db, `${sessionSelect} LIMIT 1`);
+    if (!row) {
+      throw sessionNotFound(id ?? db.filename);
+    }
+    return toSession(row, deriveSessionTitle(db, row.id));
+  });
 }
 function toSession(row: SessionRow, title: string): RegisteredSession {
   return {

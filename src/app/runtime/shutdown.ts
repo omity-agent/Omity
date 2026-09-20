@@ -1,4 +1,6 @@
+import type { AppHosts } from "../hosts";
 import { Logger } from "../../infrastructure/logging/logger";
+import type { RetainedRegistry } from "./resources/retainedRegistry";
 import type { Server } from "node:http";
 import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
@@ -22,6 +24,13 @@ interface ShutdownLogger {
 }
 export function createShutdownLogger() {
   return new Logger("debug");
+}
+export async function closeControllerResources(hosts: AppHosts, registry: RetainedRegistry) {
+  try {
+    await hosts.close();
+  } finally {
+    registry.close();
+  }
 }
 export function listenForShutdownSignal() {
   const waiting = Promise.withResolvers<ShutdownSignal>(),

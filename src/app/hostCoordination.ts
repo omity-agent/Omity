@@ -6,7 +6,7 @@ import type { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import type { ProcessOwner } from "../infrastructure/process/ownership";
 import type { RegisteredSession } from "./registry";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
-import { createAppMcp } from "./runtime/toolResources";
+import { createAppMcp } from "./runtime/resources/toolPool";
 
 function controllerHostEvents(
   events: AppEvents,

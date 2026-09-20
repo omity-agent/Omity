@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { AppMcp } from "../../../src/app/runtime/toolResources";
+import { AppMcp } from "../../../src/app/runtime/resources/toolPool";
 import type { LoadedMcp } from "../../../src/infrastructure/mcp/tools/catalog";
 import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { emptyMcpToolSnapshot } from "../../../src/infrastructure/mcp/tools/definitions";

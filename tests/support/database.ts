@@ -14,9 +14,9 @@ export function afterQuery(
   let completed = false;
   const sqlite = new Proxy(database.db, {
     get(target, property) {
-      if (property === "prepare") {
+      if (property === "prepare" || property === "query") {
         return (sql: string) => {
-          const statement = target.prepare(sql);
+          const statement = target[property](sql);
           if (!sql.includes(sqlFragment)) {
             return statement;
           }

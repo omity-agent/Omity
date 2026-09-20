@@ -11,8 +11,8 @@ import { clearCompletedCancellations } from "./records/toolCancellations";
 import { finishToolStreams } from "./records/toolCompletion";
 import { insertStreamEvent } from "./records/streamEvents";
 import { messageFileLinkSources } from "../../fileLinks/messageSources";
+import { prepareMessageSync } from "./records/messages/sync";
 import { runTransaction } from "./connection";
-import { syncMessages } from "./records/messages/sync";
 import { touchSessionRecord } from "./records/sessions";
 
 export async function syncIndexedHistory(options: {
@@ -28,11 +28,12 @@ export async function syncIndexedHistory(options: {
     messageFileLinkSources(options.messages),
   );
   return runTransaction(options.db, () => {
-    const messagesChanged = syncMessages(options.db, options.sessionId, options.messages);
+    const history = prepareMessageSync(options.db, options.sessionId, options.messages);
+    history.commit();
     upsertFileLinkUnits(options.db, options.sessionId, units);
     const streams = finishToolStreams(options.db, options.sessionId, options.messages);
     clearCompletedCancellations(options.db, options.sessionId, options.messages);
-    if (messagesChanged || streams.changed || units.length > 0) {
+    if (history.changed || streams.changed || units.length > 0) {
       touchSessionRecord(options.db, options.sessionId);
     }
     return streams.events;

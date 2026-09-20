@@ -38,9 +38,6 @@ interface QueueRow {
 export function loadSessionTranscript(sessionId: string) {
   return withSessionDatabase(sessionId, (db) => loadTranscript(db, sessionId));
 }
-export function loadSessionEventCursor(sessionId: string) {
-  return withSessionDatabase(sessionId, (db) => db.eventCursor());
-}
 function withSessionDatabase<T>(sessionId: string, read: (db: AgentDatabase) => T) {
   const paths = resolveSessionPaths(sessionId);
   if (!existsSync(paths.dbPath)) {

@@ -5,7 +5,7 @@ import {
   modelToolDefinitions,
 } from "../../../src/infrastructure/mcp/tools/definitions";
 import { expect, mock, test } from "bun:test";
-import { AppMcp } from "../../../src/app/runtime/toolResources";
+import { AppMcp } from "../../../src/app/runtime/resources/toolPool";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { renameMcpTools } from "../../../src/infrastructure/mcp/tools/descriptions";

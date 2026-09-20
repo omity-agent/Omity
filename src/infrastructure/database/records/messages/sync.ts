@@ -9,7 +9,7 @@ interface StoredRow {
   message_json: string;
   source_id: string;
 }
-export function syncMessages(db: Database, sessionId: string, messages: BaseMessage[]) {
+export function prepareMessageSync(db: Database, sessionId: string, messages: BaseMessage[]) {
   const items = messages.map((message) => {
       message.id ??= randomUUID();
       return { message, stored: messageInsert(message) };
@@ -24,29 +24,31 @@ export function syncMessages(db: Database, sessionId: string, messages: BaseMess
       existing,
       items.map((item) => item.stored),
     );
-  if (changedAt === items.length && changedAt === existing.length) {
-    return false;
-  }
-  db.run(
-    `UPDATE messages SET position = NULL, queue_id = NULL
-     WHERE session_id = ? AND position >= ?`,
-    [sessionId, changedAt],
-  );
-  for (let position = changedAt; position < items.length; position += 1) {
-    const item = items[position];
-    if (!item) {
-      throw new Error(`消息位置不存在：${position.toString()}`);
-    }
-    storePreparedMessage(
-      db,
-      sessionId,
-      item.stored,
-      position,
-      messageQueueId(sessionId, item.message),
-    );
-  }
-  pruneUnreferencedMessages(db, sessionId);
-  return true;
+  const changed = changedAt !== items.length || changedAt !== existing.length;
+  return {
+    changed,
+    commit: () => {
+      if (!changed) {
+        return;
+      }
+      db.run(
+        `UPDATE messages SET position = NULL, queue_id = NULL
+         WHERE session_id = ? AND position >= ?`,
+        [sessionId, changedAt],
+      );
+      for (let position = changedAt; position < items.length; position += 1) {
+        const item = items[position]!;
+        storePreparedMessage(
+          db,
+          sessionId,
+          item.stored,
+          position,
+          messageQueueId(sessionId, item.message),
+        );
+      }
+      pruneUnreferencedMessages(db, sessionId);
+    },
+  };
 }
 function firstChangedIndex(existing: StoredRow[], incoming: MessageInsert[]) {
   const length = Math.min(existing.length, incoming.length);

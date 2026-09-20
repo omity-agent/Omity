@@ -3,6 +3,7 @@ import { type TextUnit, outputUnit, splitTextUnits } from "../../fileLinks/units
 import type { Database } from "bun:sqlite";
 import type { FileLinkSource } from "../../fileLinks/messageSources";
 import type { FileLinkSurface } from "../../fileLinks/types";
+import { groupBy } from "es-toolkit";
 import { probeFileLinks } from "../../fileLinks/probe";
 import { queryAll } from "./connection";
 
@@ -54,13 +55,16 @@ export class FileLinkIndexer {
     workspace: string,
     sources: FileLinkSource[],
   ): Promise<StoredFileLinkUnit[]> {
-    const result: StoredFileLinkUnit[] = [];
+    const result: StoredFileLinkUnit[] = [],
+      stored = groupBy(loadStoredFileLinkUnits(this.db, sessionId), (unit) =>
+        streamKey(sessionId, unit.ownerId, unit.surface),
+      );
     for (const source of sources) {
       const candidates =
           source.mode === "output"
             ? [outputUnit(source.text)]
             : splitTextUnits(source.text, 0, 0, true),
-        existing = loadStoredFileLinkUnits(this.db, sessionId, source.ownerId, source.surface);
+        existing = stored[streamKey(sessionId, source.ownerId, source.surface)] ?? [];
       assertExistingUnits(existing, candidates, source);
       const missing = candidates.slice(existing.length);
       result.push(

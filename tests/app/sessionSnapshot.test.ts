@@ -1,4 +1,4 @@
-import { type AppMcp, createAppMcp } from "../../src/app/runtime/toolResources";
+import { type AppMcp, createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
