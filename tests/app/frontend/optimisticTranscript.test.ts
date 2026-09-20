@@ -18,6 +18,7 @@ test("optimistic user has a stable timeline representation", () => {
     key: user.key,
     optimistic: true,
     parts: [{ content: "hello" }],
+    pending: true,
     role: "user",
   });
 });
@@ -51,6 +52,7 @@ test("rebuilding after confirmation does not duplicate a persisted user", () => 
     }),
   );
   expect(transcript(client).view.map(({ key: itemKey }) => itemKey)).toEqual(["message-11"]);
+  expect(transcript(client).view[0]?.pending).toBeUndefined();
 });
 test("stream deltas do not move a staged user boundary into transcript cache", () => {
   const client = new QueryClient();
@@ -148,6 +150,7 @@ test("pending queue acknowledgement does not turn the stale client cursor into a
     "assistant:before\n\nafter",
     "user:hello",
   ]);
+  expect(transcript(client).view.at(-1)?.pending).toBe(true);
 });
 function transcript(client: QueryClient) {
   const data = client.getQueryData<TranscriptData>(transcriptKey("session"));

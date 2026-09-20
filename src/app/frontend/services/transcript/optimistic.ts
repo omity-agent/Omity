@@ -25,6 +25,7 @@ export function optimisticTimelineMessage(user: OptimisticUser): TimelineMessage
     key: user.key,
     optimistic: true,
     parts: [{ content: user.content, type: "content" }],
+    pending: true,
     role: "user",
   };
 }

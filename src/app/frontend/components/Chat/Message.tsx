@@ -38,6 +38,9 @@ const row = css({
       w: "fit-content",
     },
     variants: {
+      pending: {
+        true: { opacity: 0.55 },
+      },
       role: {
         assistant: { maxW: { base: "full", sm: "2/3" }, w: "full" },
         tool: {},
@@ -120,7 +123,11 @@ export function Message({
     }, [item.id, onFork]);
   return (
     <div className={cx(row, visualRole === "user" && inputRow)} data-last={last}>
-      <article className={message({ role: visualRole })} data-first={first} data-last={last}>
+      <article
+        className={message({ pending: item.role === "user" && item.pending, role: visualRole })}
+        data-first={first}
+        data-last={last}
+      >
         {first ? (
           <div className={header}>
             <span className={actions({ role: visualRole })}>

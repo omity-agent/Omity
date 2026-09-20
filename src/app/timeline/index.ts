@@ -144,7 +144,9 @@ function timelineTail(
     }
   }
   flushStream();
-  result.push(...pending.values());
+  for (const message of pending.values()) {
+    result.push({ ...message, pending: true });
+  }
   result.push(...optimistic);
   return result;
 }

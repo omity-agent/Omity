@@ -21,6 +21,7 @@ export interface TimelineMessage {
   id: number;
   key: string;
   optimistic?: true;
+  pending?: true;
   role: DisplayRole;
   content: string;
   createdAt: number;

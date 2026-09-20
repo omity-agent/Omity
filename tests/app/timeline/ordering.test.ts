@@ -45,6 +45,8 @@ test("keeps live output before a user append across persistence", () => {
     );
   expect(summary(streaming)).toEqual(["user:开始", "assistant:第一段\n\n第二段", "user:追加问题"]);
   expect(summary(streaming)).toEqual(summary(persisted));
+  expect(streaming.map(({ pending }) => pending)).toEqual([undefined, undefined, true]);
+  expect(persisted.every(({ pending }) => pending === undefined)).toBe(true);
 });
 test("keeps a streaming tool call before a pending user append", () => {
   const queue: DisplayQueue[] = [
@@ -134,6 +136,7 @@ test("places output generated after the consumed boundary behind the user messag
     "user:追加问题",
     "assistant:插入后",
   ]);
+  expect(view.every(({ pending }) => pending === undefined)).toBe(true);
 });
 test.each(["paused", "running", "canceled"] as const)(
   "shows accepted %s queue content before its persisted user message",
@@ -152,6 +155,7 @@ test.each(["paused", "running", "canceled"] as const)(
       [],
     );
     expect(summary(view)).toEqual(["user:已接受"]);
+    expect(view[0]?.pending).toBe(true);
   },
 );
 test("does not invent user messages for continuation queues", () => {
