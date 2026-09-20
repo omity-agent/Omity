@@ -1,6 +1,6 @@
 import { ChevronUp, type LucideIcon } from "lucide-react";
+import { type ReactNode, useId, useMemo } from "react";
 import { Collapsible } from "@ark-ui/react/collapsible";
-import type { ReactNode } from "react";
 import { sva } from "styled-system/css";
 import { useDisclosure } from "../Transcript/disclosures";
 
@@ -31,7 +31,9 @@ const frame = sva({
       h: "detailHeader",
       maxW: "full",
       minH: { _coarse: "11" },
+      position: "relative",
       px: "2",
+      zIndex: "1",
     },
     icon: { flexShrink: 0 },
     root: {
@@ -102,24 +104,34 @@ export function Frame({
   title?: ReactNode;
   tone: "model" | "tool";
 }) {
-  const classes = frame({ tone }),
-    { open, onOpenChange, registerDetail } = useDisclosure(stateKey, expandedInitially);
+  const contentId = useId(),
+    ids = useMemo(() => ({ content: contentId }), [contentId]),
+    classes = frame({ tone }),
+    { open, registerDetail, toggle } = useDisclosure(stateKey, expandedInitially);
   return (
     <Collapsible.Root
       className={classes.root}
+      ids={ids}
       open={open}
-      onOpenChange={onOpenChange}
       ref={registerDetail}
       lazyMount
       unmountOnExit
     >
       <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
       <div className={classes.header}>
-        <Collapsible.Trigger aria-label={label} className={classes.trigger}>
+        <button
+          aria-controls={contentId}
+          aria-expanded={open}
+          aria-label={label}
+          className={classes.trigger}
+          data-state={open ? "open" : "closed"}
+          onClick={toggle}
+          type="button"
+        >
           <ChevronUp aria-hidden className={classes.disclosure} size={12} />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
-        </Collapsible.Trigger>
+        </button>
         {accessory ? <div className={classes.accessory}>{accessory}</div> : null}
       </div>
     </Collapsible.Root>

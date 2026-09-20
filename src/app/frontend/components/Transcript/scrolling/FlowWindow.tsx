@@ -8,7 +8,8 @@ const row = css({
   flexShrink: 0,
 });
 function flowStyle(style: CSSProperties): CSSProperties {
-  return { ...style, display: "flex", flexDirection: "column" };
+  // Disclosure anchoring scrolls this window while its controls remain interactive.
+  return { ...style, display: "flex", flexDirection: "column", pointerEvents: "auto" };
 }
 function rowStyle(
   style: CSSProperties,

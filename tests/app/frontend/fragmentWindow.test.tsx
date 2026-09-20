@@ -13,6 +13,7 @@ const ignoreToolCancellation = () => Promise.resolve(),
   placement = {
     detail: { position: "absolute", top: 500 },
     following: { position: "absolute", top: 540 },
+    scrolling: { height: 3000, pointerEvents: "none", position: "relative" },
     window: { height: 3000, position: "relative" },
   } satisfies Record<string, CSSProperties>;
 
@@ -78,4 +79,13 @@ test("mounted segments flow together instead of retaining stale absolute offsets
   expect(html).toContain("--window-offset:540px");
   expect(html).not.toContain("position:absolute");
   expect(html).not.toContain("top:");
+});
+test("scroll corrections during disclosure leave transcript controls clickable", () => {
+  const html = renderToStaticMarkup(
+    <FlowWindow style={placement.scrolling}>
+      <button type="button">toggle detail</button>
+    </FlowWindow>,
+  );
+  expect(html).toContain("pointer-events:auto");
+  expect(html).not.toContain("pointer-events:none");
 });
