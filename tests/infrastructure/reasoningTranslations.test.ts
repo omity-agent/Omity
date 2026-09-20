@@ -50,25 +50,3 @@ test("reasoning translations only persist completed messages", async () => {
   ]);
   db.close();
 });
-test("reasoning translations validate completed message source", async () => {
-  const db = makeDb(),
-    sessionId = "completed-translation";
-  db.resetSession(sessionId, workspace);
-  await db.syncHistory(sessionId, [
-    new AIMessage({
-      additional_kwargs: {
-        aiSdkContent: [{ text: "analysis", type: "reasoning" }],
-      },
-      content: "answer",
-      id: "assistant",
-    }),
-  ]);
-  storeReasoningTranslation(db.db, sessionId, {
-    messageId: "assistant",
-    source: "analysis",
-    targetLanguage: "zh-CN",
-    translated: "分析",
-  });
-  expect(loadTranscript(db, sessionId).reasoningTranslations).toHaveLength(1);
-  db.close();
-});

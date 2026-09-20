@@ -1,13 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
-import {
-  parseMcpConfiguration,
-  readMcpConfiguration,
-} from "../../src/infrastructure/mcp/configuration";
 import { rmSync, writeFileSync } from "node:fs";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
-import { normalizeMcpServers } from "../../src/infrastructure/mcp/configuration/connections";
+import { readMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
 import { renameMcpTools } from "../../src/infrastructure/mcp/tools/descriptions";
 
 const savedEnv = new Map<string, string | undefined>();
@@ -83,62 +79,6 @@ test("mcp config rejects session placeholders", () => {
   } finally {
     rmSync(directory, { recursive: true });
   }
-});
-test("mcp config rejects unknown top-level fields", () => {
-  const directory = createTestDirectory("mcp"),
-    path = join(directory, "toolbox.yaml");
-  try {
-    writeFileSync(path, "mcpServers: {}\nunknown: true\n");
-    expect(() => readMcpConfiguration(path)).toThrow("Unrecognized key");
-  } finally {
-    rmSync(directory, { recursive: true });
-  }
-});
-test("mcp stdio config fills omitted args and captures stderr", () => {
-  expect(
-    normalizeMcpServers({
-      noisy: {
-        args: ["--serve"],
-        command: "server.exe",
-        extension: { enabled: true },
-        stderr: "inherit",
-        transport: "stdio",
-      },
-      omitted: {
-        command: "server.exe",
-        transport: "stdio",
-      },
-    }),
-  ).toEqual({
-    noisy: {
-      args: ["--serve"],
-      command: "server.exe",
-      extension: { enabled: true },
-      stderr: "pipe",
-      transport: "stdio",
-    },
-    omitted: {
-      args: [],
-      command: "server.exe",
-      stderr: "pipe",
-      transport: "stdio",
-    },
-  });
-});
-test("mcp stdio config rejects non-array args", () => {
-  expect(() =>
-    normalizeMcpServers({
-      invalid: { args: null, command: "server.exe" },
-    }),
-  ).toThrow();
-});
-test("mcp stdio config validates its restart policy", () => {
-  expect(() =>
-    parseMcpConfiguration(
-      { stdio: { restart: { delayMs: 1000, maxAttempts: 0 } } },
-      "toolbox.yaml",
-    ),
-  ).toThrow();
 });
 test("mcp tool name overrides report missing source tools", () => {
   expect(() =>

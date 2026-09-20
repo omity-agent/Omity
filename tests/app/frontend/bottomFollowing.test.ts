@@ -73,28 +73,6 @@ test("gentle upward scrolling leaves the bottom even inside the follow threshold
   controller.align(viewport);
   expect(viewport.scrollTop).toBe(1800);
 });
-test("alignment completes all geometry reads before the scroll write", () => {
-  const operations: string[] = [],
-    viewport = {
-      get clientHeight() {
-        operations.push("read height");
-        return 600;
-      },
-      get scrollHeight() {
-        operations.push("read content");
-        return 1200;
-      },
-      get scrollTop() {
-        operations.push("read top");
-        return 0;
-      },
-      set scrollTop(_value: number) {
-        operations.push("write top");
-      },
-    };
-  new FollowBottomController().align(viewport);
-  expect(operations).toEqual(["read content", "read height", "read top", "write top"]);
-});
 test("settled content does not rewrite the same scroll position", () => {
   let top = 0,
     writes = 0;

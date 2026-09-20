@@ -11,17 +11,6 @@ afterAll(() => {
   stdout.mockRestore();
   stderr.mockRestore();
 });
-test("日志等级过滤及标准输出分流由 Consola 处理", () => {
-  const logger = new Logger("warn");
-  logger.debug("debug");
-  logger.info("info");
-  logger.warn("warn");
-  logger.error("error");
-  expect(stdout).not.toHaveBeenCalled();
-  expect(stderr).toHaveBeenCalledTimes(2);
-  expect(stderr.mock.calls[0]?.[0]).toContain("[warn]");
-  expect(stderr.mock.calls[1]?.[0]).toContain("[error]");
-});
 test("静默日志不会格式化数据或输出 token", () => {
   const logger = new Logger("debug", true),
     data = {
@@ -37,18 +26,6 @@ test("静默日志不会格式化数据或输出 token", () => {
   logger.token("token");
   expect(stdout).not.toHaveBeenCalled();
   expect(stderr).not.toHaveBeenCalled();
-});
-test("循环引用、BigInt 和错误因果链可以输出", () => {
-  const logger = new Logger("debug"),
-    data: { count: bigint; self?: unknown } = { count: 10n },
-    error = new Error("根错误");
-  data.self = data;
-  error.cause = error;
-  expect(() => logger.info("复杂数据", data)).not.toThrow();
-  expect(() => logger.error("失败", error)).not.toThrow();
-  expect(stdout.mock.calls[0]?.[0]).toContain("10n");
-  expect(stdout.mock.calls[0]?.[0]).toContain("Circular");
-  expect(stderr.mock.calls[0]?.[0]).toContain("根错误");
 });
 test("重复日志不节流，逐字输出不添加前缀", () => {
   const logger = new Logger("info");

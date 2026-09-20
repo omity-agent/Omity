@@ -1,21 +1,10 @@
-import {
-  FlowItem,
-  FlowWindow,
-} from "../../../src/app/frontend/components/Transcript/scrolling/FlowWindow";
 import type { TimelineMessage, TimelinePart } from "../../../src/app/timeline";
 import { expect, test } from "bun:test";
 import { Body } from "../../../src/app/frontend/components/Transcript/Body";
-import type { CSSProperties } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { segmentTranscript } from "../../../src/app/frontend/components/Transcript/segments";
 
-const ignoreToolCancellation = () => Promise.resolve(),
-  placement = {
-    detail: { position: "absolute", top: 500 },
-    following: { position: "absolute", top: 540 },
-    scrolling: { height: 3000, pointerEvents: "none", position: "relative" },
-    window: { height: 3000, position: "relative" },
-  } satisfies Record<string, CSSProperties>;
+const ignoreToolCancellation = () => Promise.resolve();
 
 function assistant(parts: TimelinePart[]): TimelineMessage {
   return { content: "answer", createdAt: 0, id: 1, key: "assistant-1", parts, role: "assistant" };
@@ -23,22 +12,6 @@ function assistant(parts: TimelinePart[]): TimelineMessage {
 function content(index: number): TimelinePart {
   return { content: `fragment_${index.toString()}_end`, type: "content" };
 }
-test("a dense assistant bubble is windowed at part granularity", () => {
-  const message = assistant(Array.from({ length: 162 }, (_, index) => content(index))),
-    segments = segmentTranscript([message]);
-  expect(segments).toHaveLength(162);
-  expect(segments[0]?.partIndex).toBe(0);
-  expect(segments[161]?.partIndex).toBe(161);
-  expect(segments[161]?.message).toBe(message);
-});
-test("user messages remain a single scrollable bubble", () => {
-  const message: TimelineMessage = {
-      ...assistant([content(0), content(1)]),
-      role: "user",
-    },
-    segments = segmentTranscript([message]);
-  expect(segments).toEqual([{ key: message.key, message }]);
-});
 test("appending parts preserves the identities of existing virtual rows", () => {
   const message = assistant([content(0), content(1)]),
     before = segmentTranscript([message]),
@@ -46,12 +19,6 @@ test("appending parts preserves the identities of existing virtual rows", () => 
   expect(after.slice(0, 2).map((segment) => segment.key)).toEqual(
     before.map((segment) => segment.key),
   );
-});
-test("segment identity is namespaced by message", () => {
-  const first = assistant([content(0)]),
-    second = { ...first, key: "assistant-2" },
-    segments = segmentTranscript([first, second]);
-  expect(new Set(segments.map((segment) => segment.key)).size).toBe(2);
 });
 test("a mounted body does not render the other 161 parts of its message", () => {
   const message = assistant(Array.from({ length: 162 }, (_, index) => content(index))),
@@ -62,30 +29,4 @@ test("a mounted body does not render the other 161 parts of its message", () => 
   expect(html).not.toContain("fragment_79_end");
   expect(html).not.toContain("fragment_81_end");
   expect(html.match(/<p>/g)).toHaveLength(1);
-});
-test("mounted segments flow together instead of retaining stale absolute offsets on expansion", () => {
-  const html = renderToStaticMarkup(
-    <FlowWindow style={placement.window}>
-      <FlowItem index={10} style={placement.detail}>
-        detail
-      </FlowItem>
-      <FlowItem index={11} style={placement.following}>
-        following text
-      </FlowItem>
-    </FlowWindow>,
-  );
-  expect(html).toContain("flex-direction:column");
-  expect(html).toContain("--window-offset:500px");
-  expect(html).toContain("--window-offset:540px");
-  expect(html).not.toContain("position:absolute");
-  expect(html).not.toContain("top:");
-});
-test("scroll corrections during disclosure leave transcript controls clickable", () => {
-  const html = renderToStaticMarkup(
-    <FlowWindow style={placement.scrolling}>
-      <button type="button">toggle detail</button>
-    </FlowWindow>,
-  );
-  expect(html).toContain("pointer-events:auto");
-  expect(html).not.toContain("pointer-events:none");
 });

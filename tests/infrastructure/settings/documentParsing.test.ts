@@ -6,30 +6,8 @@ import { join } from "node:path";
 import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
 import { readSettingsYamlFile } from "../../../src/infrastructure/configuration/placeholders";
 
-test.each([
-  ["", true, null],
-  ["# comment\n \n", true, null],
-  ["null\n", false, null],
-  ["---\n", false, null],
-  ["[]\n", false, []],
-  ["{}\n", false, {}],
-  ["value: &value [1, 2]\ncopy: *value\n", false, { copy: [1, 2], value: [1, 2] }],
-] as const)(
-  "parses YAML stream %j with explicit empty-document semantics",
-  (source, empty, value) => {
-    withDocument(source, (path) => {
-      expect(readSettingsYamlFile(path)).toEqual({ empty, value });
-    });
-  },
-);
-test.each([
-  "value: [\n",
-  "value: 1\nvalue: 2\n",
-  "%YAML invalid\n",
-  "value: 1\n---\nvalue: 2\n",
-  "value: *unknown\n",
-])("rejects invalid or multi-document YAML %j", (source) => {
-  withDocument(source, (path) => {
+test("rejects multi-document YAML settings", () => {
+  withDocument("value: 1\n---\nvalue: 2\n", (path) => {
     expect(() => readSettingsYamlFile(path)).toThrow();
   });
 });

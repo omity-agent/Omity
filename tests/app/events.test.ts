@@ -1,7 +1,21 @@
-import { expect, test } from "bun:test";
+import { expect, mock, test } from "bun:test";
+import { AppEvents } from "../../src/app/events";
 import { createApi } from "../../src/app/http/handler";
 import { createApiController } from "./support/apiController";
 
+test("唤醒仅通知同一会话，并广播给该会话的所有等待者", async () => {
+  const events = new AppEvents(),
+    otherWoke = mock(),
+    other = observe(events.wait("other", 60_000), otherWoke),
+    first = events.wait("target", 60_000),
+    second = events.wait("target", 60_000);
+  events.wake("target");
+  await Promise.all([first, second]);
+  expect(otherWoke).not.toHaveBeenCalled();
+  events.wake("other");
+  await other;
+  expect(otherWoke).toHaveBeenCalledTimes(1);
+});
 test("state SSE starts with a versioned snapshot and sends versioned mutations", async () => {
   const abort = new AbortController(),
     controller = createApiController(),
@@ -144,4 +158,8 @@ function eventId(frame: string) {
     throw new Error("SSE 帧缺少事件 ID");
   }
   return match.groups["id"];
+}
+async function observe(waiting: Promise<void>, completed: () => void) {
+  await waiting;
+  completed();
 }

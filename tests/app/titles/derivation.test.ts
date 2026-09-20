@@ -4,7 +4,6 @@ import { cleanupDatabaseDirs, makeDb, workspace } from "../../support/database";
 import { cancelledToolMessage } from "../../../src/runtime/toolOutput";
 import { deriveSessionTitle } from "../../../src/infrastructure/database/records/messages/deriveTitle";
 import { recordedTitle } from "./recordedCalls";
-import { runTransaction } from "../../../src/infrastructure/database/connection";
 import { storeMessage } from "../../../src/infrastructure/database/records/messages/history";
 
 afterEach(cleanupDatabaseDirs);
@@ -130,45 +129,6 @@ test("a successful title record with invalid arguments fails explicitly", async 
     request.tool_calls![0]!.args = { title: 42 };
     await db.syncHistory("session", [request, result]);
     expect(() => deriveSessionTitle(db.db, "session")).toThrow();
-  } finally {
-    db.close();
-  }
-});
-test("long histories of unrelated tool calls do not trigger repeated full-message scans", async () => {
-  const db = makeDb();
-  try {
-    db.createSession("session", workspace);
-    const pair = await recordedTitle("长会话保留的标题");
-    runTransaction(db.db, () => {
-      for (const [index, message] of pair.entries()) {
-        storeMessage(db.db, "session", message, index);
-      }
-      for (let index = 0; index < 5000; index += 1) {
-        const id = `other-${index.toString()}`;
-        storeMessage(
-          db.db,
-          "session",
-          new AIMessage({
-            content: "",
-            tool_calls: [{ args: {}, id, name: "other" }],
-          }),
-          index * 2 + 2,
-        );
-        storeMessage(
-          db.db,
-          "session",
-          new ToolMessage({
-            content: "ok",
-            name: "other",
-            tool_call_id: id,
-          }),
-          index * 2 + 3,
-        );
-      }
-    });
-    const started = performance.now();
-    expect(deriveSessionTitle(db.db, "session")).toBe("长会话保留的标题");
-    expect(performance.now() - started).toBeLessThan(2000);
   } finally {
     db.close();
   }

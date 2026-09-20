@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+import type { HighlightedCodeResult } from "../../../../src/app/frontend/components/HighlightedCode/background/dispatch";
 import { createCodeHighlighter } from "../../../../src/app/frontend/components/HighlightedCode/background/tokenization";
+import { retainedLineMarkup } from "../../../../src/app/frontend/components/HighlightedCode/retention";
 
 test("keeps multiline Shiki spans balanced in each virtual line", async () => {
   const highlighter = createCodeHighlighter(() => Promise.resolve("typescript")),
@@ -97,4 +99,20 @@ test("HTML source remains escaped when stable lines are reused", async () => {
   expect(result.lines.join("")).not.toContain("<script>");
   expect(result.lines.join("")).not.toContain("<img ");
   expect(result.lines.join("")).toContain("&lt;script&gt;");
+});
+test("流式追加时保留旧高亮并转义新增尾部", () => {
+  const highlight: HighlightedCodeResult = {
+    code: "const value =",
+    language: "typescript",
+    lines: ['<span style="color:var(--colors-syntax-keyword)">const</span> value ='],
+    sourceLines: ["const value ="],
+  };
+  expect(
+    retainedLineMarkup({
+      appendOnly: true,
+      current: "const value = <next>",
+      highlight,
+      index: 0,
+    }),
+  ).toBe(`${highlight.lines[0]} &lt;next&gt;`);
 });

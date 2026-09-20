@@ -83,7 +83,7 @@ function updateCachedSessions(
     current ? { ...current, sessions: update(current.sessions) } : current,
   );
 }
-export function upsertSessionList(sessions: SessionInfo[], session: SessionInfo) {
+function upsertSessionList(sessions: SessionInfo[], session: SessionInfo) {
   return [session, ...sessions.filter(({ id }) => id !== session.id)].toSorted(
     (left, right) => right.updatedAt - left.updatedAt || right.createdAt - left.createdAt,
   );

@@ -6,14 +6,13 @@ import { useSessionTranscript } from "./query";
 import { useUserMessageSubmissions } from "./submissions";
 
 type Navigate = (page: Page, replace?: boolean) => void;
-export { forkDraftTarget } from "./pendingFork";
 function chatDraftTarget(page: ForkPage | undefined, sessionId: string | undefined) {
   if (page) {
     return forkDraftTarget(page);
   }
   return sessionId ? ({ kind: "session", sessionId } as const) : ({ kind: "new" } as const);
 }
-export function previewFork(view: TimelineMessage[], beforeMessageId: number) {
+function previewFork(view: TimelineMessage[], beforeMessageId: number) {
   const index = view.findIndex(
     (message) => message.id === beforeMessageId && message.role === "user",
   );

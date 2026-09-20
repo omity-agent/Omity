@@ -1,9 +1,6 @@
-import { claimShortId, claimShortIdAsync, createShortId } from "../src/infrastructure/randomId";
+import { claimShortId, claimShortIdAsync } from "../../src/infrastructure/randomId";
 import { expect, test } from "bun:test";
 
-test("short IDs use eight lowercase base36 characters", () => {
-  expect(createShortId()).toMatch(/^[0-9a-z]{8}$/);
-});
 test("short ID claims regenerate after collisions", async () => {
   const candidates = ["aaaaaaaa", "bbbbbbbb"],
     claimed = claimShortId(

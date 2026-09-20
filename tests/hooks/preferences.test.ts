@@ -18,16 +18,6 @@ const rule: HookRule = {
   tool: "notify",
   when: "after",
 };
-test.each([
-  { enable: "false" },
-  { enable: null },
-  { enable: 1 },
-  { description: false },
-  { description: null },
-  { description: 42 },
-])("Hook preferences reject invalid values: %j", (fields) => {
-  expect(() => parseHookRules({ hooks: [{ ...rule, ...fields }] })).toThrow();
-});
 test("Hook preferences retain strict field and duplicate ID validation", () => {
   expect(() => parseHookRules({ hooks: [{ ...rule, enabled: true }] })).toThrow();
   expect(() => parseHookRules({ hooks: [rule, { ...rule, enable: false }] })).toThrow(

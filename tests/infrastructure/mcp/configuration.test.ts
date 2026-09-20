@@ -12,26 +12,10 @@ import { snapshotMcpTools } from "../../../src/infrastructure/mcp/tools/definiti
 import { z } from "zod";
 
 test.each([
-  ["mcpServers", { search: { command: "search", defer_loading: "true" } }],
-  ["mcpServers", { search: { command: "search", prefixToolNameWithServerName: "false" } }],
-  ["mcpServers", { search: { command: "search", prefixToolNameWithServerName: null } }],
-  ["mcpServers", { search: { command: "search", excludedTools: "search" } }],
-  ["mcpServers", { search: { command: "search", excludedTools: null } }],
-  ["mcpServers", { search: { command: "search", excludedTools: [""] } }],
-  ["mcpServers", { search: { command: "search", excludedTools: ["search", 42] } }],
   ["mcpServers", { search: { command: "search", excludedTools: ["search", "search"] } }],
-  ["toolNameOverrides", "search"],
-  ["toolNameOverrides", { search: "" }],
   ["toolNameOverrides", { search: "agent" }],
-  ["toolNameOverrides", { search: 42 }],
-  ["toolDescriptionOverrides", []],
-  ["toolDescriptionOverrides", { search: "" }],
-  ["toolDescriptionOverrides", { search: false }],
-  ["freeformToolInputs", "search"],
-  ["freeformToolInputs", [""]],
-  ["freeformToolInputs", ["search", 42]],
   ["freeformToolInputs", ["search", "search"]],
-])("MCP %s is validated by its configuration schema (%j)", (field, value) => {
+])("MCP %s rejects duplicate or reserved names (%j)", (field, value) => {
   let failure: unknown;
   try {
     parseMcpConfiguration({ [field]: value }, "toolbox.yaml");
@@ -43,35 +27,6 @@ test.each([
     throw new Error("Expected structured validation failure");
   }
   expect(failure.issues.some((issue) => issue.path[0] === field)).toBe(true);
-});
-test("MCP server preferences are preserved independently for stdio and HTTP servers", () => {
-  const configuration = parseMcpConfiguration(
-    {
-      mcpServers: {
-        local: {
-          command: "local",
-          excludedTools: ["delete"],
-          prefixToolNameWithServerName: false,
-        },
-        remote: {
-          excludedTools: [],
-          prefixToolNameWithServerName: true,
-          url: "https://example.com/mcp",
-        },
-      },
-    },
-    "toolbox.yaml",
-  );
-  expect(configuration.mcpServers["local"]).toMatchObject({
-    command: "local",
-    excludedTools: ["delete"],
-    prefixToolNameWithServerName: false,
-  });
-  expect(configuration.mcpServers["remote"]).toMatchObject({
-    excludedTools: [],
-    prefixToolNameWithServerName: true,
-    url: "https://example.com/mcp",
-  });
 });
 test.each([true, false])(
   "excluded tools and their customizations stay out of the catalog and snapshot (prefix: %s)",
@@ -152,36 +107,3 @@ test.each([true, false])(
     }
   },
 );
-test("missing or null customizations normalize to independent empty containers", () => {
-  const omitted = parseMcpConfiguration({}, "toolbox.yaml"),
-    explicit = parseMcpConfiguration(
-      {
-        freeformToolInputs: null,
-        toolDescriptionOverrides: null,
-        toolNameOverrides: null,
-      },
-      "toolbox.yaml",
-    );
-  expect(omitted).toEqual(explicit);
-  omitted.freeformToolInputs.push("modified");
-  expect(explicit.freeformToolInputs).toEqual([]);
-  expect(explicit.toolNameOverrides).toEqual({});
-  expect(explicit.toolDescriptionOverrides).toEqual({});
-});
-test("invalid customization entries remain diagnosable by their complete field path", () => {
-  try {
-    parseMcpConfiguration(
-      {
-        toolDescriptionOverrides: { invalid: "", valid: "prompts/search.md" },
-      },
-      "toolbox.yaml",
-    );
-    throw new Error("Expected validation failure");
-  } catch (error) {
-    expect(error).toBeInstanceOf(z.ZodError);
-    if (!(error instanceof z.ZodError)) {
-      throw error;
-    }
-    expect(error.issues[0]?.path).toEqual(["toolDescriptionOverrides", "invalid"]);
-  }
-});

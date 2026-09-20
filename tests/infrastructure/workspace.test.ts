@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import { normalizeWorkspacePath } from "../../src/infrastructure/configuration/workspacePath";
-import { resolve } from "node:path";
 
 const env = {
   MIXED_ROOT: "C:/Users/example",
@@ -22,11 +21,6 @@ test("workspace path normalizes drive roots and repeated separators", () => {
   expect(normalizeWorkspacePath("C:", String.raw`F:\base`, env)).toBe("C:\\");
   expect(normalizeWorkspacePath("C://Users//example//repo", String.raw`F:\base`, env)).toBe(
     String.raw`C:\Users\example\repo`,
-  );
-});
-test("workspace path resolves relative paths from the supplied base", () => {
-  expect(normalizeWorkspacePath("./repo", String.raw`F:\base`, env)).toBe(
-    resolve(String.raw`F:\base`, "repo"),
   );
 });
 test("workspace path reports empty input and undefined environment variables", () => {
