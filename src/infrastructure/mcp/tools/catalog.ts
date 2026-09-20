@@ -16,6 +16,7 @@ import type { StructuredToolInterface } from "@langchain/core/tools";
 import { collectReadableZodIssues } from "./issues";
 import { disableAdapterRequestTimeout } from "../client/requestPolicy";
 import { omit } from "es-toolkit";
+import { omitExcludedToolCustomizations } from "../configuration/exclusions";
 import { resolve } from "node:path";
 import { suppressTerminalError } from "../../../failures/output";
 
@@ -112,18 +113,23 @@ async function connectMcp(
     const connections = Object.fromEntries(
         Object.entries(configuration.mcpServers).map(([name, connection]) => [
           name,
-          omit(connection, ["defer_loading", "prefixToolNameWithServerName"]),
+          omit(connection, ["defer_loading", "excludedTools", "prefixToolNameWithServerName"]),
         ]),
       ),
       connectedPool = new McpClientPool(connections, configuration.stdio.restart, logger, cwd);
     pool = connectedPool;
-    const namedTools = renameMcpTools(
-        [...builtInTools, ...(await loadServerTools(connectedPool, configuration.mcpServers))],
-        configuration.toolNameOverrides,
+    const availableTools = [
+        ...builtInTools,
+        ...(await loadServerTools(connectedPool, configuration.mcpServers)),
+      ],
+      activeConfiguration = omitExcludedToolCustomizations(
+        configuration,
+        availableTools.map((tool) => tool.name),
       ),
+      namedTools = renameMcpTools(availableTools, activeConfiguration.toolNameOverrides),
       configured = snapshot
         ? applyMcpToolSnapshot(namedTools, snapshot)
-        : configureCurrentTools(namedTools, configuration, context),
+        : configureCurrentTools(namedTools, activeConfiguration, context),
       { freeformToolParameters, tools } = configured;
     logger.info("已加载 MCP 工具", {
       servers: names,

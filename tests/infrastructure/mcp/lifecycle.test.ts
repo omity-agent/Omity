@@ -35,13 +35,17 @@ test("MCP adapter clients initialize sequentially", async () => {
 test.each([true, false])(
   "defer loading and snapshots support server prefixes: %s",
   async (prefix) => {
-    const first = toolClient("first"),
+    const first = toolClient("first", ["blocked", "tool"]),
       callTool = mock(() => Promise.resolve({ content: [{ text: "ok", type: "text" as const }] }));
     first.callTool = callTool;
     const tools = await loadServerTools(
       { getClient: async (name) => (name === "first" ? first : toolClient(name)) },
       {
-        first: { defer_loading: true, prefixToolNameWithServerName: prefix },
+        first: {
+          defer_loading: true,
+          excludedTools: ["blocked"],
+          prefixToolNameWithServerName: prefix,
+        },
         second: {},
       },
     );
@@ -160,17 +164,15 @@ test("App MCP closes successful lifecycles after another initialization fails", 
   await mcp.close();
   expect(close).toHaveBeenCalledTimes(1);
 });
-function toolClient(name: string) {
+function toolClient(name: string, names = ["tool"]) {
   const client = new Client({ name, version: "1.0.0" });
   client.listTools = () =>
     Promise.resolve({
-      tools: [
-        {
-          description: name,
-          inputSchema: { properties: {}, type: "object" as const },
-          name: "tool",
-        },
-      ],
+      tools: names.map((toolName) => ({
+        description: name,
+        inputSchema: { properties: {}, type: "object" as const },
+        name: toolName,
+      })),
     });
   return client;
 }

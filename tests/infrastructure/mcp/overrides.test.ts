@@ -8,6 +8,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
+import { omitExcludedToolCustomizations } from "../../../src/infrastructure/mcp/configuration/exclusions";
 import { parseMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
 import { sessionModelTools } from "../../../src/infrastructure/mcp/tools/freeform";
@@ -22,11 +23,11 @@ test("user MCP settings deeply override repository defaults", () => {
     writeFileSync(join(userSettings, "profile.yaml"), "- tools\n");
     writeFileSync(
       join(root, "settings", "toolbox.yaml"),
-      `mcpServers:\n  terminal:\n    transport: stdio\n    command: terminal\n    args: [default]\ntoolNameOverrides:\n  terminal__open: open\nfreeformToolInputs: [open]\n`,
+      `mcpServers:\n  terminal:\n    transport: stdio\n    command: terminal\n    args: [default]\n    excludedTools: [delete]\ntoolNameOverrides:\n  terminal__open: open\nfreeformToolInputs: [open]\n`,
     );
     writeFileSync(
       join(profile, "toolbox.yaml"),
-      `mcpServers:\n  terminal:\n    args: [user]\ntoolNameOverrides:\n  terminal__close: close\nfreeformToolInputs: [close]\n`,
+      `mcpServers:\n  terminal:\n    args: [user]\n    excludedTools: []\ntoolNameOverrides:\n  terminal__close: close\nfreeformToolInputs: [close]\n`,
     );
     const file = readLayeredSettingsYaml(
       createSettingsContext(root, userSettings),
@@ -38,6 +39,7 @@ test("user MCP settings deeply override repository defaults", () => {
     expect(configuration.mcpServers["terminal"]).toMatchObject({
       args: ["user"],
       command: "terminal",
+      excludedTools: [],
     });
     expect(configuration.toolNameOverrides).toEqual({
       terminal__close: "close",
@@ -48,6 +50,42 @@ test("user MCP settings deeply override repository defaults", () => {
     rmSync(root, { recursive: true });
   }
 });
+test("exclusion cleanup preserves surviving names and aliases while retaining unrelated errors", () => {
+  const configuration = parseMcpConfiguration(
+      {
+        freeformToolInputs: ["shared", "missing"],
+        mcpServers: {
+          local: {
+            command: "local",
+            excludedTools: ["blocked", "shared"],
+            prefixToolNameWithServerName: false,
+          },
+        },
+        toolDescriptionOverrides: { missing: "missing.md", shared: "shared.md" },
+        toolNameOverrides: { blocked: "shared", missing: "unknown", surviving: "shared" },
+      },
+      "toolbox.yaml",
+    ),
+    survivingAlias = omitExcludedToolCustomizations(configuration, ["surviving"]);
+  expect(survivingAlias.toolNameOverrides).toEqual({ missing: "unknown", surviving: "shared" });
+  expect(survivingAlias.toolDescriptionOverrides).toEqual(configuration.toolDescriptionOverrides);
+  expect(survivingAlias.freeformToolInputs).toEqual(["shared", "missing"]);
+  expect(omitExcludedToolCustomizations(configuration, ["blocked", "shared"])).toEqual(
+    configuration,
+  );
+  expect(Object.keys(configuration.toolNameOverrides)).toContain("blocked");
+});
+test.each(["constructor", "toString", "__proto__"])(
+  "exclusion cleanup preserves own customization keys: %s",
+  (name) => {
+    const configuration = {
+      ...parseMcpConfiguration({}, "toolbox.yaml"),
+      toolDescriptionOverrides: Object.fromEntries([[name, "description.md"]]),
+      toolNameOverrides: Object.fromEntries([[name, "renamed"]]),
+    };
+    expect(omitExcludedToolCustomizations(configuration, [name])).toEqual(configuration);
+  },
+);
 test("MCP tool descriptions are loaded from configured paths after renaming", () => {
   const root = createTestDirectory("mcp-description");
   try {

@@ -1,6 +1,7 @@
 import type { McpConfiguration } from "./configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { createMcpToolFailureClient } from "./tools/invocation";
+import { excludedServerToolNames } from "./configuration/exclusions";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 
 export async function loadServerTools(
@@ -15,11 +16,13 @@ export async function loadServerTools(
     if (serverClient === undefined) {
       throw new Error(`MCP 服务器客户端未建立：${name}`);
     }
-    const serverTools = await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
-      prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
-      throwOnLoadError: false,
-      useStandardContentBlocks: true,
-    });
+    const excludedNames = new Set(excludedServerToolNames(name, configuration)),
+      loaded = await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
+        prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
+        throwOnLoadError: false,
+        useStandardContentBlocks: true,
+      }),
+      serverTools = loaded.filter((tool) => !excludedNames.has(tool.name));
     if (configuration.defer_loading) {
       for (const tool of serverTools) {
         tool.extras = { ...tool.extras, defer_loading: true };
