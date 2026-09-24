@@ -1,6 +1,6 @@
-import { expect, test } from "bun:test";
+import { closeAppResources, closeControllerResources } from "../../src/app/runtime/shutdown";
+import { expect, mock, test } from "bun:test";
 import type { Socket } from "node:net";
-import { closeAppResources } from "../../src/app/runtime/shutdown";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { resolve } from "node:path";
@@ -78,6 +78,27 @@ test("shutdown closes active HTTP streams", async () => {
   expect(server.listening).toBeFalse();
   expect(body).rejects.toThrow();
 }, 3000);
+test("控制器按顺序释放资源并保留两个阶段的错误", async () => {
+  const failure = new Error("Host 关闭失败"),
+    cleanup = new Error("数据库关闭失败"),
+    order: string[] = [],
+    hosts = {
+      close: mock(() => {
+        order.push("hosts");
+        return Promise.reject(failure);
+      }),
+    },
+    registry = {
+      close: mock(() => {
+        order.push("registry");
+        throw cleanup;
+      }),
+    };
+  expect(closeControllerResources(hosts, registry)).rejects.toMatchObject({
+    errors: [failure, cleanup],
+  });
+  expect(order).toEqual(["hosts", "registry"]);
+});
 test("waking an app host does not retain its polling timer", async () => {
   await expectChildExit(`
     import { AppEvents } from "./src/app/events";

@@ -3,6 +3,8 @@ import { type ErrorDetails, captureError } from "../failures/details";
 import type { AppMcp } from "./runtime/resources/toolPool";
 import type { ProcessOwner } from "../infrastructure/process/ownership";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
+import { once } from "es-toolkit";
+import pMap from "p-map";
 import { runHostSession } from "../host";
 
 interface RunningHost {
@@ -103,19 +105,24 @@ export class AppHosts {
     this.events.changed(sessionId);
     await host.done;
   }
-  async close() {
+  close = once(async () => {
     this.closing = true;
     const hosts = [...this.running.entries()];
     for (const [sessionId, host] of hosts) {
       host.stopping.abort(new Error("App 正在关闭"));
       this.events.changed(sessionId);
     }
-    try {
-      await Promise.all(hosts.map(([, host]) => this.stopAtDeadline(host)));
-    } finally {
-      await this.mcp.close();
-    }
-  }
+    await pMap(
+      [
+        () => pMap(hosts, ([, host]) => this.stopAtDeadline(host), { stopOnError: false }),
+        () => this.mcp.close(),
+      ],
+      async (close) => {
+        await close();
+      },
+      { concurrency: 1, stopOnError: false },
+    );
+  });
   private observer(force: AbortController) {
     return {
       activity: (changedSessionId: string, activity: HostActivity) => {

@@ -3,6 +3,7 @@ import { StderrCapture } from "./diagnostics";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "@langchain/mcp-adapters";
 import { Writable } from "node:stream";
+import { cleanupFailedInitialization } from "../lifecycle";
 import { disableClientRequestTimeout } from "./requestPolicy";
 import { isPlainObject as isRecord } from "es-toolkit";
 
@@ -66,14 +67,16 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
       isClosed: () => isClosed,
     };
   } catch (error) {
-    await client.close();
     const output = diagnostics.text(),
       message = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      output
-        ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
-        : `MCP stdio 服务器 "${serverName}" 连接失败：${message}`,
-      { cause: error },
+    return cleanupFailedInitialization(
+      new Error(
+        output
+          ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
+          : `MCP stdio 服务器 "${serverName}" 连接失败：${message}`,
+        { cause: error },
+      ),
+      () => client.close(),
     );
   }
 };

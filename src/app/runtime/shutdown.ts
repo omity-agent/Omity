@@ -4,6 +4,7 @@ import type { RetainedRegistry } from "./resources/retainedRegistry";
 import type { Server } from "node:http";
 import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
+import pMap from "p-map";
 import { promisify } from "node:util";
 
 type ShutdownSignal = "SIGINT" | "SIGTERM";
@@ -25,12 +26,14 @@ interface ShutdownLogger {
 export function createShutdownLogger() {
   return new Logger("debug");
 }
-export async function closeControllerResources(hosts: AppHosts, registry: RetainedRegistry) {
-  try {
-    await hosts.close();
-  } finally {
-    registry.close();
-  }
+export async function closeControllerResources(
+  hosts: Pick<AppHosts, "close">,
+  registry: Pick<RetainedRegistry, "close">,
+) {
+  await pMap([hosts, registry], (resource) => resource.close(), {
+    concurrency: 1,
+    stopOnError: false,
+  });
 }
 export function listenForShutdownSignal() {
   const waiting = Promise.withResolvers<ShutdownSignal>(),

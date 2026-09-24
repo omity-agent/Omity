@@ -13,6 +13,7 @@ import type { Logger } from "../../logging/logger";
 import { McpClientPool } from "../client/pool";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { cleanupFailedInitialization } from "../lifecycle";
 import { collectReadableZodIssues } from "./issues";
 import { disableAdapterRequestTimeout } from "../client/requestPolicy";
 import { omit } from "es-toolkit";
@@ -145,8 +146,7 @@ async function connectMcp(
       tools,
     };
   } catch (error) {
-    await pool?.close();
-    throw createMcpLoadError(error);
+    return await cleanupFailedInitialization(createMcpLoadError(error), () => pool?.close());
   } finally {
     end();
   }

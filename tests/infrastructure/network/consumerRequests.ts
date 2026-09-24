@@ -41,9 +41,6 @@ try {
     );
   try {
     const client = await pool.getClient("fixture");
-    if (!client) {
-      throw new Error("测试 MCP 客户端未创建");
-    }
     const tools = await client.listTools();
     console.log(JSON.stringify({ codex: await response.text(), model: result.content, tools }));
   } finally {

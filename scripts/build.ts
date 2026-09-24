@@ -2,6 +2,7 @@ import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { join, resolve } from "node:path";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { build } from "vite";
+import pMap from "p-map";
 import { prepareMagikaAssets } from "./magikaModel";
 
 const databases = [
@@ -65,11 +66,7 @@ async function buildApplication() {
 }
 async function generateMigrations() {
   await rm(migrationsRoot, { force: true, recursive: true });
-  const results = await Promise.allSettled(databases.map(generateMigration)),
-    errors = results.flatMap((result) => (result.status === "rejected" ? [result.reason] : []));
-  if (errors.length > 0) {
-    throw new AggregateError(errors, "数据库迁移生成失败");
-  }
+  await pMap(databases, generateMigration, { stopOnError: false });
   await Promise.all(databases.map(flattenMigration));
 }
 async function generateMigration(database: (typeof databases)[number]) {

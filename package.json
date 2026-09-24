@@ -65,6 +65,7 @@
     "mitt": "latest",
     "nanoid": "latest",
     "openai-codex-oauth": "latest",
+    "p-map": "latest",
     "pathprobe": "latest",
     "race-signal": "latest",
     "rate-limiter-flexible": "latest",

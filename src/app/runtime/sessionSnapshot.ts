@@ -5,6 +5,7 @@ import {
 } from "../../infrastructure/configuration/settings/context";
 import type { AppMcp } from "./resources/toolPool";
 import type { SessionSubmission } from "../attachments/contract";
+import { cleanupFailedInitialization } from "../../infrastructure/mcp/lifecycle";
 import { createAppSession } from "./sessionActions";
 import { createSessionDefinition } from "../../infrastructure/database/sessionDefinition";
 import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
@@ -47,17 +48,9 @@ export async function createSnapshotSession(options: {
       },
     );
   } catch (error) {
-    await discardFailedSession(options.mcp, reservedSessionId, error);
-    throw error;
-  }
-}
-async function discardFailedSession(mcp: AppMcp, sessionId: string | undefined, failure: unknown) {
-  if (!sessionId) {
-    return;
-  }
-  const [cleanup] = await Promise.allSettled([mcp.discardSession(sessionId)]);
-  if (cleanup.status === "rejected") {
-    throw new AggregateError([failure, cleanup.reason], "创建 Session 及清理 MCP 均失败");
+    return cleanupFailedInitialization(error, () =>
+      reservedSessionId ? options.mcp.discardSession(reservedSessionId) : undefined,
+    );
   }
 }
 async function captureSessionSnapshot(options: {
