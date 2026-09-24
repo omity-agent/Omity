@@ -1,9 +1,11 @@
 import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyChunks.ts";
 import type { UserConfig } from "vite";
+import { proxyAddon } from "../scripts/proxyAddon";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 export const frontendOutput = resolve(root, "dist/frontend");
+export const backendPlugins = [proxyAddon];
 export const frontendBuild = {
   emptyOutDir: true,
   outDir: frontendOutput,

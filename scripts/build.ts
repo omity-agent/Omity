@@ -1,7 +1,7 @@
+import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { join, resolve } from "node:path";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { build } from "vite";
-import { frontendOutput } from "../settings/bundling";
 import { prepareMagikaAssets } from "./magikaModel";
 
 const databases = [
@@ -55,6 +55,7 @@ async function buildApplication() {
       entrypoints: ["./src/cli.ts"],
       format: "esm",
       minify: true,
+      plugins: backendPlugins,
       root,
       sourcemap: "linked",
     });
