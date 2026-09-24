@@ -77,6 +77,7 @@
     "remark-gfm": "latest",
     "serialize-error": "latest",
     "shiki": "latest",
+    "tough-cookie": "latest",
     "undici": "latest",
     "untildify": "latest",
     "virtua": "latest",

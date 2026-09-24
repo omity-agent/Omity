@@ -1,3 +1,8 @@
+import {
+  type HeaderPolicy,
+  explicitHeaderDispatcher,
+  registerExplicitFetch,
+} from "./explicitHeaders";
 import { type ResolveOutboundProxy, createProxyDispatcher } from "./dispatchProxied";
 import { type RequestInit as UndiciRequestInit, fetch as undiciFetch } from "undici/index.js";
 import { OutboundRouting } from "./resolveOutbound";
@@ -6,7 +11,11 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
   const routing = resolveProxy ? undefined : new OutboundRouting(),
     transport = createProxyDispatcher(resolveProxy ?? ((url) => routing!.resolve(url))),
     originalFetch = globalThis.fetch,
-    routedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    routedFetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+      policy?: HeaderPolicy,
+    ): Promise<Response> => {
       const url = input instanceof Request ? input.url : String(input),
         { protocol } = new URL(url);
       if (["blob:", "data:", "file:"].includes(protocol)) {
@@ -20,12 +29,26 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
         // Bun 与 Undici 的类型包含不同的运行时扩展；此处只传递标准 Fetch 参数。
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         ...(init as UndiciRequestInit),
-        dispatcher: transport.dispatcher,
+        dispatcher:
+          policy === "explicit"
+            ? explicitHeaderDispatcher(
+                transport.dispatcher,
+                new Headers(
+                  init?.headers ?? (input instanceof Request ? input.headers : undefined),
+                ),
+              )
+            : transport.dispatcher,
         duplex: "half",
       };
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 两者实现相同的 WHATWG Response 接口。
       return (await undiciFetch(url, options)) as unknown as Response;
     };
+  const fetch = Object.assign(routedFetch, {
+    preconnect() {
+      throw new Error("统一代理请求层不支持绕过代理的 fetch.preconnect");
+    },
+  });
+  registerExplicitFetch(fetch);
   return {
     async close() {
       try {
@@ -34,11 +57,7 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
         routing?.close();
       }
     },
-    fetch: Object.assign(routedFetch, {
-      preconnect() {
-        throw new Error("统一代理请求层不支持绕过代理的 fetch.preconnect");
-      },
-    }),
+    fetch,
   };
 }
 export function installNetworking() {

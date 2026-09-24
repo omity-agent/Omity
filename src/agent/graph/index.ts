@@ -16,6 +16,7 @@ import {
   type ModelToolDefinition,
   modelToolDefinitions,
 } from "../../infrastructure/mcp/tools/definitions";
+import { buildAiModel, modelApi } from "../model/provider";
 import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
 import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
 import { BunSqliteSaver } from "../../checkpointer/saver";
@@ -30,7 +31,6 @@ import { aiModelTools } from "../model/tools";
 import { createHookNode } from "../../hooks/graph/node";
 import { createResultRouter } from "./resultRouting";
 import { createToolInvoker } from "../toolExecution";
-import { modelApi } from "../model/provider";
 import { streamAiModel } from "../model/request";
 
 const AgentState = Annotation.Root({
@@ -80,6 +80,7 @@ export function buildGraph(
 }
 export function createAgentGraph(options: GraphOptions) {
   const freeform = options.freeformToolParameters ?? new Map(),
+    model = options.model ?? buildAiModel(options.settings),
     definitions = options.toolDefinitions ?? modelToolDefinitions(options.tools, freeform),
     modelTools = aiModelTools(definitions, modelApi(options.settings)),
     invokeTool = createToolInvoker(options.tools, {
@@ -92,7 +93,7 @@ export function createAgentGraph(options: GraphOptions) {
       streamAiModel({
         freeformToolNames: new Set(freeform.keys()),
         messages,
-        model: options.model,
+        model,
         sessionId: options.hooks.sessionId,
         settings: options.settings,
         signal: getConfig().signal,

@@ -1,7 +1,8 @@
 import type { ModelApi, Settings } from "../../types";
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
-import { codexClientFields } from "../../infrastructure/openai/codexAuthentication";
+import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
 import { createOpenAI } from "@ai-sdk/openai";
 
 export function buildAiModel(settings: Settings) {
@@ -16,7 +17,9 @@ export function buildAiModel(settings: Settings) {
 export function aiRequestOptions(
   settings: Settings,
   sessionId: string,
+  turnId?: string,
 ): {
+  headers?: Record<string, string>;
   instructions?: string;
   providerOptions: SharedV4ProviderOptions;
 } {
@@ -51,6 +54,9 @@ export function aiRequestOptions(
         providerOptions: { openai },
       }
     : {
+        ...(settings.model.adapter === "codex"
+          ? { headers: conversationHeaders(sessionId, turnId) }
+          : {}),
         providerOptions: {
           openai: {
             ...openai,
@@ -64,7 +70,7 @@ export function modelApi(settings: Settings): ModelApi {
 }
 function providerOptions(settings: Settings) {
   if (settings.model.adapter === "codex") {
-    const fields = codexClientFields();
+    const fields = createCodexClientFields();
     return {
       apiKey: fields.apiKey,
       baseURL: fields.configuration.baseURL,

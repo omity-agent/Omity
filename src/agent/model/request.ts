@@ -1,4 +1,4 @@
-import { AIMessage, type BaseMessage } from "@langchain/core/messages";
+import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type LanguageModel, type TextStreamPart, type ToolSet, streamText } from "ai";
 import { aiRequestOptions, buildAiModel, modelApi } from "./provider";
 import { ModelEmptyResponseError } from "../../runtime/network";
@@ -22,7 +22,9 @@ export interface AiStreamEvent {
 }
 export async function streamAiModel(options: ModelRequestOptions) {
   const attempts = new Map<number, AbortController>(),
-    completed = Promise.withResolvers<AIMessage>();
+    completed = Promise.withResolvers<AIMessage>(),
+    model = options.model ?? buildAiModel(options.settings),
+    turnId = options.messages.findLast((message) => HumanMessage.isInstance(message))?.id;
   let finished = false,
     nextAttemptId = 0,
     winnerId: number | undefined;
@@ -67,10 +69,10 @@ export async function streamAiModel(options: ModelRequestOptions) {
         abortSignal: options.signal
           ? AbortSignal.any([options.signal, controller.signal])
           : controller.signal,
-        ...aiRequestOptions(options.settings, options.sessionId),
+        ...aiRequestOptions(options.settings, options.sessionId, turnId),
         maxRetries: 0,
         messages: toModelMessages(options.messages, modelApi(options.settings)),
-        model: options.model ?? buildAiModel(options.settings),
+        model,
         onError: () => undefined,
         temperature: options.settings.model.temperature,
         tools: options.tools,
