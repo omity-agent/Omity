@@ -57,20 +57,20 @@ export class AsyncResourceCache<Resource extends Closeable> {
     }
   });
   private release(loading: Promise<Resource>) {
-    const holder = { promise: Promise.resolve() };
-    const pending = (async () => {
-      try {
-        const resource = await loading;
-        let released = this.released.get(resource);
-        if (!released) {
-          released = Promise.try(() => resource.close());
-          this.released.set(resource, released);
+    const holder = { promise: Promise.resolve() },
+      pending = (async () => {
+        try {
+          const resource = await loading;
+          let released = this.released.get(resource);
+          if (!released) {
+            released = Promise.try(() => resource.close());
+            this.released.set(resource, released);
+          }
+          await released;
+        } finally {
+          this.releasing.delete(holder.promise);
         }
-        await released;
-      } finally {
-        this.releasing.delete(holder.promise);
-      }
-    })();
+      })();
     holder.promise = pending;
     this.releasing.add(pending);
     return pending;

@@ -1,6 +1,7 @@
 import "./panda.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
+import { MarkdownModeProvider } from "./components/Markdown/DisplayMode";
 import { createRoot } from "react-dom/client";
 import { i18nReady } from "./i18n";
 import { reportError } from "./services/errors";
@@ -28,6 +29,8 @@ createRoot(root, {
   },
 }).render(
   <QueryClientProvider client={queryClient}>
-    <App />
+    <MarkdownModeProvider>
+      <App />
+    </MarkdownModeProvider>
   </QueryClientProvider>,
 );

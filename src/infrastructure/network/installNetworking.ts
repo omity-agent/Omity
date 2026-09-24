@@ -42,12 +42,12 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
       };
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 两者实现相同的 WHATWG Response 接口。
       return (await undiciFetch(url, options)) as unknown as Response;
-    };
-  const fetch = Object.assign(routedFetch, {
-    preconnect() {
-      throw new Error("统一代理请求层不支持绕过代理的 fetch.preconnect");
     },
-  });
+    fetch = Object.assign(routedFetch, {
+      preconnect() {
+        throw new Error("统一代理请求层不支持绕过代理的 fetch.preconnect");
+      },
+    });
   registerExplicitFetch(fetch);
   return {
     async close() {

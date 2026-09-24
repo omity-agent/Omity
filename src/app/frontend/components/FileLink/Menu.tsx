@@ -1,5 +1,5 @@
 import { ExternalLink, FolderOpen } from "lucide-react";
-import { type ReactNode, createContext, useCallback, useContext } from "react";
+import { type ReactNode, useCallback } from "react";
 import { css, cx } from "styled-system/css";
 import type { FilePathKind } from "../../../../fileLinks/types";
 import { Menu } from "@ark-ui/react/menu";
@@ -68,9 +68,7 @@ const classes = menu({ size: "sm" }),
     textAlign: "left",
     w: "full",
     whiteSpace: "nowrap",
-  }),
-  FileLinkMenuOpenContext = createContext<(open: boolean) => void>(() => undefined);
-export const FileLinkMenuOpenProvider = FileLinkMenuOpenContext.Provider;
+  });
 export function FileLinkMenu({
   children,
   kind,
@@ -82,21 +80,14 @@ export function FileLinkMenu({
 }) {
   const { t } = useTranslation(),
     sessionId = useFileLinkSession(),
-    reportOpenChange = useContext(FileLinkMenuOpenContext),
     open = useCallback(() => {
       reportPromiseErrors(activateFileLink(sessionId, path, "open"));
     }, [path, sessionId]),
     reveal = useCallback(() => {
       reportPromiseErrors(activateFileLink(sessionId, path, "reveal"));
-    }, [path, sessionId]),
-    handleOpenChange = useCallback(
-      ({ open: menuOpen }: { open: boolean }) => {
-        reportOpenChange(menuOpen);
-      },
-      [reportOpenChange],
-    );
+    }, [path, sessionId]);
   return (
-    <Menu.Root onOpenChange={handleOpenChange} positioning={positioning}>
+    <Menu.Root positioning={positioning}>
       <Menu.Trigger className={trigger} title={path} type="button">
         <span className={label}>{children}</span>
       </Menu.Trigger>

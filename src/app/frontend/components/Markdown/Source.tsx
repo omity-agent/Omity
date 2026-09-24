@@ -1,21 +1,13 @@
 import { Fragment, useLayoutEffect, useMemo, useRef } from "react";
 import { HighlightedLine, codeLines } from "../HighlightedCode/lines";
 import { fitSourceHeight, observeSourceSpace } from "./fittedSource";
-import type { FilePathMatch } from "../../../../fileLinks/types";
 import { css } from "styled-system/css";
 import { highlightMarkdownSource } from "./syntax";
 import { source } from "./styles";
 
-const noFileLinks: FilePathMatch[] = [],
-  container = css({ inset: 0, overflow: "clip", position: "absolute" });
-export function MarkdownSource({
-  content,
-  fileLinks = noFileLinks,
-}: {
-  content: string;
-  fileLinks?: FilePathMatch[];
-}) {
-  const lines = useMemo(() => codeLines(content, fileLinks), [content, fileLinks]),
+const container = css({ inset: 0, overflow: "clip", position: "absolute" });
+export function MarkdownSource({ content }: { content: string }) {
+  const lines = useMemo(() => codeLines(content, []), [content]),
     highlight = useMemo(() => highlightMarkdownSource(content), [content]),
     sourceReference = useRef<HTMLPreElement>(null),
     containerReference = useRef<HTMLDivElement>(null);

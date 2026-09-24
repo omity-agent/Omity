@@ -6,7 +6,6 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { FileLinkMenu, FileLinkMenuOpenProvider } from "./FileLink/Menu";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
 import {
   fileLinkRemark,
@@ -17,18 +16,20 @@ import {
 import { inlineCode, region, rendered, tableScroll } from "./Markdown/styles";
 import { normalizeCodeMatches, normalizeLineBreaks } from "./FileLink/lineBreaks";
 import { Code } from "./ParkUI";
+import { FileLinkMenu } from "./FileLink/Menu";
 import type { FilePathMatch } from "../../../fileLinks/types";
 import { HighlightedCode } from "./HighlightedCode";
 import { MarkdownSource } from "./Markdown/Source";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
-import { useSourceHover } from "./Markdown/hover";
+import { useMarkdownSource } from "./Markdown/DisplayMode";
 
 interface MarkdownRenderContext {
   fileLinks: FilePathMatch[];
   source: string;
 }
 const MarkdownContext = createContext<MarkdownRenderContext | undefined>(undefined),
+  MarkdownLinkContext = createContext(false),
   noFileLinks: FilePathMatch[] = [];
 function codeText(value: ReactNode): string {
   if (typeof value === "string") {
@@ -56,7 +57,6 @@ export function MarkdownView({
       return {
         content: result.code,
         context: { fileLinks: result.matches, source: result.code },
-        fileLinks: result.matches,
         remarkPlugins: [
           remarkGfm,
           fileLinkRemark(result.matches),
@@ -64,42 +64,29 @@ export function MarkdownView({
         ],
       };
     }, [content, fileLinks, preserveLineBreaks]),
-    {
-      handlePointerEnter,
-      handlePointerLeave,
-      handlePointerMove,
-      onMenuOpenChange,
-      regionReference,
-      showSource,
-    } = useSourceHover();
+    showSource = useMarkdownSource();
   return (
     <MarkdownContext.Provider value={normalized.context}>
-      <div
-        className={region}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
-        onPointerMove={handlePointerMove}
-        ref={regionReference}
-      >
+      <div className={region}>
         <div aria-hidden={showSource} className={rendered} data-source-visible={showSource}>
           <ReactMarkdown components={components} remarkPlugins={normalized.remarkPlugins}>
             {normalized.content}
           </ReactMarkdown>
         </div>
-        {showSource ? (
-          <FileLinkMenuOpenProvider value={onMenuOpenChange}>
-            <MarkdownSource content={normalized.content} fileLinks={normalized.fileLinks} />
-          </FileLinkMenuOpenProvider>
-        ) : null}
+        {showSource ? <MarkdownSource content={normalized.content} /> : null}
       </div>
     </MarkdownContext.Provider>
   );
 }
 export function MarkdownInline({ content }: { content: string }) {
   const normalized = useMemo(() => {
-    const source = normalizeLineBreaks(content);
-    return { context: { fileLinks: noFileLinks, source }, source };
-  }, [content]);
+      const source = normalizeLineBreaks(content);
+      return { context: { fileLinks: noFileLinks, source }, source };
+    }, [content]),
+    showSource = useMarkdownSource();
+  if (showSource) {
+    return normalized.source;
+  }
   return (
     <MarkdownContext.Provider value={normalized.context}>
       <ReactMarkdown
@@ -118,27 +105,33 @@ function MarkdownAnchor({ children, href, node, ...props }: ComponentProps<"a"> 
     match =
       matchInsideNode(node, fileLinks) ??
       fileLinks.find((candidate) => candidate.path === linkedPath);
-  if (match !== undefined) {
-    return (
-      <FileLinkMenu kind={match.kind} path={match.path}>
-        {children}
-      </FileLinkMenu>
-    );
-  }
-  return createElement(
-    "a",
-    { ...props, href, rel: "noopener noreferrer", target: "_blank" },
-    children,
+  return (
+    <MarkdownLinkContext value>
+      {match !== undefined ? (
+        <FileLinkMenu kind={match.kind} path={match.path}>
+          {children}
+        </FileLinkMenu>
+      ) : (
+        createElement(
+          "a",
+          { ...props, href, rel: "noopener noreferrer", target: "_blank" },
+          children,
+        )
+      )}
+    </MarkdownLinkContext>
   );
 }
 function MarkdownCode({ children, className, node }: ComponentProps<"code"> & ExtraProps) {
   const { fileLinks, source } = useMarkdownRenderContext(),
+    insideLink = useContext(MarkdownLinkContext),
     raw = codeText(children),
     code = raw.replace(/\n$/, ""),
-    matches = localizeMatches(code, source, node, fileLinks),
+    matches = insideLink ? noFileLinks : localizeMatches(code, source, node, fileLinks),
     language = className?.match(/(?:^|\s)language-(?<language>[^\s]+)/)?.groups?.["language"];
   if (className || raw.includes("\n")) {
-    return <HighlightedCode code={code} fileLinkMatches={matches} language={language} />;
+    return (
+      <HighlightedCode code={code} fileLinkMatches={matches} language={language} layout="flow" />
+    );
   }
   const codeNode = (
       <Code className={inlineCode} size="md" variant="ghost">

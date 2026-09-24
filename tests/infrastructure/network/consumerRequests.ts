@@ -40,8 +40,8 @@ try {
       process.cwd(),
     );
   try {
-    const client = await pool.getClient("fixture");
-    const tools = await client.listTools();
+    const client = await pool.getClient("fixture"),
+      tools = await client.listTools();
     console.log(JSON.stringify({ codex: await response.text(), model: result.content, tools }));
   } finally {
     await pool.close();

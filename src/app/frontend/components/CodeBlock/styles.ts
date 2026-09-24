@@ -1,4 +1,4 @@
-import { css } from "styled-system/css";
+import { css, cva } from "styled-system/css";
 
 export const container = css({
   maxW: "full",
@@ -11,35 +11,54 @@ export const copyButton = css({
   top: "2",
   zIndex: "1",
 });
-export const block = css({
-  bg: "surfaceInset",
-  borderColor: "line",
-  borderWidth: "1px",
-  color: "text",
-  display: "block",
-  fontFamily: "mono",
-  fontSize: "sm",
-  lineHeight: "1.65",
-  m: 0,
-  maxH: "toolOutput",
-  maxW: "full",
-  minW: 0,
-  overflow: "auto",
-  overflowAnchor: "none",
-  p: "3",
-  pr: "12",
-  whiteSpace: "pre",
+export const block = cva({
+  base: {
+    bg: "surfaceInset",
+    borderColor: "line",
+    borderWidth: "1px",
+    color: "text",
+    display: "block",
+    fontFamily: "mono",
+    fontSize: "sm",
+    lineHeight: "1.65",
+    m: 0,
+    maxW: "full",
+    minW: 0,
+    overflowAnchor: "none",
+    p: "3",
+    pr: "12",
+  },
+  defaultVariants: { layout: "contained" },
+  variants: {
+    layout: {
+      contained: { maxH: "toolOutput", overflow: "auto", whiteSpace: "pre" },
+      flow: {
+        maxH: "none",
+        overflow: "visible",
+        overflowWrap: "anywhere",
+        whiteSpace: "pre-wrap",
+      },
+    },
+  },
 });
-export const codeElement = css({
-  bg: "transparent",
-  color: "text",
-  display: "block",
-  fontFamily: "inherit",
-  fontSize: "inherit",
-  lineHeight: "inherit",
-  minW: "fit-content",
-  position: "relative",
-  whiteSpace: "inherit",
+export const codeElement = cva({
+  base: {
+    bg: "transparent",
+    color: "text",
+    display: "block",
+    fontFamily: "inherit",
+    fontSize: "inherit",
+    lineHeight: "inherit",
+    position: "relative",
+    whiteSpace: "inherit",
+  },
+  defaultVariants: { layout: "contained" },
+  variants: {
+    layout: {
+      contained: { minW: "fit-content" },
+      flow: { minW: 0 },
+    },
+  },
 });
 export const sourceLine = css({
   display: "block",

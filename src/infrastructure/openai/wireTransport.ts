@@ -38,12 +38,12 @@ export function createCodexTransport(
       headers.set("x-codex-turn-state", currentTurn.state);
     }
     const response = await followCodexRequest(fetch, store, request.url, {
-      body,
-      headers,
-      method: request.method,
-      signal: request.signal,
-    });
-    const state = response.headers.get("x-codex-turn-state");
+        body,
+        headers,
+        method: request.method,
+        signal: request.signal,
+      }),
+      state = response.headers.get("x-codex-turn-state");
     if (currentTurn && state !== null) {
       currentTurn.state ??= state;
     }

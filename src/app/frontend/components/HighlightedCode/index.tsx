@@ -1,4 +1,5 @@
 import { type CustomContainerComponentProps, Virtualizer } from "virtua";
+import { Fragment, memo, useRef } from "react";
 import { HighlightedLine, codeLines } from "./lines";
 import {
   block,
@@ -8,7 +9,6 @@ import {
   sourceLine,
   widthSizer,
 } from "../CodeBlock/styles";
-import { memo, useRef } from "react";
 import { CopyButton } from "../Chat/CopyButton";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { codeWindow } from "../../../../../settings/rendering";
@@ -20,7 +20,7 @@ import { useHighlight } from "./useHighlight";
 const noFileLinks: FilePathMatch[] = [];
 function CodeSurface({ children, ref, style }: CustomContainerComponentProps) {
   return (
-    <span className={codeElement} ref={ref} style={style}>
+    <span className={codeElement()} ref={ref} style={style}>
       {children}
     </span>
   );
@@ -31,12 +31,14 @@ function HighlightedCodeView({
   code,
   fileLinkMatches = noFileLinks,
   language,
+  layout = "contained",
 }: {
   autoFollow?: boolean;
   className?: string;
   code: string;
   fileLinkMatches?: FilePathMatch[];
   language?: string;
+  layout?: "contained" | "flow";
 }) {
   const normalized = normalizeCodeMatches(code, fileLinkMatches),
     lines = codeLines(normalized.code, normalized.matches),
@@ -54,30 +56,46 @@ function HighlightedCodeView({
   return (
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
-      <pre className={cx(block, className)} ref={blockRef} onScroll={onScroll}>
-        <code className={codeElement}>
-          <span aria-hidden className={widthSizer}>
-            {widestLine}
-          </span>
-          <Virtualizer
-            as={CodeSurface}
-            bufferSize={codeWindow.bufferSize}
-            data={lines}
-            item="span"
-            itemSize={codeWindow.estimatedLineHeight}
-            scrollRef={blockRef}
-          >
-            {(line, index) => (
-              <span className={sourceLine} key={index}>
+      <pre className={cx(block({ layout }), className)} ref={blockRef} onScroll={onScroll}>
+        <code className={codeElement({ layout })}>
+          {layout === "flow" ? (
+            lines.map((line, index) => (
+              <Fragment key={line.start}>
                 <HighlightedLine
                   appendOnly={appendOnly}
                   highlight={highlight}
                   line={line}
                   lineIndex={index}
                 />
+                {index < lines.length - 1 ? "\n" : null}
+              </Fragment>
+            ))
+          ) : (
+            <>
+              <span aria-hidden className={widthSizer}>
+                {widestLine}
               </span>
-            )}
-          </Virtualizer>
+              <Virtualizer
+                as={CodeSurface}
+                bufferSize={codeWindow.bufferSize}
+                data={lines}
+                item="span"
+                itemSize={codeWindow.estimatedLineHeight}
+                scrollRef={blockRef}
+              >
+                {(line, index) => (
+                  <span className={sourceLine} key={index}>
+                    <HighlightedLine
+                      appendOnly={appendOnly}
+                      highlight={highlight}
+                      line={line}
+                      lineIndex={index}
+                    />
+                  </span>
+                )}
+              </Virtualizer>
+            </>
+          )}
         </code>
       </pre>
     </div>
