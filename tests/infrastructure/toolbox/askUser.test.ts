@@ -83,7 +83,7 @@ test("ask_user runtime validates choice answers and exposes the pending question
     "没有备注时至少选择一个选项",
   );
   runtime.answer("session", "call", { note: "", options: ["A"] });
-  expect(waiting).resolves.toEqual({ kind: "choice", note: "", options: ["A"] });
+  expect(waiting).resolves.toEqual({ note: "", options: ["A"] });
   expect(runtime.question("session")).toBeNull();
 });
 test("choice answers can omit options when a note is present", async () => {
@@ -99,5 +99,5 @@ test("choice answers can omit options when a note is present", async () => {
       "session",
     );
   runtime.answer("session", "call", { note: "原因", options: [] });
-  expect(waiting).resolves.toEqual({ kind: "choice", note: "原因", options: [] });
+  expect(waiting).resolves.toEqual({ note: "原因", options: [] });
 });

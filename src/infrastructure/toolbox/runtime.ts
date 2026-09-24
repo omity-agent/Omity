@@ -3,9 +3,7 @@ import type { AskUserRequest } from "./askUser";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { raceSignal } from "race-signal";
 
-type AskUserAnswer =
-  | { kind: "choice"; options: string[]; note: string }
-  | { answer: string; kind: "open_ended" };
+type AskUserAnswer = { options: string[]; note: string } | { answer: string };
 interface PendingQuestion {
   answered?: true;
   request: AskUserRequest;
@@ -64,7 +62,7 @@ function parseAnswer(request: AskUserRequest, answer: unknown): AskUserAnswer {
     if (!isRecord(answer) || typeof answer["answer"] !== "string") {
       throw askUserAnswerInvalid("open_ended 答案必须包含 answer 字符串");
     }
-    return { answer: answer["answer"], kind: "open_ended" };
+    return { answer: answer["answer"] };
   }
   if (
     !isRecord(answer) ||
@@ -89,5 +87,5 @@ function parseAnswer(request: AskUserRequest, answer: unknown): AskUserAnswer {
   if (options.length === 0 && answer["note"].trim().length === 0) {
     throw askUserAnswerInvalid("没有备注时至少选择一个选项");
   }
-  return { kind: "choice", note: answer["note"], options };
+  return { note: answer["note"], options };
 }

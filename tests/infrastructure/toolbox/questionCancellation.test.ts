@@ -30,7 +30,7 @@ test("正常回答后移除取消监听，重复回答显式失败", async () =>
     waiting = runtime.ask(question, "session", controller.signal);
   runtime.answer("session", "call", { answer: "答案" });
   expect(() => runtime.answer("session", "call", { answer: "重复" })).toThrow();
-  expect(await waiting).toEqual({ answer: "答案", kind: "open_ended" });
+  expect(await waiting).toEqual({ answer: "答案" });
   expect(getEventListeners(controller.signal, "abort")).toHaveLength(0);
   expect(runtime.question("session")).toBeNull();
 });
