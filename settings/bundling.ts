@@ -1,6 +1,6 @@
 import { vocabularyChunks, vocabularyModulePrefix } from "../scripts/vocabularyChunks.ts";
 import type { UserConfig } from "vite";
-import { proxyAddon } from "../scripts/proxyAddon";
+import { proxyAddon } from "../scripts/proxyAddon.ts";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");

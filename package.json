@@ -72,6 +72,7 @@
     "react-dom": "canary",
     "react-i18next": "latest",
     "react-markdown": "latest",
+    "reflect-metadata": "latest",
     "remark-breaks": "latest",
     "remark-gfm": "latest",
     "serialize-error": "latest",
