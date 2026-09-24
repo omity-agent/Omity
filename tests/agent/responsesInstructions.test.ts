@@ -33,10 +33,11 @@ test("Responses API sends developer instructions in the top-level field", async 
     adapter: "responses",
     apiKeyEnv: "TEST_KEY",
     baseURL: null,
+    maxConcurrentRequests: 2,
     model: "gpt-5",
+    raceIntervalMs: 1000,
     retryDelayMs: 1000,
     temperature: 0,
-    timeoutMs: 1000,
   };
   let rejection: unknown;
   try {

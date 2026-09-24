@@ -6,7 +6,10 @@ export type ModelSettings =
   | Exclude<ParsedModel, { adapter: "codex" }>
   | (Extract<ParsedModel, { adapter: "codex" }> & { apiKeyEnv?: never; baseURL?: never });
 type FrozenModel<T> = T extends ModelSettings
-  ? Omit<T, "apiKeyEnv" | "retryDelayMs" | "temperature" | "timeoutMs">
+  ? Omit<
+      T,
+      "apiKeyEnv" | "maxConcurrentRequests" | "raceIntervalMs" | "retryDelayMs" | "temperature"
+    >
   : never;
 export type ModelPrefixSettings = FrozenModel<ModelSettings>;
 export type Settings = ReturnType<typeof parseMainSettings> &

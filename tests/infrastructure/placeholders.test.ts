@@ -64,8 +64,9 @@ test("settings resolve global and session placeholders in their allowed scopes",
 model: \${${environmentName}}
 apiKeyEnv: TEST_KEY
 baseURL: null
+maxConcurrentRequests: 2
+raceIntervalMs: 1000
 retryDelayMs: 1000
-timeoutMs: 1000
 `,
     skillsPrompt: `skills: \${session}|\${cwd}|\${appData}|\${${environmentName}}`,
     systemPrompt: `system: \${session}|\${cwd}|\${appData}|\${${environmentName}}`,

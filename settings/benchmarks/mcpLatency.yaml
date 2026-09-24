@@ -86,8 +86,9 @@ model:
   apiKeyEnv: OMITY_BENCHMARK_KEY # 运行期间设置临时占位值，结束后恢复。
   baseURL: https://benchmark.invalid/v1
   reasoning_effort: high
+  maxConcurrentRequests: 2
+  raceIntervalMs: 30000
   retryDelayMs: 1000
-  timeoutMs: 30000
 
 agent:
   recursionLimit: 25

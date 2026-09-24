@@ -27,10 +27,10 @@ export async function streamAiModel(options: ModelRequestOptions) {
     nextAttemptId = 0,
     winnerId: number | undefined;
   const interval = setInterval(() => {
-    if (winnerId === undefined) {
+    if (winnerId === undefined && attempts.size < options.settings.model.maxConcurrentRequests) {
       startAttempt();
     }
-  }, options.settings.model.timeoutMs);
+  }, options.settings.model.raceIntervalMs);
   startAttempt();
   try {
     return await completed.promise;
@@ -73,7 +73,6 @@ export async function streamAiModel(options: ModelRequestOptions) {
         model: options.model ?? buildAiModel(options.settings),
         onError: () => undefined,
         temperature: options.settings.model.temperature,
-        timeout: { chunkMs: options.settings.model.timeoutMs },
         tools: options.tools,
       });
       for await (const part of result.stream) {

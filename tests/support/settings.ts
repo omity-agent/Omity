@@ -36,10 +36,11 @@ export function testSettings(): Settings {
       adapter: "completions",
       apiKeyEnv: "TEST_KEY",
       baseURL: null,
+      maxConcurrentRequests: 2,
       model: "test",
+      raceIntervalMs: 1000,
       retryDelayMs: 1000,
       temperature: 0,
-      timeoutMs: 1000,
     },
     server: { host: "127.0.0.1", port: 3030 },
     skills: {

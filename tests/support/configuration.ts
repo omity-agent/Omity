@@ -25,10 +25,11 @@ skills:
 model: test
 apiKeyEnv: TEST_KEY
 baseURL: null
+maxConcurrentRequests: 2
 temperature: 0
 reasoning_effort: medium
+raceIntervalMs: 1000
 retryDelayMs: 1000
-timeoutMs: 1000
 `;
 export function writeTestConfiguration(root: string, options: TestConfigurationOptions = {}) {
   const settingsDir = join(root, "settings"),

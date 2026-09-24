@@ -81,9 +81,10 @@ function restoreModel(current: ModelSettings, snapshot: ModelPrefixSettings | nu
     throw new Error("会话缺少模型前缀快照");
   }
   const runtime = {
+    maxConcurrentRequests: current.maxConcurrentRequests,
+    raceIntervalMs: current.raceIntervalMs,
     retryDelayMs: current.retryDelayMs,
     temperature: current.temperature,
-    timeoutMs: current.timeoutMs,
   };
   if (snapshot.adapter === "codex") {
     return { ...runtime, ...snapshot };

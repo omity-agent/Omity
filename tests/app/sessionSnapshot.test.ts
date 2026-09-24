@@ -84,7 +84,8 @@ baseURL: https://locked.example.test
 temperature: 0
 reasoning_effort: medium
 retryDelayMs: 1000
-timeoutMs: 1000
+maxConcurrentRequests: 2
+raceIntervalMs: 1000
 `,
     systemPrompt: "locked prompt",
   });
@@ -121,7 +122,8 @@ baseURL: https://changed.example.test
 temperature: 0.75
 reasoning_effort: high
 retryDelayMs: 2500
-timeoutMs: 3500
+maxConcurrentRequests: 4
+raceIntervalMs: 3500
 `,
   );
   writeToolboxConfiguration(root, {
@@ -157,11 +159,12 @@ timeoutMs: 3500
     adapter: "completions",
     apiKeyEnv: "CURRENT_KEY",
     baseURL: "https://locked.example.test",
+    maxConcurrentRequests: 4,
     model: "locked-model",
+    raceIntervalMs: 3500,
     reasoning_effort: "medium",
     retryDelayMs: 2500,
     temperature: 0.75,
-    timeoutMs: 3500,
   });
   const restoredMcp = createAppMcp(root, "debug", context, new AskUserRuntime(() => undefined));
   mcps.push(restoredMcp);

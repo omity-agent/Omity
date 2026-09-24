@@ -10,9 +10,10 @@ const usage = {
   inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
   outputTokens: { reasoning: 0, text: 2, total: 2 },
 };
-test("model timeout resets after each stream update", async () => {
+test("model stream remains open during idle gaps", async () => {
   const settings = testSettings();
-  settings.model.timeoutMs = 100;
+  settings.model.raceIntervalMs = 1;
+  settings.model.maxConcurrentRequests = 1;
   const model = new MockLanguageModelV4({
       doStream: {
         stream: simulateReadableStream({
@@ -47,11 +48,12 @@ test("model timeout resets after each stream update", async () => {
   });
   expect(model.doStreamCalls).toHaveLength(1);
 });
-test("model request is duplicated after first chunk timeout and losers are aborted", async () => {
+test("model race keeps the first request until a winner appears", async () => {
   const settings = testSettings(),
     writtenTypes: string[] = [],
     writtenText: string[] = [];
-  settings.model.timeoutMs = 30;
+  settings.model.raceIntervalMs = 30;
+  settings.model.maxConcurrentRequests = 2;
   let firstAborted = false,
     requests = 0;
   const model = new MockLanguageModelV4({
@@ -120,6 +122,47 @@ test("model request is duplicated after first chunk timeout and losers are abort
   expect(firstAborted).toBe(true);
   expect(writtenTypes.filter((type) => type === "start")).toHaveLength(1);
   expect(writtenText).toEqual(["winner"]);
+});
+test("model race does not exceed its concurrent request limit", async () => {
+  const settings = testSettings(),
+    controller = new AbortController();
+  settings.model.raceIntervalMs = 1;
+  settings.model.maxConcurrentRequests = 2;
+  let requests = 0;
+  const model = new MockLanguageModelV4({
+    doStream: async ({ abortSignal }) => ({
+      stream: new ReadableStream({
+        start(streamController) {
+          requests += 1;
+          streamController.enqueue({
+            id: `response-${requests}`,
+            modelId: "mock",
+            timestamp: new Date(0),
+            type: "response-metadata",
+          });
+          streamController.enqueue({
+            id: `text-${requests}`,
+            type: "text-start",
+          });
+          abortSignal?.addEventListener("abort", () => streamController.error(abortSignal.reason), {
+            once: true,
+          });
+        },
+      }),
+    }),
+  });
+  const promise = streamAiModel({
+    messages: [new HumanMessage("Say hello")],
+    model,
+    sessionId: "test-session",
+    settings,
+    signal: controller.signal,
+    tools: {},
+  });
+  const abortTimer = setTimeout(() => controller.abort(), 20);
+  await promise.catch(() => undefined);
+  clearTimeout(abortTimer);
+  expect(requests).toBe(2);
 });
 test("model stream errors are propagated without terminal output", async () => {
   const log = spyOn(console, "error").mockReturnValue(undefined),

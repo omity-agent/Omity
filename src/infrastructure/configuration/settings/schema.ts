@@ -21,11 +21,12 @@ const promptFileSchema = z
     .array(promptFileSchema)
     .refine((files) => new Set(files).size === files.length, "提示词文件列表不能包含重复项"),
   sharedModelSettings = {
+    maxConcurrentRequests: z.number().int().positive(),
     model: z.string().min(1),
+    raceIntervalMs: z.number().int().positive(),
     reasoning_effort: reasoningEffortSchema.optional(),
     retryDelayMs: z.number().int().positive(),
     temperature: z.number().optional(),
-    timeoutMs: z.number().int().positive(),
   },
   modelSettingsSchema = z.discriminatedUnion("adapter", [
     z.strictObject({

@@ -63,7 +63,7 @@ test("user settings deeply override defaults and preserve relative path semantic
     join(userSettingsDir, "main.yaml"),
     `server: { port: 4040 }\naccess:\n  loginRateLimit: { attempts: 3 }\n`,
   );
-  writeFileSync(join(baseProfileDir, "model.yaml"), "model: base-model\ntimeoutMs: 2000\n");
+  writeFileSync(join(baseProfileDir, "model.yaml"), "model: base-model\nraceIntervalMs: 2000\n");
   writeFileSync(join(profileDir, "model.yaml"), "model: user-model\n");
   writeFileSync(
     join(profileDir, "agent.yaml"),
@@ -80,7 +80,7 @@ test("user settings deeply override defaults and preserve relative path semantic
   expect(settings.server).toEqual({ host: "127.0.0.1", port: 4040 });
   expect(settings.access.loginRateLimit).toEqual({ attempts: 3, windowMs: 60_000 });
   expect([settings.model.adapter, settings.model.model]).toEqual(["completions", "user-model"]);
-  expect(settings.model.timeoutMs).toBe(2000);
+  expect(settings.model.raceIntervalMs).toBe(2000);
   expect(settings.agent.recursionLimit).toBe(7);
   expect(settings.toolExecution.parallel).toBeFalse();
   expect(settings.toolOutput.maxTokens).toBe(8192);
