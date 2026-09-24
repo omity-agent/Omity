@@ -1,11 +1,11 @@
 import { type MouseEvent, useCallback } from "react";
+import { groupSessions, isRunning } from "./sessions";
 import { navigateLink, pagePath } from "../../route";
 import { LinkButton } from "../ParkUI";
 import { Plus } from "lucide-react";
 import { SessionGroup } from "./SessionGroup";
 import type { SessionInfo } from "../../services/client";
 import { css } from "styled-system/css";
-import { groupSessions } from "./sessions";
 import { useTranslation } from "react-i18next";
 
 const panel = css({
@@ -66,6 +66,7 @@ export function Sidebar({
   onSelect,
 }: SidebarProps) {
   const { t } = useTranslation(),
+    hasRunningSessions = sessions.some(isRunning),
     handleCreate = useCallback(
       (event: MouseEvent<HTMLAnchorElement>) => navigateLink(event, onCreate),
       [onCreate],
@@ -94,6 +95,7 @@ export function Sidebar({
           <SessionGroup
             activeId={activeId}
             group={group}
+            hasRunningSessions={hasRunningSessions}
             key={group.workspace}
             unreadIds={unreadIds}
             onSelect={onSelect}

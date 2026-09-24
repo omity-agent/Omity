@@ -30,6 +30,7 @@ import { useTranslation } from "react-i18next";
 interface Props {
   group: Group;
   activeId?: string;
+  hasRunningSessions?: boolean;
   unreadIds: ReadonlySet<string>;
   onSelect: (id: string) => void;
 }
@@ -70,7 +71,13 @@ function SessionItem({ active, language, onSelect, session, unread }: SessionIte
     </div>
   );
 }
-export function SessionGroup({ group, activeId, unreadIds, onSelect }: Props) {
+export function SessionGroup({
+  group,
+  activeId,
+  hasRunningSessions = false,
+  unreadIds,
+  onSelect,
+}: Props) {
   const { t, i18n } = useTranslation(),
     [expanded, setExpanded] = useState(true),
     [historyExpanded, setHistoryExpanded] = useState(false),
@@ -90,18 +97,19 @@ export function SessionGroup({ group, activeId, unreadIds, onSelect }: Props) {
       runningSessions.length > 0
         ? [...runningSessions, ...(historyExpanded ? historySessions : compactHistory)]
         : group.sessions,
-    hiddenHistoryCount = historySessions.length - compactHistory.length;
+    hiddenHistoryCount = historySessions.length - compactHistory.length,
+    visibleExpanded = expanded && (!hasRunningSessions || group.runningCount > 0);
   return (
     <section className={root}>
       <button className={header} onClick={toggleExpanded} title={group.workspace} type="button">
-        <ChevronDown className={cx(chevron, !expanded && collapsedChevron)} size={13} />
+        <ChevronDown className={cx(chevron, !visibleExpanded && collapsedChevron)} size={13} />
         <span className={workspaceName}>{workspaceLabel(group.workspace)}</span>
         <span className={counts}>
           {group.runningCount > 0 && <span className={runningCount}>● {group.runningCount}</span>}
           <span>{group.sessions.length}</span>
         </span>
       </button>
-      {expanded && (
+      {visibleExpanded && (
         <div className={sessions}>
           {visibleSessions.map((session) => (
             <SessionItem

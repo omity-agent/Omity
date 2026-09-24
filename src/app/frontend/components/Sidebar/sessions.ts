@@ -81,8 +81,14 @@ function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
   };
 }
 function compareSessions(left: SessionInfo, right: SessionInfo) {
+  const runningOrder = Number(isRunning(right)) - Number(isRunning(left));
+  if (runningOrder !== 0) {
+    return runningOrder;
+  }
+  if (isRunning(left)) {
+    return right.createdAt - left.createdAt || left.id.localeCompare(right.id);
+  }
   return (
-    Number(isRunning(right)) - Number(isRunning(left)) ||
     right.updatedAt - left.updatedAt ||
     right.createdAt - left.createdAt ||
     left.id.localeCompare(right.id)

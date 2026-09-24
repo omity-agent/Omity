@@ -100,6 +100,12 @@ export function pageSessionId(page: Page) {
   }
   return page.kind === "session" ? page.id : page.sourceSessionId;
 }
+export function transcriptSessionId(
+  sessionId: string | undefined,
+  deletingSessionId: string | undefined,
+) {
+  return sessionId === deletingSessionId ? undefined : sessionId;
+}
 export function resolvePage(page: Page, sessions: { id: string }[], ready: boolean) {
   if (!ready) {
     return page;

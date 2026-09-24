@@ -1,7 +1,13 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import { type SessionInfo, deleteSession, pickWorkspacePath, setControl } from "./services/client";
 import { layout, main, sidebar } from "./design";
-import { pageSessionId, readPage, resolvePage, usePageNavigation, usePageNavigator } from "./route";
+import {
+  readPage,
+  resolvePage,
+  transcriptSessionId,
+  usePageNavigation,
+  usePageNavigator,
+} from "./route";
 import { removeSession, useBootstrap } from "./services/queries";
 import { AccessGate } from "./components/Access/AccessGate";
 import { ChatPage } from "./components/Chat/ChatPage";
@@ -32,6 +38,7 @@ function AuthenticatedApp() {
     bootstrap = useBootstrap(),
     [page, setPage] = useState(readPage),
     [pausingSessionId, setPausingSessionId] = useState<string>(),
+    [deletingSessionId, setDeletingSessionId] = useState<string>(),
     navigate = usePageNavigator(setPage),
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
@@ -61,7 +68,7 @@ function AuthenticatedApp() {
       navigate,
       page: pendingFork,
       snapshotThrottleMs: bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
-      sourceSessionId: pageSessionId(currentPage),
+      sourceSessionId: transcriptSessionId(sourceSession?.id, deletingSessionId),
     }),
     {
       create: createNewSession,
@@ -122,9 +129,15 @@ function AuthenticatedApp() {
       if (!activeSession) {
         return;
       }
-      await deleteSession(activeSession.id);
-      removeSession(queryClient, activeSession.id);
-      navigate({ kind: "new" });
+      const sessionId = activeSession.id;
+      setDeletingSessionId(sessionId);
+      try {
+        await deleteSession(sessionId);
+        removeSession(queryClient, sessionId);
+        navigate({ kind: "new" });
+      } finally {
+        setDeletingSessionId(undefined);
+      }
     }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient]),
     beginFork = useCallback<ChatPageProps["onFork"]>(
       async (messageId) => {

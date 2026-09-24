@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { pageFromHash, pageSessionId, resolvePage } from "../../../src/app/frontend/route";
+import {
+  pageFromHash,
+  pageSessionId,
+  resolvePage,
+  transcriptSessionId,
+} from "../../../src/app/frontend/route";
 
 test.each([
   ["#/sessions/session%20id", "session id"],
@@ -18,3 +23,8 @@ test.each(["#/sessions/missing", "#/fork/missing/42"])(
     expect(pageSessionId(resolvePage(page, [], true))).toBeUndefined();
   },
 );
+test("deleting the active session disables its transcript source while the request is pending", () => {
+  expect(transcriptSessionId("deleting", "deleting")).toBeUndefined();
+  expect(transcriptSessionId("other", "deleting")).toBe("other");
+  expect(transcriptSessionId(undefined, "deleting")).toBeUndefined();
+});
