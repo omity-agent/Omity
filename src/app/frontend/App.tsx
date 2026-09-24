@@ -38,7 +38,7 @@ function AuthenticatedApp() {
     bootstrap = useBootstrap(),
     [page, setPage] = useState(readPage),
     [pausingSessionId, setPausingSessionId] = useState<string>(),
-    [deletingSessionId, setDeletingSessionId] = useState<string>(),
+    [deletingId, setDeletingId] = useState<string>(),
     navigate = usePageNavigator(setPage),
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
@@ -68,7 +68,7 @@ function AuthenticatedApp() {
       navigate,
       page: pendingFork,
       snapshotThrottleMs: bootstrap.data?.frontend.transcriptSnapshotThrottleMs,
-      sourceSessionId: transcriptSessionId(sourceSession?.id, deletingSessionId),
+      sourceSessionId: transcriptSessionId(sourceSession?.id, deletingId),
     }),
     {
       create: createNewSession,
@@ -130,15 +130,13 @@ function AuthenticatedApp() {
         return;
       }
       const sessionId = activeSession.id;
-      setDeletingSessionId(sessionId);
-      try {
-        await deleteSession(sessionId);
-        removeSession(queryClient, sessionId);
-        navigate({ kind: "new" });
-      } finally {
-        setDeletingSessionId(undefined);
-      }
-    }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient]),
+      setDeletingId(sessionId);
+      await deleteSession(sessionId).finally(() => {
+        setDeletingId(undefined);
+      });
+      removeSession(queryClient, sessionId);
+      navigate({ kind: "new" });
+    }, [activeSession, discardPendingFork, navigate, pendingFork, queryClient, setDeletingId]),
     beginFork = useCallback<ChatPageProps["onFork"]>(
       async (messageId) => {
         const sourceSessionId = pendingFork?.sourceSessionId ?? activeSession?.id;

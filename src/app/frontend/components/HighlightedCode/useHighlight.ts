@@ -2,10 +2,9 @@ import { HighlightScheduler, type HighlightedCodeResult } from "./background/dis
 import { useEffect, useId, useState } from "react";
 import { reportError } from "../../services/errors";
 
-const scheduler = new HighlightScheduler();
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => scheduler.dispose());
-}
+const scheduler = new HighlightScheduler(),
+  hot = import.meta.hot as ImportMeta["hot"] | undefined;
+hot?.dispose(() => scheduler.dispose());
 export function useHighlight(code: string, language?: string) {
   const [result, setResult] = useState<HighlightedCodeResult>(),
     streamId = useId();
