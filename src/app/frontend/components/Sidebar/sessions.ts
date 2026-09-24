@@ -10,6 +10,7 @@ export interface SessionGroup {
   workspace: string;
   sessions: SessionInfo[];
   runningCount: number;
+  createdAt: number;
   updatedAt: number;
 }
 export function isRunning(session: SessionInfo) {
@@ -74,6 +75,7 @@ export function updatedAtRefreshDelay(updatedAt: number, now = Date.now()) {
 function toGroup([workspace, source]: [string, SessionInfo[]]): SessionGroup {
   const sessions = [...source].toSorted(compareSessions);
   return {
+    createdAt: maxBy(sessions, (session) => session.createdAt)!.createdAt,
     runningCount: sessions.filter(isRunning).length,
     sessions,
     updatedAt: maxBy(sessions, (session) => session.updatedAt)!.updatedAt,
@@ -95,9 +97,11 @@ function compareSessions(left: SessionInfo, right: SessionInfo) {
   );
 }
 function compareGroups(left: SessionGroup, right: SessionGroup) {
-  return (
-    Number(right.runningCount > 0) - Number(left.runningCount > 0) ||
-    right.updatedAt - left.updatedAt ||
-    left.workspace.localeCompare(right.workspace)
-  );
+  const runningOrder = Number(right.runningCount > 0) - Number(left.runningCount > 0);
+  if (runningOrder !== 0) {
+    return runningOrder;
+  }
+  const recencyOrder =
+    left.runningCount > 0 ? right.createdAt - left.createdAt : right.updatedAt - left.updatedAt;
+  return recencyOrder || left.workspace.localeCompare(right.workspace);
 }

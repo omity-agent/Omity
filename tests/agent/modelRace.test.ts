@@ -130,36 +130,40 @@ test("model race does not exceed its concurrent request limit", async () => {
   settings.model.maxConcurrentRequests = 2;
   let requests = 0;
   const model = new MockLanguageModelV4({
-    doStream: async ({ abortSignal }) => ({
-      stream: new ReadableStream({
-        start(streamController) {
-          requests += 1;
-          streamController.enqueue({
-            id: `response-${requests}`,
-            modelId: "mock",
-            timestamp: new Date(0),
-            type: "response-metadata",
-          });
-          streamController.enqueue({
-            id: `text-${requests}`,
-            type: "text-start",
-          });
-          abortSignal?.addEventListener("abort", () => streamController.error(abortSignal.reason), {
-            once: true,
-          });
-        },
+      doStream: async ({ abortSignal }) => ({
+        stream: new ReadableStream({
+          start(streamController) {
+            requests += 1;
+            streamController.enqueue({
+              id: `response-${requests}`,
+              modelId: "mock",
+              timestamp: new Date(0),
+              type: "response-metadata",
+            });
+            streamController.enqueue({
+              id: `text-${requests}`,
+              type: "text-start",
+            });
+            abortSignal?.addEventListener(
+              "abort",
+              () => streamController.error(abortSignal.reason),
+              {
+                once: true,
+              },
+            );
+          },
+        }),
       }),
     }),
-  });
-  const promise = streamAiModel({
-    messages: [new HumanMessage("Say hello")],
-    model,
-    sessionId: "test-session",
-    settings,
-    signal: controller.signal,
-    tools: {},
-  });
-  const abortTimer = setTimeout(() => controller.abort(), 20);
+    promise = streamAiModel({
+      messages: [new HumanMessage("Say hello")],
+      model,
+      sessionId: "test-session",
+      settings,
+      signal: controller.signal,
+      tools: {},
+    }),
+    abortTimer = setTimeout(() => controller.abort(), 20);
   await promise.catch(() => undefined);
   clearTimeout(abortTimer);
   expect(requests).toBe(2);

@@ -79,14 +79,13 @@ export function SessionGroup({
   onSelect,
 }: Props) {
   const { t, i18n } = useTranslation(),
-    [expanded, setExpanded] = useState(true),
     [historyExpanded, setHistoryExpanded] = useState(false),
-    toggleExpanded = useCallback(() => {
-      setExpanded((value) => !value);
-    }, []),
     toggleHistory = useCallback(() => {
       setHistoryExpanded((value) => !value);
     }, []),
+    { expanded, toggleExpanded } = useWorkspaceExpansion(
+      !hasRunningSessions || group.runningCount > 0,
+    ),
     runningSessions = group.sessions.filter(isRunning),
     historySessions = group.sessions.filter((session) => !isRunning(session)),
     selectedHistory = historySessions.find(({ id }) => id === activeId),
@@ -97,19 +96,24 @@ export function SessionGroup({
       runningSessions.length > 0
         ? [...runningSessions, ...(historyExpanded ? historySessions : compactHistory)]
         : group.sessions,
-    hiddenHistoryCount = historySessions.length - compactHistory.length,
-    visibleExpanded = expanded && (!hasRunningSessions || group.runningCount > 0);
+    hiddenHistoryCount = historySessions.length - compactHistory.length;
   return (
     <section className={root}>
-      <button className={header} onClick={toggleExpanded} title={group.workspace} type="button">
-        <ChevronDown className={cx(chevron, !visibleExpanded && collapsedChevron)} size={13} />
+      <button
+        aria-expanded={expanded}
+        className={header}
+        onClick={toggleExpanded}
+        title={group.workspace}
+        type="button"
+      >
+        <ChevronDown className={cx(chevron, !expanded && collapsedChevron)} size={13} />
         <span className={workspaceName}>{workspaceLabel(group.workspace)}</span>
         <span className={counts}>
           {group.runningCount > 0 && <span className={runningCount}>● {group.runningCount}</span>}
           <span>{group.sessions.length}</span>
         </span>
       </button>
-      {visibleExpanded && (
+      {expanded && (
         <div className={sessions}>
           {visibleSessions.map((session) => (
             <SessionItem
@@ -132,4 +136,14 @@ export function SessionGroup({
       )}
     </section>
   );
+}
+function useWorkspaceExpansion(defaultExpanded: boolean) {
+  const [expansion, setExpansion] = useState({ defaultExpanded, expanded: defaultExpanded }),
+    toggleExpanded = useCallback(() => {
+      setExpansion((value) => ({ ...value, expanded: !value.expanded }));
+    }, [setExpansion]);
+  if (expansion.defaultExpanded !== defaultExpanded) {
+    setExpansion({ defaultExpanded, expanded: defaultExpanded });
+  }
+  return { expanded: expansion.expanded, toggleExpanded };
 }
