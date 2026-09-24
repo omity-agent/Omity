@@ -9,7 +9,7 @@ export const frontendBuild = {
   outDir: frontendOutput,
   rolldownOptions: {
     checks: {
-      pluginTimings: false,
+      bundlerTimings: false,
     },
     output: {
       codeSplitting: {

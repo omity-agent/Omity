@@ -1,3 +1,4 @@
+import { isPlainObject as isRecord, omit } from "es-toolkit";
 import { logLevelSchema, modelApiSchema, reasoningEffortSchema } from "../../../types";
 import ipaddr from "ipaddr.js";
 import { z } from "zod";
@@ -132,7 +133,12 @@ export function parseMainSettings(value: unknown) {
   return mainSettingsSchema.parse(value);
 }
 export function parseModelSettings(value: unknown) {
-  return modelSettingsSchema.parse(value);
+  return modelSettingsSchema.parse(omitCodexConnectionSettings(value));
+}
+export function omitCodexConnectionSettings(value: unknown) {
+  return isRecord(value) && value["adapter"] === "codex"
+    ? omit(value, ["apiKeyEnv", "baseURL"])
+    : value;
 }
 export function parseAgentSettings(value: unknown) {
   return agentSettingsSchema.parse(value);

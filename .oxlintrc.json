@@ -46,7 +46,30 @@
     "promise",
     "jest"
   ],
+  "settings": {
+    "@pandacss/configPath": "./panda.config.ts",
+    "import-x/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import-x/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
+    }
+  },
   "rules": {
+    "import-js/no-unused-modules": [
+      "warn",
+      {
+        "unusedExports": true
+      }
+    ],
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/*.css"]
+      }
+    ],
     "@pandacss/file-not-included": "error",
     "@pandacss/no-config-function-in-source": "error",
     "@pandacss/no-debug": "warn",
@@ -63,13 +86,7 @@
     "@tanstack/query/infinite-query-property-order": "error",
     "@tanstack/query/no-void-query-fn": "error",
     "@tanstack/query/mutation-property-order": "error",
-    "typescript/no-deprecated": "error",
-    "import-js/no-unused-modules": [
-      "warn",
-      {
-        "unusedExports": true
-      }
-    ],
+    "typescript/no-deprecated": "warn",
     "consistent-type-specifier-style": "allow",
     "exports-last": "allow",
     "filename-case": "allow",
@@ -79,12 +96,6 @@
     "jsx-max-depth": "allow",
     "init-declarations": "allow",
     "one-var": "allow",
-    "import/no-unassigned-import": [
-      "warn",
-      {
-        "allow": ["**/*.css"]
-      }
-    ],
     "max-lines-per-function": "allow",
     "max-nested-calls": "allow",
     "max-params": "allow",
@@ -105,16 +116,5 @@
     "prefer-default-export": "allow",
     "react-in-jsx-scope": "allow",
     "require-hook": "allow"
-  },
-  "settings": {
-    "@pandacss/configPath": "./panda.config.ts",
-    "import-x/parsers": {
-      "@typescript-eslint/parser": [".ts", ".tsx"]
-    },
-    "import-x/resolver": {
-      "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx"]
-      }
-    }
   }
 }

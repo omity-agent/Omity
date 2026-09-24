@@ -1,6 +1,11 @@
 import { type SettingsContext, createSettingsContext } from "./context";
 import { join, resolve } from "node:path";
-import { parseAgentSettings, parseMainSettings, parseModelSettings } from "./schema";
+import {
+  omitCodexConnectionSettings,
+  parseAgentSettings,
+  parseMainSettings,
+  parseModelSettings,
+} from "./schema";
 import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
 import type { Settings } from "../../../types";
 import { buildSkillsList } from "../../../skills";
@@ -23,7 +28,17 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
     main = parseMainSettings(requireLayeredYaml(context, "global", "main.yaml").value),
     agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
-    model = parseModelSettings(requireLayeredYaml(context, "profile", "model.yaml").value),
+    model = parseModelSettings(
+      requireLayeredYaml(
+        context,
+        "profile",
+        "model.yaml",
+        {},
+        {
+          beforePlaceholders: omitCodexConnectionSettings,
+        },
+      ).value,
+    ),
     storageDirectory = userDataDirectory(),
     session = options.sessionId
       ? resolve(storageDirectory, "sessions", safeId(options.sessionId))
@@ -73,8 +88,9 @@ function requireLayeredYaml(
   scope: Parameters<typeof readLayeredSettingsYaml>[1],
   relativePath: string,
   placeholders: Parameters<typeof readLayeredSettingsYaml>[3] = {},
+  transforms: Parameters<typeof readLayeredSettingsYaml>[4] = {},
 ) {
-  const file = readLayeredSettingsYaml(context, scope, relativePath, placeholders);
+  const file = readLayeredSettingsYaml(context, scope, relativePath, placeholders, transforms);
   if (!file) {
     throw new Error(`配置文件不存在：${resolve(context.defaultsDirectory, relativePath)}`);
   }
