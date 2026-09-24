@@ -28,7 +28,7 @@ export function fileLinkLauncher(
       : { args: [path], command: "xdg-open" };
   }
   if (platform === "win32") {
-    return { args: [`/select,${path}`], command: "explorer.exe" };
+    return { args: ["/select,", path], command: "explorer.exe" };
   }
   if (platform === "darwin") {
     return { args: ["-R", path], command: "open" };
@@ -49,7 +49,7 @@ async function startLauncher(launcher: Launcher) {
   const child = spawn(launcher.command, launcher.args, {
     detached: true,
     stdio: "ignore",
-    windowsHide: true,
+    windowsHide: false,
   });
   await once(child, "spawn");
   child.unref();

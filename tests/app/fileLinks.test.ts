@@ -1,14 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { activateFileLink, fileLinkLauncher } from "../../src/app/fileLinks/launch";
+import { describe, expect, spyOn, test } from "bun:test";
+import { mkdir, realpath } from "node:fs/promises";
 import { outputUnit, splitTextUnits } from "../../src/fileLinks/units";
 import { createApi } from "../../src/app/http/handler";
 import { createApiController } from "./support/apiController";
 import { createTestDirectory } from "../support/artifacts";
-import { fileLinkLauncher } from "../../src/app/fileLinks/launch";
 import { join } from "node:path";
-import { mkdir } from "node:fs/promises";
 import { normalizeCodeMatches } from "../../src/app/frontend/components/FileLink/lineBreaks";
 import { probeFileLinks } from "../../src/fileLinks/probe";
 
+const childProcess = await import("node:child_process");
 describe("文件链接探测", () => {
   test("解析工作目录中的真实相对路径并保留文本位置", async () => {
     const workspace = createTestDirectory("file-links"),
@@ -63,7 +64,7 @@ describe("文件链接动作", () => {
       command: "rundll32.exe",
     });
     expect(fileLinkLauncher(String.raw`C:\work\file.txt`, "reveal", "win32")).toEqual({
-      args: [String.raw`/select,C:\work\file.txt`],
+      args: ["/select,", String.raw`C:\work\file.txt`],
       command: "explorer.exe",
     });
     expect(fileLinkLauncher("/work/file.txt", "reveal", "darwin")).toEqual({
@@ -74,6 +75,37 @@ describe("文件链接动作", () => {
       args: ["/work"],
       command: "xdg-open",
     });
+  });
+  test("Windows 定位参数将选项与含空格和逗号的路径分开传递", () => {
+    const path = String.raw`C:\work space\文件, report.txt`;
+    expect(fileLinkLauncher(path, "reveal", "win32")).toEqual({
+      args: ["/select,", path],
+      command: "explorer.exe",
+    });
+  });
+  test.each(["open", "reveal"] as const)("%s 不隐藏目标应用窗口", async (action) => {
+    const path = join(createTestDirectory("desktop-launch"), "selected.txt");
+    await Bun.write(path, "selected");
+    const child = new childProcess.ChildProcess(),
+      spawn = spyOn(childProcess, "spawn").mockReturnValue(child),
+      unref = spyOn(child, "unref").mockReturnValue(undefined);
+    child.on("newListener", (event) => {
+      if (event === "spawn") {
+        queueMicrotask(() => child.emit("spawn"));
+      }
+    });
+    try {
+      expect(await activateFileLink(path, action)).toBe(await realpath(path));
+      expect(spawn).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ detached: true, stdio: "ignore", windowsHide: false }),
+      );
+      expect(unref).toHaveBeenCalledTimes(1);
+    } finally {
+      spawn.mockRestore();
+      unref.mockRestore();
+    }
   });
   test("HTTP 接口校验激活动作并绑定 Session", async () => {
     const actionCalls: Parameters<ReturnType<typeof createApiController>["activateFileLink"]>[] =
