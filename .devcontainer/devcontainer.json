@@ -1,0 +1,31 @@
+{
+  "name": "Omity",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/omity,type=bind",
+  "workspaceFolder": "/workspaces/omity",
+  "remoteUser": "node",
+  "containerUser": "node",
+  "init": true,
+  "containerEnv": {
+    "OMITY_HOME": "/home/node/.omity"
+  },
+  "mounts": [
+    "source=omity-${devcontainerId}-dependencies,target=/workspaces/omity/node_modules,type=volume,volume-nocopy",
+    "source=omity-${devcontainerId}-artifacts,target=/workspaces/omity/dist,type=volume,volume-nocopy",
+    "source=omity-${devcontainerId}-styles,target=/workspaces/omity/styled-system,type=volume,volume-nocopy",
+    "source=omity-${devcontainerId}-data,target=/home/node/.omity,type=volume,volume-nocopy",
+    "source=omity-bun-download-cache,target=/home/node/.bun/install/cache,type=volume,volume-nocopy"
+  ],
+  "forwardPorts": [3030],
+  "portsAttributes": {
+    "3030": {
+      "label": "Omity WebUI",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": ["bash", ".devcontainer/initialize.sh"],
+  "waitFor": "postCreateCommand"
+}

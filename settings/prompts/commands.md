@@ -16,4 +16,9 @@ Prefer using `rg --files` over `Get-ChildItem`.
 
 If `rg` is unavailable, you use the next best tool.
 
+## Proxy
+
+如果设备配置了系统代理，你在运行支持使用网络代理但不默认遵循系统代理的程序时，应临时显式控制其使用代理。
+网络代理的 IP 与端口不保证稳定不变，不要将其硬编码进需要长期使用的文件。
+
 </commands_instructions>
