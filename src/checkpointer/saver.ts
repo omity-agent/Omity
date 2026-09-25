@@ -16,7 +16,11 @@ import {
   selectCheckpoint,
 } from "./sql";
 import type { Database, SQLQueryBindings } from "bun:sqlite";
-import { cachedQuery, queryAll, runTransaction } from "../infrastructure/database/sqlite/connection";
+import {
+  cachedQuery,
+  queryAll,
+  runTransaction,
+} from "../infrastructure/database/sqlite/connection";
 import { CheckpointDecoder } from "./decoding";
 import type { RunnableConfig } from "@langchain/core/runnables";
 

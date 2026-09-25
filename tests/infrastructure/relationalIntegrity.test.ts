@@ -48,9 +48,13 @@ test("deleting a session cascades checkpoints and writes without touching anothe
   const remainingRun = required(db.nextInput("sessionXone")).runId;
   db.deleteSession("session_one");
   for (const table of ["runs", "inputs", "messages", "checkpoints", "checkpoint_writes"]) {
-    expect(db.db.query<{ count: number }, []>(`SELECT count(*) AS count FROM ${table}`).get()?.count).toBe(1);
+    expect(
+      db.db.query<{ count: number }, []>(`SELECT count(*) AS count FROM ${table}`).get()?.count,
+    ).toBe(1);
   }
-  const remaining = required(await saver.getTuple({ configurable: { thread_id: remainingRun.toString() } }));
+  const remaining = required(
+    await saver.getTuple({ configurable: { thread_id: remainingRun.toString() } }),
+  );
   expect(remaining.pendingWrites).toEqual([["task", "messages", "pending"]]);
   expect(db.db.query("PRAGMA foreign_key_check").all()).toEqual([]);
 });
@@ -69,7 +73,11 @@ test("completed runs release recovery state while preserving pending input and h
   expect(await saver.getTuple(config)).toBeUndefined();
   expect(db.db.query("SELECT * FROM checkpoint_writes").all()).toEqual([]);
   expect(db.history("session").map(({ text }) => text)).toEqual(["first"]);
-  expect(db.nextInput("session")).toMatchObject({ content: "next", id: pending, status: "pending" });
+  expect(db.nextInput("session")).toMatchObject({
+    content: "next",
+    id: pending,
+    status: "pending",
+  });
   expect(runOf(db, pending)).not.toBe(runOf(db, first));
   expect(db.db.query("PRAGMA foreign_key_check").all()).toEqual([]);
 });

@@ -12,8 +12,8 @@ interface InputRow {
   error: string | null;
   submission_id: string | null;
 }
-const activeRun = "r.status IN ('pending', 'running', 'paused')";
-const inputSelection = `
+const activeRun = "r.status IN ('pending', 'running', 'paused')",
+  inputSelection = `
   SELECT i.id, i.run_id, i.content,
     CASE WHEN i.delivery = 'canceled' THEN 'canceled'
       WHEN i.delivery = 'pending' AND i.ordinal > 0 THEN 'pending'
