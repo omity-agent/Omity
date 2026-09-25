@@ -2,7 +2,7 @@ import {
   clearComposerDraftRecord,
   readComposerDraftRecord,
   writeComposerDraftRecord,
-} from "../infrastructure/database/records/composerDrafts";
+} from "../infrastructure/database/records/session/composerDrafts";
 import { openStoredSession } from "../storedSessions";
 
 export function readSessionDraft(sessionId: string) {

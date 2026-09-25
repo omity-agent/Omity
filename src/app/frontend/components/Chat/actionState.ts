@@ -1,6 +1,6 @@
 import {
   type Control,
-  type QueueStatus,
+  type RunStatus,
   type SessionStatus,
   isRunningStatus,
 } from "../../../../types";
@@ -8,7 +8,7 @@ import { pauseRequested, resolvePausePhase } from "../../../pauseState";
 
 export type ChatControlState = "pause" | "pausing" | "resume" | "stepping";
 interface QueueState {
-  status: QueueStatus;
+  status: RunStatus;
 }
 interface ChatActionInput {
   control: Control;

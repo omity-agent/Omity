@@ -1,4 +1,4 @@
-import type { McpConfiguration } from "./index";
+import type { McpConfiguration } from "./";
 
 export function excludedServerToolNames(
   server: string,

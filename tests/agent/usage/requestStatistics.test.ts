@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { HumanMessage } from "@langchain/core/messages";
 import { MockLanguageModelV4 } from "ai/test";
-import { decodeMessage } from "../../../src/infrastructure/database/records/messages/hydration";
+import { decodeMessage } from "../../../src/infrastructure/database/records/transcript/messages/hydration";
 import { estimateCacheHitRate } from "../../../src/agent/model/cacheExpectation";
-import { messageInsert } from "../../../src/infrastructure/database/records/messages/serialization";
+import { messageInsert } from "../../../src/infrastructure/database/records/transcript/messages/serialization";
 import { modelTokenUsage } from "../../../src/app/timeline/tokenCounts";
 import { simulateReadableStream } from "ai";
 import { streamAiModel } from "../../../src/agent/model/request";

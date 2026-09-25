@@ -59,14 +59,14 @@ test("state SSE starts with a versioned snapshot and sends versioned mutations",
       attempt: 2,
       delayMs: 1000,
       error: { message: "upstream unavailable", name: "Error" },
-      queueId: 3,
+      inputId: 3,
       sessionId: "test",
     },
     message: "模型 API 暂不可用，正在重试",
   });
   const warning = await frames.next();
   expect(warning).toContain('event: warning\ndata: {"code":"model_api_unavailable"');
-  expect(warning).toContain('"queueId":3');
+  expect(warning).toContain('"inputId":3');
   abort.abort();
   await frames.cancel();
 });
@@ -83,10 +83,10 @@ test("content SSE uses the persisted cursor and sends ordered target deltas", as
   expect(await frames.next()).toBe('event: sync\ndata: {"eventCursor":4}\nid: 4\n\n');
   const event = {
     id: 5,
+    inputId: 1,
     kind: "assistant_text_delta" as const,
     messageId: "message-1",
     partId: "text-1",
-    queueId: 1,
     value: "hello",
   } as const;
   controller.events.notifyTranscript("other", { ...event, id: 3 });

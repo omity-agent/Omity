@@ -4,10 +4,10 @@ import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/dat
 import {
   readComposerDraftRecord,
   writeComposerDraftRecord,
-} from "../../src/infrastructure/database/records/composerDrafts";
+} from "../../src/infrastructure/database/records/session/composerDrafts";
 import { agentFixture } from "./support/agentFixture";
 import { forkDatabaseBeforeMessage } from "../../src/app/fork";
-import { processQueue } from "../../src/runtime/queue";
+import { processInput } from "../../src/runtime/consumeInputs";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -22,11 +22,11 @@ test.each(["", "unsent draft"])(
       writeComposerDraftRecord(target.db, "target", draft, 2);
       const fixture = agentFixture({ db: target }),
         before = target.history("target").filter((message) => HumanMessage.isInstance(message));
-      expect(target.nextQueue("target")?.status).toBe("paused");
+      expect(target.nextInput("target")?.status).toBe("paused");
       target.setControl("target", "running");
-      await processQueue(fixture.context, required(target.nextQueue("target")));
+      await processInput(fixture.context, required(target.nextInput("target")));
       expect(fixture.model.doStreamCalls).toHaveLength(1);
-      expect(target.nextQueue("target")).toBeNull();
+      expect(target.nextInput("target")).toBeNull();
       expect(
         target.history("target").filter((message) => HumanMessage.isInstance(message)),
       ).toEqual(before);
@@ -65,9 +65,9 @@ test("fork resumes pending tools before requesting the model", async () => {
     );
     const fixture = agentFixture({ db: target, tools: [echo] });
     target.setControl("target", "running");
-    await processQueue(fixture.context, required(target.nextQueue("target")));
+    await processInput(fixture.context, required(target.nextInput("target")));
     expect(called).toBe(1);
-    expect(target.nextQueue("target")).toBeNull();
+    expect(target.nextInput("target")).toBeNull();
     expect(fixture.model.doStreamCalls).toHaveLength(1);
     expect(
       target.history("target").filter((message) => ToolMessage.isInstance(message)),
@@ -85,10 +85,10 @@ async function prepareFork(
 ) {
   source.resetSession("source", workspace);
   source.appendUser("source", "first user");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   await source.syncHistory("source", [...source.history("source"), response]);
   source.appendUser("source", "deleted fork message");
-  const messageId = source.startQueue("source", required(source.pendingAppends("source")[0]));
+  const messageId = source.consumeInput("source", required(source.pendingInputs("source")[0]));
   forkDatabaseBeforeMessage({
     beforeMessageId: messageId,
     profiles: [],

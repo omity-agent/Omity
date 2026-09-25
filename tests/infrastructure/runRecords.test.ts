@@ -1,52 +1,52 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { queueMessageId } from "../../src/infrastructure/database/records/messages/history";
+import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../support/database";
+import { inputMessageId } from "../../src/infrastructure/database/records/transcript/messages/history";
 
 afterEach(cleanupDatabaseDirs);
 test("replace history restores queue ids from user message identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const first = db.appendUser("123", "第一条");
-  db.startQueue("123", required(db.nextQueue("123")));
-  db.setQueueStatus(first, "done");
+  db.consumeInput("123", required(db.nextInput("123")));
+  db.setRunStatus(runOf(db, first), "done");
   const second = db.appendUser("123", "第二条");
   await db.syncHistory("123", [
     new HumanMessage({
       content: "第一条",
-      id: queueMessageId("123", first),
+      id: inputMessageId("123", first),
     }),
     new AIMessage("中间响应"),
     new HumanMessage({
       content: "第二条",
-      id: queueMessageId("123", second),
+      id: inputMessageId("123", second),
     }),
     new AIMessage("最终响应"),
   ]);
   const rows = db.db
-    .query<{ queue_id: number | null }, []>("SELECT queue_id FROM messages ORDER BY id")
+    .query<{ input_id: number | null }, []>("SELECT input_id FROM messages ORDER BY id")
     .all();
-  expect(rows.map((row) => row.queue_id)).toEqual([first, null, second, null]);
+  expect(rows.map((row) => row.input_id)).toEqual([first, null, second, null]);
   db.close();
 });
 test("replacing a queued message body moves its queue identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "旧正文");
-  db.startQueue("123", required(db.nextQueue("123")));
+  const inputId = db.appendUser("123", "旧正文");
+  db.consumeInput("123", required(db.nextInput("123")));
   await db.syncHistory("123", [
     new HumanMessage({
       content: "新正文",
-      id: queueMessageId("123", queueId),
+      id: inputMessageId("123", inputId),
     }),
   ]);
   expect(db.history("123").map((message) => message.text)).toEqual(["新正文"]);
   expect(
     db.db
       .query<{ count: number }, [number]>(
-        "SELECT COUNT(*) AS count FROM messages WHERE queue_id = ?",
+        "SELECT COUNT(*) AS count FROM messages WHERE input_id = ?",
       )
-      .get(queueId)?.count,
+      .get(inputId)?.count,
   ).toBe(1);
   db.close();
 });
@@ -55,7 +55,7 @@ test("replace history rejects queue identities from another session", async () =
   db.resetSession("123", workspace);
   expect(
     db.syncHistory("123", [
-      new HumanMessage({ content: "错误消息", id: queueMessageId("456", 1) }),
+      new HumanMessage({ content: "错误消息", id: inputMessageId("456", 1) }),
     ]),
   ).rejects.toThrow("用户消息属于其他会话");
   db.close();
@@ -66,42 +66,44 @@ test("append during active run belongs to that run", () => {
   const first = db.appendUser("123", "第一条"),
     second = db.appendUser("123", "第二条"),
     rows = db.db
-      .query<{ id: number; root_id: number }, []>("SELECT id, root_id FROM queue ORDER BY id")
-      .all();
+      .query<{ id: number; run_id: number }, []>("SELECT id, run_id FROM inputs ORDER BY id")
+      .all(),
+    runId = runOf(db, first);
   expect(rows).toEqual([
-    { id: first, root_id: first },
-    { id: second, root_id: first },
+    { id: first, run_id: runId },
+    { id: second, run_id: runId },
   ]);
   db.close();
 });
-test("reset deletes self-referencing queue rows", () => {
+test("reset cascades to runs and their inputs", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   db.appendUser("123", "第一条");
   db.appendUser("123", "第二条");
   db.resetSession("123", workspace);
-  const row = db.db.query<{ count: number }, []>("SELECT COUNT(*) count FROM queue").get();
+  const row = db.db.query<{ count: number }, []>("SELECT COUNT(*) count FROM inputs").get();
   expect(row?.count).toBe(0);
+  expect(db.db.query<{ count: number }, []>("SELECT COUNT(*) count FROM runs").get()?.count).toBe(
+    0,
+  );
   db.close();
 });
-test("run activity is derived from its queue items", () => {
+test("finishing a run carries unconsumed inputs into a new run", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   const first = db.appendUser("123", "第一条"),
     second = db.appendUser("123", "第二条");
-  db.setQueueStatus(first, "done");
+  db.consumeInput("123", required(db.nextInput("123")));
+  const firstRun = runOf(db, first);
+  db.setRunStatus(firstRun, "done");
+  expect(db.runStatus(firstRun)).toBe("done");
+  expect(runOf(db, second)).not.toBe(firstRun);
   const third = db.appendUser("123", "第三条");
-  expect(queueRoot(db, third)).toBe(first);
-  db.setQueueStatus(second, "done");
-  db.setQueueStatus(third, "done");
+  expect(runOf(db, third)).toBe(runOf(db, second));
+  db.consumeInput("123", required(db.nextInput("123")));
+  db.consumeInput("123", required(db.pendingInputs("123")[0]));
+  db.setRunStatus(runOf(db, third), "done");
   const fourth = db.appendUser("123", "第四条");
-  expect(queueRoot(db, fourth)).toBe(fourth);
+  expect(runOf(db, fourth)).not.toBe(runOf(db, third));
   db.close();
 });
-function queueRoot(db: ReturnType<typeof makeDb>, queueId: number) {
-  return required(
-    db.db
-      .query<{ root_id: number }, [number]>("SELECT root_id FROM queue WHERE id = ?")
-      .get(queueId),
-  ).root_id;
-}

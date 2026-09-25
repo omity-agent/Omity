@@ -2,9 +2,9 @@ import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../../support/database";
 import { cancelledToolMessage } from "../../../src/runtime/toolOutput";
-import { deriveSessionTitle } from "../../../src/infrastructure/database/records/messages/deriveTitle";
+import { deriveSessionTitle } from "../../../src/infrastructure/database/records/transcript/messages/deriveTitle";
 import { recordedTitle } from "./recordedCalls";
-import { storeMessage } from "../../../src/infrastructure/database/records/messages/history";
+import { storeMessage } from "../../../src/infrastructure/database/records/transcript/messages/history";
 
 afterEach(cleanupDatabaseDirs);
 test("titles require a committed successful result", async () => {

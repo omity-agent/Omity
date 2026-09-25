@@ -10,13 +10,13 @@ test("syncing tool output emits a versioned completion event", async () => {
   const db = makeDb(),
     sessionId = "tool-finished-session";
   db.resetSession(sessionId, workspace);
-  const queueId = db.appendUser(sessionId, "run command");
-  db.startQueue(sessionId, required(db.nextQueue(sessionId)));
+  const inputId = db.appendUser(sessionId, "run command");
+  db.consumeInput(sessionId, required(db.nextInput(sessionId)));
   void db.appendStream(sessionId, {
+    inputId,
     kind: "tool_call_delta",
     messageId: "assistant-1",
     partId: "tool-0",
-    queueId,
     value: {
       idDelta: "call-1",
       index: 0,
@@ -24,16 +24,16 @@ test("syncing tool output emits a versioned completion event", async () => {
     },
   });
   void db.appendStream(sessionId, {
+    inputId,
     kind: "tool_started",
     messageId: "assistant-1",
     partId: "tool-0",
-    queueId,
     value: "call-1",
   });
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
   await db.syncHistory(sessionId, [
-    new HumanMessage({ content: "run command", id: `queue:${sessionId}:${queueId.toString()}` }),
+    new HumanMessage({ content: "run command", id: `input:${sessionId}:${inputId.toString()}` }),
     new AIMessage({
       content: "",
       id: "assistant-1",
@@ -63,8 +63,8 @@ test("syncing tool output emits a versioned completion event", async () => {
   expect(tool?.type === "tool" ? tool.output?.content : undefined).toBe("done");
   expect(tool?.type === "tool" ? tool.phase : undefined).toBe("completed");
   const appendedQueueId = db.appendUser(sessionId, "next"),
-    appended = required(db.pendingAppends(sessionId).find(({ id }) => id === appendedQueueId));
-  db.startQueue(sessionId, appended);
+    appended = required(db.pendingInputs(sessionId).find(({ id }) => id === appendedQueueId));
+  db.consumeInput(sessionId, appended);
   const withAppend = loadTranscript(db, sessionId),
     timeline = buildTimeline(withAppend.messages, withAppend.queue, withAppend.events);
   expect(timeline.map(({ role }) => role)).toEqual(["user", "assistant", "user"]);
@@ -79,11 +79,11 @@ test("syncing one tool does not drop the remaining parallel tool calls", async (
   const db = makeDb(),
     sessionId = "partial-tool-finished-session";
   db.resetSession(sessionId, workspace);
-  const queueId = db.appendUser(sessionId, "run commands");
-  db.startQueue(sessionId, required(db.nextQueue(sessionId)));
+  const inputId = db.appendUser(sessionId, "run commands");
+  db.consumeInput(sessionId, required(db.nextInput(sessionId)));
   try {
     await db.syncHistory(sessionId, [
-      new HumanMessage({ content: "run commands", id: `queue:${sessionId}:${queueId.toString()}` }),
+      new HumanMessage({ content: "run commands", id: `input:${sessionId}:${inputId.toString()}` }),
       new AIMessage({
         content: "",
         id: "assistant-1",
@@ -95,35 +95,35 @@ test("syncing one tool does not drop the remaining parallel tool calls", async (
       }),
     ]);
     void db.appendStream(sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-0",
-      queueId,
       value: { idDelta: "call-1", index: 0, nameDelta: "tool-1" },
     });
     void db.appendStream(sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-1",
-      queueId,
       value: { idDelta: "call-2", index: 1, nameDelta: "tool-2" },
     });
     void db.appendStream(sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: "assistant-1",
       partId: "tool-2",
-      queueId,
       value: { idDelta: "call-3", index: 2, nameDelta: "tool-3" },
     });
     void db.appendStream(sessionId, {
+      inputId,
       kind: "tool_started",
       messageId: "assistant-1",
       partId: "tool-0",
-      queueId,
       value: "call-1",
     });
     await db.syncHistory(sessionId, [
-      new HumanMessage({ content: "run commands", id: `queue:${sessionId}:${queueId.toString()}` }),
+      new HumanMessage({ content: "run commands", id: `input:${sessionId}:${inputId.toString()}` }),
       new AIMessage({
         content: "",
         id: "assistant-1",

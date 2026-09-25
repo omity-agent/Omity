@@ -1,14 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { required, runOf } from "../support/database";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AppController } from "../../src/app/controller";
 import { createTestDirectory } from "../support/artifacts";
-import { emptySessionDefinition } from "../../src/infrastructure/database/sessionDefinition";
+import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { hostOwnerId } from "../../src/infrastructure/process/ownership";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { recoverHostSession } from "../../src/runtime/execution/recovery";
-import { required } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { writeTestConfiguration } from "../support/configuration";
@@ -29,14 +29,14 @@ test("app startup atomically pauses an orphaned run", async () => {
   expect(controller.bootstrap().sessions[0]?.status).toBe("paused");
   expect(transcript.control).toBe("pause");
   expect(transcript.queue.map(({ id, status }) => ({ id, status }))).toEqual([
-    { id: fixture.queueId, status: "paused" },
+    { id: fixture.inputId, status: "paused" },
     { id: pending, status: "pending" },
   ]);
   await controller.close();
 });
 test("app startup preserves the activity time of an already paused session", async () => {
   const fixture = interruptedSession("already-paused");
-  fixture.db.setQueueStatus(fixture.queueId, "paused");
+  fixture.db.setRunStatus(runOf(fixture.db, fixture.inputId), "paused");
   fixture.db.setControl("already-paused", "pause");
   fixture.db.db.run("UPDATE sessions SET updated_at = 1 WHERE id = 'already-paused'");
   fixture.db.db.run("UPDATE messages SET created_at = 1 WHERE session_id = 'already-paused'");
@@ -62,7 +62,7 @@ test("app startup reclaims the lease of its terminated predecessor", async () =>
   const controller = new AppController(fixture.root, { abandonedOwner }),
     reopened = openSession("abandoned");
   expect(reopened.control("abandoned")).toBe("pause");
-  expect(reopened.queueStatus(fixture.queueId)).toBe("paused");
+  expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("paused");
   expect(reopened.hostLease("abandoned")).toBeNull();
   reopened.close();
   await controller.close();
@@ -83,7 +83,7 @@ test("app startup never takes over a live standalone host", async () => {
   const controller = new AppController(fixture.root),
     reopened = openSession("live");
   expect(reopened.control("live")).toBe("running");
-  expect(reopened.queueStatus(fixture.queueId)).toBe("running");
+  expect(reopened.runStatus(runOf(reopened, fixture.inputId))).toBe("running");
   expect(reopened.hostLease("live")).not.toBeNull();
   reopened.close();
   await controller.close();
@@ -102,7 +102,7 @@ test("standalone Host uses the shared interrupted-session recovery", () => {
   });
   expect(recoverHostSession(fixture.db, "standalone").status).toBe("recovered");
   expect(fixture.db.control("standalone")).toBe("pause");
-  expect(fixture.db.queueStatus(fixture.queueId)).toBe("paused");
+  expect(fixture.db.runStatus(runOf(fixture.db, fixture.inputId))).toBe("paused");
   fixture.db.close();
 });
 test("resume reloads the current MCP configuration", async () => {
@@ -128,9 +128,9 @@ function interruptedSession(sessionId: string) {
     reasoning_effort: "medium",
   };
   db.createSession(sessionId, workspace, [], definition);
-  const queueId = db.appendUser(sessionId, "运行中的输入");
-  db.startQueue(sessionId, required(db.nextQueue(sessionId)));
-  return { db, queueId, root };
+  const inputId = db.appendUser(sessionId, "运行中的输入");
+  db.consumeInput(sessionId, required(db.nextInput(sessionId)));
+  return { db, inputId, root };
 }
 function openSession(sessionId: string) {
   return new AgentDatabase(sessionPaths(sessionId).dbPath);

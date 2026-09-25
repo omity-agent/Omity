@@ -33,7 +33,7 @@ test("rebuilding after confirmation does not duplicate a persisted user", () => 
           createdAt: 1,
           id: 11,
           images: [],
-          queueId: 7,
+          inputId: 7,
           reasoning: "",
           role: "user",
           sourceId: "human-11",
@@ -62,10 +62,10 @@ test("stream deltas do not move a staged user boundary into transcript cache", (
     events: [
       {
         id: 1,
+        inputId: 1,
         kind: "assistant_text_delta",
         messageId: "before",
         partId: "text-1",
-        queueId: 1,
         value: "before",
       },
     ],
@@ -83,10 +83,10 @@ test("stream deltas do not move a staged user boundary into transcript cache", (
     appendTranscriptEvents(current ?? empty(), [
       {
         id: 2,
+        inputId: 1,
         kind: "assistant_text_delta",
         messageId: "after",
         partId: "text-1",
-        queueId: 1,
         value: "after",
       },
     ]),
@@ -103,10 +103,10 @@ test("pending queue acknowledgement does not turn the stale client cursor into a
     events: [
       {
         id: 1,
+        inputId: 1,
         kind: "assistant_text_delta",
         messageId: "before",
         partId: "text-1",
-        queueId: 1,
         value: "before",
       },
     ],
@@ -138,10 +138,10 @@ test("pending queue acknowledgement does not turn the stale client cursor into a
     appendTranscriptEvents(current ?? empty(), [
       {
         id: 2,
+        inputId: 1,
         kind: "assistant_text_delta",
         messageId: "after",
         partId: "text-1",
-        queueId: 1,
         value: "after",
       },
     ]),

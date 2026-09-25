@@ -8,8 +8,8 @@ import {
 } from "./wireFixtures";
 import { expect, test } from "bun:test";
 import { aiModelTools } from "../../../src/agent/model/tools";
-import { decodeMessage } from "../../../src/infrastructure/database/records/messages/hydration";
-import { encodeMessage } from "../../../src/infrastructure/database/records/messages/payload";
+import { decodeMessage } from "../../../src/infrastructure/database/records/transcript/messages/hydration";
+import { encodeMessage } from "../../../src/infrastructure/database/records/transcript/messages/payload";
 import { streamAiModel } from "../../../src/agent/model/request";
 import { toModelMessages } from "../../../src/agent/aiMessages";
 

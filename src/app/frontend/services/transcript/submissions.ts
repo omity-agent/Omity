@@ -55,7 +55,7 @@ export function useUserMessageSubmissions(
     async (optimistic: OptimisticUser, draftRevision: number, attachments: PendingAttachment[]) => {
       setStaged((current) => [...current, optimistic]);
       try {
-        const { content, queueId } = await sendMessage(
+        const { content, inputId } = await sendMessage(
           optimistic.sessionId,
           optimistic.content,
           draftRevision,
@@ -69,7 +69,7 @@ export function useUserMessageSubmissions(
           queryClientRef.current,
           optimistic.sessionId,
           optimistic.submissionId,
-          queueId,
+          inputId,
           content,
         );
       } catch (error) {
@@ -85,11 +85,11 @@ function acknowledgeUser(
   queryClient: QueryClient,
   sessionId: string,
   submissionId: string,
-  queueId: number,
+  inputId: number,
   content: string,
 ) {
   queryClient.setQueryData<TranscriptData>(transcriptKey(sessionId), (current) => {
-    if (!current || current.queue.some(({ id }) => id === queueId)) {
+    if (!current || current.queue.some(({ id }) => id === inputId)) {
       return current;
     }
     return rebuildTranscript(current, {
@@ -98,7 +98,7 @@ function acknowledgeUser(
         {
           content,
           error: null,
-          id: queueId,
+          id: inputId,
           status: "pending",
           submissionId,
           userMessageId: null,

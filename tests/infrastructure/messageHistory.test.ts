@@ -1,13 +1,13 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { initializeConversation } from "../../src/infrastructure/database/initialConversation";
+import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../support/database";
+import { initializeConversation } from "../../src/infrastructure/database/session/initialConversation";
 
 afterEach(cleanupDatabaseDirs);
 test("initial conversation keeps history outside the pending queue", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = initializeConversation(
+  const inputId = initializeConversation(
     db.db,
     "123",
     [
@@ -24,10 +24,10 @@ test("initial conversation keeps history outside the pending queue", () => {
     "历史问题二",
     "历史回答二",
   ]);
-  expect(db.pendingAppends("123").map(({ id, content }) => ({ content, id }))).toEqual([
-    { content: "当前问题", id: queueId },
+  expect(db.pendingInputs("123").map(({ id, content }) => ({ content, id }))).toEqual([
+    { content: "当前问题", id: inputId },
   ]);
-  db.startQueue("123", required(db.nextQueue("123")));
+  db.consumeInput("123", required(db.nextInput("123")));
   expect(db.history("123").map((message) => message.text)).toEqual([
     "历史问题一",
     "历史回答一",
@@ -88,20 +88,20 @@ test("persists user and tool boundaries while clearing persisted text deltas", a
   db.resetSession("123", workspace);
   db.appendUser("123", "问题");
   expect(db.db.query("SELECT id FROM events").all()).toEqual([]);
-  db.startQueue("123", required(db.nextQueue("123")));
+  db.consumeInput("123", required(db.nextInput("123")));
   db.setControl("123", "pause");
   await db.appendStream("123", {
+    inputId: 1,
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
-    queueId: 1,
     value: "答案",
   });
   void db.appendStream("123", {
+    inputId: 1,
     kind: "tool_call_delta",
     messageId: "message-1",
     partId: "tool-0",
-    queueId: 1,
     value: { idDelta: "call-1", index: 0, nameDelta: "tool" },
   });
   const events = db.db
@@ -111,32 +111,32 @@ test("persists user and tool boundaries while clearing persisted text deltas", a
         message_id: string;
         part_id: string;
         payload_json: string | null;
-        queue_id: number;
+        input_id: number;
       },
       []
-    >("SELECT queue_id, message_id, part_id, kind, payload_json FROM events ORDER BY id")
+    >("SELECT input_id, message_id, part_id, kind, payload_json FROM events ORDER BY id")
     .all();
   expect(events).toEqual([
     {
+      input_id: 1,
       kind: "user_appended",
-      message_id: "queue:123:1",
+      message_id: "input:123:1",
       part_id: "user",
       payload_json: null,
-      queue_id: 1,
     },
     {
+      input_id: 1,
       kind: "assistant_text_delta",
       message_id: "message-1",
       part_id: "text-1",
       payload_json: '"答案"',
-      queue_id: 1,
     },
     {
+      input_id: 1,
       kind: "tool_call_delta",
       message_id: "message-1",
       part_id: "tool-0",
       payload_json: '{"idDelta":"call-1","index":0,"nameDelta":"tool"}',
-      queue_id: 1,
     },
   ]);
   const answer = new AIMessage({ content: "答案", id: "message-1" });
@@ -150,29 +150,29 @@ test("persists user and tool boundaries while clearing persisted text deltas", a
 test("clears stream deltas when their queue becomes terminal", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "问题");
+  const inputId = db.appendUser("123", "问题");
   await db.appendStream("123", {
+    inputId,
     kind: "tool_call_delta",
     messageId: "message-1",
     partId: "tool-0",
-    queueId,
     value: { idDelta: "call-1", index: 0, nameDelta: "tool" },
   });
-  db.setQueueStatus(queueId, "canceled");
+  db.setRunStatus(runOf(db, inputId), "canceled");
   expect(db.db.query("SELECT id FROM events").all()).toEqual([]);
   db.close();
 });
 test("retains the unchanged prefix and queue message identity", async () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "问题");
-  db.startQueue("123", required(db.nextQueue("123")));
+  const inputId = db.appendUser("123", "问题");
+  db.consumeInput("123", required(db.nextInput("123")));
   const original = messageRows(db);
   await db.syncHistory("123", [...db.history("123"), new AIMessage("初稿")]);
   const firstSync = messageRows(db);
   await db.syncHistory("123", [required(db.history("123")[0]), new AIMessage("修订稿")]);
   const secondSync = messageRows(db);
-  expect(queueMessageRowId(db, queueId)).toBe(original[0]?.id);
+  expect(queueMessageRowId(db, inputId)).toBe(original[0]?.id);
   db.close();
   expect(firstSync[0]).toEqual(original[0]);
   expect(secondSync[0]).toEqual(original[0]);
@@ -188,12 +188,12 @@ function messageRows(db: ReturnType<typeof makeDb>) {
     query.finalize();
   }
 }
-function queueMessageRowId(db: ReturnType<typeof makeDb>, queueId: number) {
+function queueMessageRowId(db: ReturnType<typeof makeDb>, inputId: number) {
   const query = db.db.prepare<{ user_message_id: number }, [number]>(
-    "SELECT id AS user_message_id FROM messages WHERE queue_id = ?",
+    "SELECT id AS user_message_id FROM messages WHERE input_id = ?",
   );
   try {
-    return query.get(queueId)?.user_message_id;
+    return query.get(inputId)?.user_message_id;
   } finally {
     query.finalize();
   }

@@ -1,4 +1,4 @@
-import { controlSchema, queueStatusSchema, streamEventSchema } from "../../../types";
+import { controlSchema, runStatusSchema, streamEventSchema } from "../../../types";
 import { fileLinkUnitSchema, filePathMatchSchema } from "../../../fileLinks/types";
 import { errorDetailsSchema } from "../../../failures/details";
 import { z } from "zod";
@@ -33,8 +33,8 @@ const integer = z.number().int(),
     createdAt: integer,
     id: integer.nonnegative(),
     images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
+    inputId: integer.positive().nullable(),
     outputTokens: integer.nonnegative().optional(),
-    queueId: integer.positive().nullable(),
     reasoning: z.string(),
     role: z.enum(["user", "system", "assistant", "tool"]),
     sourceId: z.string().optional(),
@@ -48,8 +48,8 @@ const integer = z.number().int(),
     content: z.string(),
     error: errorDetailsSchema.nullable(),
     id: integer.positive(),
-    root: z.boolean().optional(),
-    status: queueStatusSchema,
+    runId: z.number().int().positive().optional(),
+    status: runStatusSchema,
     submissionId: z.string().nullable().optional(),
     userMessageId: integer.positive().nullable().optional(),
   });

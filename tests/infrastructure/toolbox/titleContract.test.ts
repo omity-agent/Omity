@@ -12,7 +12,6 @@ const settings = defaultBuiltIns().update_title!,
   { minLength, maxLength } = settings.parameters.title,
   validTitle = "字".repeat(minLength),
   range = `${minLength}–${maxLength}`;
-
 test("title validation declares one string parameter and has no database side effects", async () => {
   const tool = createTitleTool(settings),
     sessionId = randomUUID(),

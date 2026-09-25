@@ -84,10 +84,10 @@ test("temporary tool identity upgrades to the formal call ID when execution star
       event("tool_call_delta", { argumentsDelta: '{"cmd":', index: 0 }),
       {
         id: 2,
+        inputId: 1,
         kind: "tool_started",
         messageId: "message-live",
         partId: "tool-0",
-        queueId: 1,
         value: "call-1",
       },
       event(
@@ -109,10 +109,10 @@ test("formal tool identity rejects a conflicting streamed call ID", () => {
     event("tool_call_delta", { idDelta: "call-other", index: 0 }),
     {
       id: 2,
+      inputId: 1,
       kind: "tool_started",
       messageId: "message-live",
       partId: "tool-0",
-      queueId: 1,
       value: "call-1",
     },
   ];
@@ -173,7 +173,7 @@ function assistant(options: {
     content: options.content ?? "",
     createdAt: options.id,
     images: [],
-    queueId: null,
+    inputId: null,
     reasoning: options.reasoning ?? "",
     role: "assistant",
     toolCalls: options.call ? [options.call] : [],
@@ -189,9 +189,9 @@ function event(
 ): DisplayEvent {
   const base = {
     id: options.id ?? 1,
+    inputId: 1,
     messageId: options.messageId ?? "message-live",
     partId: options.partId ?? (kind === "tool_call_delta" ? "tool-0" : "reasoning-1"),
-    queueId: 1,
   };
   if (kind === "tool_call_delta" && typeof value !== "string") {
     return { ...base, kind, value };

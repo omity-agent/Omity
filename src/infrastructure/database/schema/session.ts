@@ -1,31 +1,15 @@
-import {
-  type AnySQLiteColumn,
-  blob,
-  check,
-  integer,
-  sqliteTable,
-  text,
-  uniqueIndex,
-} from "drizzle-orm/sqlite-core";
-import type { Control, QueueStatus } from "../../../types";
-import type { ErrorDetails } from "../../../failures/details";
-import type { SessionDefinition } from "../sessionDefinition";
+import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import type { Control } from "../../../types";
+import type { SessionDefinition } from "../session/sessionDefinition";
 import { sql } from "drizzle-orm";
 
 const controls = [
-    "running",
-    "step",
-    "pause",
-    "cancel",
-    "pause_cancel",
-  ] as const satisfies readonly Control[],
-  queueStatuses = [
-    "pending",
-    "running",
-    "paused",
-    "done",
-    "canceled",
-  ] as const satisfies readonly QueueStatus[];
+  "running",
+  "step",
+  "pause",
+  "cancel",
+  "pause_cancel",
+] as const satisfies readonly Control[];
 export const sessions = sqliteTable(
   "sessions",
   {
@@ -45,27 +29,6 @@ export const sessions = sqliteTable(
     ),
   ],
 );
-export const queue = sqliteTable(
-  "queue",
-  {
-    content: text(),
-    error: text({ mode: "json" }).$type<ErrorDetails>(),
-    id: integer().primaryKey({ autoIncrement: true }),
-    rootId: integer("root_id").references((): AnySQLiteColumn => queue.id),
-    sessionId: text("session_id")
-      .notNull()
-      .references(() => sessions.id, { onDelete: "cascade" }),
-    status: text({ enum: queueStatuses }).notNull(),
-    submissionId: text("submission_id"),
-  },
-  (table) => [
-    check(
-      "queue_status",
-      sql`${table.status} in ('pending', 'running', 'paused', 'done', 'canceled')`,
-    ),
-    uniqueIndex("queue_submission").on(table.sessionId, table.submissionId),
-  ],
-);
 export const composerDrafts = sqliteTable("composer_drafts", {
   content: text().notNull(),
   revision: integer().notNull(),
@@ -73,13 +36,6 @@ export const composerDrafts = sqliteTable("composer_drafts", {
     .primaryKey()
     .references(() => sessions.id, { onDelete: "cascade" }),
   updatedAt: integer("updated_at").notNull(),
-});
-export const hostLeases = sqliteTable("host_leases", {
-  expiresAt: integer("expires_at").notNull(),
-  ownerId: text("owner_id").notNull(),
-  sessionId: text("session_id")
-    .primaryKey()
-    .references(() => sessions.id, { onDelete: "cascade" }),
 });
 export const hookUsage = sqliteTable(
   "hook_usage",
@@ -91,49 +47,4 @@ export const hookUsage = sqliteTable(
     usedCount: integer("used_count").notNull(),
   },
   (table) => [uniqueIndex("hook_usage_identity").on(table.sessionId, table.hookId)],
-);
-export const toolCancellations = sqliteTable(
-  "tool_cancellations",
-  {
-    callId: text("call_id").notNull(),
-    requestedAt: integer("requested_at").notNull(),
-    sessionId: text("session_id")
-      .notNull()
-      .references(() => sessions.id, { onDelete: "cascade" }),
-  },
-  (table) => [uniqueIndex("tool_cancellations_identity").on(table.sessionId, table.callId)],
-);
-export const checkpoints = sqliteTable(
-  "checkpoints",
-  {
-    checkpoint: blob({ mode: "buffer" }).notNull(),
-    checkpointId: text("checkpoint_id").notNull(),
-    checkpointNs: text("checkpoint_ns").notNull(),
-    metadata: blob({ mode: "buffer" }).notNull(),
-    threadId: text("thread_id").notNull(),
-    type: text().notNull(),
-  },
-  (table) => [uniqueIndex("checkpoints_identity").on(table.threadId, table.checkpointNs)],
-);
-export const checkpointWrites = sqliteTable(
-  "checkpoint_writes",
-  {
-    channel: text().notNull(),
-    checkpointId: text("checkpoint_id").notNull(),
-    checkpointNs: text("checkpoint_ns").notNull(),
-    index: integer("write_index").notNull(),
-    taskId: text("task_id").notNull(),
-    threadId: text("thread_id").notNull(),
-    type: text().notNull(),
-    value: blob({ mode: "buffer" }).notNull(),
-  },
-  (table) => [
-    uniqueIndex("checkpoint_writes_identity").on(
-      table.threadId,
-      table.checkpointNs,
-      table.checkpointId,
-      table.taskId,
-      table.index,
-    ),
-  ],
 );

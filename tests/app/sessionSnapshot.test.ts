@@ -10,11 +10,11 @@ import { buildTimeline } from "../../src/app/timeline";
 import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
 import { createTestDirectory } from "../support/artifacts";
-import { emptySessionDefinition } from "../../src/infrastructure/database/sessionDefinition";
+import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { join } from "node:path";
 import { loadTranscript } from "../../src/app/transcript";
 import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
-import { readDefinitionRecord } from "../../src/infrastructure/database/records/sessions";
+import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";
 

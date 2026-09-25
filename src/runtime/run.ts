@@ -1,22 +1,21 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../failures/details";
 import type { HostContext } from "./context";
-import type { QueueItem } from "../types";
+import type { QueuedInput } from "../types";
 import { contentToText } from "./content";
-import { deleteThreadData } from "../checkpointer/saver";
-import { runTransaction } from "../infrastructure/database/connection";
+import { runTransaction } from "../infrastructure/database/sqlite/connection";
 
 export class CanceledRunError extends Error {
   override readonly name = "CanceledRunError";
 }
-export interface QueueRun {
-  items: [QueueItem, ...QueueItem[]];
-  rootId: number;
+export interface ActiveRun {
+  items: [QueuedInput, ...QueuedInput[]];
+  id: number;
   threadId: string;
 }
 export function finishRun(
   ctx: HostContext,
-  run: QueueRun,
+  run: ActiveRun,
   messages: BaseMessage[],
   hookPlan: unknown,
 ) {
@@ -32,7 +31,7 @@ export function finishRun(
   }
   finalizeRun(ctx, run, "done");
   ctx.observer?.changed?.(ctx.sessionId);
-  ctx.logger.info("队列完成", { chars: content.length, queueId: lastItem.id });
+  ctx.logger.info("队列完成", { chars: content.length, inputId: lastItem.id });
   if (ctx.settings.logging.streamTokens) {
     process.stdout.write("\n");
   }
@@ -50,38 +49,31 @@ function requireFinalMessageId(plan: unknown) {
   }
   return plan.finalMessageId;
 }
-export function cancelRun(ctx: HostContext, run: QueueRun) {
+export function cancelRun(ctx: HostContext, run: ActiveRun) {
   finalizeRun(ctx, run, "canceled");
   ctx.controller.abort(new CanceledRunError("运行已取消"));
   ctx.observer?.changed?.(ctx.sessionId);
-  ctx.logger.warn("队列已取消，Host 已关闭", { queueId: run.items[0].id });
+  ctx.logger.warn("队列已取消，Host 已关闭", { inputId: run.items[0].id });
 }
-function finalizeRun(ctx: HostContext, run: QueueRun, status: "done" | "canceled") {
+function finalizeRun(ctx: HostContext, run: ActiveRun, status: "done" | "canceled") {
   runTransaction(ctx.db.db, () => {
-    for (const item of run.items) {
-      ctx.db.setQueueStatus(item.id, status);
-    }
+    ctx.db.setRunStatus(run.id, status);
     if (status === "canceled") {
       ctx.db.setControl(ctx.sessionId, "running");
     }
-    deleteThreadData(ctx.db.db, run.threadId);
   });
   ctx.db.requestStorageReclaim();
 }
 export function setRunStatus(
   ctx: HostContext,
-  run: QueueRun,
-  status: QueueItem["status"],
+  run: ActiveRun,
+  status: QueuedInput["status"],
   error?: ErrorDetails,
 ) {
   if (status === "paused") {
-    ctx.db.pauseRun(ctx.sessionId, run.rootId, error);
+    ctx.db.pauseRun(ctx.sessionId, run.id, error);
   } else {
-    runTransaction(ctx.db.db, () => {
-      for (const item of run.items) {
-        ctx.db.setQueueStatus(item.id, status, error);
-      }
-    });
+    ctx.db.setRunStatus(run.id, status, error);
   }
   ctx.observer?.changed?.(ctx.sessionId);
 }

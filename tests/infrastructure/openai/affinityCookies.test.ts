@@ -25,7 +25,6 @@ test("Codex shares only infrastructure cookies and respects domain, path and exp
   expect(store.cookies(endpoint)).toContain("__cf_bm=updated");
   expect(store.cookies(endpoint)).not.toContain("__cf_bm=bot");
 });
-
 test("Codex refuses cookies outside the upstream HTTPS ChatGPT host allowlist", () => {
   const store = new CloudflareCookieStore();
   for (const host of [
@@ -51,7 +50,6 @@ test("Codex refuses cookies outside the upstream HTTPS ChatGPT host allowlist", 
   }
   expect(store.cookies("https://chatgpt.com/")).not.toContain("cf_clearance");
 });
-
 test("Codex transport stores response cookies and replays them on the next request", async () => {
   const store = new CloudflareCookieStore(),
     requests: Headers[] = [],

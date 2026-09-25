@@ -39,7 +39,7 @@ test("completed snapshots replace cleared stream events", () => {
           createdAt: 1,
           id: 10,
           images: [],
-          queueId: 1,
+          inputId: 1,
           reasoning: "",
           role: "assistant",
           sourceId: "assistant-10",
@@ -123,7 +123,7 @@ function toolOutput() {
     createdAt: 1,
     id: 10,
     images: [],
-    queueId: 1,
+    inputId: 1,
     reasoning: "",
     role: "tool" as const,
     sourceId: "tool-1",
@@ -134,10 +134,10 @@ function toolOutput() {
 function textEvent(id: number, text: string): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
-    queueId: 1,
     value: text,
   };
 }
@@ -150,10 +150,10 @@ function toolCallEvent(
 ): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "tool_call_delta",
     messageId: "message-1",
     partId,
-    queueId: 1,
     value: {
       idDelta: callId,
       index,
@@ -164,10 +164,10 @@ function toolCallEvent(
 function startedEvent(id: number, callId = "call-1", partId = "tool-0"): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "tool_started",
     messageId: "message-1",
     partId,
-    queueId: 1,
     value: callId,
   };
 }
@@ -179,10 +179,10 @@ function finishedEvent(
 ): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "tool_finished",
     messageId: "message-1",
     partId,
-    queueId: 1,
     value: {
       callId,
       output: { content, images: [], outputTokens: 1 },

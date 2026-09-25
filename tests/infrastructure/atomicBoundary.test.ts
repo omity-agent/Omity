@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
-import { runTransaction } from "../../src/infrastructure/database/connection";
+import { runTransaction } from "../../src/infrastructure/database/sqlite/connection";
 
 test("SQLite automatic rollback preserves its original error and releases the transaction", () => {
   using db = new Database(":memory:", { strict: true });

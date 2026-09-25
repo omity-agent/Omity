@@ -45,7 +45,7 @@ test("takeover hooks bracket an AI SDK tool call without recursive hooks", async
       tools: [hookTool, originalTool],
     }),
     result = await graph.invoke(
-      { hookPendingUserIds: ["queue:1"], messages: [{ content: "run", role: "user" }] },
+      { hookPendingUserIds: ["input:1"], messages: [{ content: "run", role: "user" }] },
       { configurable: { thread_id: "hook-order" } },
     );
   expect(calls).toEqual(["hook", "hook", "original", "hook"]);

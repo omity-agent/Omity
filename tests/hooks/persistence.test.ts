@@ -2,13 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import {
   applySessionDefinition,
   createSessionDefinition,
-} from "../../src/infrastructure/database/sessionDefinition";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
+} from "../../src/infrastructure/database/session/sessionDefinition";
+import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../support/database";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/transcript/messages/history";
 import { emptyMcp } from "../../src/infrastructure/mcp/tools/definitions";
 import { emptyMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
 import { forkDatabaseBeforeMessage } from "../../src/app/fork";
-import { readDefinitionRecord } from "../../src/infrastructure/database/records/sessions";
+import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
 import { testSettings } from "../support/settings";
 
 afterEach(cleanupDatabaseDirs);
@@ -56,14 +56,14 @@ test("Fork inherits session Hook choices", () => {
   try {
     source.createSession("source", workspace, [], definition({ notify: false }));
     const first = source.appendUser("source", "first");
-    source.startQueue("source", required(source.nextQueue("source")));
+    source.consumeInput("source", required(source.nextInput("source")));
     appendAssistantMessage(source.db, "source", "reply");
-    source.setQueueStatus(first, "done");
+    source.setRunStatus(runOf(source, first), "done");
     const second = source.appendUser("source", "second");
-    source.startQueue("source", required(source.nextQueue("source")));
+    source.consumeInput("source", required(source.nextInput("source")));
     const forkPoint = required(
       source.db
-        .query<{ id: number }, [number]>("SELECT id FROM messages WHERE queue_id = ?")
+        .query<{ id: number }, [number]>("SELECT id FROM messages WHERE input_id = ?")
         .get(second),
     );
     forkDatabaseBeforeMessage({

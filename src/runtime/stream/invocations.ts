@@ -4,13 +4,13 @@ import type { AiStreamEvent } from "../../agent/model/request";
 import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { captureError } from "../../failures/details";
-import { findToolStreamIdentity } from "../../infrastructure/database/records/toolStreamIdentity";
+import { findToolStreamIdentity } from "../../infrastructure/database/records/transcript/toolStreamIdentity";
 import { toUIMessageChunk } from "ai";
 
 type InvocationContext = Pick<HostContext, "db" | "sessionId" | "toolExecutions">;
 export async function recordInvocation(
   ctx: InvocationContext,
-  queueId: number,
+  inputId: number,
   event: AiStreamEvent,
   state: StreamLogState,
 ) {
@@ -21,10 +21,10 @@ export async function recordInvocation(
     }
     const identity = invocationIdentity(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: {
         ...(event.freeform ? { freeform: true } : {}),
         idDelta: chunk.toolCallId,
@@ -36,19 +36,19 @@ export async function recordInvocation(
   } else if (chunk?.type === "tool-input-delta") {
     const identity = invocationIdentity(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: { argumentsDelta: chunk.inputTextDelta, index: identity.index },
     });
   } else if (chunk?.type === "tool-input-available" && chunk.providerExecuted) {
     const identity = invocationIdentity(state, chunk.toolCallId);
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_call_delta",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: {
         argumentsText: toolValueText(displayToolInput(chunk.input)),
         index: identity.index,
@@ -56,10 +56,10 @@ export async function recordInvocation(
       },
     });
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_started",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: chunk.toolCallId,
     });
   } else if (
@@ -85,10 +85,10 @@ export async function recordInvocation(
       content = toolOutputText(chunk.output);
     }
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_finished",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: { callId: chunk.toolCallId, output: textOutputSnapshot(content) },
     });
   }

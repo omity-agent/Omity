@@ -10,7 +10,7 @@ export function prependInstructions(messages: DisplayMessage[], instructions?: s
       createdAt: 0,
       id: 0,
       images: [],
-      queueId: null,
+      inputId: null,
       reasoning: "",
       role: "system" as const,
       toolCalls: [],

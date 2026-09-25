@@ -3,7 +3,7 @@ import type { AttachmentSettings, PendingAttachment } from "../../../attachments
 import { type ComposerDraftTarget, composerDraftKey } from "../../services/composerDrafts";
 import type { Control, SessionStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
-import { Composer } from "./Composer/index";
+import { Composer } from "./Composer";
 import { FileLinkProvider } from "../FileLink/context";
 import type { FrontendSettings } from "../../services/client";
 import type { InitialSessionState } from "../../../initialState";

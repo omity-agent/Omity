@@ -1,7 +1,7 @@
 import type { HostObserver } from "../context";
 import type { LoadedMcp } from "../../infrastructure/mcp/tools/catalog";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
+import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
 
 interface HostControls {

@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { AIMessage } from "@langchain/core/messages";
 import { loadTranscript } from "../../src/app/transcript";
-import { storeReasoningTranslation } from "../../src/infrastructure/database/records/reasoningTranslations";
+import { storeReasoningTranslation } from "../../src/infrastructure/database/records/transcript/reasoningTranslations";
 
 afterEach(cleanupDatabaseDirs);
 test("reasoning translations only persist completed messages", async () => {

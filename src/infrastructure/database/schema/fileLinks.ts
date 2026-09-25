@@ -1,6 +1,7 @@
 import type { FileLinkSurface, FilePathMatch } from "../../../fileLinks/types";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { queue, sessions } from "./session";
+import { foreignKey, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { inputs } from "./execution";
+import { sessions } from "./session";
 
 const surfaces = [
   "content",
@@ -13,10 +14,10 @@ export const fileLinkUnits = sqliteTable(
   {
     end: integer().notNull(),
     id: integer().primaryKey({ autoIncrement: true }),
+    inputId: integer("input_id"),
     matches: text("matches_json", { mode: "json" }).$type<FilePathMatch[]>().notNull(),
     nextOffset: integer("next_offset").notNull(),
     ownerId: text("owner_id").notNull(),
-    queueId: integer("queue_id").references(() => queue.id),
     sessionId: text("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
@@ -26,6 +27,10 @@ export const fileLinkUnits = sqliteTable(
     unitIndex: integer("unit_index").notNull(),
   },
   (table) => [
+    foreignKey({
+      columns: [table.sessionId, table.inputId],
+      foreignColumns: [inputs.sessionId, inputs.id],
+    }),
     uniqueIndex("file_link_unit_owner").on(
       table.sessionId,
       table.ownerId,

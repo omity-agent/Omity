@@ -53,12 +53,12 @@ export function buildTimeline(
     persistedSourceIds = new Set(
       messages.map((item) => item.sourceId).filter((id) => id !== undefined),
     ),
-    knownQueue = new Set(messages.map((item) => item.queueId)),
+    knownQueue = new Set(messages.map((item) => item.inputId)),
     persistedUserQueue = new Set(
       messages
         .filter((item) => item.role === "user")
-        .map((item) => item.queueId)
-        .filter((queueId): queueId is number => queueId !== null),
+        .map((item) => item.inputId)
+        .filter((inputId): inputId is number => inputId !== null),
     ),
     queuedUsers = new Map(
       queue
@@ -85,8 +85,8 @@ export function buildTimeline(
     ),
     liveEvents = events.filter(
       (event) =>
-        (event.kind === "user_appended" && queuedUsers.has(event.queueId)) ||
-        (activeQueueIds.has(event.queueId) &&
+        (event.kind === "user_appended" && queuedUsers.has(event.inputId)) ||
+        (activeQueueIds.has(event.inputId) &&
           (event.kind === "tool_call_delta" || !persistedSourceIds.has(event.messageId))),
     ),
     live = timelineTail(
@@ -134,11 +134,11 @@ function timelineTail(
   };
   for (const event of events) {
     if (event.kind === "user_appended") {
-      const message = pending.get(event.queueId);
+      const message = pending.get(event.inputId);
       if (message) {
         flushStream();
         result.push(message);
-        pending.delete(event.queueId);
+        pending.delete(event.inputId);
       }
     } else {
       stream.push(event);

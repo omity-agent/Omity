@@ -115,15 +115,15 @@ test("transcript keeps the original token count for redirected output", async ()
 test("live stream events match persisted snapshots and keep their cursor", async () => {
   const db = makeDb();
   db.resetSession("stream-session", workspace);
-  const queueId = db.appendUser("stream-session", "question");
-  db.startQueue("stream-session", required(db.nextQueue("stream-session")));
+  const inputId = db.appendUser("stream-session", "question");
+  db.consumeInput("stream-session", required(db.nextInput("stream-session")));
   const emitted: StreamEvent[] = [];
   db.onChange((event) => emitted.push(event));
   const event = await db.appendStream("stream-session", {
+      inputId,
       kind: "assistant_text_delta",
       messageId: "message-1",
       partId: "text-1",
-      queueId,
       value: "hello",
     }),
     streaming = loadTranscript(db, "stream-session");
@@ -147,16 +147,16 @@ test("snapshot refresh does not discard a tool event committed after its events 
     writer = required(databases[1]),
     sessionId = "stream-race-session";
   reader.resetSession(sessionId, workspace);
-  const queueId = reader.appendUser(sessionId, "run command");
-  reader.startQueue(sessionId, required(reader.nextQueue(sessionId)));
+  const inputId = reader.appendUser(sessionId, "run command");
+  reader.consumeInput(sessionId, required(reader.nextInput(sessionId)));
   const emitted: StreamEvent[] = [];
   writer.onChange((event) => emitted.push(event));
   const racingReader = afterQuery(reader, "FROM events WHERE session_id", () => {
       void writer.appendStream(sessionId, {
+        inputId,
         kind: "tool_call_delta",
         messageId: "assistant-race",
         partId: "tool-0",
-        queueId,
         value: {
           argumentsDelta: '{"command":"pwd"}',
           idDelta: "call-race",

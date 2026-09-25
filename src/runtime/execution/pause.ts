@@ -1,16 +1,16 @@
-import { CanceledRunError, type QueueRun, cancelRun, setRunStatus } from "../run";
+import { type ActiveRun, CanceledRunError, cancelRun, setRunStatus } from "../run";
 import { type HostContext, waitForWake } from "../context";
 import { captureError } from "../../failures/details";
 import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
 
-export function pauseForStop(ctx: HostContext, run: QueueRun) {
+export function pauseForStop(ctx: HostContext, run: ActiveRun) {
   if (!ctx.stopping?.aborted && !ctx.controller.signal.aborted) {
     return false;
   }
   setRunStatus(ctx, run, "paused");
   return true;
 }
-export function pauseForMcpUnavailable(ctx: HostContext, run: QueueRun, error: unknown) {
+export function pauseForMcpUnavailable(ctx: HostContext, run: ActiveRun, error: unknown) {
   const unavailable = findMcpStdioUnavailable(error);
   if (!unavailable) {
     return false;
@@ -18,12 +18,12 @@ export function pauseForMcpUnavailable(ctx: HostContext, run: QueueRun, error: u
   const details = captureError(unavailable);
   setRunStatus(ctx, run, "paused", details);
   ctx.logger.warn("MCP stdio 不可用，队列已暂停", {
-    queueId: run.items[0].id,
+    inputId: run.items[0].id,
     server: unavailable.serverName,
   });
   return true;
 }
-export async function waitIfPaused(ctx: HostContext, run: QueueRun) {
+export async function waitIfPaused(ctx: HostContext, run: ActiveRun) {
   let pauseLogged = false;
   for (;;) {
     if (pauseForStop(ctx, run)) {
@@ -34,7 +34,7 @@ export async function waitIfPaused(ctx: HostContext, run: QueueRun) {
       setRunStatus(ctx, run, "paused");
       ctx.controller.abort(new CanceledRunError("暂停状态收到 cancel"));
       ctx.logger.warn("暂停状态收到 cancel，Host 已关闭", {
-        queueId: run.items[0].id,
+        inputId: run.items[0].id,
       });
       return false;
     }
@@ -49,7 +49,7 @@ export async function waitIfPaused(ctx: HostContext, run: QueueRun) {
     if (!pauseLogged) {
       setRunStatus(ctx, run, "paused");
       ctx.logger.info("暂停中，等待 resume 或 cancel", {
-        queueId: run.items[0].id,
+        inputId: run.items[0].id,
       });
       pauseLogged = true;
     }

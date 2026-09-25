@@ -1,4 +1,4 @@
-import { CanceledRunError, type QueueRun, cancelRun, finishRun, setRunStatus } from "../run";
+import { type ActiveRun, CanceledRunError, cancelRun, finishRun, setRunStatus } from "../run";
 import { type HostContext, readGraphState, streamGraph } from "../context";
 import { completeActiveStream, createStreamLogState, discardActiveStream } from "../stream";
 import { consumeBoundaryAppends, recoverConsumedAppends } from "../appends";
@@ -12,7 +12,7 @@ import { waitBeforeModelRetry } from "../retry";
 type AgentOperation = "model" | "tools";
 export async function runGraphUntilBoundary(
   ctx: HostContext,
-  run: QueueRun,
+  run: ActiveRun,
   initialStepping: boolean,
 ) {
   const [item] = run.items,
@@ -143,18 +143,18 @@ function stepIsComplete(completed: AgentOperation | undefined, next: AgentOperat
 }
 async function announceOperation(
   ctx: HostContext,
-  queueId: number,
+  inputId: number,
   operation: AgentOperation,
   messages: Parameters<typeof recordToolStarted>[1],
 ) {
   ctx.observer?.activity?.(ctx.sessionId, operation === "tools" ? "tool" : "waiting");
   if (operation === "tools") {
-    await recordToolStarted(ctx, messages, queueId);
+    await recordToolStarted(ctx, messages, inputId);
   }
 }
 async function handleGraphEvent(
   ctx: HostContext,
-  queueId: number,
+  inputId: number,
   event: unknown,
   state: ReturnType<typeof createStreamLogState>,
 ) {
@@ -168,7 +168,7 @@ async function handleGraphEvent(
   if (!isAiStreamEvent(part)) {
     throw new Error("LangGraph custom 事件不是 AI SDK 流事件");
   }
-  await recordAiStreamPart(ctx, queueId, part, state);
+  await recordAiStreamPart(ctx, inputId, part, state);
 }
 function isAiStreamEvent(value: unknown): value is Parameters<typeof recordAiStreamPart>[2] {
   if (typeof value !== "object" || value === null || !("part" in value)) {

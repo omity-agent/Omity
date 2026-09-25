@@ -18,8 +18,8 @@ export function createStreamLogState(): StreamLogState {
     seenStructures: new Set(),
   };
 }
-export function discardActiveStream(ctx: HostContext, state: StreamLogState, queueId: number) {
-  ctx.db.discardQueueStream(queueId);
+export function discardActiveStream(ctx: HostContext, state: StreamLogState, inputId: number) {
+  ctx.db.discardInputStream(inputId);
   ctx.observer?.changed?.(ctx.sessionId);
   completeActiveStream(state);
 }

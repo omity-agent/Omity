@@ -6,8 +6,8 @@ import type { HostContext } from "../../src/runtime/context";
 import { Logger } from "../../src/infrastructure/logging/logger";
 import { MockLanguageModelV4 } from "ai/test";
 import { createAgentGraph } from "../../src/agent";
-import { processQueue } from "../../src/runtime/queue";
-import { queryAll } from "../../src/infrastructure/database/connection";
+import { processInput } from "../../src/runtime/consumeInputs";
+import { queryAll } from "../../src/infrastructure/database/sqlite/connection";
 import { simulateReadableStream } from "ai";
 import { testSettings } from "../support/settings";
 import { tool } from "@langchain/core/tools";
@@ -50,13 +50,13 @@ test("a paused run resumes from the model boundary without repeating the model c
     },
     token: () => undefined,
   };
-  await processQueue(pausedContext, required(db.nextQueue("session")));
-  expect(db.nextQueue("session")?.status).toBe("paused");
+  await processInput(pausedContext, required(db.nextInput("session")));
+  expect(db.nextInput("session")?.status).toBe("paused");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual([]);
   db.setControl("session", "running");
-  await processQueue(context(db, saver, graph), required(db.nextQueue("session")));
-  expect(db.nextQueue("session")).toBeNull();
+  await processInput(context(db, saver, graph), required(db.nextInput("session")));
+  expect(db.nextInput("session")).toBeNull();
   expect(model.doStreamCalls).toHaveLength(2);
   expect(calls).toEqual(["tool", "tool"]);
   db.close();
@@ -88,13 +88,13 @@ test("a paused run steps through one model request or a complete tool batch", as
       tools: [echo],
     });
   db.setControl("session", "step");
-  await processQueue(stepContext(db, saver, graph), required(db.nextQueue("session")));
-  expect(db.nextQueue("session")?.status).toBe("paused");
+  await processInput(stepContext(db, saver, graph), required(db.nextInput("session")));
+  expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual([]);
   db.setControl("session", "step");
-  const toolStep = processQueue(stepContext(db, saver, graph), required(db.nextQueue("session")));
+  const toolStep = processInput(stepContext(db, saver, graph), required(db.nextInput("session")));
   expect(await invoked.promise).toBe("echo-call-1");
   expect(
     queryAll<{ kind: string }>(
@@ -107,7 +107,7 @@ test("a paused run steps through one model request or a complete tool batch", as
   expect(calls).toEqual(["echo-call-1", "echo-call-2"]);
   release.resolve("echoed");
   await toolStep;
-  expect(db.nextQueue("session")?.status).toBe("paused");
+  expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual(["echo-call-1", "echo-call-2"]);
@@ -147,7 +147,7 @@ function stepContext(
     ctx = context(db, checkpointer, graph, stopping.signal);
   ctx.observer = {
     changed: () => {
-      if (db.nextQueue("session")?.status === "paused") {
+      if (db.nextInput("session")?.status === "paused") {
         stopping.abort();
       }
     },

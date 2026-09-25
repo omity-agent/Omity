@@ -55,10 +55,10 @@ test("content event IDs must match their persisted cursors", () => {
       },
     ],
     id: 5,
+    inputId: 1,
     kind: "assistant_text_delta",
     messageId: "message",
     partId: "text",
-    queueId: 1,
     value: "hello",
   });
   expect(readTranscriptEvent(message(delta, "5"))).toMatchObject({
@@ -68,10 +68,10 @@ test("content event IDs must match their persisted cursors", () => {
   expect(() => readTranscriptEvent(message(delta, "6"))).toThrow("data.id 不一致");
   const finished = JSON.stringify({
     id: 7,
+    inputId: 1,
     kind: "tool_finished",
     messageId: "message",
     partId: "tool-0",
-    queueId: 1,
     value: {
       callId: "call-1",
       output: { content: "done", images: [], outputTokens: 1 },
@@ -92,7 +92,7 @@ test("warning events validate the model retry payload", () => {
             attempt: 2,
             delayMs: 1000,
             error: { message: "upstream unavailable", name: "Error" },
-            queueId: 3,
+            inputId: 3,
             sessionId: "session",
           },
           message: "模型 API 暂不可用，正在重试",

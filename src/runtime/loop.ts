@@ -1,14 +1,14 @@
 import { type HostContext, waitForWake } from "./context";
-import { processQueue } from "./queue";
+import { processInput } from "./consumeInputs";
 
 export async function hostLoop(ctx: HostContext) {
   let lastIdle = 0;
   while (!ctx.controller.signal.aborted) {
     ctx.assertLease?.();
-    const item = ctx.db.nextQueue(ctx.sessionId);
+    const item = ctx.db.nextInput(ctx.sessionId);
     if (ctx.stopping?.aborted) {
       if (item) {
-        await processQueue(ctx, item);
+        await processInput(ctx, item);
       }
       return;
     }
@@ -39,7 +39,7 @@ export async function hostLoop(ctx: HostContext) {
       await waitForWake(ctx, ctx.settings.host.pollMs);
     } else {
       ctx.observer?.activity?.(ctx.sessionId, "waiting");
-      await processQueue(ctx, item);
+      await processInput(ctx, item);
     }
   }
 }

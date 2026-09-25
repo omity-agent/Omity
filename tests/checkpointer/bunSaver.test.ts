@@ -1,12 +1,14 @@
 import { Annotation, END, START, StateGraph, task } from "@langchain/langgraph";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb } from "../support/database";
+import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
 import { BunSqliteSaver } from "../../src/checkpointer/saver";
 
 afterEach(cleanupDatabaseDirs);
 test("Bun saver resumes a completed task without repeating its side effect", async () => {
   const db = makeDb(),
     saver = new BunSqliteSaver(db.db);
+  db.createSession("task-recovery", workspace);
+  db.appendUser("task-recovery", "resume");
   let calls = 0;
   const effect = task("effect", () => {
       calls += 1;
@@ -20,7 +22,9 @@ test("Bun saver resumes a completed task without repeating its side effect", asy
       .addEdge(START, "work")
       .addEdge("work", END)
       .compile({ checkpointer: saver }),
-    config = { configurable: { thread_id: "task-recovery" } };
+    config = {
+      configurable: { thread_id: required(db.nextInput("task-recovery")).runId.toString() },
+    };
   await invokeWithTaskInterrupt(graph, {}, config);
   expect(calls).toBe(1);
   const state = await graph.getState(config);

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { AIMessage } from "@langchain/core/messages";
 import type { ModelMessage } from "ai";
-import { decodeMessage } from "../../src/infrastructure/database/records/messages/hydration";
-import { encodeMessage } from "../../src/infrastructure/database/records/messages/payload";
+import { decodeMessage } from "../../src/infrastructure/database/records/transcript/messages/hydration";
+import { encodeMessage } from "../../src/infrastructure/database/records/transcript/messages/payload";
 import { fromModelMessages } from "../../src/agent/fromAiMessages";
 import { required } from "../support/database";
 import { toModelMessages } from "../../src/agent/aiMessages";

@@ -40,7 +40,7 @@ export const draftResponseSchema = z.object({
   revision: integer.nonnegative(),
 });
 export const revisionResponseSchema = z.object({ revision: integer.nonnegative() });
-export const messageResponseSchema = z.object({ content: z.string(), queueId: integer.positive() });
+export const messageResponseSchema = z.object({ content: z.string(), inputId: integer.positive() });
 export const controlResponseSchema = z.object({
   control: controlCommandSchema,
 });

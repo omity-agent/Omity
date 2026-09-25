@@ -2,8 +2,8 @@ import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDatabases, required, workspace } from "../support/database";
 import { buildTimeline } from "../../src/app/timeline";
+import { inputMessageId } from "../../src/infrastructure/database/records/transcript/messages/history";
 import { loadTranscript } from "../../src/app/transcript";
-import { queueMessageId } from "../../src/infrastructure/database/records/messages/history";
 
 afterEach(cleanupDatabaseDirs);
 test("模型完整行实时写入索引，最终末行只补算一次并可重新读取", async () => {
@@ -12,23 +12,23 @@ test("模型完整行实时写入索引，最终末行只补算一次并可重�
     reopened = required(reader),
     sessionId = "file-link-stream";
   db.resetSession(sessionId, workspace);
-  const queueId = db.appendUser(sessionId, "question");
-  db.startQueue(sessionId, required(db.nextQueue(sessionId)));
+  const inputId = db.appendUser(sessionId, "question");
+  db.consumeInput(sessionId, required(db.nextInput(sessionId)));
   const prefix = "查看 ./package.json",
     first = await db.appendStream(sessionId, {
+      inputId,
       kind: "assistant_text_delta",
       messageId: "message-1",
       partId: "text-1",
-      queueId,
       value: prefix,
     });
   expect(first.fileLinks).toBeUndefined();
   expect(indexRows(db, "message-1", "content")).toEqual([]);
   const completedLine = await db.appendStream(sessionId, {
+    inputId,
     kind: "assistant_text_delta",
     messageId: "message-1",
     partId: "text-1",
-    queueId,
     value: "\n末行",
   });
   expect(completedLine.fileLinks?.[0]?.matches[0]?.path).toContain("package.json");
@@ -37,7 +37,7 @@ test("模型完整行实时写入索引，最终末行只补算一次并可重�
   const messages = [
     new HumanMessage({
       content: "question",
-      id: queueMessageId(sessionId, queueId),
+      id: inputMessageId(sessionId, inputId),
     }),
     new AIMessage({ content: `${prefix}\n末行`, id: "message-1" }),
   ];

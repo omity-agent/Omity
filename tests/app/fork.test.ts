@@ -1,10 +1,10 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
+import { cleanupDatabaseDirs, makeDb, required, runOf, workspace } from "../support/database";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/transcript/messages/history";
 import { consumeHookUsage } from "../../src/hooks/storage/usage";
 import { forkDatabaseBeforeMessage } from "../../src/app/fork";
-import { readComposerDraftRecord } from "../../src/infrastructure/database/records/composerDrafts";
+import { readComposerDraftRecord } from "../../src/infrastructure/database/records/session/composerDrafts";
 
 afterEach(cleanupDatabaseDirs);
 test("fork copies messages before selected user message", () => {
@@ -12,11 +12,11 @@ test("fork copies messages before selected user message", () => {
     target = makeDb();
   source.resetSession("source", workspace, ["base", "work"]);
   const first = source.appendUser("source", "第一条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   appendAssistantMessage(source.db, "source", "第一条回复");
-  source.setQueueStatus(first, "done");
+  source.setRunStatus(runOf(source, first), "done");
   const forkPoint = source.appendUser("source", "不要复制");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   appendAssistantMessage(source.db, "source", "也不要复制");
   const forkMessageId = userMessageId(source, forkPoint);
   forkDatabaseBeforeMessage({
@@ -32,7 +32,7 @@ test("fork copies messages before selected user message", () => {
   expect(target.control("target")).toBe("pause");
   expect(target.profiles("target")).toEqual(["base", "work"]);
   expect(readOnlyQueue(target)).toMatchObject({
-    content: null,
+    content: "第一条",
     status: "paused",
     user_message_id: expect.any(Number),
   });
@@ -45,11 +45,11 @@ test("fork preserves hook usage counters", () => {
     target = makeDb();
   source.resetSession("source", workspace);
   const first = source.appendUser("source", "第一条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   appendAssistantMessage(source.db, "source", "第一条回复");
-  source.setQueueStatus(first, "done");
+  source.setRunStatus(runOf(source, first), "done");
   const forkPoint = source.appendUser("source", "第二条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   expect(consumeHookUsage(source.db, "source", "limited", 3)).toBeTrue();
   expect(consumeHookUsage(source.db, "source", "limited", 3)).toBeTrue();
   forkDatabaseBeforeMessage({
@@ -71,7 +71,7 @@ test("first user message cannot fork", () => {
     target = makeDb();
   source.resetSession("source", workspace);
   const first = source.appendUser("source", "第一条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   const firstMessageId = userMessageId(source, first);
   expect(() => {
     forkDatabaseBeforeMessage({
@@ -87,12 +87,12 @@ test("first user message cannot fork", () => {
   source.close();
   target.close();
 });
-function userMessageId(db: ReturnType<typeof makeDb>, queueId: number) {
+function userMessageId(db: ReturnType<typeof makeDb>, inputId: number) {
   const query = db.db.prepare<{ id: number }, [number]>(
-    "SELECT id FROM messages WHERE queue_id = ?",
+    "SELECT id FROM messages WHERE input_id = ?",
   );
   try {
-    return required(query.get(queueId)).id;
+    return required(query.get(inputId)).id;
   } finally {
     query.finalize();
   }
@@ -102,8 +102,8 @@ function readOnlyQueue(db: ReturnType<typeof makeDb>) {
     { content: string; status: string; user_message_id: number | null },
     []
   >(
-    `SELECT q.content, q.status, m.id AS user_message_id
-     FROM queue q LEFT JOIN messages m ON m.queue_id = q.id
+    `SELECT q.content, r.status, m.id AS user_message_id
+     FROM inputs q JOIN runs r ON r.id = q.run_id LEFT JOIN messages m ON m.input_id = q.id
      ORDER BY q.id LIMIT 1`,
   );
   try {
@@ -117,7 +117,7 @@ test("fork point must be a user message", () => {
     target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "问题");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   appendAssistantMessage(source.db, "source", "回答");
   const assistantRow = latestMessageId(source);
   expect(() => {
@@ -149,7 +149,7 @@ test("fork preserves completed takeover pairs and an independent editable draft"
     target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "第一条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   await source.syncHistory("source", [
     ...source.history("source"),
     new AIMessage({
@@ -163,10 +163,10 @@ test("fork preserves completed takeover pairs and an independent editable draft"
     }),
     new AIMessage("第一条回复"),
   ]);
-  source.setQueueStatus(required(source.nextQueue("source")).id, "done");
+  source.setRunStatus(required(source.nextInput("source")).runId, "done");
   const appended = source.appendUser("source", "第二条"),
-    appendItem = required(source.pendingAppends("source")[0]);
-  source.startQueue("source", appendItem);
+    appendItem = required(source.pendingInputs("source")[0]);
+  source.consumeInput("source", appendItem);
   const forkPoint = { id: userMessageId(source, appended) };
   forkDatabaseBeforeMessage({
     beforeMessageId: forkPoint.id,
@@ -185,7 +185,7 @@ test("fork preserves completed takeover pairs and an independent editable draft"
   ]);
   expect(target.control("target")).toBe("pause");
   expect(readOnlyQueue(target)).toMatchObject({
-    content: null,
+    content: "第一条",
     status: "paused",
     user_message_id: expect.any(Number),
   });

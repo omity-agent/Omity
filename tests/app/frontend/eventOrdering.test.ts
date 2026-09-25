@@ -54,10 +54,10 @@ test("file-link replacement retains first-key order and handles multiple surface
 function textEvent(id: number, value: string): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "assistant_text_delta",
     messageId: "message",
     partId: "text",
-    queueId: 1,
     value,
   };
 }

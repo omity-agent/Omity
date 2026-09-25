@@ -8,6 +8,7 @@ import { createTestDirectory } from "../../support/artifacts";
 import { hostOwnerId } from "../../../src/infrastructure/process/ownership";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { runOf } from "../../support/database";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../../support/configuration";
 
@@ -47,8 +48,8 @@ test("controller permits cleanup while running and rejects unknown sessions", as
   roots.push(root, paths.dir);
   writeTestConfiguration(root);
   db.createSession("cleanup-running", root);
-  const queueId = db.appendUser("cleanup-running", "running task");
-  db.setQueueStatus(queueId, "running");
+  const inputId = db.appendUser("cleanup-running", "running task");
+  db.setRunStatus(runOf(db, inputId), "running");
   db.acquireHostLease({
     now: Date.now(),
     ownerId: hostOwnerId({ instanceId: randomUUID(), kind: "standalone", pid: process.pid }),
@@ -69,7 +70,7 @@ test("controller permits cleanup while running and rejects unknown sessions", as
     expect(readdirSync(paths.tempDir)).toEqual([]);
     expect(controller.transcript("cleanup-running").control).toBe("running");
     expect(controller.transcript("cleanup-running").queue).toMatchObject([
-      { id: queueId, status: "running" },
+      { id: inputId, status: "running" },
     ]);
     const unknown = await api.request("/api/sessions/cleanup-unknown/temporary-files", {
       method: "DELETE",

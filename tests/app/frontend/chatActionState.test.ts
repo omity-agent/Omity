@@ -3,14 +3,14 @@ import {
   deriveChatActionState,
   pauseRequestPending,
 } from "../../../src/app/frontend/components/Chat/actionState";
-import type { Control, QueueStatus, SessionStatus } from "../../../src/types";
+import type { Control, RunStatus, SessionStatus } from "../../../src/types";
 import { expect, test } from "bun:test";
 
 interface MatrixCase {
   name: string;
   control: Control;
   pausing?: boolean;
-  queue: QueueStatus[];
+  queue: RunStatus[];
   sessionStatus: SessionStatus;
   expected: ChatActionState;
 }

@@ -2,7 +2,7 @@ import { type StreamEvent, type StreamEventKind, streamEventSchema } from "../..
 
 export interface PersistedEventRow {
   id: number;
-  queue_id: number;
+  input_id: number;
   message_id: string;
   part_id: string;
   kind: StreamEventKind;
@@ -14,10 +14,10 @@ export function persistedDisplayEvent(row: PersistedEventRow): StreamEvent {
     parsed = streamEventSchema.safeParse({
       ...(Array.isArray(fileLinks) && fileLinks.length === 0 ? {} : { fileLinks }),
       id: row.id,
+      inputId: row.input_id,
       kind: row.kind,
       messageId: row.message_id,
       partId: row.part_id,
-      queueId: row.queue_id,
       value: JSON.parse(row.payload_json) as unknown,
     });
   if (!parsed.success) {

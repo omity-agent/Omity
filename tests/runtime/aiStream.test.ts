@@ -12,14 +12,14 @@ import type { AiStreamEvent } from "../../src/agent/model/request";
 import { Logger } from "../../src/infrastructure/logging/logger";
 import type { StreamEvent } from "../../src/types";
 import { agentFixture } from "./support/agentFixture";
-import { processQueue } from "../../src/runtime/queue";
+import { processInput } from "../../src/runtime/consumeInputs";
 import { testSettings } from "../support/settings";
 
 afterEach(cleanupDatabaseDirs);
 test("AI SDK stream groups response parts and exposes tool metadata before execution", async () => {
   const db = makeDb();
   db.resetSession("session", workspace);
-  const queueId = db.appendUser("session", "run"),
+  const inputId = db.appendUser("session", "run"),
     events: StreamEvent[] = [];
   db.onChange((event) => events.push(event));
   const context = {
@@ -31,19 +31,19 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
     state = createStreamLogState();
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     { part: { id: "reasoning-1", text: "first", type: "reasoning-delta" } },
     state,
   );
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     { part: { id: "reasoning-2", text: "second", type: "reasoning-delta" } },
     state,
   );
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     {
       freeform: true,
       part: { id: "call-1", toolName: "shell", type: "tool-input-start" },
@@ -52,7 +52,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
   );
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     { part: { delta: "dir", id: "call-1", type: "tool-input-delta" } },
     state,
   );
@@ -78,7 +78,7 @@ test("AI SDK stream groups response parts and exposes tool metadata before execu
         tool_calls: [{ args: { input: "dir" }, id: "call-1", name: "shell" }],
       }),
     ],
-    queueId,
+    inputId,
   );
   const [, started] = timeline(events)[0]?.parts ?? [];
   expect(started).toMatchObject({
@@ -99,11 +99,11 @@ test("hosted search stream is visible without announcing a local execution", asy
     state = createStreamLogState(),
     events: StreamEvent[] = [];
   db.resetSession("target", workspace);
-  const queueId = db.appendUser("target", "search");
+  const inputId = db.appendUser("target", "search");
   db.onChange((event) => events.push(event));
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     {
       part: {
         id: "hosted",
@@ -116,7 +116,7 @@ test("hosted search stream is visible without announcing a local execution", asy
   );
   await recordAiStreamPart(
     context,
-    queueId,
+    inputId,
     {
       part: { delta: '{"paths":["find_file"]}', id: "hosted", type: "tool-input-delta" },
     },
@@ -140,7 +140,7 @@ test.each(contentParts)("only meaningful model content starts receiving: $type",
     activity = mock(),
     state = createStreamLogState();
   db.resetSession("target", workspace);
-  const queueId = db.appendUser("target", "run"),
+  const inputId = db.appendUser("target", "run"),
     emptyParts: AiStreamEvent["part"][] = [
       { type: "start" },
       { id: "part", type: "text-start" },
@@ -152,19 +152,19 @@ test.each(contentParts)("only meaningful model content starts receiving: $type",
     ];
   context.observer = { activity, token: () => undefined };
   for (const empty of emptyParts) {
-    await recordAiStreamPart(context, queueId, { part: empty }, state);
+    await recordAiStreamPart(context, inputId, { part: empty }, state);
     expect(activity).not.toHaveBeenCalled();
   }
-  await recordAiStreamPart(context, queueId, { part }, state);
-  await recordAiStreamPart(context, queueId, { part }, state);
+  await recordAiStreamPart(context, inputId, { part }, state);
+  await recordAiStreamPart(context, inputId, { part }, state);
   expect(activity.mock.calls).toEqual([["target", "streaming"]]);
   completeActiveStream(state);
   expect(state.modelResponding).toBe(false);
-  await recordAiStreamPart(context, queueId, { part }, state);
+  await recordAiStreamPart(context, inputId, { part }, state);
   expect(activity).toHaveBeenCalledTimes(2);
-  discardActiveStream(context, state, queueId);
+  discardActiveStream(context, state, inputId);
   expect(state.modelResponding).toBe(false);
-  await recordAiStreamPart(context, queueId, { part }, state);
+  await recordAiStreamPart(context, inputId, { part }, state);
   expect(activity).toHaveBeenCalledTimes(3);
   db.close();
 });
@@ -174,8 +174,8 @@ test("a graph run reports waiting, receiving and completion in order", async () 
   db.resetSession("target", workspace);
   db.appendUser("target", "run");
   context.observer = { activity, token: () => undefined };
-  await processQueue(context, required(db.nextQueue("target")));
-  expect(db.nextQueue("target")).toBeNull();
+  await processInput(context, required(db.nextInput("target")));
+  expect(db.nextInput("target")).toBeNull();
   expect(activity.mock.calls).toEqual([
     ["target", "waiting"],
     ["target", "streaming"],

@@ -1,7 +1,7 @@
 import { createSessionStorage, removeSessionStorage } from "../runtime/sessionStorage";
 import type { InitialMessagePair } from "../initialState";
 import type { PendingAttachment } from "./contract";
-import type { SessionDefinition } from "../../infrastructure/database/sessionDefinition";
+import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { Settings } from "../../types";
 import { saveMessageAttachments } from "./storage";
 

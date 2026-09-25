@@ -47,7 +47,7 @@ test("forks copy inherited user messages and save their edited draft when submit
   );
   const sourcePaths = resolveSessionPaths(sourceSessionId),
     source = new AgentDatabase(sourcePaths.dbPath);
-  source.startQueue(sourceSessionId, required(source.nextQueue(sourceSessionId)));
+  source.consumeInput(sourceSessionId, required(source.nextInput(sourceSessionId)));
   const forkPoint = required(
     source.db.query<{ id: number }, []>("SELECT id FROM messages ORDER BY id DESC LIMIT 1").get(),
   );

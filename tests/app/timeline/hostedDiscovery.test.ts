@@ -32,12 +32,12 @@ test.each(["responses", "messages"] as const)(
         api === "responses" ? responsesSearchEvents() : messagesSearchEvents(),
       );
     db.resetSession("target", workspace);
-    const queueId = db.appendUser("target", "Find a file"),
+    const inputId = db.appendUser("target", "Find a file"),
       user = new HumanMessage({
         content: "Find a file",
-        id: `queue:target:${queueId.toString()}`,
+        id: `input:target:${inputId.toString()}`,
       });
-    db.startQueue("target", required(db.nextQueue("target")));
+    db.consumeInput("target", required(db.nextInput("target")));
     db.onChange((event) => events.push(event));
     try {
       const response = await streamAiModel({
@@ -49,7 +49,7 @@ test.each(["responses", "messages"] as const)(
         write: (part) => parts.push(part),
       });
       for (const part of parts) {
-        await recordAiStreamPart(context, queueId, part, state);
+        await recordAiStreamPart(context, inputId, part, state);
         if (part.part.type === "tool-call" && part.part.providerExecuted) {
           expect(streamedTools(events)[0]).toMatchObject({
             call: {
@@ -106,7 +106,7 @@ test("hosted search errors complete the visible card without local execution", a
       toolName: "tool_search_tool_regex",
     };
   db.resetSession("target", workspace);
-  const queueId = db.appendUser("target", "search");
+  const inputId = db.appendUser("target", "search");
   db.onChange((event) => events.push(event));
   try {
     for (const part of [
@@ -119,7 +119,7 @@ test("hosted search errors complete the visible card without local execution", a
       { ...call, type: "tool-call" },
       { ...call, error: new Error("invalid search pattern"), type: "tool-error" },
     ] satisfies AiStreamEvent["part"][]) {
-      await recordAiStreamPart(context, queueId, { part }, state);
+      await recordAiStreamPart(context, inputId, { part }, state);
     }
     expect(streamedTools(events)[0]).toMatchObject({
       call: { providerExecuted: true },

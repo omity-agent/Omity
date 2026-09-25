@@ -36,7 +36,7 @@ export async function waitBeforeModelRetry(
         attempt,
         delayMs,
         error: captureError(error),
-        queueId: run.items[0].id,
+        inputId: run.items[0].id,
         sessionId: ctx.sessionId,
       },
       message: "模型 API 暂不可用，正在重试",

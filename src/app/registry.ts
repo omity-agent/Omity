@@ -4,11 +4,11 @@ import {
   configureReadonlyDatabase,
   queryAll,
   runTransaction,
-} from "../infrastructure/database/connection";
+} from "../infrastructure/database/sqlite/connection";
 import { databasePath, resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import type { Control } from "../types";
 import { Database } from "bun:sqlite";
-import { deriveSessionTitle } from "../infrastructure/database/records/messages/deriveTitle";
+import { deriveSessionTitle } from "../infrastructure/database/records/transcript/messages/deriveTitle";
 import { existsSync } from "node:fs";
 import { sessionNotFound } from "../errors";
 import { settingsProfileNamesSchema } from "../infrastructure/configuration/settings/context";
@@ -50,17 +50,17 @@ const sessionSelect = `
     ) AS updated_at,
     s.control,
     EXISTS(
-      SELECT 1 FROM queue q
+      SELECT 1 FROM runs q
       WHERE q.session_id = s.id AND q.status = 'running'
     ) AS queue_running,
     EXISTS(
-      SELECT 1 FROM queue q
+      SELECT 1 FROM runs q
       WHERE q.session_id = s.id AND q.status = 'paused'
     ) AS paused,
     (
-      SELECT q.error FROM queue q
+      SELECT q.error_json FROM runs q
       WHERE q.session_id = s.id AND q.status = 'paused'
-        AND q.error IS NOT NULL
+        AND q.error_json IS NOT NULL
       ORDER BY q.id DESC LIMIT 1
     ) AS error
   FROM sessions s`;

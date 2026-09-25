@@ -8,9 +8,15 @@ import {
   WRITES_IDX_MAP,
   copyCheckpoint,
 } from "@langchain/langgraph-checkpoint";
-import { type CheckpointRow, configIdentity, listQuery, selectCheckpoint } from "./sql";
+import {
+  type CheckpointRow,
+  checkpointRunId,
+  configIdentity,
+  listQuery,
+  selectCheckpoint,
+} from "./sql";
 import type { Database, SQLQueryBindings } from "bun:sqlite";
-import { cachedQuery, queryAll, runTransaction } from "../infrastructure/database/connection";
+import { cachedQuery, queryAll, runTransaction } from "../infrastructure/database/sqlite/connection";
 import { CheckpointDecoder } from "./decoding";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
@@ -20,8 +26,8 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     super();
   }
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
-    const { checkpointId, checkpointNs, threadId } = configIdentity(config),
-      row = cachedQuery<CheckpointRow>(this.db, selectCheckpoint()).get(threadId, checkpointNs);
+    const { checkpointId, checkpointNs, runId } = configIdentity(config),
+      row = cachedQuery<CheckpointRow>(this.db, selectCheckpoint()).get(runId, checkpointNs);
     if (!row) {
       return undefined;
     }
@@ -55,31 +61,31 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     runTransaction(this.db, () => {
       const current = cachedQuery<{ checkpoint_id: string }>(
         this.db,
-        "SELECT checkpoint_id FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?",
-      ).get(identity.threadId, identity.checkpointNs);
+        "SELECT checkpoint_id FROM checkpoints WHERE run_id = ? AND checkpoint_ns = ?",
+      ).get(identity.runId, identity.checkpointNs);
       if (current && current.checkpoint_id !== identity.checkpointId) {
         throw new Error(`checkpoint head 冲突：${current.checkpoint_id}`);
       }
       this.db.run(
         `DELETE FROM checkpoint_writes
-         WHERE thread_id = ? AND checkpoint_ns = ? AND checkpoint_id <> ?`,
-        [identity.threadId, identity.checkpointNs, checkpoint.id],
+         WHERE run_id = ? AND checkpoint_ns = ? AND checkpoint_id <> ?`,
+        [identity.runId, identity.checkpointNs, checkpoint.id],
       );
       this.db.run(
         `INSERT INTO checkpoints
-          (thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata)
+          (run_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata)
          VALUES (?, ?, ?, ?, ?, ?)
-         ON CONFLICT(thread_id, checkpoint_ns) DO UPDATE SET
+         ON CONFLICT(run_id, checkpoint_ns) DO UPDATE SET
           checkpoint_id = excluded.checkpoint_id, type = excluded.type,
           checkpoint = excluded.checkpoint, metadata = excluded.metadata`,
-        [identity.threadId, identity.checkpointNs, checkpoint.id, type, value, metadataValue],
+        [identity.runId, identity.checkpointNs, checkpoint.id, type, value, metadataValue],
       );
     });
     return {
       configurable: {
         checkpoint_id: checkpoint.id,
         checkpoint_ns: identity.checkpointNs,
-        thread_id: identity.threadId,
+        thread_id: identity.runId.toString(),
       },
     };
   }
@@ -93,7 +99,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
         writes.map(async ([channel, value], index) => {
           const [type, serialized] = await this.serde.dumpsTyped(value),
             bindings: SQLQueryBindings[] = [
-              identity.threadId,
+              identity.runId,
               identity.checkpointNs,
               checkpointId,
               taskId,
@@ -111,15 +117,15 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     runTransaction(this.db, () => {
       const current = cachedQuery<{ checkpoint_id: string }>(
         this.db,
-        "SELECT checkpoint_id FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?",
-      ).get(identity.threadId, identity.checkpointNs);
+        "SELECT checkpoint_id FROM checkpoints WHERE run_id = ? AND checkpoint_ns = ?",
+      ).get(identity.runId, identity.checkpointNs);
       if (current?.checkpoint_id !== checkpointId) {
         throw new Error(`checkpoint pending write 已过期：${checkpointId}`);
       }
       for (const row of rows) {
         this.db.run(
           `INSERT OR ${row.replace ? "REPLACE" : "IGNORE"} INTO checkpoint_writes
-           (thread_id, checkpoint_ns, checkpoint_id, task_id, write_index,
+           (run_id, checkpoint_ns, checkpoint_id, task_id, write_index,
             channel, type, value) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           row.bindings,
         );
@@ -127,10 +133,6 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
     });
   }
   async deleteThread(threadId: string) {
-    runTransaction(this.db, () => deleteThreadData(this.db, threadId));
+    this.db.query("DELETE FROM checkpoints WHERE run_id = ?").run(checkpointRunId(threadId));
   }
-}
-export function deleteThreadData(db: Database, threadId: string) {
-  db.query("DELETE FROM checkpoint_writes WHERE thread_id = ?").run(threadId);
-  db.query("DELETE FROM checkpoints WHERE thread_id = ?").run(threadId);
 }

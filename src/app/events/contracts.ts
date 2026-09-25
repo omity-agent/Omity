@@ -19,7 +19,7 @@ export const warningEventSchema = z.object({
     attempt: z.number().int().positive(),
     delayMs: z.number().int().positive(),
     error: errorDetailsSchema,
-    queueId: z.number().int().positive(),
+    inputId: z.number().int().positive(),
     sessionId: z.string().min(1),
   }),
   message: z.string().min(1),

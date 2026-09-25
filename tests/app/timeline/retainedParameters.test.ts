@@ -8,10 +8,10 @@ const queue: DisplayQueue[] = [
 function delta(id: number, text: string, index = 0, freeform = false): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "tool_call_delta",
     messageId: "message-1",
     partId: `tool-${index.toString()}`,
-    queueId: 1,
     value: { argumentsDelta: text, freeform, index },
   };
 }

@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
-import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/transcript/messages/history";
 import { forkDatabaseBeforeMessage } from "../../src/app/fork";
 
 afterEach(cleanupDatabaseDirs);
@@ -9,10 +9,10 @@ test("fork pauses a user message inserted into an active model run", () => {
     target = makeDb();
   source.resetSession("source", workspace);
   source.appendUser("source", "第一条");
-  source.startQueue("source", required(source.nextQueue("source")));
+  source.consumeInput("source", required(source.nextInput("source")));
   appendAssistantMessage(source.db, "source", "生成中的回复");
   const inserted = source.appendUser("source", "插入消息");
-  source.startQueue("source", required(source.pendingAppends("source")[0]));
+  source.consumeInput("source", required(source.pendingInputs("source")[0]));
   forkDatabaseBeforeMessage({
     beforeMessageId: userMessageId(source, inserted),
     profiles: [],
@@ -26,12 +26,12 @@ test("fork pauses a user message inserted into an active model run", () => {
   source.close();
   target.close();
 });
-function userMessageId(db: ReturnType<typeof makeDb>, queueId: number) {
+function userMessageId(db: ReturnType<typeof makeDb>, inputId: number) {
   const query = db.db.prepare<{ id: number }, [number]>(
-    "SELECT id FROM messages WHERE queue_id = ?",
+    "SELECT id FROM messages WHERE input_id = ?",
   );
   try {
-    return required(query.get(queueId)).id;
+    return required(query.get(inputId)).id;
   } finally {
     query.finalize();
   }

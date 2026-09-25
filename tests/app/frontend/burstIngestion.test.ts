@@ -9,10 +9,10 @@ import { transcriptResponseSchema } from "../../../src/app/timeline/contracts/re
 test("large event bursts advance the cursor without spreading function arguments", () => {
   const events = Array.from({ length: 150_000 }, (_, index): DisplayEvent => ({
       id: index + 1,
+      inputId: 1,
       kind: "assistant_text_delta",
       messageId: "message",
       partId: "text",
-      queueId: 1,
       value: "",
     })),
     current = emptyTranscriptData(),
@@ -29,10 +29,10 @@ test("shared transcript contracts retain nested response validation", () => {
     events: [
       {
         id: 1,
+        inputId: 1,
         kind: "tool_finished" as const,
         messageId: "message",
         partId: "tool",
-        queueId: 1,
         value: { callId: "call", output: { content: "done", images: [], outputTokens: 0 } },
       },
     ],

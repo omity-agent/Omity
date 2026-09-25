@@ -9,9 +9,9 @@ const toolOutputSnapshotSchema = z.object({
   streamEventBaseSchema = z.object({
     fileLinks: z.array(fileLinkUnitSchema).optional(),
     id: z.number().int().positive(),
+    inputId: z.number().int().positive(),
     messageId: z.string().min(1),
     partId: z.string().min(1),
-    queueId: z.number().int().positive(),
   });
 export const streamEventSchema = z.discriminatedUnion("kind", [
   streamEventBaseSchema.extend({

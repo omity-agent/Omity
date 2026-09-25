@@ -52,7 +52,7 @@ export class CheckpointDecoder {
         configurable: {
           checkpoint_id: row.checkpoint_id,
           checkpoint_ns: row.checkpoint_ns,
-          thread_id: row.thread_id,
+          thread_id: row.run_id.toString(),
         },
       },
       metadata: cloneDeepWith(head.metadata, cloneMessage),

@@ -21,7 +21,7 @@ export interface HostObserver {
   activity?: (sessionId: string, status: HostActivity) => void;
   changed?: (sessionId: string) => void;
   transcript?: (sessionId: string, event: StreamEvent) => void;
-  token: (sessionId: string, queueId: number, text: string) => void;
+  token: (sessionId: string, inputId: number, text: string) => void;
   warning?: (sessionId: string, warning: BrowserWarning) => void;
 }
 export interface HostContext {

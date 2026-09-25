@@ -8,7 +8,7 @@ export interface CheckpointRow {
   checkpoint_ns: string;
   metadata: Uint8Array;
   pending_writes: string;
-  thread_id: string;
+  run_id: number;
   type: string;
 }
 export interface WriteRow {
@@ -17,11 +17,15 @@ export interface WriteRow {
   type: string;
   value: string;
 }
-function requiredString(value: unknown, name: string) {
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`缺少 ${name}`);
+export function checkpointRunId(value: unknown) {
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
+    throw new Error("thread_id 必须是执行轮次 ID");
   }
-  return value;
+  const id = Number(value);
+  if (!Number.isSafeInteger(id)) {
+    throw new Error("执行轮次 ID 超出安全整数范围");
+  }
+  return id;
 }
 function optionalString(value: unknown, name: string) {
   if (value == null) {
@@ -36,22 +40,22 @@ export function configIdentity(config: RunnableConfig) {
   return {
     checkpointId: optionalString(config.configurable?.["checkpoint_id"], "checkpoint_id"),
     checkpointNs: optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns") ?? "",
-    threadId: requiredString(config.configurable?.["thread_id"], "thread_id"),
+    runId: checkpointRunId(config.configurable?.["thread_id"]),
   };
 }
 export function selectCheckpoint() {
-  return `SELECT thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata,
+  return `SELECT run_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata,
     (SELECT json_group_array(json_object(
       'task_id', task_id, 'channel', channel, 'type', type,
       'value', CAST(value AS TEXT)
     )) FROM (
       SELECT task_id, channel, type, value FROM checkpoint_writes
-      WHERE thread_id = checkpoints.thread_id
+      WHERE run_id = checkpoints.run_id
         AND checkpoint_ns = checkpoints.checkpoint_ns
         AND checkpoint_id = checkpoints.checkpoint_id
       ORDER BY task_id, write_index
     )) AS pending_writes
-    FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ?`;
+    FROM checkpoints WHERE run_id = ? AND checkpoint_ns = ?`;
 }
 export function listQuery(config: RunnableConfig, options?: CheckpointListOptions) {
   const clauses: string[] = [],
@@ -59,8 +63,8 @@ export function listQuery(config: RunnableConfig, options?: CheckpointListOption
     threadId = optionalString(config.configurable?.["thread_id"], "thread_id"),
     checkpointNs = optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns");
   if (threadId) {
-    clauses.push("thread_id = ?");
-    args.push(threadId);
+    clauses.push("run_id = ?");
+    args.push(checkpointRunId(threadId));
   }
   if (checkpointNs !== undefined) {
     clauses.push("checkpoint_ns = ?");
@@ -70,7 +74,7 @@ export function listQuery(config: RunnableConfig, options?: CheckpointListOption
     throw new Error("当前恢复存储不支持历史 checkpoint 查询");
   }
   let sql = selectCheckpoint().replace(
-    " WHERE thread_id = ? AND checkpoint_ns = ?",
+    " WHERE run_id = ? AND checkpoint_ns = ?",
     clauses.length > 0 ? ` WHERE ${clauses.join(" AND ")}` : "",
   );
   if (options?.limit !== undefined) {

@@ -1,13 +1,13 @@
 import {
   closeDatabase,
   configureReadonlyDatabase,
-} from "../../../infrastructure/database/connection";
+} from "../../../infrastructure/database/sqlite/connection";
 import { AppRegistry } from "../../registry";
 import { Database } from "bun:sqlite";
 import { existsSync } from "node:fs";
 import { resolveSessionPaths } from "../../../infrastructure/configuration/sessionPaths";
 import { sessionNotFound } from "../../../errors";
-import { streamEventCursor } from "../../../infrastructure/database/records/streamEvents";
+import { streamEventCursor } from "../../../infrastructure/database/records/transcript/streamEvents";
 
 export class RetainedRegistry extends AppRegistry {
   private readonly readers = new Map<string, Database>();

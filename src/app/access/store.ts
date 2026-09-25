@@ -6,7 +6,7 @@ import {
   registrationTickets,
 } from "../../infrastructure/database/schema";
 import { and, count, eq, gt, lte, sql } from "drizzle-orm";
-import { closeDatabase, openSessionDatabase } from "../../infrastructure/database/connection";
+import { closeDatabase, openSessionDatabase } from "../../infrastructure/database/sqlite/connection";
 import { createHash, randomBytes } from "node:crypto";
 import type { Database } from "bun:sqlite";
 import type { WebAuthnCredential } from "@simplewebauthn/server";

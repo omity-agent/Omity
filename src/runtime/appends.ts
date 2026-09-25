@@ -1,39 +1,39 @@
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
+import type { ActiveRun } from "./run";
 import type { HostContext } from "./context";
-import type { QueueRun } from "./run";
-import { queueMessageId } from "../infrastructure/database/records/messages/history";
+import { inputMessageId } from "../infrastructure/database/records/transcript/messages/history";
 
-export function consumeBoundaryAppends(ctx: HostContext, run: QueueRun, state: BoundaryState) {
+export function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
   if (hasPendingTools(state) || blocksAppend(state.values?.hookPlan)) {
     return null;
   }
-  const appends = ctx.db.pendingAppends(ctx.sessionId);
+  const appends = ctx.db.pendingInputs(ctx.sessionId);
   if (appends.length === 0) {
     return null;
   }
   for (const item of appends) {
-    const userMessageId = ctx.db.startQueue(ctx.sessionId, item);
+    const userMessageId = ctx.db.consumeInput(ctx.sessionId, item);
     run.items.push({ ...item, status: "running", userMessageId });
   }
   ctx.logger.info("已在节点边界追加输入", {
-    queueIds: appends.map((item) => item.id),
+    inputIds: appends.map((item) => item.id),
   });
   return {
     hookPendingUserIds: [
       ...pendingUserIds(state),
-      ...appends.map((item) => queueMessageId(ctx.sessionId, item.id)),
+      ...appends.map((item) => inputMessageId(ctx.sessionId, item.id)),
     ],
     messages: appends.map(
       (item) =>
         new HumanMessage({
           content: item.content,
-          id: queueMessageId(ctx.sessionId, item.id),
+          id: inputMessageId(ctx.sessionId, item.id),
         }),
     ),
   };
 }
-export function recoverConsumedAppends(ctx: HostContext, run: QueueRun, state: BoundaryState) {
-  const consumedIds = new Set(run.items.map((item) => queueMessageId(ctx.sessionId, item.id)));
+export function recoverConsumedAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
+  const consumedIds = new Set(run.items.map((item) => inputMessageId(ctx.sessionId, item.id)));
   for (const message of state.values?.messages ?? []) {
     if (HumanMessage.isInstance(message) && message.id) {
       consumedIds.delete(message.id);
@@ -56,8 +56,8 @@ export function recoverConsumedAppends(ctx: HostContext, run: QueueRun, state: B
     throw new Error(`已消费的用户消息不存在：${absentIds.join(", ")}`);
   }
   ctx.logger.warn("恢复 checkpoint 后尚未提交的追加输入", {
-    queueIds: run.items
-      .filter((item) => consumedIds.has(queueMessageId(ctx.sessionId, item.id)))
+    inputIds: run.items
+      .filter((item) => consumedIds.has(inputMessageId(ctx.sessionId, item.id)))
       .map((item) => item.id),
   });
   return {

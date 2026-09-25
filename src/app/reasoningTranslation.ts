@@ -1,7 +1,7 @@
 import {
   type ReasoningTranslation,
   storeReasoningTranslation,
-} from "../infrastructure/database/records/reasoningTranslations";
+} from "../infrastructure/database/records/transcript/reasoningTranslations";
 import { openStoredSession } from "../storedSessions";
 
 export function writeReasoningTranslation(sessionId: string, submission: ReasoningTranslation) {

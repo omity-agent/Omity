@@ -67,7 +67,7 @@ test.each([
         tools: [hookTool, ...originals],
       }),
       result = await graph.invoke(
-        { hookPendingUserIds: ["queue:1"], messages: [{ content: "run", role: "user" }] },
+        { hookPendingUserIds: ["input:1"], messages: [{ content: "run", role: "user" }] },
         { configurable: { thread_id: "parallel-hooks" } },
       );
     expect(maximumActive).toBe(parallel ? 2 : 1);

@@ -25,14 +25,14 @@ export const controlSchema = z.enum(["running", "step", "pause", "cancel", "paus
     "paused",
     "error",
   ]),
-  queueStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
+  runStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
   logLevelSchema = z.enum(["debug", "info", "warn", "error"]),
   reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
   modelApiSchema = z.enum(["responses", "completions", "messages"]);
 export type Control = z.infer<typeof controlSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export type HostActivity = Extract<SessionStatus, "tool" | "waiting" | "streaming" | "idle">;
-export type QueueStatus = z.infer<typeof queueStatusSchema>;
+export type RunStatus = z.infer<typeof runStatusSchema>;
 export type LogLevel = z.infer<typeof logLevelSchema>;
 export type ModelApi = z.infer<typeof modelApiSchema>;
 export function isRunningStatus(status: SessionStatus | undefined) {
@@ -64,11 +64,10 @@ export interface SkillInfo {
   description: string;
   source: string;
 }
-export interface QueueItem {
+export interface QueuedInput {
   id: number;
-  runId: number | null;
+  runId: number;
   content: string;
-  status: QueueStatus;
+  status: RunStatus;
   userMessageId: number | null;
-  root: boolean;
 }

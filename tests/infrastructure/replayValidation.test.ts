@@ -1,7 +1,7 @@
 import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { expect, test } from "bun:test";
-import { decodeMessage } from "../../src/infrastructure/database/records/messages/hydration";
-import { messageInsert } from "../../src/infrastructure/database/records/messages/serialization";
+import { decodeMessage } from "../../src/infrastructure/database/records/transcript/messages/hydration";
+import { messageInsert } from "../../src/infrastructure/database/records/transcript/messages/serialization";
 import { structuredOutputArtifact } from "../../src/infrastructure/mcp/tools/structured";
 
 test.each([

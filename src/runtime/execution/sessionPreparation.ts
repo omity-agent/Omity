@@ -9,14 +9,14 @@ import { sessionConflict, sessionNotFound } from "../../errors";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import type { HostMode } from "../../types";
 import type { HostRunOptions } from "./hostOptions";
-import { applySessionDefinition } from "../../infrastructure/database/sessionDefinition";
+import { applySessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import { existsSync } from "node:fs";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import { openStoredSession } from "../../storedSessions";
-import { readDefinitionRecord } from "../../infrastructure/database/records/sessions";
+import { readDefinitionRecord } from "../../infrastructure/database/records/session/metadata";
 import { recoverHostSession } from "./recovery";
-import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
+import { removeDatabaseDirectory } from "../../infrastructure/database/sqlite/connection";
 
 export function prepareHostSession(
   mode: HostMode,

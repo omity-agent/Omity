@@ -4,7 +4,7 @@ import { appendReasoningDelta, flushReasoning } from "./content";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
-import { findToolStreamIdentity } from "../infrastructure/database/records/toolStreamIdentity";
+import { findToolStreamIdentity } from "../infrastructure/database/records/transcript/toolStreamIdentity";
 import { pendingToolBatch } from "../agent/graph/toolBatch";
 import { recordInvocation } from "./stream/invocations";
 import { toUIMessageChunk } from "ai";
@@ -15,7 +15,7 @@ type AiStreamContext = Pick<
 >;
 export async function recordAiStreamPart(
   ctx: AiStreamContext,
-  queueId: number,
+  inputId: number,
   event: AiStreamEvent,
   state: StreamLogState,
 ) {
@@ -31,10 +31,10 @@ export async function recordAiStreamPart(
     }
     const messageId = streamMessageId(state, chunk.id);
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "assistant_reasoning_delta",
       messageId,
       partId: sequentialPart(state.parts, "assistant_reasoning_delta"),
-      queueId,
       value,
     });
     return;
@@ -47,26 +47,26 @@ export async function recordAiStreamPart(
           ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
           : chunk.delta;
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind,
       messageId,
       partId: sequentialPart(state.parts, kind),
-      queueId,
       value,
     });
     if (chunk.type === "text-delta") {
       if (ctx.settings.logging.streamTokens) {
         ctx.logger.token(chunk.delta);
       }
-      ctx.observer?.token(ctx.sessionId, queueId, chunk.delta);
+      ctx.observer?.token(ctx.sessionId, inputId, chunk.delta);
     }
   } else {
-    await recordInvocation(ctx, queueId, event, state);
+    await recordInvocation(ctx, inputId, event, state);
   }
 }
 export async function recordToolStarted(
   ctx: AiStreamContext,
   messages: BaseMessage[],
-  queueId: number,
+  inputId: number,
 ) {
   const calls = pendingToolBatch(messages, ctx.settings.toolExecution.parallel);
   for (const call of calls.filter(
@@ -79,10 +79,10 @@ export async function recordToolStarted(
       };
     ctx.toolExecutions?.announce(callId);
     await ctx.db.appendStream(ctx.sessionId, {
+      inputId,
       kind: "tool_started",
       messageId: identity.messageId,
       partId: identity.partId,
-      queueId,
       value: callId,
     });
   }

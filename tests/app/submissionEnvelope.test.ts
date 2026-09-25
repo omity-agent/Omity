@@ -55,7 +55,7 @@ test("preserves empty attachments, metadata whitespace and file identity", async
           id: "a1b2c3d4",
         });
         expect(await submission.attachments[1]!.file.text()).toBe("文件内容");
-        return { content: submission.content, queueId: 1 };
+        return { content: submission.content, inputId: 1 };
       },
     }),
     body = submissionForm({ ...message, content: "  message\n" }, [

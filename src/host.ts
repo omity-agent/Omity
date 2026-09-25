@@ -6,10 +6,10 @@ import type { HostRunOptions } from "./runtime/execution/hostOptions";
 import { Logger } from "./infrastructure/logging/logger";
 import { ToolExecutions } from "./agent/toolExecutions";
 import { buildGraph } from "./agent";
-import { createSessionDefinition } from "./infrastructure/database/sessionDefinition";
+import { createSessionDefinition } from "./infrastructure/database/session/sessionDefinition";
 import { hostLoop } from "./runtime/loop";
 import { prepareHostSession } from "./runtime/execution/sessionPreparation";
-import { removeDatabaseDirectory } from "./infrastructure/database/connection";
+import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";
 import { wireHostSignals } from "./runtime/execution/signals";
 
 export async function runHost(mode: HostMode, root = process.cwd(), options: HostRunOptions = {}) {

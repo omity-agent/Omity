@@ -7,7 +7,7 @@ import type { AppMcp } from "./resources/toolPool";
 import type { SessionSubmission } from "../attachments/contract";
 import { cleanupFailedInitialization } from "../../infrastructure/mcp/lifecycle";
 import { createAppSession } from "./sessionActions";
-import { createSessionDefinition } from "../../infrastructure/database/sessionDefinition";
+import { createSessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";

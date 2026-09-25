@@ -5,24 +5,25 @@ import {
   makeDatabases,
   makeDb,
   required,
+  runOf,
   workspace,
 } from "../support/database";
-import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
-import { decodeMessage } from "../../src/infrastructure/database/records/messages/hydration";
-import { encodeMessage } from "../../src/infrastructure/database/records/messages/payload";
-import { runTransaction } from "../../src/infrastructure/database/connection";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/transcript/messages/history";
+import { decodeMessage } from "../../src/infrastructure/database/records/transcript/messages/hydration";
+import { encodeMessage } from "../../src/infrastructure/database/records/transcript/messages/payload";
+import { runTransaction } from "../../src/infrastructure/database/sqlite/connection";
 
 afterEach(cleanupDatabaseDirs);
 test("queue append and transcript lifecycle", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
-  const queueId = db.appendUser("123", "你好"),
-    item = db.nextQueue("123");
-  expect(item?.id).toBe(queueId);
-  db.startQueue("123", required(item));
+  const inputId = db.appendUser("123", "你好"),
+    item = db.nextInput("123");
+  expect(item?.id).toBe(inputId);
+  db.consumeInput("123", required(item));
   expect(db.history("123").map((message) => message.text)).toEqual(["你好"]);
   appendAssistantMessage(db.db, "123", "你好，有什么可以帮你？");
-  db.setQueueStatus(queueId, "done");
+  db.setRunStatus(runOf(db, inputId), "done");
   expect(db.history("123").at(-1)?.text).toBe("你好，有什么可以帮你？");
   db.close();
 });
@@ -110,9 +111,9 @@ test("queue start atomically rejects a stale claim", () => {
   const db = makeDb();
   db.resetSession("123", workspace);
   db.appendUser("123", "只应写入一次");
-  const stale = required(db.nextQueue("123"));
-  db.startQueue("123", stale);
-  expect(() => db.startQueue("123", stale)).toThrow("队列认领冲突");
+  const stale = required(db.nextInput("123"));
+  db.consumeInput("123", stale);
+  expect(() => db.consumeInput("123", stale)).toThrow("输入认领冲突");
   expect(db.history("123").map((message) => message.text)).toEqual(["只应写入一次"]);
   db.close();
 });
@@ -132,9 +133,9 @@ test("conversation and queue changes advance the session activity time", async (
   ]);
   expect(updatedAt(db)).toBe(1);
   setUpdatedAt(db, 1);
-  const queueId = db.appendUser("123", "继续");
+  const inputId = db.appendUser("123", "继续");
   setUpdatedAt(db, 1);
-  db.setQueueStatus(queueId, "canceled");
+  db.setRunStatus(runOf(db, inputId), "canceled");
   expect(updatedAt(db)).toBeGreaterThan(1);
   db.close();
 });

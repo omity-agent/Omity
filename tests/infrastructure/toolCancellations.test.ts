@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
-import { makeDb, required, workspace } from "../support/database";
+import { makeDb, required, runOf, workspace } from "../support/database";
 import { buildTimeline } from "../../src/app/timeline";
-import { insertStreamEvent } from "../../src/infrastructure/database/records/streamEvents";
+import { insertStreamEvent } from "../../src/infrastructure/database/records/transcript/streamEvents";
 import { loadTranscript } from "../../src/app/transcript";
 import { toolNotRunning } from "../../src/errors";
 
@@ -10,13 +10,13 @@ test("tool cancellation requests retain their first timestamp across reads and r
   try {
     db.resetSession("session", workspace);
     db.appendUser("session", "run tool");
-    const item = required(db.nextQueue("session"));
-    db.startQueue("session", item);
+    const item = required(db.nextInput("session"));
+    db.consumeInput("session", item);
     insertStreamEvent(db.db, "session", {
+      inputId: item.id,
       kind: "tool_started",
       messageId: "message-1",
       partId: "tool-0",
-      queueId: item.id,
       value: "call-1",
     });
     db.requestToolCancellation("session", "call-1");
@@ -44,14 +44,14 @@ test("paused pending tool calls can be cancelled before execution starts", () =>
   try {
     db.resetSession("session", workspace);
     db.appendUser("session", "run tool");
-    const item = required(db.nextQueue("session"));
-    db.startQueue("session", item);
-    db.setQueueStatus(item.id, "paused");
+    const item = required(db.nextInput("session"));
+    db.consumeInput("session", item);
+    db.setRunStatus(runOf(db, item.id), "paused");
     insertStreamEvent(db.db, "session", {
+      inputId: item.id,
       kind: "tool_call_delta",
       messageId: "message-1",
       partId: "tool-0",
-      queueId: item.id,
       value: { idDelta: "call-1", index: 0, nameDelta: "capture" },
     });
     db.requestToolCancellation("session", "call-1");
@@ -64,7 +64,7 @@ test("paused pending tool calls can be cancelled before execution starts", () =>
       output: { content: "工具运行 0 毫秒 后被用户手动终止。" },
       phase: "completed",
     });
-    expect(db.nextQueue("session")?.status).toBe("paused");
+    expect(db.nextInput("session")?.status).toBe("paused");
   } finally {
     db.close();
   }
@@ -74,20 +74,20 @@ test("tool cancellation rejects calls that already finished", () => {
   try {
     db.resetSession("session", workspace);
     db.appendUser("session", "run tool");
-    const item = required(db.nextQueue("session"));
-    db.startQueue("session", item);
+    const item = required(db.nextInput("session"));
+    db.consumeInput("session", item);
     insertStreamEvent(db.db, "session", {
+      inputId: item.id,
       kind: "tool_started",
       messageId: "message-1",
       partId: "tool-0",
-      queueId: item.id,
       value: "call-1",
     });
     insertStreamEvent(db.db, "session", {
+      inputId: item.id,
       kind: "tool_finished",
       messageId: "message-1",
       partId: "tool-0",
-      queueId: item.id,
       value: {
         callId: "call-1",
         output: { content: "done", images: [], outputTokens: 1 },

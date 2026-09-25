@@ -1,15 +1,15 @@
 import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { required, runOf } from "../support/database";
 import { resolveSessionState, resolveSessionStatus } from "../../src/app/sessionState";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AppController } from "../../src/app/controller";
 import { AppInstanceLock } from "../../src/app/runtime/instanceLock";
 import { AppRegistry } from "../../src/app/registry";
-import { appendAssistantMessage } from "../../src/infrastructure/database/records/messages/history";
+import { appendAssistantMessage } from "../../src/infrastructure/database/records/transcript/messages/history";
 import { captureError } from "../../src/failures/details";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
-import { required } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
 import { writeTestConfiguration } from "../support/configuration";
@@ -28,8 +28,8 @@ test("app session summaries expose paused queue errors", async () => {
   const paths = sessionPaths("failed-session"),
     db = new AgentDatabase(paths.dbPath);
   db.createSession("failed-session", workspace);
-  const queueId = db.appendUser("failed-session", "test");
-  db.setQueueStatus(queueId, "paused", captureError(new Error("model request failed")));
+  const inputId = db.appendUser("failed-session", "test");
+  db.setRunStatus(runOf(db, inputId), "paused", captureError(new Error("model request failed")));
   db.close();
   const controller = new AppController(root);
   expect(controller.bootstrap().sessions[0]).toMatchObject({
@@ -46,8 +46,8 @@ test("pending appends do not turn a paused run into a pausing session", async ()
   const paths = sessionPaths("paused-session"),
     db = new AgentDatabase(paths.dbPath);
   db.createSession("paused-session", workspace);
-  const queueId = db.appendUser("paused-session", "first");
-  db.setQueueStatus(queueId, "paused");
+  const inputId = db.appendUser("paused-session", "first");
+  db.setRunStatus(runOf(db, inputId), "paused");
   db.setControl("paused-session", "pause");
   db.appendUser("paused-session", "appended");
   db.close();

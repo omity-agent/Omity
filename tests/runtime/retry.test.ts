@@ -37,7 +37,7 @@ test("model retry warnings are sent to the browser observer", async () => {
       attempt: 2,
       delayMs: 1,
       error: { message: "upstream unavailable", name: "Error" },
-      queueId: 7,
+      inputId: 7,
       sessionId: "session",
     },
     message: "模型 API 暂不可用，正在重试",

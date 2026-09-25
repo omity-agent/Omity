@@ -1,10 +1,10 @@
 import type { Control } from "./types";
 import { openStoredSession } from "./storedSessions";
-import { requestStepControlRecord } from "./infrastructure/database/records/queue/control";
+import { requestStepControlRecord } from "./infrastructure/database/records/execution/control";
 
 export function appendSessionMessage(sessionId: string, content: string) {
   using db = openStoredSession(sessionId);
-  return { queueId: db.appendUser(sessionId, content) };
+  return { inputId: db.appendUser(sessionId, content) };
 }
 export function submitSessionMessage(
   sessionId: string,
@@ -13,7 +13,7 @@ export function submitSessionMessage(
   submissionId: string,
 ) {
   using db = openStoredSession(sessionId);
-  return { queueId: db.submitUser(sessionId, content, draftRevision, submissionId) };
+  return { inputId: db.submitUser(sessionId, content, draftRevision, submissionId) };
 }
 export function setSessionControl(sessionId: string, control: Control) {
   using db = openStoredSession(sessionId);

@@ -3,7 +3,7 @@ import { AppController } from "../../../src/app/controller";
 import { AppRegistry } from "../../../src/app/registry";
 import { BunSqliteSaver } from "../../../src/checkpointer/saver";
 import { Database } from "bun:sqlite";
-import { FileLinkIndexer } from "../../../src/infrastructure/database/fileLinkIndexer";
+import { FileLinkIndexer } from "../../../src/infrastructure/database/indexing/linkScanner";
 import { FunctionTracing } from "./functionTracing";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";

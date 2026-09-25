@@ -1,8 +1,16 @@
 import type { StreamEventKind, StreamEventValues } from "../../../types";
-import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
-import { queue, sessions } from "./session";
+import {
+  check,
+  foreignKey,
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 import type { FileLinkUnit } from "../../../fileLinks/types";
-import type { StoredConversationMessage } from "../records/messages/replayShape";
+import type { StoredConversationMessage } from "../records/transcript/messages/replayShape";
+import { inputs } from "./execution";
+import { sessions } from "./session";
 import { sql } from "drizzle-orm";
 
 const streamEventKinds = [
@@ -18,9 +26,9 @@ export const messages = sqliteTable(
   {
     createdAt: integer("created_at").notNull(),
     id: integer().primaryKey({ autoIncrement: true }),
+    inputId: integer("input_id"),
     message: text("message_json", { mode: "json" }).$type<StoredConversationMessage>().notNull(),
     position: integer(),
-    queueId: integer("queue_id").references(() => queue.id),
     sessionId: text("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
@@ -30,7 +38,11 @@ export const messages = sqliteTable(
   (table) => [
     uniqueIndex("messages_source").on(table.sessionId, table.sourceId),
     uniqueIndex("messages_position").on(table.sessionId, table.position),
-    uniqueIndex("messages_queue").on(table.queueId),
+    uniqueIndex("messages_input").on(table.inputId),
+    foreignKey({
+      columns: [table.sessionId, table.inputId],
+      foreignColumns: [inputs.sessionId, inputs.id],
+    }),
   ],
 );
 export const reasoningTranslations = sqliteTable(
@@ -58,18 +70,20 @@ export const events = sqliteTable(
   {
     fileLinks: text("file_links_json", { mode: "json" }).$type<FileLinkUnit[]>().notNull(),
     id: integer().primaryKey({ autoIncrement: true }),
+    inputId: integer("input_id").notNull(),
     kind: text({ enum: streamEventKinds }).notNull(),
     messageId: text("message_id").notNull(),
     partId: text("part_id").notNull(),
     payload: text("payload_json", { mode: "json" }).$type<StreamEventValues[StreamEventKind]>(),
-    queueId: integer("queue_id")
-      .notNull()
-      .references(() => queue.id, { onDelete: "cascade" }),
     sessionId: text("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
   },
   (table) => [
+    foreignKey({
+      columns: [table.sessionId, table.inputId],
+      foreignColumns: [inputs.sessionId, inputs.id],
+    }).onDelete("cascade"),
     check(
       "events_kind",
       sql`${table.kind} in ('assistant_reasoning_delta', 'assistant_text_delta', 'tool_call_delta', 'tool_finished', 'tool_started', 'user_appended')`,

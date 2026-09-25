@@ -4,6 +4,7 @@ import { setSessionControl, submitSessionMessage } from "../../src/client";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { createTestDirectory } from "../support/artifacts";
 import { rmSync } from "node:fs";
+import { runOf } from "../support/database";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { writeTestConfiguration } from "../support/configuration";
 
@@ -30,12 +31,12 @@ test("single step is accepted only after a queue has reached pause", () => {
   );
   const db = new AgentDatabase(dbPath);
   db.appendUser("step", "run");
-  const item = db.nextQueue("step");
+  const item = db.nextInput("step");
   if (!item) {
     throw new Error("测试队列不存在");
   }
-  db.startQueue("step", item);
-  db.setQueueStatus(item.id, "paused");
+  db.consumeInput("step", item);
+  db.setRunStatus(runOf(db, item.id), "paused");
   db.close();
   expect(setSessionControl("step", "step")).toEqual({ control: "step" });
   const reopened = new AgentDatabase(dbPath);
@@ -47,10 +48,10 @@ test("message enqueue and submitted draft clear commit together", () => {
   writeSessionDraft("submit", "消息", 1);
   const result = submitSessionMessage("submit", "消息", 1, "abc12345"),
     reopened = new AgentDatabase(dbPath);
-  expect(result.queueId).toBePositive();
-  expect(reopened.nextQueue("submit")).toMatchObject({
+  expect(result.inputId).toBePositive();
+  expect(reopened.nextInput("submit")).toMatchObject({
     content: "消息",
-    id: result.queueId,
+    id: result.inputId,
     status: "pending",
   });
   expect(readSessionDraft("submit")).toEqual({ content: "", revision: 1 });

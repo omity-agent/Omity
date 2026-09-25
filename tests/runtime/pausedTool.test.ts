@@ -5,7 +5,7 @@ import { MockLanguageModelV4 } from "ai/test";
 import { ToolMessage } from "@langchain/core/messages";
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
-import { processQueue } from "../../src/runtime/queue";
+import { processInput } from "../../src/runtime/consumeInputs";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -42,9 +42,9 @@ test("paused cancellation is visible immediately and survives host reconstructio
       },
       token: () => undefined,
     };
-    await processQueue(first.context, required(db.nextQueue("target")));
+    await processInput(first.context, required(db.nextInput("target")));
     expect(called).toBe(0);
-    expect(db.nextQueue("target")?.status).toBe("paused");
+    expect(db.nextInput("target")?.status).toBe("paused");
     db.requestToolCancellation("target", "echo-call");
     const snapshot = loadTranscript(db, "target"),
       parts = buildTimeline(snapshot.messages, snapshot.queue, snapshot.events).flatMap(
@@ -57,9 +57,9 @@ test("paused cancellation is visible immediately and survives host reconstructio
     first.executions.close();
     const resumed = agentFixture({ db, tools: [echo] });
     db.setControl("target", "running");
-    await processQueue(resumed.context, required(db.nextQueue("target")));
+    await processInput(resumed.context, required(db.nextInput("target")));
     expect(called).toBe(0);
-    expect(db.nextQueue("target")).toBeNull();
+    expect(db.nextInput("target")).toBeNull();
     expect(db.history("target").find((message) => ToolMessage.isInstance(message))?.text).toBe(
       "工具运行 0 毫秒 后被用户手动终止。",
     );

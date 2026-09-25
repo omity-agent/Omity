@@ -73,7 +73,7 @@ test("completed streamed tool call exposes its output and settled state", () => 
       createdAt: 2,
       id: 2,
       images: [],
-      queueId: null,
+      inputId: null,
       reasoning: "",
       role: "tool",
       toolCallId: "call-1",
@@ -83,10 +83,10 @@ test("completed streamed tool call exposes its output and settled state", () => 
       toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "capture" }),
       {
         id: 2,
+        inputId: 1,
         kind: "tool_started",
         messageId: "message-1",
         partId: "tool-0",
-        queueId: 1,
         value: "call-1",
       },
     ],
@@ -100,7 +100,7 @@ test("persisted single-call execution reconciles with its original multi-call st
       createdAt: 1,
       id: 1,
       images: [],
-      queueId: 1,
+      inputId: 1,
       reasoning: "",
       role: "assistant",
       sourceId: "message-1",
@@ -138,10 +138,10 @@ function toolEvent(
 ): DisplayEvent {
   return {
     id,
+    inputId: 1,
     kind: "tool_call_delta",
     messageId: "message-1",
     partId,
-    queueId: 1,
     value,
   };
 }
@@ -151,5 +151,5 @@ function textEvent(
   partId: string,
   value: string,
 ): DisplayEvent {
-  return { id, kind, messageId: "message-1", partId, queueId: 1, value };
+  return { id, inputId: 1, kind, messageId: "message-1", partId, value };
 }

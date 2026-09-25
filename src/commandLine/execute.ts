@@ -40,7 +40,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     }
     case "append": {
       const result = appendSessionMessage(command.sessionId, command.message.join(" "));
-      console.log(`已发送到会话 ${command.sessionId}（queue=${result.queueId.toString()}）`);
+      console.log(`已发送到会话 ${command.sessionId}（queue=${result.inputId.toString()}）`);
       return;
     }
     case "pause":

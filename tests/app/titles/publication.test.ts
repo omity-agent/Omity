@@ -13,7 +13,7 @@ import { createControllerHosts } from "../../../src/app/hostCoordination";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
-import { processQueue } from "../../../src/runtime/queue";
+import { processInput } from "../../../src/runtime/consumeInputs";
 import { projectSession } from "../../../src/app/sessionState";
 import { required } from "../../support/database";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
@@ -82,7 +82,7 @@ test("runtime publishes a derived title after committing tool results and restor
       };
       try {
         db.appendUser(id, "请更新标题");
-        await processQueue(fixture.context, required(db.nextQueue(id)));
+        await processInput(fixture.context, required(db.nextInput(id)));
       } finally {
         fixture.executions.close();
       }

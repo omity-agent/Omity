@@ -7,7 +7,6 @@ export type OutboundFetch = (
   init?: RequestInit,
   policy?: HeaderPolicy,
 ) => Promise<Response>;
-
 const registeredFetches = new WeakMap<object, OutboundFetch>();
 export function registerExplicitFetch(fetch: OutboundFetch) {
   registeredFetches.set(fetch, fetch);

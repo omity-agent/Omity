@@ -1,18 +1,25 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDatabases, makeDb, required } from "../support/database";
+import {
+  cleanupDatabaseDirs,
+  makeDatabases,
+  makeDb,
+  required,
+  workspace,
+} from "../support/database";
 import { BunSqliteSaver } from "../../src/checkpointer/saver";
 import { emptyCheckpoint } from "@langchain/langgraph-checkpoint";
 import { z } from "zod";
 
 afterEach(cleanupDatabaseDirs);
 const metadata = { parents: {}, source: "loop" as const, step: 1 },
-  config = { configurable: { thread_id: "snapshot-isolation" } },
+  config = { configurable: { thread_id: "1" } },
   messageSchema = z.tuple([z.instanceof(AIMessage), z.instanceof(ToolMessage)]);
-
 test("cached checkpoint reads isolate message mutations and preserve recovery artifacts", async () => {
   const db = makeDb();
   try {
+    db.createSession("snapshot-isolation", workspace);
+    db.appendUser("snapshot-isolation", "snapshot");
     const saver = new BunSqliteSaver(db.db),
       checkpoint = {
         ...emptyCheckpoint(),
@@ -54,12 +61,13 @@ test("cached checkpoint reads isolate message mutations and preserve recovery ar
     db.close();
   }
 });
-
 test("cached heads observe external pending writes and replacement bytes under the same ID", async () => {
   const [reader, writer] = makeDatabases(2),
     db = required(reader),
     other = required(writer);
   try {
+    db.createSession("snapshot-isolation", workspace);
+    db.appendUser("snapshot-isolation", "snapshot");
     const saver = new BunSqliteSaver(db.db),
       external = new BunSqliteSaver(other.db),
       checkpoint = { ...emptyCheckpoint(), channel_values: { result: ["first"] } },

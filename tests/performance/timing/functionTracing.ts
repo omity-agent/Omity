@@ -1,7 +1,7 @@
 /* oxlint-disable import/no-namespace -- spyOn 持有模块命名空间才能替换并恢复实际 ESM 导出。 */
 import * as aiMessages from "../../../src/agent/aiMessages";
 import * as fileSources from "../../../src/fileLinks/messageSources";
-import * as historySync from "../../../src/infrastructure/database/records/messages/sync";
+import * as historySync from "../../../src/infrastructure/database/records/transcript/messages/sync";
 import * as incomingMessages from "../../../src/agent/fromAiMessages";
 import * as largeOutput from "../../../src/runtime/largeOutput";
 import * as modelProvider from "../../../src/agent/model/provider";

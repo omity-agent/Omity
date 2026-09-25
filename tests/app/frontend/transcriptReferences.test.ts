@@ -18,7 +18,7 @@ test("preserves unchanged timeline object references while appending a delta", (
           createdAt: 1,
           id: 1,
           images: [],
-          queueId: 1,
+          inputId: 1,
           reasoning: "",
           role: "user",
           toolCalls: [],
@@ -40,10 +40,10 @@ test("preserves unchanged timeline object references while appending a delta", (
     [firstMessage] = current.view,
     event: DisplayEvent = {
       id: 1,
+      inputId: 1,
       kind: "assistant_text_delta",
       messageId: "message-1",
       partId: "text-1",
-      queueId: 1,
       value: "answer",
     },
     next = appendTranscriptEvents(current, [event]);

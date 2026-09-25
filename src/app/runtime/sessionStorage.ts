@@ -2,7 +2,7 @@ import { type InitialMessagePair, initialHistory } from "../initialState";
 import {
   type SessionDefinition,
   emptySessionDefinition,
-} from "../../infrastructure/database/sessionDefinition";
+} from "../../infrastructure/database/session/sessionDefinition";
 import {
   databasePath,
   resolveSessionPaths,
@@ -10,13 +10,13 @@ import {
 } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import { HumanMessage } from "@langchain/core/messages";
-import { UserMessageStorage } from "../../infrastructure/database/userMessages";
+import { UserMessageStorage } from "../../infrastructure/database/session/userMessages";
 import { contentToText } from "../../runtime/content";
 import { existsSync } from "node:fs";
 import { forkDatabaseBeforeMessage } from "../fork";
-import { initializeConversation } from "../../infrastructure/database/initialConversation";
+import { initializeConversation } from "../../infrastructure/database/session/initialConversation";
 import { openStoredSession } from "../../storedSessions";
-import { removeDatabaseDirectory } from "../../infrastructure/database/connection";
+import { removeDatabaseDirectory } from "../../infrastructure/database/sqlite/connection";
 
 export function createSessionStorage(
   sessionId: string,

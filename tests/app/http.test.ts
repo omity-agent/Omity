@@ -26,7 +26,7 @@ test("message multipart validation forwards placeholders and files", async () =>
     controller = createApiController({
       sendMessage: (...args) => {
         calls.push(args);
-        return Promise.resolve({ content: "attachments/file.txt", queueId: 1 });
+        return Promise.resolve({ content: "attachments/file.txt", inputId: 1 });
       },
     }),
     id = "a1b2c3d4",
@@ -53,7 +53,7 @@ test("multipart attachments without filenames are rejected", async () => {
     controller = createApiController({
       sendMessage: (...args) => {
         calls.push(args);
-        return Promise.resolve({ content: "unused", queueId: 1 });
+        return Promise.resolve({ content: "unused", inputId: 1 });
       },
     }),
     boundary = "attachment-test-boundary",

@@ -1,13 +1,13 @@
-import type { Control, QueueItem, QueueStatus } from "../../types";
-import { type SessionDefinition, emptySessionDefinition } from "./sessionDefinition";
+import type { Control, QueuedInput, RunStatus } from "../../types";
+import { type SessionDefinition, emptySessionDefinition } from "./session/sessionDefinition";
 import type { StreamEvent, StreamEventDraft } from "./schema/streamEvent";
 import {
   closeDatabase,
   openSessionDatabase,
   reclaimDatabasePages,
   runTransaction,
-} from "./connection";
-import { consumedRunRows, nextQueueRow, pendingAppendRows } from "./records/queue/readWorkItems";
+} from "./sqlite/connection";
+import { consumedInputRows, nextInputRow, pendingInputRows } from "./records/execution/readWorkItems";
 import {
   createSessionRecord,
   hasSessionRecord,
@@ -16,40 +16,37 @@ import {
   readTranscriptRevisionRecord,
   readWorkspaceRecord,
   requireSessionRecord,
-  touchQueueSessionRecord,
+  touchInputSessionRecord,
   touchSessionRecord,
   writeControlRecord,
-} from "./records/sessions";
+} from "./records/session/metadata";
 import {
-  deleteQueueStream,
+  deleteInputStream,
   insertUserBoundaryEvent,
   streamEventCursor,
-} from "./records/streamEvents";
+} from "./records/transcript/streamEvents";
 import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
-import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
-import {
-  queueStatusRecord,
-  setQueueStatusRecord,
-  startQueueRecord,
-} from "./records/queue/operations";
-import { readToolCancellation, requestToolCancellation } from "./records/toolCancellations";
+import { discardInputLinks, syncIndexedHistory } from "./indexing/historySync";
+import { readToolCancellation, requestToolCancellation } from "./records/execution/toolCancellations";
+import { runInputIds, runStatusRecord, setRunStatusRecord } from "./records/execution/transitions";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
-import { FileLinkIndexer } from "./fileLinkIndexer";
-import { QueueSubmissionStore } from "./records/queue/submission";
-import { RecoverableDatabase } from "./records/recovery";
-import { appendFileLinkStream } from "./fileLinkAppend";
-import { loadMessages } from "./records/messages/history";
+import { FileLinkIndexer } from "./indexing/linkScanner";
+import { InputSubmissionStore } from "./records/execution/acceptance";
+import { RecoverableDatabase } from "./records/execution/interruption";
+import { appendFileLinkStream } from "./indexing/streamAppend";
+import { consumeInputRecord } from "./records/execution/inbox";
+import { loadMessages } from "./records/transcript/messages/history";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
   private readonly fileLinks: FileLinkIndexer;
-  private readonly queueSubmissions: QueueSubmissionStore;
+  private readonly queueSubmissions: InputSubmissionStore;
   private storageReclaimPending = false;
   constructor(path: string, root = process.cwd()) {
     super(openSessionDatabase(path, root));
     this.fileLinks = new FileLinkIndexer(this.db);
-    this.queueSubmissions = new QueueSubmissionStore(this.db);
+    this.queueSubmissions = new InputSubmissionStore(this.db);
   }
   close() {
     closeDatabase(this.db);
@@ -106,18 +103,18 @@ export class AgentDatabase extends RecoverableDatabase {
   submitUser(sessionId: string, content: string, draftRevision: number, submissionId: string) {
     return this.queueSubmissions.submitUser(sessionId, content, draftRevision, submissionId);
   }
-  pendingAppends(sessionId: string): QueueItem[] {
-    return pendingAppendRows(this.db, sessionId);
+  pendingInputs(sessionId: string): QueuedInput[] {
+    return pendingInputRows(this.db, sessionId);
   }
-  consumedRunItems(sessionId: string, runId: number | null): QueueItem[] {
-    return consumedRunRows(this.db, sessionId, runId);
+  consumedInputs(sessionId: string, runId: number): QueuedInput[] {
+    return consumedInputRows(this.db, sessionId, runId);
   }
-  nextQueue(sessionId: string): QueueItem | null {
-    return nextQueueRow(this.db, sessionId);
+  nextInput(sessionId: string): QueuedInput | null {
+    return nextInputRow(this.db, sessionId);
   }
-  startQueue(sessionId: string, item: QueueItem) {
+  consumeInput(sessionId: string, item: QueuedInput) {
     const result = runTransaction(this.db, () => {
-      const userMessageId = startQueueRecord(this.db, sessionId, item),
+      const userMessageId = consumeInputRecord(this.db, sessionId, item),
         boundary = insertUserBoundaryEvent(this.db, sessionId, item.id);
       touchSessionRecord(this.db, sessionId);
       return { boundary, userMessageId };
@@ -127,20 +124,22 @@ export class AgentDatabase extends RecoverableDatabase {
     }
     return result.userMessageId;
   }
-  setQueueStatus(queueId: number, status: QueueStatus, error?: ErrorDetails) {
+  setRunStatus(runId: number, status: RunStatus, error?: ErrorDetails) {
     runTransaction(this.db, () => {
-      setQueueStatusRecord(this.db, queueId, status, error);
-      touchQueueSessionRecord(this.db, queueId);
-      if (status === "done" || status === "canceled") {
-        deleteQueueStream(this.db, queueId);
+      setRunStatusRecord(this.db, runId, status, error);
+      for (const inputId of runInputIds(this.db, runId)) {
+        touchInputSessionRecord(this.db, inputId);
+        if (status === "done" || status === "canceled") {
+          deleteInputStream(this.db, inputId);
+        }
+        if (status === "canceled") {
+          discardInputLinks(this.db, this.fileLinks, inputId);
+        }
       }
     });
-    if (status === "canceled") {
-      discardIndexedQueue(this.db, this.fileLinks, queueId);
-    }
   }
-  queueStatus(queueId: number) {
-    return queueStatusRecord(this.db, queueId);
+  runStatus(runId: number) {
+    return runStatusRecord(this.db, runId);
   }
   eventCursor() {
     return streamEventCursor(this.db);
@@ -188,11 +187,11 @@ export class AgentDatabase extends RecoverableDatabase {
       workspace: this.workspace(sessionId),
     });
   }
-  discardQueueStream(queueId: number) {
+  discardInputStream(inputId: number) {
     runTransaction(this.db, () => {
-      touchQueueSessionRecord(this.db, queueId);
-      deleteQueueStream(this.db, queueId);
+      touchInputSessionRecord(this.db, inputId);
+      deleteInputStream(this.db, inputId);
     });
-    discardIndexedQueue(this.db, this.fileLinks, queueId);
+    discardInputLinks(this.db, this.fileLinks, inputId);
   }
 }

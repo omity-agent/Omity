@@ -1,8 +1,8 @@
 import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
-import { cachedQuery } from "../../../src/infrastructure/database/connection";
-import { deriveSessionTitle } from "../../../src/infrastructure/database/records/messages/deriveTitle";
+import { cachedQuery } from "../../../src/infrastructure/database/sqlite/connection";
+import { deriveSessionTitle } from "../../../src/infrastructure/database/records/transcript/messages/deriveTitle";
 import { forkDatabaseBeforeMessage } from "../../../src/app/fork";
 import { recordedTitle } from "./recordedCalls";
 

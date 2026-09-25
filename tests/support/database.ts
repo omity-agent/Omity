@@ -59,6 +59,13 @@ export function afterQuery(
 export function makeDb() {
   return required(makeDatabases(1)[0], "测试数据库创建失败");
 }
+export function runOf(db: AgentDatabase, inputId: number) {
+  return required(
+    db.db
+      .query<{ run_id: number }, [number]>("SELECT run_id FROM inputs WHERE id = ?")
+      .get(inputId),
+  ).run_id;
+}
 export function required<T>(value: T | null | undefined, message = "测试所需值不存在"): T {
   if (value === null || value === undefined) {
     throw new Error(message);

@@ -1,38 +1,29 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
-import { queryAll, runTransaction } from "../infrastructure/database/connection";
+import { queryAll, runTransaction } from "../infrastructure/database/sqlite/connection";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { DisplayMessage } from "./timeline";
-import type { QueueStatus } from "../types";
 import { extractToolActivity } from "./timeline/tool/extraction";
 import { extractToolImages } from "../runtime/multimodal";
-import { loadFileLinkUnits } from "../infrastructure/database/records/fileLinks";
-import { loadReasoningTranslations } from "../infrastructure/database/records/reasoningTranslations";
-import { messageRowsToChatMessages } from "../infrastructure/database/records/messages/serialization";
+import { loadFileLinkUnits } from "../infrastructure/database/records/transcript/fileLinks";
+import { loadReasoningTranslations } from "../infrastructure/database/records/transcript/reasoningTranslations";
+import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 import { modelTokenUsage } from "./timeline/tokenCounts";
 import { openStoredSession } from "../storedSessions";
 import { parseError } from "../failures/details";
 import { prependInstructions } from "./timeline/build/instructions";
-import { readDefinitionRecord } from "../infrastructure/database/records/sessions";
+import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
 import { toolOutputTokens } from "../runtime/toolOutput";
+import { transcriptInputRows } from "../infrastructure/database/records/execution/readWorkItems";
 
 interface MessageRow {
   id: number;
   source_id: string;
   message_json: string;
-  queue_id: number | null;
+  input_id: number | null;
   created_at: number;
   token_count: number | null;
-}
-interface QueueRow {
-  id: number;
-  content: string;
-  status: QueueStatus;
-  error: string | null;
-  user_message_id: number | null;
-  root_id: number | null;
-  submission_id: string | null;
 }
 export function loadSessionTranscript(sessionId: string) {
   using db = openStoredSession(sessionId);
@@ -45,7 +36,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
       messages = prependInstructions(
         queryAll<MessageRow>(
           db.db,
-          `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at, m.token_count
+          `SELECT m.id, m.source_id, m.message_json, m.input_id, m.created_at, m.token_count
 	       FROM messages m
 	       WHERE m.session_id = ? AND m.position IS NOT NULL
 	       ORDER BY m.position`,
@@ -53,26 +44,18 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
         ).map(toDisplayMessage),
         readDefinitionRecord(db.db, sessionId).prefix.systemPrompt,
       ),
-      queue = queryAll<QueueRow>(
-        db.db,
-        `SELECT q.id, COALESCE(q.content, '') AS content, q.status, q.error,
-	         m.id AS user_message_id, q.root_id, q.submission_id
-       FROM queue q
-       LEFT JOIN messages m ON m.queue_id = q.id
-       WHERE q.session_id = ? ORDER BY q.id`,
-        sessionId,
-      ).map((row) => ({
+      queue = transcriptInputRows(db.db, sessionId).map((row) => ({
         content: row.content,
         error: row.error ? parseError(row.error) : null,
         id: row.id,
-        root: row.root_id === row.id,
+        runId: row.run_id,
         status: row.status,
         submissionId: row.submission_id,
         userMessageId: row.user_message_id,
       })),
       events = queryAll<PersistedEventRow>(
         db.db,
-        `SELECT id, queue_id, message_id, part_id, kind, payload_json, file_links_json
+        `SELECT id, input_id, message_id, part_id, kind, payload_json, file_links_json
        FROM events WHERE session_id = ? ORDER BY id`,
         sessionId,
       ).map(persistedDisplayEvent),
@@ -106,7 +89,7 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     ...(message.id ? { sourceId: message.id } : {}),
     content,
     images: extractToolImages(message.content),
-    queueId: row.queue_id,
+    inputId: row.input_id,
     reasoning: messageReasoning(message),
     role,
     ...(ToolMessage.isInstance(message) ? { toolCallId: message.tool_call_id } : {}),
