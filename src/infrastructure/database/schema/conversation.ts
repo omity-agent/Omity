@@ -25,6 +25,7 @@ export const messages = sqliteTable(
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
     sourceId: text("source_id").notNull(),
+    tokenCount: integer("token_count"),
   },
   (table) => [
     uniqueIndex("messages_source").on(table.sessionId, table.sourceId),

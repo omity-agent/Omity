@@ -1,26 +1,24 @@
 import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
-import { accessSessions, challenges, credentials, registrationTickets } from "./schema";
+import {
+  accessSessions,
+  challenges,
+  credentials,
+  registrationTickets,
+} from "../../infrastructure/database/schema";
 import { and, count, eq, gt, lte, sql } from "drizzle-orm";
-import { closeDatabase, configureDatabase } from "../../infrastructure/database/connection";
+import { closeDatabase, openSessionDatabase } from "../../infrastructure/database/connection";
 import { createHash, randomBytes } from "node:crypto";
-import { Database } from "bun:sqlite";
+import type { Database } from "bun:sqlite";
 import type { WebAuthnCredential } from "@simplewebauthn/server";
-import { join } from "node:path";
-import { migrateAccessDatabase } from "../../infrastructure/database/migrations";
-import { userDataDirectory } from "../../infrastructure/configuration/settings/files";
+import { databasePath } from "../../infrastructure/configuration/sessionPaths";
 
 export class AccessStore {
   private readonly db: Database;
   private readonly orm: SQLiteBunDatabase;
   constructor(root = process.cwd()) {
-    this.db = new Database(join(userDataDirectory(), "access.sqlite"), {
-      create: true,
-      strict: true,
-    });
+    this.db = openSessionDatabase(databasePath(), root);
     try {
-      configureDatabase(this.db);
       this.orm = drizzle({ client: this.db });
-      migrateAccessDatabase(this.orm, root);
     } catch (error) {
       closeDatabase(this.db);
       throw error;

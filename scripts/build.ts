@@ -2,25 +2,18 @@ import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { join, resolve } from "node:path";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { build } from "vite";
-import pMap from "p-map";
 import { prepareMagikaAssets } from "./magikaModel";
 
-const databases = [
-    {
-      name: "access",
-      schema: "./src/app/access/schema.ts",
-    },
-    {
-      name: "session",
-      schema: "./src/infrastructure/database/schema/index.ts",
-    },
-  ] as const,
+const database = {
+    name: "database",
+    schema: "./src/infrastructure/database/schema/index.ts",
+  } as const,
   root = resolve(import.meta.dir, ".."),
-  migrationsRoot = resolve(root, "dist/migrations"),
+  databaseRoot = resolve(root, "dist/database"),
   frontendPublicCache = resolve(root, "dist/frontend-public"),
   executableOutput = resolve(root, "dist/omity.exe");
 try {
-  await generateMigrations();
+  await generateDatabaseSchema();
   const [node, script, command] = process.argv;
   void node;
   void script;
@@ -35,7 +28,7 @@ try {
         : buildApplication;
   await run();
 } finally {
-  await rm(migrationsRoot, { force: true, recursive: true });
+  await rm(databaseRoot, { force: true, recursive: true });
 }
 async function buildApplication() {
   await rm(frontendOutput, { force: true, recursive: true });
@@ -47,7 +40,7 @@ async function buildApplication() {
   });
   await mkdir(resolve(root, "dist"), { recursive: true });
   const compile = {
-      assets: ["./settings", frontendOutput, migrationsRoot],
+      assets: ["./settings", frontendOutput, databaseRoot],
       outfile: executableOutput,
     } satisfies Bun.CompileBuildOptions & { assets: string[] },
     executable = await Bun.build({
@@ -64,12 +57,12 @@ async function buildApplication() {
     throw new AggregateError(executable.logs, "可执行程序构建失败");
   }
 }
-async function generateMigrations() {
-  await rm(migrationsRoot, { force: true, recursive: true });
-  await pMap(databases, generateMigration, { stopOnError: false });
-  await Promise.all(databases.map(flattenMigration));
+async function generateDatabaseSchema() {
+  await rm(databaseRoot, { force: true, recursive: true });
+  await generateMigration(database);
+  await flattenMigration(database);
 }
-async function generateMigration(database: (typeof databases)[number]) {
+async function generateMigration(specification: typeof database) {
   const child = Bun.spawn(
       [
         process.execPath,
@@ -77,8 +70,8 @@ async function generateMigration(database: (typeof databases)[number]) {
         "drizzle-kit",
         "generate",
         "--dialect=sqlite",
-        `--schema=${database.schema}`,
-        `--out=${migrationsRoot}/${database.name}`,
+        `--schema=${specification.schema}`,
+        `--out=${databaseRoot}`,
       ],
       {
         cwd: root,
@@ -88,15 +81,15 @@ async function generateMigration(database: (typeof databases)[number]) {
     ),
     exitCode = await child.exited;
   if (exitCode !== 0) {
-    throw new Error(`${database.name} 数据库生成失败，退出码：${exitCode.toString()}`);
+    throw new Error(`${specification.name} 数据库生成失败，退出码：${exitCode.toString()}`);
   }
 }
-async function flattenMigration(database: (typeof databases)[number]) {
-  const databaseDirectory = join(migrationsRoot, database.name),
+async function flattenMigration(specification: typeof database) {
+  const databaseDirectory = databaseRoot,
     entries = await readdir(databaseDirectory, { withFileTypes: true }),
     directories = entries.filter((entry) => entry.isDirectory());
   if (directories.length !== 1 || entries.length !== 1) {
-    throw new Error(`${database.name} 数据库迁移目录结构无效`);
+    throw new Error(`${specification.name} 数据库结构目录无效`);
   }
   const generatedDirectory = join(databaseDirectory, directories[0]!.name),
     generatedEntries = await readdir(generatedDirectory, { withFileTypes: true }),
@@ -109,11 +102,14 @@ async function flattenMigration(database: (typeof databases)[number]) {
     generatedFiles.length !== expectedFiles.length ||
     generatedFiles.some((file, index) => file !== expectedFiles[index])
   ) {
-    throw new Error(`${database.name} 数据库迁移文件结构无效`);
+    throw new Error(`${specification.name} 数据库结构文件无效`);
   }
   await Promise.all(
     expectedFiles.map((file) =>
-      rename(join(generatedDirectory, file), join(databaseDirectory, file)),
+      rename(
+        join(generatedDirectory, file),
+        join(databaseDirectory, file === "migration.sql" ? "schema.sql" : file),
+      ),
     ),
   );
   await rm(generatedDirectory, { recursive: true });

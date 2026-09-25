@@ -1,5 +1,7 @@
+import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, encodeMessage } from "./payload";
-import type { BaseMessage } from "@langchain/core/messages";
+import { contentToText } from "../../../../runtime/content";
+import { countTokens } from "../../../../runtime/tokenizer";
 import { decodeMessage } from "./hydration";
 
 interface MessageRow {
@@ -9,6 +11,7 @@ interface MessageRow {
 export interface MessageInsert {
   messageJson: string;
   sourceId: string;
+  tokenCount: number | null;
 }
 export type { MessageStorageMode } from "./payload";
 export function messageInsert(
@@ -21,6 +24,9 @@ export function messageInsert(
   return {
     messageJson: JSON.stringify(encodeMessage(message, mode)),
     sourceId: message.id,
+    tokenCount: HumanMessage.isInstance(message)
+      ? countTokens(contentToText(message.content))
+      : null,
   };
 }
 export function messageRowsToChatMessages(rows: MessageRow[]): BaseMessage[] {

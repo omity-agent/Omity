@@ -1,13 +1,4 @@
-import {
-  checkpointWrites,
-  checkpoints,
-  hookUsage,
-  hostLeases,
-  messages,
-  queue,
-  reasoningTranslations,
-  sessions,
-} from "./schema";
+import { hookUsage, hostLeases, messages, queue, reasoningTranslations, sessions } from "./schema";
 import { runTransaction, sessionDatabase } from "./connection";
 import type { Database } from "bun:sqlite";
 import type { SessionDefinition } from "./sessionDefinition";
@@ -47,10 +38,9 @@ function replaceSessionStorage(
   if (!Number.isSafeInteger(previousRevision) || previousRevision >= Number.MAX_SAFE_INTEGER) {
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }
-  orm.delete(checkpointWrites).run();
-  orm.delete(checkpoints).run();
-  orm.delete(hookUsage).run();
-  orm.delete(hostLeases).run();
+  deleteSessionCheckpoints(db, sessionId);
+  orm.delete(hookUsage).where(eq(hookUsage.sessionId, sessionId)).run();
+  orm.delete(hostLeases).where(eq(hostLeases.sessionId, sessionId)).run();
   deleteSessionStream(db, sessionId);
   orm.delete(reasoningTranslations).where(eq(reasoningTranslations.sessionId, sessionId)).run();
   orm.delete(messages).where(eq(messages.sessionId, sessionId)).run();
@@ -68,4 +58,15 @@ function replaceSessionStorage(
     .set({ transcriptRevision: previousRevision + 1 })
     .where(eq(sessions.id, sessionId))
     .run();
+}
+export function deleteSessionStorage(db: Database, sessionId: string) {
+  runTransaction(db, () => {
+    deleteSessionCheckpoints(db, sessionId);
+    sessionDatabase(db).delete(sessions).where(eq(sessions.id, sessionId)).run();
+  });
+}
+function deleteSessionCheckpoints(db: Database, sessionId: string) {
+  const pattern = `${sessionId}:%`;
+  db.run("DELETE FROM checkpoint_writes WHERE thread_id LIKE ?", [pattern]);
+  db.run("DELETE FROM checkpoints WHERE thread_id LIKE ?", [pattern]);
 }

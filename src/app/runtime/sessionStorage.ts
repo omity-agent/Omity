@@ -3,11 +3,16 @@ import {
   type SessionDefinition,
   emptySessionDefinition,
 } from "../../infrastructure/database/sessionDefinition";
-import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
+import {
+  databasePath,
+  resolveSessionPaths,
+  sessionPaths,
+} from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import { HumanMessage } from "@langchain/core/messages";
 import { UserMessageStorage } from "../../infrastructure/database/userMessages";
 import { contentToText } from "../../runtime/content";
+import { existsSync } from "node:fs";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/initialConversation";
 import { openStoredSession } from "../../storedSessions";
@@ -79,5 +84,12 @@ export function forkSessionStorage({
   }
 }
 export function removeSessionStorage(sessionId: string) {
-  removeDatabaseDirectory(resolveSessionPaths(sessionId).dir);
+  const paths = resolveSessionPaths(sessionId);
+  if (existsSync(paths.dbPath)) {
+    using db = new AgentDatabase(databasePath());
+    if (db.hasSession(sessionId)) {
+      db.deleteSession(sessionId);
+    }
+  }
+  removeDatabaseDirectory(paths.dir);
 }

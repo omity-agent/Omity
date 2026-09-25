@@ -2,6 +2,9 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { userDataDirectory } from "./settings/files";
 
+export function databasePath(storageDirectory = userDataDirectory()) {
+  return resolve(storageDirectory, "omity.sqlite");
+}
 export function sessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
   const paths = resolveSessionPaths(sessionId, storageDirectory);
   mkdirSync(paths.dir, { recursive: true });
@@ -9,7 +12,7 @@ export function sessionPaths(sessionId: string, storageDirectory = userDataDirec
 }
 export function resolveSessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
   const dir = resolve(storageDirectory, "sessions", safeId(sessionId)),
-    dbPath = resolve(dir, "agent.sqlite"),
+    dbPath = databasePath(storageDirectory),
     userMessagesDir = resolve(dir, "user_messages"),
     tempDir = resolve(dir, "temp");
   return { dbPath, dir, tempDir, userMessagesDir };

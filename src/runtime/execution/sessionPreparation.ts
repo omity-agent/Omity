@@ -68,6 +68,8 @@ function prepareWritableSession(mode: HostMode) {
     throw sessionNotFound(mode.sessionId);
   }
   if (mode.kind === "overwrite") {
+    using db = openStoredSession(mode.sessionId);
+    db.deleteSession(mode.sessionId);
     removeDatabaseDirectory(planned.dir);
   }
   return sessionPaths(mode.sessionId);

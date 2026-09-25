@@ -2,17 +2,16 @@ import { type ErrorDetails, parseError } from "../failures/details";
 import {
   cachedQuery,
   configureReadonlyDatabase,
+  queryAll,
   runTransaction,
 } from "../infrastructure/database/connection";
-import { existsSync, readdirSync } from "node:fs";
+import { databasePath, resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import type { Control } from "../types";
 import { Database } from "bun:sqlite";
 import { deriveSessionTitle } from "../infrastructure/database/records/messages/deriveTitle";
-import { resolve } from "node:path";
-import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
+import { existsSync } from "node:fs";
 import { sessionNotFound } from "../errors";
 import { settingsProfileNamesSchema } from "../infrastructure/configuration/settings/context";
-import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
 export interface RegisteredSession {
   id: string;
@@ -66,11 +65,9 @@ const sessionSelect = `
     ) AS error
   FROM sessions s`;
 export class AppRegistry {
-  private readonly sessionsDir: string;
   private readonly sessions = new Map<string, RegisteredSession>();
   constructor() {
-    this.sessionsDir = resolve(userDataDirectory(), "sessions");
-    for (const session of scanSessions(this.sessionsDir)) {
+    for (const session of readSessions(databasePath())) {
       this.sessions.set(session.id, session);
     }
   }
@@ -97,13 +94,15 @@ export class AppRegistry {
     }
   }
 }
-function scanSessions(sessionsDir: string) {
-  if (!existsSync(sessionsDir)) {
+function readSessions(dbPath: string) {
+  if (!existsSync(dbPath)) {
     return [];
   }
-  return readdirSync(sessionsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => readSession(resolveSessionPaths(entry.name).dbPath));
+  using db = new Database(dbPath, { create: false, readonly: true, strict: true });
+  configureReadonlyDatabase(db);
+  return queryAll<SessionRow>(db, sessionSelect)
+    .filter((row) => existsSync(resolveSessionPaths(row.id).dir))
+    .map((row) => toSession(row, deriveSessionTitle(db, row.id)));
 }
 function compareSessions(left: RegisteredSession, right: RegisteredSession) {
   return right.updatedAt - left.updatedAt || right.createdAt - left.createdAt;

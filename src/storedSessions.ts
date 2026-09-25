@@ -9,6 +9,8 @@ export function deleteHostSession(sessionId: string) {
   if (!existsSync(paths.dir)) {
     throw sessionNotFound(sessionId);
   }
+  using db = openStoredSession(sessionId);
+  db.deleteSession(sessionId);
   removeDatabaseDirectory(paths.dir);
 }
 export function requestHostToolCancellation(sessionId: string, callId: string) {

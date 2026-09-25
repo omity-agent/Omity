@@ -97,12 +97,13 @@ export function storePreparedMessage(
   const row = cachedQuery<{ id: number }>(
     db,
     `INSERT INTO messages
-       (session_id, source_id, message_json, queue_id, position, created_at)
-     VALUES (?, ?, ?, ?, ?, COALESCE(?, unixepoch()))
+       (session_id, source_id, message_json, queue_id, position, created_at, token_count)
+     VALUES (?, ?, ?, ?, ?, COALESCE(?, unixepoch()), ?)
      ON CONFLICT(session_id, source_id) DO UPDATE SET
        message_json = excluded.message_json,
        queue_id = COALESCE(excluded.queue_id, messages.queue_id),
-       position = COALESCE(excluded.position, messages.position)
+       position = COALESCE(excluded.position, messages.position),
+       token_count = excluded.token_count
      RETURNING id`,
   ).get(
     sessionId,
@@ -111,6 +112,7 @@ export function storePreparedMessage(
     queueId ?? null,
     position ?? null,
     createdAt ?? null,
+    item.tokenCount,
   );
   if (!row) {
     throw new Error(`消息写入失败：${item.sourceId}`);

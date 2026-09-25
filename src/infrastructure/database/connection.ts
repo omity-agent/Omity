@@ -1,7 +1,7 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite";
 import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { parse, resolve } from "node:path";
-import { migrateSessionDatabase } from "./migrations";
+import { initializeDatabase } from "./initialization";
 import { rmSync } from "node:fs";
 
 const sqliteBusyTimeoutMs = 5000,
@@ -11,14 +11,14 @@ export function openSessionDatabase(path: string, root = process.cwd()) {
   const db = new Database(path, { create: true, strict: true });
   try {
     configureDatabase(db);
-    migrateSessionDatabase(sessionDatabase(db), root);
+    initializeDatabase(db, root);
     return db;
   } catch (error) {
     closeDatabase(db);
     throw error;
   }
 }
-export function configureDatabase(db: Database) {
+function configureDatabase(db: Database) {
   db.run(`PRAGMA busy_timeout = ${sqliteBusyTimeoutMs.toString()}`);
   db.run("PRAGMA auto_vacuum = INCREMENTAL");
   db.run("PRAGMA journal_mode = WAL");

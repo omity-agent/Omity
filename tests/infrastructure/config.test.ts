@@ -1,8 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
 import { createTestDirectory, testArtifactsRoot } from "../support/artifacts";
+import {
+  databasePath,
+  safeId,
+  sessionPaths,
+} from "../../src/infrastructure/configuration/sessionPaths";
 import { join, resolve } from "node:path";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { safeId, sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { loadSettings } from "../../src/infrastructure/configuration/settings/load";
 import { resolveHookArgs } from "../../src/hooks/variables";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
@@ -24,7 +28,7 @@ test("settings use the unified user data directory", () => {
   expect(settings.agent.systemPrompt).toBe("test\n\nuse skills");
   const paths = sessionPaths("abc-def");
   expect(paths).toEqual({
-    dbPath: resolve(directory, "sessions", safeId("abc-def"), "agent.sqlite"),
+    dbPath: databasePath(directory),
     dir: resolve(directory, "sessions", safeId("abc-def")),
     tempDir: resolve(directory, "sessions", safeId("abc-def"), "temp"),
     userMessagesDir: resolve(directory, "sessions", safeId("abc-def"), "user_messages"),

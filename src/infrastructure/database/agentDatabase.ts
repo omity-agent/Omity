@@ -25,6 +25,7 @@ import {
   insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/streamEvents";
+import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
 import { discardIndexedQueue, syncIndexedHistory } from "./fileLinkOperations";
 import {
   queueStatusRecord,
@@ -39,7 +40,6 @@ import { QueueSubmissionStore } from "./records/queue/submission";
 import { RecoverableDatabase } from "./records/recovery";
 import { appendFileLinkStream } from "./fileLinkAppend";
 import { loadMessages } from "./records/messages/history";
-import { resetSessionStorage } from "./maintenance";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
@@ -49,7 +49,7 @@ export class AgentDatabase extends RecoverableDatabase {
   constructor(path: string, root = process.cwd()) {
     super(openSessionDatabase(path, root));
     this.fileLinks = new FileLinkIndexer(this.db);
-    this.queueSubmissions = new QueueSubmissionStore(this.db, path);
+    this.queueSubmissions = new QueueSubmissionStore(this.db);
   }
   close() {
     closeDatabase(this.db);
@@ -67,6 +67,9 @@ export class AgentDatabase extends RecoverableDatabase {
     initialDefinition: SessionDefinition = emptySessionDefinition(),
   ) {
     resetSessionStorage(this.db, sessionId, workspace, profiles, initialDefinition);
+  }
+  deleteSession(sessionId: string) {
+    deleteSessionStorage(this.db, sessionId);
   }
   requestStorageReclaim() {
     this.storageReclaimPending = true;

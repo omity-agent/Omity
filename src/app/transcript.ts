@@ -23,6 +23,7 @@ interface MessageRow {
   message_json: string;
   queue_id: number | null;
   created_at: number;
+  token_count: number | null;
 }
 interface QueueRow {
   id: number;
@@ -44,7 +45,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
       messages = prependInstructions(
         queryAll<MessageRow>(
           db.db,
-          `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at
+          `SELECT m.id, m.source_id, m.message_json, m.queue_id, m.created_at, m.token_count
 	       FROM messages m
 	       WHERE m.session_id = ? AND m.position IS NOT NULL
 	       ORDER BY m.position`,
@@ -114,6 +115,7 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
       ? { outputTokens: toolOutputTokens(message, content) }
       : {}),
     createdAt: row.created_at,
+    tokenCount: row.token_count,
     usage: modelTokenUsage(message),
   };
 }

@@ -17,6 +17,7 @@ interface MessageRow {
   message_json: string;
   position: number;
   created_at: number;
+  token_count: number | null;
   queue_id: number | null;
   root_id: number | null;
 }
@@ -64,7 +65,7 @@ function assertForkPoint(db: Database, sessionId: string, messageId: number) {
   }
   const row = cachedQuery<MessageRow>(
     db,
-    `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at,
+    `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at, m.token_count,
        m.queue_id, q.root_id
 	     FROM messages m LEFT JOIN queue q ON q.id = m.queue_id
 	     WHERE m.session_id = ? AND m.id = ? AND m.position IS NOT NULL`,
@@ -80,7 +81,7 @@ function assertForkPoint(db: Database, sessionId: string, messageId: number) {
 function forkMessages(db: Database, sessionId: string, beforePosition: number) {
   return queryAll<MessageRow>(
     db,
-    `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at,
+    `SELECT m.id, m.source_id, m.message_json, m.position, m.created_at, m.token_count,
        m.queue_id, q.root_id
 	     FROM messages m LEFT JOIN queue q ON q.id = m.queue_id
 	     WHERE m.session_id = ? AND m.position < ? ORDER BY m.position`,
