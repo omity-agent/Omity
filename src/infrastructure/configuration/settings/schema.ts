@@ -104,6 +104,7 @@ const promptFileSchema = z
         .max(Number.MAX_SAFE_INTEGER - 1024 * 1024),
     }),
     frontend: z.strictObject({
+      cacheHitWarningRatio: z.number().min(0).max(1),
       draftSaveDelayMs: z.number().int().positive(),
       reasoningTranslation: z.strictObject({
         enabled: z.boolean(),

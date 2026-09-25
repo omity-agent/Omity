@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 export function Composer({
   disabled,
   attachmentSettings,
+  cacheHitWarningRatio,
   draft,
   draftSaveDelayMs,
   draftTarget,
@@ -165,6 +166,7 @@ export function Composer({
         />
       )}
       <Actions
+        cacheHitWarningRatio={cacheHitWarningRatio}
         controlDisabled={controlDisabled || loading || submitting}
         controlState={controlState}
         deleteDisabled={deleteDisabled}

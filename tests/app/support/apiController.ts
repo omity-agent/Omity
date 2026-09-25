@@ -10,6 +10,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       attachments: { allowedSuffixes: [".txt"], maxSizeBytes: 1024 },
       cwd: "F:/workspace",
       frontend: {
+        cacheHitWarningRatio: 0.8,
         draftSaveDelayMs: 0,
         reasoningTranslation: {
           enabled: false,

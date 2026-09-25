@@ -9,6 +9,7 @@ import type { TokenUsage } from "../../../../timeline";
 export interface ComposerProps {
   disabled: boolean;
   attachmentSettings?: AttachmentSettings;
+  cacheHitWarningRatio?: number;
   draft?: string;
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;

@@ -14,6 +14,7 @@ import {
 } from "./replayShape";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { omitToolItemIds } from "../../../../agent/toolProviderOptions";
+import { readCacheExpectation } from "../../../../agent/model/cacheExpectation";
 import { structuredToolOutput } from "../../../mcp/tools/structured";
 
 export type MessageStorageMode = "history" | "recovery";
@@ -106,6 +107,7 @@ function storedUsage(message: AIMessage): StoredUsage | undefined {
     return undefined;
   }
   return {
+    ...readCacheExpectation(message),
     cacheRead: message.usage_metadata.input_token_details?.cache_read ?? 0,
     input: message.usage_metadata.input_tokens,
     output: message.usage_metadata.output_tokens,

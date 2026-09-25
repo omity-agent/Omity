@@ -26,6 +26,7 @@ test("transcript exposes Responses API token and cache usage", async () => {
     new HumanMessage("问题"),
     new AIMessage({
       content: "答案",
+      response_metadata: { estimatedCacheHitRate: 0.9 },
       usage_metadata: {
         input_token_details: { cache_read: 900 },
         input_tokens: 1200,
@@ -37,6 +38,7 @@ test("transcript exposes Responses API token and cache usage", async () => {
   const transcript = loadTranscript(db, "usage-session");
   expect(view(transcript).at(-1)?.usage).toEqual({
     cacheReadTokens: 900,
+    estimatedCacheHitRate: 0.9,
     inputTokens: 1200,
     outputTokens: 300,
   });

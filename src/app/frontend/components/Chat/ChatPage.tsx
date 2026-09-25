@@ -38,6 +38,7 @@ export function ChatPage({
   actionPending = false,
   allowFork = true,
   attachmentSettings,
+  cacheHitWarningRatio,
   control,
   draft,
   draftSaveDelayMs,
@@ -68,6 +69,7 @@ export function ChatPage({
   actionPending?: boolean;
   allowFork?: boolean;
   attachmentSettings?: AttachmentSettings;
+  cacheHitWarningRatio?: number;
   control: Control;
   draft?: string;
   draftSaveDelayMs?: number;
@@ -154,6 +156,7 @@ export function ChatPage({
       </FileLinkProvider>
       <Composer
         attachmentSettings={attachmentSettings}
+        cacheHitWarningRatio={cacheHitWarningRatio}
         askUser={askUser}
         controlDisabled={actionPending || actionState.controlDisabled}
         controlState={actionState.controlState}

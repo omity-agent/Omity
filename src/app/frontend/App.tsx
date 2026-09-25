@@ -166,6 +166,7 @@ function AuthenticatedApp() {
           actionPending={forkActionPending}
           allowFork={!pendingFork}
           attachmentSettings={bootstrap.data?.attachments}
+          cacheHitWarningRatio={bootstrap.data?.frontend.cacheHitWarningRatio}
           control={pendingFork ? "running" : transcript.control}
           draft={pendingPreview?.draft}
           draftSaveDelayMs={bootstrap.data?.frontend.draftSaveDelayMs}

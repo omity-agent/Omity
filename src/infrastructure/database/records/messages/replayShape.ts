@@ -12,7 +12,12 @@ const content = z.union([
   ]),
   tokens = z.number().int().nonnegative(),
   usage = z
-    .strictObject({ cacheRead: tokens, input: tokens, output: tokens })
+    .strictObject({
+      cacheRead: tokens,
+      estimatedCacheHitRate: z.number().min(0).max(1).optional(),
+      input: tokens,
+      output: tokens,
+    })
     .refine(
       ({ input, output }) => Number.isSafeInteger(input + output),
       "消息总 token 数超出安全整数范围",

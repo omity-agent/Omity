@@ -17,6 +17,7 @@ export const bootstrapResponseSchema = z.object({
   attachments: attachmentSettingsSchema,
   cwd: z.string(),
   frontend: z.object({
+    cacheHitWarningRatio: z.number().min(0).max(1),
     draftSaveDelayMs: integer.nonnegative(),
     reasoningTranslation: z.object({
       enabled: z.boolean(),

@@ -26,18 +26,27 @@ const panel = css({
     gap: "1.5",
     justifyContent: "space-between",
   }),
-  value = css({ color: "mutedStrong" });
-export function ContextUsage({ usage }: { usage: TokenUsage | null }) {
+  value = css({ color: "mutedStrong" }),
+  cacheNormal = css({ color: "accent.green" }),
+  cacheWarning = css({ color: "accent.red" });
+export function ContextUsage({
+  cacheHitWarningRatio,
+  usage,
+}: {
+  cacheHitWarningRatio?: number;
+  usage: TokenUsage | null;
+}) {
   const { t } = useTranslation(),
     totalTokens = usage
       ? formatTokens(usage.inputTokens + usage.outputTokens)
       : t("unavailableTokens"),
-    cacheRate =
-      usage && usage.inputTokens > 0
-        ? `${((usage.cacheReadTokens / usage.inputTokens) * 100).toFixed(2)}%`
-        : usage
-          ? "0.00%"
-          : "—",
+    actualCacheHitRate =
+      usage && usage.inputTokens > 0 ? usage.cacheReadTokens / usage.inputTokens : 0,
+    cacheRate = usage ? `${(actualCacheHitRate * 100).toFixed(2)}%` : "—",
+    belowExpectation =
+      cacheHitWarningRatio !== undefined &&
+      usage?.estimatedCacheHitRate !== undefined &&
+      actualCacheHitRate + Number.EPSILON < usage.estimatedCacheHitRate * cacheHitWarningRatio,
     description = `${t("contextUsage")}: ${totalTokens}; ${t("kvCache")}: ${cacheRate}`;
   return (
     <div aria-label={description} className={panel} title={description}>
@@ -50,7 +59,9 @@ export function ContextUsage({ usage }: { usage: TokenUsage | null }) {
           <DatabaseZap aria-hidden="true" size={12} />
           <span>{t("kvCache")}</span>
         </span>
-        <span className={value}>{cacheRate}</span>
+        <span className={!usage ? value : belowExpectation ? cacheWarning : cacheNormal}>
+          {cacheRate}
+        </span>
       </span>
     </div>
   );

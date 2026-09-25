@@ -3,6 +3,7 @@ import { type LanguageModel, type TextStreamPart, type ToolSet, streamText } fro
 import { aiRequestOptions, buildAiModel, modelApi } from "./provider";
 import { ModelEmptyResponseError } from "../../runtime/network";
 import type { Settings } from "../../types";
+import { estimateCacheHitRate } from "./cacheExpectation";
 import { fromModelMessages } from "../fromAiMessages";
 import { toModelMessages } from "../aiMessages";
 
@@ -24,6 +25,8 @@ export async function streamAiModel(options: ModelRequestOptions) {
   const attempts = new Map<number, AbortController>(),
     completed = Promise.withResolvers<AIMessage>(),
     model = options.model ?? buildAiModel(options.settings),
+    modelMessages = toModelMessages(options.messages, modelApi(options.settings)),
+    estimatedCacheHitRate = estimateCacheHitRate(options.messages, modelMessages),
     turnId = options.messages.findLast((message) => HumanMessage.isInstance(message))?.id;
   let finished = false,
     nextAttemptId = 0,
@@ -71,7 +74,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
           : controller.signal,
         ...aiRequestOptions(options.settings, options.sessionId, turnId),
         maxRetries: 0,
-        messages: toModelMessages(options.messages, modelApi(options.settings)),
+        messages: modelMessages,
         model,
         onError: () => undefined,
         temperature: options.settings.model.temperature,
@@ -114,6 +117,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
         throw new ModelEmptyResponseError();
       }
       response.response_metadata["rawFinishReason"] = step.rawFinishReason;
+      response.response_metadata["estimatedCacheHitRate"] = estimatedCacheHitRate;
       return response;
     } finally {
       attempts.delete(id);

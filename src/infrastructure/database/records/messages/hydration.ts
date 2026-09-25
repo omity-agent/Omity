@@ -18,6 +18,9 @@ export function decodeMessage(value: string, id?: string) {
       },
       content: stored.content,
       id,
+      ...(stored.usage?.estimatedCacheHitRate === undefined
+        ? {}
+        : { response_metadata: { estimatedCacheHitRate: stored.usage.estimatedCacheHitRate } }),
       ...(stored.toolCalls ? { tool_calls: stored.toolCalls } : {}),
       ...(stored.usage ? { usage_metadata: restoredUsage(stored.usage) } : {}),
     });

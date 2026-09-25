@@ -15,6 +15,7 @@ export function testSettings(): Settings {
       maxSizeBytes: 1024,
     },
     frontend: {
+      cacheHitWarningRatio: 0.8,
       draftSaveDelayMs: 1,
       reasoningTranslation: {
         enabled: false,

@@ -24,6 +24,7 @@ const integer = z.number().int(),
   }),
   tokenUsageSchema = z.object({
     cacheReadTokens: integer.nonnegative(),
+    estimatedCacheHitRate: z.number().min(0).max(1).optional(),
     inputTokens: integer.nonnegative(),
     outputTokens: integer.nonnegative(),
   }),

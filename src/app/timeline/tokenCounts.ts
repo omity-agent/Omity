@@ -2,6 +2,7 @@ import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { TokenUsage } from "./contracts/projection";
 import { countTokens } from "../../runtime/tokenizer";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { readCacheExpectation } from "../../agent/model/cacheExpectation";
 
 export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   if (call["isCustomTool"] === true) {
@@ -41,5 +42,5 @@ export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
   if (cacheReadTokens > inputTokens) {
     throw new Error("模型 cache_read tokens 超过 input tokens");
   }
-  return { cacheReadTokens, inputTokens, outputTokens };
+  return { ...readCacheExpectation(message), cacheReadTokens, inputTokens, outputTokens };
 }

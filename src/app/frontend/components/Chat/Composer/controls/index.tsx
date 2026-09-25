@@ -12,6 +12,7 @@ import { clearTemporaryFiles } from "../../../../services/client";
 import { useTranslation } from "react-i18next";
 
 export function Actions({
+  cacheHitWarningRatio,
   controlDisabled,
   controlState,
   deleteDisabled,
@@ -23,6 +24,7 @@ export function Actions({
   onControl,
   onDelete,
 }: {
+  cacheHitWarningRatio?: number;
   controlDisabled: boolean;
   controlState?: ChatControlState;
   deleteDisabled: boolean;
@@ -44,8 +46,11 @@ export function Actions({
       }
     }, [sessionId, t]),
     footer = useMemo(
-      () => (usage !== undefined ? <ContextUsage usage={usage} /> : undefined),
-      [usage],
+      () =>
+        usage !== undefined ? (
+          <ContextUsage cacheHitWarningRatio={cacheHitWarningRatio} usage={usage} />
+        ) : undefined,
+      [cacheHitWarningRatio, usage],
     );
   return (
     <ActionPanel footer={footer}>

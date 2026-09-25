@@ -15,6 +15,11 @@ test.each([
   { content: "", type: "ai", usage: { cacheRead: 0, input: -1, output: 1 } },
   { content: "", type: "ai", usage: { cacheRead: 0, input: "1", output: 1 } },
   { content: "", type: "ai", usage: { cacheRead: 0, input: Number.MAX_SAFE_INTEGER, output: 1 } },
+  {
+    content: "",
+    type: "ai",
+    usage: { cacheRead: 0, estimatedCacheHitRate: 1.1, input: 5, output: 1 },
+  },
   { content: "", status: "success", toolCallId: 42, type: "tool" },
   { content: "", largeOutputTokens: -1, status: "success", toolCallId: "tool", type: "tool" },
   { content: "", custom: "true", status: "success", toolCallId: "tool", type: "tool" },
@@ -57,6 +62,7 @@ test("round-trips replay content, provider fields, usage and custom tool calls",
     },
     content: [{ providerField: "retained", text: "text", type: "text" }],
     id: "assistant",
+    response_metadata: { estimatedCacheHitRate: 0.85 },
     tool_calls: [{ args: { input: "free-form" }, id: "call", name: "tool", type: "tool_call" }],
     usage_metadata: {
       input_token_details: { cache_read: 2 },
@@ -76,6 +82,7 @@ test("round-trips replay content, provider fields, usage and custom tool calls",
   expect(restored.additional_kwargs).toEqual(message.additional_kwargs);
   expect(restored.tool_calls).toEqual(message.tool_calls);
   expect(restored.usage_metadata).toEqual(message.usage_metadata);
+  expect(restored.response_metadata).toEqual(message.response_metadata);
 });
 test("round-trips tool recovery artifacts and human messages", () => {
   const messages = [
