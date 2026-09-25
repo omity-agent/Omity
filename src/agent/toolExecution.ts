@@ -8,6 +8,7 @@ import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availabili
 import { isPlainObject as isRecord } from "es-toolkit";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { requireCallId } from "../hooks/plan";
+import { trimFreeformInput } from "../runtime/freeform";
 
 interface ToolInvokerOptions {
   freeformToolParameters: ReadonlyMap<string, string>;
@@ -70,7 +71,9 @@ export function createToolInvoker(
 function materializeFreeformInput(call: ToolCall, parameters: ReadonlyMap<string, string>) {
   const parameter = parameters.get(call.name),
     input = isRecord(call.args) ? call.args["input"] : undefined;
-  return parameter && typeof input === "string" ? { [parameter]: input } : call.args;
+  return parameter && typeof input === "string"
+    ? { [parameter]: trimFreeformInput(input) }
+    : call.args;
 }
 async function normalizeOutput(
   value: unknown,

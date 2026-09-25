@@ -30,3 +30,35 @@ test("structured tool artifacts remain available to Hook output references", asy
     ),
   ).toEqual({ value: 42 });
 });
+test.each([true, false])(
+  "tool invocation trims trailing blank lines only for Freeform inputs: %j",
+  async (freeform) => {
+    const content = "\n  first\n\n  second  \t",
+      input = `${content}\r\n \t\r\n`,
+      received: string[] = [],
+      tool = new DynamicStructuredTool({
+        description: "capture input",
+        func: async ({ source }) => {
+          received.push(source);
+          return "ok";
+        },
+        name: "capture",
+        schema: z.object({ source: z.string() }),
+      }),
+      invoke = createToolInvoker([tool], {
+        freeformToolParameters: new Map(freeform ? [["capture", "source"]] : []),
+        sessionId: "session",
+        settings: testSettings(),
+      });
+    await invoke(
+      {
+        args: freeform ? { input } : { source: input },
+        id: "call",
+        name: "capture",
+        type: "tool_call",
+      },
+      { configurable: { thread_id: "thread" } },
+    );
+    expect(received).toEqual([freeform ? content : input]);
+  },
+);

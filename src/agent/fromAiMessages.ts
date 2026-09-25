@@ -8,6 +8,7 @@ import {
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { omitToolItemIds } from "./toolProviderOptions";
+import { trimFreeformInput } from "../runtime/freeform";
 
 export function fromModelMessages(
   messages: ModelMessage[],
@@ -80,7 +81,7 @@ function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["conten
     .map((part) => {
       if (typeof part.input === "string") {
         return {
-          args: { input: part.input },
+          args: { input: trimFreeformInput(part.input) },
           id: part.toolCallId,
           isCustomTool: true,
           name: part.toolName,

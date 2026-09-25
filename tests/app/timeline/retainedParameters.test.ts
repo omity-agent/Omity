@@ -45,6 +45,13 @@ test("Freeform streams keep every raw increment without JSON parsing", () => {
   const events = [delta(1, "*** Begin Patch\n", 0, true), delta(2, '+{"value":tru', 0, true)];
   expect(formatToolInput(calls(events)[0]!)).toBe('*** Begin Patch\n+{"value":tru');
 });
+test("Freeform streams hide trailing blank lines until subsequent content arrives", () => {
+  const events = [delta(1, "*** Begin Patch\n\n", 0, true)];
+  expect(formatToolInput(calls(events)[0]!)).toBe("*** Begin Patch");
+  events.push(delta(2, "+value\n\n", 0, true));
+  expect(formatToolInput(calls(events)[0]!)).toBe("*** Begin Patch\n\n+value");
+  expect(calls(events)[0]?.rawInput).toBe("*** Begin Patch\n\n+value\n\n");
+});
 test("valid falsy JSON values replace previous parsed prefixes", () => {
   expect(calls([delta(1, "n"), delta(2, "ull")])[0]?.input).toBeNull();
   expect(formatToolInput(calls([delta(1, "0")])[0]!)).toBe("0");

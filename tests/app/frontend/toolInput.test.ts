@@ -20,9 +20,16 @@ test.each(['{"value":tru', String.raw`{"value":"\u12`, '{"value" 1}'])(
 test("uses the structured input when no streamed text is available", () => {
   expect(formatToolInput(call({ command: "pwd" }))).toBe("command: pwd");
 });
-test("keeps Freeform tool input unchanged", () => {
-  const input = '*** Begin Patch\n+const value = "quoted";\\path\n';
-  expect(formatToolInput(call({ input }, input))).toBe(input);
+test.each(["", "\n", "\n\n", "\r\n \t\r\n", "\r", "\u2028\u2029"])(
+  "removes only trailing blank lines from displayed Freeform input: %j",
+  (ending) => {
+    const content = '\n  *** Begin Patch\n\n+const value = "quoted";\\path  \t',
+      input = content + ending;
+    expect(formatToolInput(call({ input }, input))).toBe(content);
+  },
+);
+test.each(["", " \t", "\n \r\n"])("displays blank Freeform input as empty: %j", (input) => {
+  expect(formatToolInput(call({ input }, input))).toBe("");
 });
 test.each([null, false, 0, ""])("preserves a valid JSON scalar: %j", (input) => {
   expect(parseToolInput(JSON.stringify(input))).toEqual(input);

@@ -1,5 +1,5 @@
+import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { expect, test } from "bun:test";
-import { ToolMessage } from "@langchain/core/messages";
 import { fromModelMessages } from "../../src/agent/fromAiMessages";
 import { messageReasoning } from "../../src/runtime/content";
 import { toModelMessages } from "../../src/agent/aiMessages";
@@ -25,13 +25,33 @@ test("AI SDK reasoning provider metadata survives persistence adapters", () => {
   expect(restored ? messageReasoning(restored) : "").toBe("summary");
   expect(restored ? toModelMessages([restored]) : []).toEqual(source);
 });
-test("AI SDK custom tool string input survives persistence adapters", () => {
+test.each(["", "\n\n", "\r\n \t\r\n"])(
+  "AI SDK custom tool input is persisted and replayed without trailing blank lines: %j",
+  (ending) => {
+    const input = "\n  raw command\n\n  next command  ",
+      part = {
+        input: input + ending,
+        toolCallId: "custom-1",
+        toolName: "shell",
+        type: "tool-call" as const,
+      },
+      restored = fromModelMessages([{ content: [part], role: "assistant" }], "response-1"),
+      [message] = restored;
+    expect(message && AIMessage.isInstance(message) && message.tool_calls?.[0]?.args).toEqual({
+      input,
+    });
+    expect(toModelMessages(restored)).toEqual([
+      { content: [{ ...part, input }], role: "assistant" },
+    ]);
+  },
+);
+test("structured tool string values retain trailing blank lines during conversion", () => {
   const source = [
     {
       content: [
         {
-          input: "raw command",
-          toolCallId: "custom-1",
+          input: { input: "raw command\n\n" },
+          toolCallId: "structured-1",
           toolName: "shell",
           type: "tool-call" as const,
         },

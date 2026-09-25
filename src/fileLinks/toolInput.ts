@@ -1,4 +1,5 @@
 import { parseDocument, stringify } from "yaml";
+import { trimFreeformInput } from "../runtime/freeform";
 
 interface ToolInputSource {
   input: unknown;
@@ -7,7 +8,7 @@ interface ToolInputSource {
 const recoverableEndErrors = new Set(["BAD_INDENT", "MISSING_CHAR"]);
 export function formatToolInput(call: ToolInputSource) {
   if (call.rawInput !== undefined) {
-    return call.rawInput;
+    return trimFreeformInput(call.rawInput);
   }
   return call.input === undefined
     ? ""
