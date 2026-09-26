@@ -37,6 +37,14 @@ export const composerDrafts = sqliteTable("composer_drafts", {
     .references(() => sessions.id, { onDelete: "cascade" }),
   updatedAt: integer("updated_at").notNull(),
 });
+export const inputPredictions = sqliteTable("input_predictions", {
+  candidates: text("candidates_json", { mode: "json" }).$type<string[]>().notNull(),
+  sessionId: text("session_id")
+    .primaryKey()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+  transcriptRevision: integer("transcript_revision").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
 export const hookUsage = sqliteTable(
   "hook_usage",
   {

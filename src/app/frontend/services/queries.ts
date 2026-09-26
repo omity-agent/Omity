@@ -14,6 +14,7 @@ import {
 } from "./events/data";
 import { reportBrowserWarning, reportSessionErrors, subscribeEvents } from "./events/delivery";
 import { useEffect, useRef } from "react";
+import { reportError } from "./errors";
 import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
@@ -29,11 +30,17 @@ export function useUserMessages() {
   });
 }
 export function usePredictions(sessionId: string | undefined, idle: boolean) {
-  return useQuery({
+  const query = useQuery({
     enabled: sessionId !== undefined && idle,
     queryFn: ({ signal }) => loadPredictions(sessionId!, signal),
     queryKey: predictionKey(sessionId ?? ""),
   });
+  useEffect(() => {
+    if (query.error) {
+      reportError(query.error);
+    }
+  }, [query.error]);
+  return query;
 }
 export function useBootstrap() {
   const queryClient = useQueryClient(),

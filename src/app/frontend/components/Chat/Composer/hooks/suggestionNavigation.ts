@@ -21,8 +21,9 @@ export function useSuggestionNavigation({
   const predictionsRef = useRef(predictions),
     navigateHistory = useHistoryNavigation(historyRef, contentRef, updateContent, userMessages);
   useLayoutEffect(() => {
+    predictionRef.current.reset();
     predictionsRef.current = predictions;
-  }, [predictions]);
+  }, [predictionRef, predictions]);
   const handleHistoryNavigate = useCallback(
       (direction: HistoryDirection) => {
         if (direction === "previous") {

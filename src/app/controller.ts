@@ -1,32 +1,31 @@
-import { AppRegistry, type RegisteredSession } from "./registry";
 import type { Control, Settings } from "../types";
-import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
-import { type ProcessOwner, appOwner } from "../infrastructure/process/ownership";
 import {
-  type SettingsContext,
-  availableSettingsProfiles,
-  createSettingsContext,
-} from "../infrastructure/configuration/settings/context";
+  type ControllerOptions,
+  bootstrapPayload,
+  prepareController,
+} from "./runtime/prepareController";
+import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
-import { hasLiveHostLease, recoverAppSessions } from "./runtime/recovery";
 import { readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { AppEvents } from "./events";
 import type { AppHosts } from "./hosts";
-import type { AppInstanceOwner } from "./runtime/instanceLock";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { PredictionService } from "./prediction/service";
-import { RetainedRegistry } from "./runtime/resources/retainedRegistry";
+import type { RegisteredSession } from "./registry";
+import type { RetainedRegistry } from "./runtime/resources/retainedRegistry";
+import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { activateFileLink } from "./fileLinks/launch";
+import { appOwner } from "../infrastructure/process/ownership";
 import { cancelSessionTool } from "./sessionCommands";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
 import { closeControllerResources } from "./runtime/shutdown";
 import { deleteHostSession } from "../storedSessions";
 import { enqueueMessageWithAttachments } from "./attachments/message";
+import { hasLiveHostLease } from "./runtime/recovery";
 import { loadSessionTranscript } from "./transcript";
-import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { loadUserMessages } from "./userMessages";
 import { materializeAppFork } from "./runtime/sessionActions";
 import { setSessionControl } from "../client";
@@ -41,17 +40,12 @@ export class AppController {
   private readonly settingsContext: SettingsContext;
   constructor(
     private readonly appRoot: string,
-    options: {
-      abandonedOwner?: AppInstanceOwner;
-      owner?: ProcessOwner;
-      settingsContext?: SettingsContext;
-    } = {},
+    options: ControllerOptions = {},
   ) {
-    this.settingsContext = options.settingsContext ?? createSettingsContext(appRoot);
-    this.settings = loadSettings(appRoot, { settingsContext: this.settingsContext });
-    const discovered = new AppRegistry();
-    recoverAppSessions(discovered.list(), options.abandonedOwner);
-    this.registry = new RetainedRegistry();
+    const prepared = prepareController(appRoot, options);
+    this.settingsContext = prepared.settingsContext;
+    this.settings = prepared.settings;
+    this.registry = prepared.registry;
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
     this.prediction = new PredictionService(this.settings);
@@ -67,17 +61,9 @@ export class AppController {
       settings: this.settings,
     });
   }
-  close = () => closeControllerResources(this.hosts, this.registry);
+  close = () => closeControllerResources(this.hosts, this.registry, this.prediction);
   bootstrap() {
-    return {
-      attachments: this.settings.attachments,
-      cwd: this.appRoot,
-      frontend: this.settings.frontend,
-      profiles: {
-        available: availableSettingsProfiles(this.settingsContext),
-      },
-      sessions: this.sessions(),
-    };
+    return bootstrapPayload(this.appRoot, this.settings, this.settingsContext, this.sessions());
   }
   sessions() {
     return this.registry.list().map((session) => this.sessionInfo(session));

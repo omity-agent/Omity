@@ -1,15 +1,10 @@
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import {
-  configureReadonlyDatabase,
-  queryAll,
-} from "../../infrastructure/database/sqlite/connection";
-import { Database } from "bun:sqlite";
+import type { Database } from "bun:sqlite";
 import { contentToText } from "../../runtime/content";
 import { countTokens } from "../../runtime/tokenizer";
-import { databasePath } from "../../infrastructure/configuration/sessionPaths";
-import { existsSync } from "node:fs";
 import { messageContentToText } from "../../runtime/modelContent";
 import { messageRowsToChatMessages } from "../../infrastructure/database/records/transcript/messages/serialization";
+import { queryAll } from "../../infrastructure/database/sqlite/connection";
 
 interface MessageRow {
   created_at: number;
@@ -32,13 +27,7 @@ export interface PredictionSample {
   user: string;
   userTokens: number;
 }
-export function loadPredictionSnapshot() {
-  const path = databasePath();
-  if (!existsSync(path)) {
-    return { latestModels: new Map(), samples: [], sessionUpdates: new Map() };
-  }
-  using db = new Database(path, { create: false, readonly: true, strict: true });
-  configureReadonlyDatabase(db);
+export function loadPredictionSnapshot(db: Database) {
   const messages = queryAll<MessageRow>(
       db,
       `SELECT id, session_id, source_id, message_json, position, created_at, token_count
@@ -61,7 +50,6 @@ export function loadPredictionSnapshot() {
        FROM sessions s`,
       ).map(({ id, updated_at }) => [id, updated_at]),
     ),
-    latestModels = new Map<string, { content: string; createdAt: number }>(),
     samples: PredictionSample[] = [];
   for (const sessionMessages of groupMessages(messages)) {
     let contextTokens = 0,
@@ -76,11 +64,10 @@ export function loadPredictionSnapshot() {
       const tokenCount = row.token_count ?? countTokens(content);
       contextTokens = addTokens(contextTokens, tokenCount);
       if (AIMessage.isInstance(message)) {
-        latestModel = {
-          content,
-          id: row.source_id,
-        };
-        latestModels.set(row.session_id, { content, createdAt: row.created_at });
+        latestModel =
+          content.trim() && !message.tool_calls?.length
+            ? { content, id: row.source_id }
+            : undefined;
       } else if (HumanMessage.isInstance(message) && latestModel) {
         const userTokens = row.token_count ?? countTokens(content);
         samples.push({
@@ -95,7 +82,7 @@ export function loadPredictionSnapshot() {
       }
     }
   }
-  return { latestModels, samples, sessionUpdates };
+  return { samples, sessionUpdates };
 }
 function groupMessages(rows: MessageRow[]) {
   const groups = new Map<string, MessageRow[]>();

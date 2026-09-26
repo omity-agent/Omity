@@ -1,168 +1,123 @@
-import { Output, generateText } from "ai";
+import { PredictionExamples, type PredictionSettings } from "./selectExamples";
 import { type PredictionSample, loadPredictionSnapshot } from "./samples";
-import { buildConfiguredAiModel, structuredRequestOptions } from "../../agent/model/provider";
+import {
+  openSessionDatabase,
+  runTransaction,
+} from "../../infrastructure/database/sqlite/connection";
+import {
+  readPredictionContext,
+  readPredictionRecord,
+  writePredictionRecord,
+} from "../../infrastructure/database/records/session/inputForecast";
 import type { Settings } from "../../types";
-import { z } from "zod";
+import { databasePath } from "../../infrastructure/configuration/sessionPaths";
+import { requestCandidates } from "./requestCandidates";
 
-type PredictionSettings = Extract<NonNullable<Settings["prediction"]>, { enabled: true }>;
-interface SampleCache {
-  ids: string[];
-  samples: PredictionSample[];
+interface PredictionTask {
+  controller: AbortController;
+  promise: Promise<void>;
+  revision: number;
 }
 export class PredictionService {
-  private readonly pending = new Map<string, Promise<string[]>>();
-  private readonly predictions = new Map<string, string[]>();
-  private sampleCache: SampleCache | undefined;
+  private readonly path = databasePath();
+  private readonly pending = new Map<string, PredictionTask>();
+  private readonly examples = new PredictionExamples();
+  private closed = false;
   constructor(private readonly settings: Settings) {}
-  onIdle(sessionId: string) {
-    const config = this.settings.prediction;
-    if (!config || !config.enabled || this.pending.has(sessionId)) {
-      return;
-    }
-    this.predictions.delete(sessionId);
-    let snapshot: ReturnType<typeof loadPredictionSnapshot>;
+  async onIdle(sessionId: string) {
     try {
-      snapshot = loadPredictionSnapshot();
+      await this.get(sessionId);
     } catch (error) {
-      reportPredictionError(sessionId, error);
-      return;
+      console.warn("用户输入预测失败", { error, sessionId });
     }
-    const currentModel = snapshot.latestModels.get(sessionId),
-      samples = this.selectSamples(snapshot, config);
-    if (!currentModel || !samples) {
-      return;
-    }
-    const pending = this.generate(config, currentModel.content, samples);
-    this.pending.set(sessionId, pending);
-    void this.storePrediction(sessionId, pending);
   }
   async get(sessionId: string) {
-    const pending = this.pending.get(sessionId);
-    if (pending) {
-      try {
-        await pending;
-      } catch {
-        return [];
+    const config = this.settings.prediction;
+    if (this.closed || !config?.enabled) {
+      return [];
+    }
+    let task = this.prepare(sessionId, config);
+    while (task) {
+      await task.promise;
+      const latest = this.pending.get(sessionId);
+      task = latest === task ? undefined : latest;
+    }
+    return this.read(sessionId);
+  }
+  async close() {
+    this.closed = true;
+    const tasks = [...this.pending.values()];
+    for (const task of tasks) {
+      task.controller.abort();
+    }
+    await Promise.all(tasks.map(({ promise }) => promise));
+  }
+  private read(sessionId: string) {
+    if (this.closed) {
+      return [];
+    }
+    using db = openSessionDatabase(this.path);
+    return runTransaction(db, () => {
+      const context = readPredictionContext(db, sessionId);
+      return context ? (readPredictionRecord(db, sessionId, context.revision) ?? []) : [];
+    });
+  }
+  private prepare(sessionId: string, config: PredictionSettings) {
+    using db = openSessionDatabase(this.path);
+    return runTransaction(db, () => {
+      const context = readPredictionContext(db, sessionId),
+        previous = this.pending.get(sessionId);
+      if (!context) {
+        previous?.controller.abort();
+        return undefined;
       }
-    }
-    return this.predictions.get(sessionId) ?? [];
-  }
-  private selectSamples(
-    snapshot: ReturnType<typeof loadPredictionSnapshot>,
-    config: PredictionSettings,
-  ) {
-    const eligible = distinctModelSamples(
-      snapshot.samples
-        .filter(
-          ({ contextTokens, userTokens }) =>
-            contextTokens > config.sampleContextTokens && userTokens <= config.maxUserMessageTokens,
-        )
-        .toSorted(
-          (left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id),
-        ),
-    );
-    if (eligible.length < config.sampleCount) {
-      return undefined;
-    }
-    const latest = eligible.slice(-config.sampleCount),
-      ids = latest.map(({ id }) => id);
-    if (!this.sampleCache || this.shouldRefresh(snapshot, config, ids)) {
-      this.sampleCache = { ids, samples: latest };
-    }
-    return this.sampleCache.samples;
-  }
-  private shouldRefresh(
-    snapshot: ReturnType<typeof loadPredictionSnapshot>,
-    config: PredictionSettings,
-    latestIds: string[],
-  ) {
-    const cachedIds = this.sampleCache?.ids ?? [],
-      changed =
-        cachedIds.length !== latestIds.length ||
-        cachedIds.some((id, index) => id !== latestIds[index]),
-      hasCurrentSample = latestIds.some((id) => cachedIds.includes(id)),
-      now = Math.floor(Date.now() / 1000),
-      staleAfter = config.refreshIntervalHours * 60 * 60,
-      allSessionsStale =
-        snapshot.sessionUpdates.size > 0 &&
-        [...snapshot.sessionUpdates.values()].every((updatedAt) => now - updatedAt > staleAfter);
-    return !hasCurrentSample || (allSessionsStale && changed);
+      if (readPredictionRecord(db, sessionId, context.revision)) {
+        return undefined;
+      }
+      if (previous?.revision === context.revision && !previous.controller.signal.aborted) {
+        return previous;
+      }
+      previous?.controller.abort();
+      const samples = this.examples.select(loadPredictionSnapshot(db), config);
+      if (!samples) {
+        return undefined;
+      }
+      const controller = new AbortController(),
+        task = {
+          controller,
+          promise: this.generate(sessionId, context, config, samples, controller),
+          revision: context.revision,
+        };
+      this.pending.set(sessionId, task);
+      return task;
+    });
   }
   private async generate(
+    sessionId: string,
+    context: { content: string; revision: number },
     config: PredictionSettings,
-    currentModel: string,
     samples: PredictionSample[],
+    controller: AbortController,
   ) {
-    const result = await generateText({
-      ...structuredRequestOptions(config.model),
-      maxRetries: 0,
-      model: buildConfiguredAiModel(config.model),
-      output: Output.array({
-        element: z.string().min(1),
-        maxItems: config.outputCount,
-        minItems: config.outputCount,
-      }),
-      prompt: predictionPrompt(config.task, currentModel, samples),
-      temperature: config.model.temperature,
-    });
-    return result.output;
-  }
-  private async storePrediction(sessionId: string, pending: Promise<string[]>) {
     try {
-      this.predictions.set(sessionId, await pending);
+      const candidates = await requestCandidates(
+        config,
+        context.content,
+        samples,
+        controller.signal,
+      );
+      if (!controller.signal.aborted) {
+        using db = openSessionDatabase(this.path);
+        writePredictionRecord(db, sessionId, context.revision, candidates);
+      }
     } catch (error) {
-      reportPredictionError(sessionId, error);
+      if (!controller.signal.aborted) {
+        throw error;
+      }
     } finally {
-      this.pending.delete(sessionId);
+      if (this.pending.get(sessionId)?.controller === controller) {
+        this.pending.delete(sessionId);
+      }
     }
   }
-}
-function distinctModelSamples(samples: PredictionSample[]) {
-  const knownModels = new Set<string>(),
-    distinct = samples.toReversed().filter((sample) => {
-      if (knownModels.has(sample.model)) {
-        return false;
-      }
-      knownModels.add(sample.model);
-      return true;
-    });
-  return distinct.toReversed();
-}
-function predictionPrompt(task: string, currentModel: string, samples: PredictionSample[]) {
-  return [
-    "<samples>",
-    ...samples.flatMap((sample, index) => [
-      `  <sample index="${(index + 1).toString()}">`,
-      "    <assistant>",
-      escapeXml(sample.model),
-      "    </assistant>",
-      "    <user>",
-      escapeXml(sample.user),
-      "    </user>",
-      "  </sample>",
-    ]),
-    "</samples>",
-    "<task-description>",
-    escapeXml(task),
-    "</task-description>",
-    "<current-assistant-response>",
-    escapeXml(currentModel),
-    "</current-assistant-response>",
-  ].join("\n");
-}
-function escapeXml(value: string) {
-  return value.replace(
-    /[<>&'"]/gu,
-    (character) =>
-      ({
-        '"': "&quot;",
-        "&": "&amp;",
-        "'": "&apos;",
-        "<": "&lt;",
-        ">": "&gt;",
-      })[character]!,
-  );
-}
-function reportPredictionError(sessionId: string, error: unknown) {
-  console.warn("用户输入预测失败", { error, sessionId });
 }

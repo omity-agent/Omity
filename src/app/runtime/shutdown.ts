@@ -29,8 +29,9 @@ export function createShutdownLogger() {
 export async function closeControllerResources(
   hosts: Pick<AppHosts, "close">,
   registry: Pick<RetainedRegistry, "close">,
+  ...background: { close: () => Promise<void> }[]
 ) {
-  await pMap([hosts, registry], (resource) => resource.close(), {
+  await pMap([...background, hosts, registry], (resource) => resource.close(), {
     concurrency: 1,
     stopOnError: false,
   });

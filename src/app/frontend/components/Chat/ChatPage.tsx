@@ -166,7 +166,11 @@ export function ChatPage({
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
         key={composerDraftKey(draftTarget)}
-        predictions={predictionsQuery.data?.predictions}
+        predictions={
+          sessionStatus === "idle" && !predictionsQuery.isFetching && !predictionsQuery.isError
+            ? predictionsQuery.data?.predictions
+            : undefined
+        }
         userMessages={userMessages}
         usage={latestUsage}
         stepAvailable={actionState.stepAvailable}
