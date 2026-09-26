@@ -16,10 +16,9 @@ import { UserMessageHistory } from "./history";
 import { composerFrame } from "./layout";
 import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
-import { useHistoryNavigation } from "./hooks/history";
 import { usePendingAttachments } from "./hooks/attachments";
-import { usePredictionNavigation } from "./hooks/predictions";
 import { useQuestionAnswerState } from "./AskUser/state";
+import { useSuggestionNavigation } from "./hooks/suggestionNavigation";
 import { useTranslation } from "react-i18next";
 
 const emptyPredictions: readonly string[] = [];
@@ -145,25 +144,14 @@ export function Composer({
         setContent,
         submit,
       }),
-    navigateHistory = useHistoryNavigation(historyRef, contentRef, updateContent, userMessages),
-    navigateUp = (direction: "previous" | "next") => {
-      if (direction === "previous") {
-        predictionRef.current.reset();
-      }
-      return navigateHistory(direction);
-    },
-    navigatePrediction = usePredictionNavigation(
-      predictionRef,
+    { handleHistoryNavigate, handlePredictionNavigate } = useSuggestionNavigation({
       contentRef,
-      updateContent,
+      historyRef,
+      predictionRef,
       predictions,
-    ),
-    navigateDown = () => {
-      if (historyRef.current.isBrowsing()) {
-        return navigateUp("next");
-      }
-      return navigatePrediction();
-    },
+      updateContent,
+      userMessages,
+    }),
     editorDisabled = disabled || loading || submitting,
     submitDisabled = askUser
       ? editorDisabled ||
@@ -184,8 +172,8 @@ export function Composer({
         <MarkdownEditor
           disabled={editorDisabled}
           onChange={handleContentChange}
-          onHistoryNavigate={navigateUp}
-          onPredictionNavigate={navigateDown}
+          onHistoryNavigate={handleHistoryNavigate}
+          onPredictionNavigate={handlePredictionNavigate}
           onPasteFiles={attachmentSettings ? pasteFiles : undefined}
           onSubmit={handleSubmit}
           placeholder={t("messagePlaceholder")}

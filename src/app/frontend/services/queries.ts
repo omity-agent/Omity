@@ -59,7 +59,7 @@ export function useBootstrap() {
           updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
           queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
           queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
-          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
+          refreshUserMessages(queryClient);
         },
         session(event) {
           const session = readSessionEvent(event);
@@ -69,14 +69,14 @@ export function useBootstrap() {
           }
           updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
           void queryClient.invalidateQueries({ queryKey: predictionKey(session.id) });
-          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
+          refreshUserMessages(queryClient);
         },
         sessions(event) {
           const sessions = readSessionsEvent(event);
           attention.replace(sessions);
           streamedSessions.current = sessions;
           updateCachedSessions(queryClient, () => sessions);
-          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
+          refreshUserMessages(queryClient);
         },
         warning(event) {
           reportBrowserWarning(readWarningEvent(event));
@@ -95,14 +95,17 @@ export function useBootstrap() {
 export function addSession(queryClient: QueryClient, session: SessionInfo) {
   sessionAttentionStore(queryClient).upsert(session);
   updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
-  void queryClient.invalidateQueries({ queryKey: userMessagesKey });
+  refreshUserMessages(queryClient);
 }
 export function removeSession(queryClient: QueryClient, sessionId: string) {
   sessionAttentionStore(queryClient).remove(sessionId);
   updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
   queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
   queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
-  void queryClient.invalidateQueries({ queryKey: userMessagesKey });
+  refreshUserMessages(queryClient);
+}
+function refreshUserMessages(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: userMessagesKey }, { cancelRefetch: false });
 }
 function updateCachedSessions(
   queryClient: QueryClient,
