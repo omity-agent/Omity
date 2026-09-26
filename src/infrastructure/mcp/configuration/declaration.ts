@@ -1,5 +1,6 @@
 import { mcpServerSchema, normalizeMcpServers } from "./connections";
 import { builtInPreferencesSchema } from "../../toolbox/metadata";
+import { emptyAs } from "../../configuration/settings/values";
 import { z } from "zod";
 
 const nonEmpty = z.string().min(1),
@@ -10,23 +11,15 @@ const nonEmpty = z.string().min(1),
     error: "MCP 工具不能命名为 agent",
   });
 export const toolboxSchema = z.strictObject({
-  freeformToolInputs: names.nullish().transform((value) => value ?? []),
-  mcpServers: z.record(z.string(), mcpServerSchema).default({}).transform(normalizeMcpServers),
-  stdio: z
-    .strictObject({
-      restart: z.strictObject({
-        delayMs: z.number().int().nonnegative().max(60_000),
-        maxAttempts: z.number().int().positive().max(100),
-      }),
-    })
-    .default({ restart: { delayMs: 1000, maxAttempts: 3 } }),
-  toolDescriptionOverrides: z
-    .record(z.string(), nonEmpty)
-    .nullish()
-    .transform((value) => value ?? {}),
-  toolNameOverrides: z
-    .record(z.string(), toolName)
-    .nullish()
-    .transform((value) => value ?? {}),
-  toolboxes: builtInPreferencesSchema.default({}),
+  freeformToolInputs: emptyAs(names, []),
+  mcpServers: emptyAs(z.record(z.string(), mcpServerSchema), {}).transform(normalizeMcpServers),
+  stdio: z.strictObject({
+    restart: z.strictObject({
+      delayMs: z.number().int().nonnegative().max(60_000),
+      maxAttempts: z.number().int().positive().max(100),
+    }),
+  }),
+  toolDescriptionOverrides: emptyAs(z.record(z.string(), nonEmpty), {}),
+  toolNameOverrides: emptyAs(z.record(z.string(), toolName), {}),
+  toolboxes: emptyAs(builtInPreferencesSchema, {}),
 });

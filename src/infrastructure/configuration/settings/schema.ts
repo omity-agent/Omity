@@ -1,8 +1,10 @@
-import { isPlainObject as isRecord, omit } from "es-toolkit";
-import { logLevelSchema, modelApiSchema, reasoningEffortSchema } from "../../../types";
+import { predictionSettingsSchema, prepareMainSettings } from "./models";
+import { emptyAs } from "./values";
 import ipaddr from "ipaddr.js";
+import { logLevelSchema } from "../../../types";
 import { z } from "zod";
 
+export { omitCodexConnectionSettings, parseModelSettings } from "./models";
 const promptFileSchema = z
     .string()
     .trim()
@@ -20,33 +22,13 @@ const promptFileSchema = z
   promptsSchema = z
     .array(promptFileSchema)
     .refine((files) => new Set(files).size === files.length, "提示词文件列表不能包含重复项"),
-  sharedModelSettings = {
-    maxConcurrentRequests: z.number().int().positive(),
-    model: z.string().min(1),
-    raceIntervalMs: z.number().int().positive(),
-    reasoning_effort: reasoningEffortSchema.optional(),
-    retryDelayMs: z.number().int().positive(),
-    temperature: z.number().optional(),
-  },
-  modelSettingsSchema = z.discriminatedUnion("adapter", [
-    z.strictObject({
-      adapter: modelApiSchema,
-      apiKeyEnv: z.string().min(1),
-      baseURL: z.url().nullable(),
-      ...sharedModelSettings,
-    }),
-    z.strictObject({
-      adapter: z.literal("codex"),
-      ...sharedModelSettings,
-    }),
-  ]),
   agentSettingsSchema = z.strictObject({
-    prompts: promptsSchema,
+    prompts: emptyAs(promptsSchema, []),
     recursionLimit: z.number().int().positive(),
     skills: z.strictObject({
       directory: z.string().min(1),
       enabled: z.boolean(),
-      skillEnabled: z.record(z.string(), z.boolean()),
+      skillEnabled: emptyAs(z.record(z.string(), z.boolean()), {}),
     }),
     toolExecution: z.strictObject({
       parallel: z.boolean(),
@@ -79,9 +61,9 @@ const promptFileSchema = z
         attempts: z.number().int().positive().max(1000),
         windowMs: z.number().int().min(1000).max(86_400_000),
       }),
-      publicOrigin: publicOriginSchema,
+      publicOrigin: emptyAs(publicOriginSchema, null),
       sessionTtlMs: z.number().int().min(60_000).max(2_592_000_000),
-      trustedProxies: z.array(cidrSchema),
+      trustedProxies: emptyAs(z.array(cidrSchema), []),
     })
     .refine(
       ({ publicOrigin, trustedProxies }) => publicOrigin === null || trustedProxies.length > 0,
@@ -126,22 +108,16 @@ const promptFileSchema = z
       level: logLevelSchema,
       streamTokens: z.boolean(),
     }),
+    prediction: emptyAs(predictionSettingsSchema.optional(), undefined).optional(),
     server: z.strictObject({
       host: z.string().min(1),
       port: z.number().int().min(0).max(65_535),
     }),
   });
 export function parseMainSettings(value: unknown) {
-  return mainSettingsSchema.parse(value);
-}
-export function parseModelSettings(value: unknown) {
-  return modelSettingsSchema.parse(omitCodexConnectionSettings(value));
-}
-export function omitCodexConnectionSettings(value: unknown) {
-  return isRecord(value) && value["adapter"] === "codex"
-    ? omit(value, ["apiKeyEnv", "baseURL"])
-    : value;
+  return mainSettingsSchema.parse(prepareMainSettings(value));
 }
 export function parseAgentSettings(value: unknown) {
   return agentSettingsSchema.parse(value);
 }
+export { agentSettingsSchema, mainSettingsSchema };

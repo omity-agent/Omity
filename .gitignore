@@ -1,6 +1,5 @@
-dist/
-migrations/
-node_modules/
-styled-system/
+/dist/
+/node_modules/
+/styled-system/
 *.bun-build
 .DS_Store

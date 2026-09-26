@@ -14,6 +14,7 @@ export interface ComposerProps {
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;
   userMessages: readonly string[];
+  predictions?: readonly string[];
   controlDisabled?: boolean;
   controlState?: ChatControlState;
   deleteDisabled?: boolean;

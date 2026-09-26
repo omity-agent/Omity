@@ -2,7 +2,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../failures/details";
 import type { HostContext } from "./context";
 import type { QueuedInput } from "../types";
-import { contentToText } from "./content";
+import { messageContentToText } from "./modelContent";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
 
 export class CanceledRunError extends Error {
@@ -21,7 +21,7 @@ export function finishRun(
 ) {
   const finalMessageId = requireFinalMessageId(hookPlan),
     last = messages.find((message) => message.type === "ai" && message.id === finalMessageId),
-    content = contentToText(last?.content);
+    content = last ? messageContentToText(last) : "";
   if (!content) {
     throw new Error("模型没有生成可记录的最终文本");
   }

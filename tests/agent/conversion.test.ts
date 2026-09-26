@@ -1,5 +1,6 @@
 import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import { expect, test } from "bun:test";
+import { messageContentParts, messageContentToText } from "../../src/runtime/modelContent";
 import { fromModelMessages } from "../../src/agent/fromAiMessages";
 import { messageReasoning } from "../../src/runtime/content";
 import { toModelMessages } from "../../src/agent/aiMessages";
@@ -24,6 +25,23 @@ test("AI SDK reasoning provider metadata survives persistence adapters", () => {
   expect(restored?.content).toBe("answer");
   expect(restored ? messageReasoning(restored) : "").toBe("summary");
   expect(restored ? toModelMessages([restored]) : []).toEqual(source);
+});
+test("model content extraction keeps only the final contiguous text group", () => {
+  const source = [
+      { text: "正文 A", type: "text" as const },
+      {
+        input: {},
+        toolCallId: "call-1",
+        toolName: "tool",
+        type: "tool-call" as const,
+      },
+      { text: "思考", type: "reasoning" as const },
+      { text: "正文 B", type: "text" as const },
+      { text: "正文 C", type: "text" as const },
+    ],
+    [message] = fromModelMessages([{ content: source, role: "assistant" }], "response-1");
+  expect(message ? messageContentParts(message) : []).toEqual(["正文 A", "正文 B", "正文 C"]);
+  expect(message ? messageContentToText(message) : "").toBe("正文 B正文 C");
 });
 test.each(["", "\n\n", "\r\n \t\r\n"])(
   "AI SDK custom tool input is persisted and replayed without trailing blank lines: %j",

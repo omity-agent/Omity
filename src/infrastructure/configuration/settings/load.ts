@@ -12,6 +12,7 @@ import { buildSkillsList } from "../../../skills";
 import { loadConfiguredHookRules } from "../hookRules";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../workspacePath";
+import { prepareMainSettings } from "./models";
 import { readSettingsText } from "../placeholders";
 import { resolveConfiguredPath } from "../configuredPath";
 import { safeId } from "../sessionPaths";
@@ -26,7 +27,17 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
   const configRoot = resolve(root),
     cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot),
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
-    main = parseMainSettings(requireLayeredYaml(context, "global", "main.yaml").value),
+    main = parseMainSettings(
+      requireLayeredYaml(
+        context,
+        "global",
+        "main.yaml",
+        {},
+        {
+          beforePlaceholders: prepareMainSettings,
+        },
+      ).value,
+    ),
     agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
     model = parseModelSettings(
       requireLayeredYaml(

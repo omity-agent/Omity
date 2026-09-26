@@ -7,12 +7,12 @@
   "type": "module",
   "module": "src/cli.ts",
   "scripts": {
-    "build": "bun scripts/build.ts",
+    "format": "oxfmt",
+    "lint": "oxlint --fix --fix-suggestions --format=agent",
+    "test": "cross-env AGENT=1 bun scripts/build.ts --test",
     "benchmark:mcp": "bun scripts/build.ts --benchmark-mcp",
     "omity": "bun src/cli.ts",
-    "lint": "oxlint --fix --fix-suggestions --format=agent",
-    "format": "oxfmt",
-    "test": "cross-env AGENT=1 bun scripts/build.ts --test"
+    "build": "bun scripts/build.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "latest",

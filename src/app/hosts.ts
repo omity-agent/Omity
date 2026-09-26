@@ -16,7 +16,7 @@ interface RunningHost {
   cancelTool: (callId: string) => boolean;
 }
 export interface AppHostEvents {
-  activity: (sessionId: string) => void;
+  activity: (sessionId: string, activity: HostActivity) => void;
   changed: (sessionId: string) => void;
   transcript: (sessionId: string, event: StreamEvent) => void;
   warning: (sessionId: string, warning: BrowserWarning) => void;
@@ -131,7 +131,7 @@ export class AppHosts {
           return;
         }
         host.activity = activity;
-        this.events.activity(changedSessionId);
+        this.events.activity(changedSessionId, activity);
       },
       changed: (changedSessionId: string) => {
         this.events.changed(changedSessionId);

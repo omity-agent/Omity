@@ -1,18 +1,19 @@
+import { emptyAs } from "../../configuration/settings/values";
 import { z } from "zod";
 
 export const mcpServerSchema = z.looseObject({
   defer_loading: z.boolean().optional(),
   enabled: z.boolean().optional(),
-  excludedTools: z
-    .array(z.string().min(1))
-    .refine((names) => new Set(names).size === names.length, {
+  excludedTools: emptyAs(
+    z.array(z.string().min(1)).refine((names) => new Set(names).size === names.length, {
       error: "MCP 工具黑名单包含重复工具",
-    })
-    .optional(),
+    }),
+    [],
+  ).optional(),
   prefixToolNameWithServerName: z.boolean().optional(),
 });
 const stdioSchema = z.looseObject({
-  args: z.array(z.string()).default([]),
+  args: emptyAs(z.array(z.string()).default([]), []),
   command: z.string(),
 });
 export function normalizeMcpServers(servers: Record<string, unknown>): Record<

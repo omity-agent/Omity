@@ -1,13 +1,17 @@
+import {
+  emptyMcpConfiguration,
+  parseMcpConfiguration,
+} from "../../../src/infrastructure/mcp/configuration";
 import { expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Client } from "@modelcontextprotocol/client";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
+import { completeToolboxYaml } from "../../support/builtins";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
 import { loadMcp } from "../../../src/infrastructure/mcp/tools/catalog";
-import { parseMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { snapshotMcpTools } from "../../../src/infrastructure/mcp/tools/definitions";
 import { z } from "zod";
 
@@ -18,7 +22,7 @@ test.each([
 ])("MCP %s rejects duplicate or reserved names (%j)", (field, value) => {
   let failure: unknown;
   try {
-    parseMcpConfiguration({ [field]: value }, "toolbox.yaml");
+    parseMcpConfiguration({ ...emptyMcpConfiguration(), [field]: value }, "toolbox.yaml");
   } catch (error) {
     failure = error;
   }
@@ -58,7 +62,7 @@ test.each([true, false])(
     mkdirSync(settings);
     writeFileSync(
       join(settings, "toolbox.yaml"),
-      JSON.stringify({
+      completeToolboxYaml({
         freeformToolInputs: ["blocked_alias"],
         mcpServers: {
           local: {

@@ -11,15 +11,18 @@ import { AskUserPrompt } from "./AskUser/Prompt";
 import type { ComposerProps } from "./props";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
 import { MarkdownEditor } from "../MarkdownEditor";
+import { UserInputPrediction } from "./prediction";
 import { UserMessageHistory } from "./history";
 import { composerFrame } from "./layout";
 import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
 import { useHistoryNavigation } from "./hooks/history";
 import { usePendingAttachments } from "./hooks/attachments";
+import { usePredictionNavigation } from "./hooks/predictions";
 import { useQuestionAnswerState } from "./AskUser/state";
 import { useTranslation } from "react-i18next";
 
+const emptyPredictions: readonly string[] = [];
 export function Composer({
   disabled,
   attachmentSettings,
@@ -28,6 +31,7 @@ export function Composer({
   draftSaveDelayMs,
   draftTarget,
   userMessages,
+  predictions = emptyPredictions,
   controlDisabled = false,
   controlState,
   deleteDisabled = false,
@@ -39,6 +43,7 @@ export function Composer({
   onSend,
   askUser,
 }: ComposerProps) {
+  "use no memo";
   const { t } = useTranslation(),
     [content, setContent] = useState(draft ?? ""),
     [loading, setLoading] = useState(true),
@@ -50,6 +55,7 @@ export function Composer({
     { attachmentValues, clearAttachments, handlePasteFiles } =
       usePendingAttachments(attachmentSettings),
     historyRef = useRef(new UserMessageHistory()),
+    predictionRef = useRef(new UserInputPrediction()),
     revisionRef = useRef(0),
     saverRef = useRef<DraftSaver | undefined>(undefined),
     submittingRef = useRef(false),
@@ -64,6 +70,7 @@ export function Composer({
       revisionRef.current = loaded.revision;
       contentRef.current = loaded.content;
       historyRef.current.reset();
+      predictionRef.current.reset();
       setContent(loaded.content);
       setLoading(false);
     };
@@ -132,12 +139,31 @@ export function Composer({
         contentRef,
         handlePasteFiles,
         historyRef,
+        predictionRef,
         revisionRef,
         saverRef,
         setContent,
         submit,
       }),
     navigateHistory = useHistoryNavigation(historyRef, contentRef, updateContent, userMessages),
+    navigateUp = (direction: "previous" | "next") => {
+      if (direction === "previous") {
+        predictionRef.current.reset();
+      }
+      return navigateHistory(direction);
+    },
+    navigatePrediction = usePredictionNavigation(
+      predictionRef,
+      contentRef,
+      updateContent,
+      predictions,
+    ),
+    navigateDown = () => {
+      if (historyRef.current.isBrowsing()) {
+        return navigateUp("next");
+      }
+      return navigatePrediction();
+    },
     editorDisabled = disabled || loading || submitting,
     submitDisabled = askUser
       ? editorDisabled ||
@@ -158,7 +184,8 @@ export function Composer({
         <MarkdownEditor
           disabled={editorDisabled}
           onChange={handleContentChange}
-          onHistoryNavigate={navigateHistory}
+          onHistoryNavigate={navigateUp}
+          onPredictionNavigate={navigateDown}
           onPasteFiles={attachmentSettings ? pasteFiles : undefined}
           onSubmit={handleSubmit}
           placeholder={t("messagePlaceholder")}

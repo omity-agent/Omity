@@ -1,10 +1,11 @@
 import { defaultBuiltIns, toolProperties, writeToolboxConfiguration } from "../../support/builtins";
-import { expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import {
+  emptyMcpConfiguration,
   parseMcpConfiguration,
   readProfileMcpConfiguration,
 } from "../../../src/infrastructure/mcp/configuration";
+import { expect, test } from "bun:test";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
@@ -31,7 +32,10 @@ test("built-in defer flags apply independently and reject non-boolean configurat
   toolboxes.choice!.defer_loading = true;
   toolboxes.open_ended!.defer_loading = false;
   toolboxes.update_title!.enabled = false;
-  const configuration = parseMcpConfiguration({ toolboxes }, "toolbox.yaml"),
+  const configuration = parseMcpConfiguration(
+      { ...emptyMcpConfiguration(), toolboxes },
+      "toolbox.yaml",
+    ),
     definitions = modelToolDefinitions(loadBuiltInTools(configuration.toolboxes, {}), new Map());
   expect(definitions.filter(({ deferLoading }) => deferLoading).map(({ name }) => name)).toEqual([
     toolboxes.choice!.name,
@@ -39,6 +43,7 @@ test("built-in defer flags apply independently and reject non-boolean configurat
   expect(() =>
     parseMcpConfiguration(
       {
+        ...emptyMcpConfiguration(),
         toolboxes: { choice: { ...toolboxes.choice, defer_loading: "true" } },
       },
       "toolbox.yaml",
@@ -105,5 +110,7 @@ test.each([
 ])("invalid title bounds are rejected in configuration: %j", (bounds) => {
   const toolboxes = defaultBuiltIns();
   Object.assign(toolboxes.update_title!.parameters.title, bounds);
-  expect(() => parseMcpConfiguration({ toolboxes }, "toolbox.yaml")).toThrow();
+  expect(() =>
+    parseMcpConfiguration({ ...emptyMcpConfiguration(), toolboxes }, "toolbox.yaml"),
+  ).toThrow();
 });

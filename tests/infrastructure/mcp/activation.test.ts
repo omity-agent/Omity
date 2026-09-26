@@ -1,13 +1,16 @@
+import { completeToolboxYaml, defaultBuiltIns } from "../../support/builtins";
+import {
+  emptyMcpConfiguration,
+  parseMcpConfiguration,
+} from "../../../src/infrastructure/mcp/configuration";
 import { expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
-import { defaultBuiltIns } from "../../support/builtins";
 import { join } from "node:path";
 import { loadMcp } from "../../../src/infrastructure/mcp/tools/catalog";
 import { normalizeMcpServers } from "../../../src/infrastructure/mcp/configuration/connections";
-import { parseMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { readLayeredSettingsYaml } from "../../../src/infrastructure/configuration/settings/files";
 
 test("MCP config omits disabled servers and consumes enabled flags", () => {
@@ -52,6 +55,7 @@ test("MCP config rejects non-boolean enabled flags", () => {
 test("disabled unprefixed servers do not claim other tools by their server name", () => {
   const configuration = parseMcpConfiguration(
     {
+      ...emptyMcpConfiguration(),
       freeformToolInputs: ["search"],
       mcpServers: {
         web: { enabled: false, prefixToolNameWithServerName: false },
@@ -77,7 +81,7 @@ test("profile toolbox settings can disable a repository server", () => {
     writeFileSync(join(userSettings, "profile.yaml"), "- tools\n");
     writeFileSync(
       join(root, "settings", "toolbox.yaml"),
-      `mcpServers:
+      completeToolboxYaml(`mcpServers:
   terminal:
     command: terminal
   web:
@@ -89,7 +93,7 @@ toolDescriptionOverrides:
   open: missing.md
   search: search.md
 freeformToolInputs: [open, search]
-`,
+`),
     );
     writeFileSync(join(profile, "toolbox.yaml"), "mcpServers:\n  terminal:\n    enabled: false\n");
     const file = readLayeredSettingsYaml(
@@ -131,11 +135,11 @@ test("disabled MCP servers are not started", async () => {
   mkdirSync(settings);
   writeFileSync(
     join(settings, "toolbox.yaml"),
-    `mcpServers:
+    completeToolboxYaml(`mcpServers:
   disabled:
     enabled: false
     command: \${MISSING_DISABLED_MCP_COMMAND}
-`,
+`),
   );
   try {
     const mcp = await loadMcp(
@@ -158,6 +162,7 @@ test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
   expect(
     parseMcpConfiguration(
       {
+        ...emptyMcpConfiguration(),
         toolDescriptionOverrides: { [settings.open_ended!.name]: "open.md" },
         toolNameOverrides: { [settings.choice!.name]: "pick" },
         toolboxes,
@@ -165,7 +170,7 @@ test("disabled ask_user toolbox is not loaded and clears its overrides", () => {
       "toolbox.yaml",
     ),
   ).toEqual({
-    ...parseMcpConfiguration({}, "toolbox.yaml"),
+    ...emptyMcpConfiguration(),
     toolboxes,
   });
 });

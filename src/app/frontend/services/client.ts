@@ -8,10 +8,12 @@ import {
   deletedResponseSchema,
   draftResponseSchema,
   messageResponseSchema,
+  predictionsResponseSchema,
   reasoningTranslationResponseSchema,
   revisionResponseSchema,
   sessionResponseSchema,
   transcriptResponseSchema,
+  userMessagesResponseSchema,
   workspaceResponseSchema,
 } from "./validation/responses";
 import type { FileLinkAction } from "../../../fileLinks/types";
@@ -27,6 +29,9 @@ const fileLinkActionSchema = z.object({ path: z.string() });
 export type FrontendSettings = Settings["frontend"];
 export async function bootstrap(signal?: AbortSignal) {
   return request("api/bootstrap", bootstrapResponseSchema, { signal });
+}
+export async function loadUserMessages(signal?: AbortSignal) {
+  return request("api/user-messages", userMessagesResponseSchema, { signal });
 }
 export async function createSession(
   workspace: string,
@@ -64,6 +69,13 @@ export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
   return request(
     `api/sessions/${encodeURIComponent(sessionId)}/transcript`,
     transcriptResponseSchema,
+    { signal },
+  );
+}
+export async function loadPredictions(sessionId: string, signal?: AbortSignal) {
+  return request(
+    `api/sessions/${encodeURIComponent(sessionId)}/predictions`,
+    predictionsResponseSchema,
     { signal },
   );
 }

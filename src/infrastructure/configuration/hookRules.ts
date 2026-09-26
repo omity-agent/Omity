@@ -1,14 +1,15 @@
 import type { HookRule } from "../../types";
 import type { PlaceholderOptions } from "./placeholders";
 import type { SettingsContext } from "./settings/context";
+import { emptyAs } from "./settings/values";
 import { isHookOutputVariable } from "../../hooks/variables";
 import { readLayeredSettingsYaml } from "./settings/files";
 import { z } from "zod";
 
 const argsSchema = z.record(z.string(), z.unknown()),
   callFields = {
-    args: argsSchema,
-    description: z.string().optional(),
+    args: emptyAs(argsSchema, {}),
+    description: emptyAs(z.string().optional(), undefined).optional(),
     enable: z.boolean().optional(),
     id: z.string().min(1),
     runLimit: z.number().int().min(-1),
@@ -18,7 +19,7 @@ const argsSchema = z.record(z.string(), z.unknown()),
   },
   hookSchema = z.strictObject({ ...callFields, mode: z.enum(["silent", "takeover"]) }),
   hooksFileSchema = z
-    .strictObject({ hooks: z.array(hookSchema) })
+    .strictObject({ hooks: emptyAs(z.array(hookSchema), []) })
     .superRefine(({ hooks }, context) => {
       const ids = new Set<string>();
       for (const [index, hook] of hooks.entries()) {
@@ -35,6 +36,7 @@ const argsSchema = z.record(z.string(), z.unknown()),
 export function parseHookRules(value: unknown): HookRule[] {
   return hooksFileSchema.parse(value).hooks;
 }
+export { hooksFileSchema };
 export function loadConfiguredHookRules(
   context: SettingsContext,
   placeholders: Omit<PlaceholderOptions, "source"> = { deferSession: true },

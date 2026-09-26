@@ -1,4 +1,5 @@
 import type { TimelineMessage, TimelinePart } from "./contracts/projection";
+import { lastContentGroup } from "./contentSelection";
 import { sameToolCall } from "./tool/correlation";
 
 export function groupAssistantMessages(messages: TimelineMessage[]) {
@@ -19,9 +20,6 @@ export function groupAssistantMessages(messages: TimelineMessage[]) {
   return result;
 }
 function mergeAssistant(target: TimelineMessage, source: TimelineMessage) {
-  target.content = [target.content, source.content]
-    .filter((content) => content.trim().length > 0)
-    .join("\n\n");
   for (const part of source.parts) {
     if (
       part.type !== "tool" ||
@@ -33,6 +31,10 @@ function mergeAssistant(target: TimelineMessage, source: TimelineMessage) {
   if (source.usage) {
     target.usage = source.usage;
   }
+  target.content = [target.content, source.content]
+    .filter((content) => content.trim().length > 0)
+    .join("\n\n");
+  target.copyContent = lastContentGroup(target.parts);
 }
 function toolParts(message: TimelineMessage) {
   return message.parts.filter(

@@ -27,6 +27,25 @@ test("preserves interleaved reasoning, text, and tool part order", () => {
     "tool",
   ]);
 });
+test("extracts only the final model body around tool and reasoning parts", () => {
+  const events: DisplayEvent[] = [
+      textEvent(1, "assistant_text_delta", "text-1", "正文"),
+      toolEvent(2, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "inspect" }),
+      textEvent(3, "assistant_reasoning_delta", "reasoning-1", "思考"),
+      textEvent(4, "assistant_text_delta", "text-2", "正文"),
+    ],
+    [message] = buildTimeline([], queue, events);
+  expect(message?.content).toBe("正文正文");
+  expect(message?.copyContent).toBe("正文");
+});
+test("joins adjacent streamed body parts for copying", () => {
+  const events: DisplayEvent[] = [
+      textEvent(1, "assistant_text_delta", "text-1", "正文一"),
+      textEvent(2, "assistant_text_delta", "text-2", "正文二"),
+    ],
+    [message] = buildTimeline([], queue, events);
+  expect(message?.content).toBe("正文一正文二");
+});
 test("merges only events sharing an explicit part identity", () => {
   const calls = streamedCalls([
     toolEvent(1, "tool-0", { idDelta: "call-1", index: 0, nameDelta: "terminal_send_command" }),

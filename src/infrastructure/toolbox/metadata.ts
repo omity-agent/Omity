@@ -1,6 +1,7 @@
+import { emptyAs } from "../configuration/settings/values";
 import { z } from "zod";
 
-const description = z.string(),
+const description = emptyAs(z.string(), ""),
   count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   parameter = z.strictObject({ description, minLength: count }),
   metadata = z.strictObject({
@@ -33,8 +34,8 @@ const description = z.string(),
     }),
   });
 export const builtInPreferencesSchema = z.strictObject({
-  choice: choicePreferences.optional(),
-  open_ended: openPreferences.optional(),
-  update_title: titlePreferences.optional(),
+  choice: emptyAs(choicePreferences.optional(), undefined).optional(),
+  open_ended: emptyAs(openPreferences.optional(), undefined).optional(),
+  update_title: emptyAs(titlePreferences.optional(), undefined).optional(),
 });
 export type BuiltInPreferences = z.infer<typeof builtInPreferencesSchema>;

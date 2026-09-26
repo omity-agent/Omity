@@ -12,7 +12,7 @@ import type { OptimisticUser } from "../../services/transcript/optimistic";
 import { Transcript } from "../Transcript";
 import { css } from "styled-system/css";
 import { deriveChatActionState } from "./actionState";
-import { useMemo } from "react";
+import { usePredictions } from "../../services/queries";
 import { useReasoningTranslation } from "../../services/translation/useReasoningTranslation";
 import { useTranslation } from "react-i18next";
 
@@ -52,6 +52,7 @@ export function ChatPage({
   sessionStatus,
   translationSettings,
   view,
+  userMessages,
   workspace,
   onCreate,
   onCancelTool,
@@ -83,6 +84,7 @@ export function ChatPage({
   sessionStatus?: SessionStatus;
   translationSettings?: FrontendSettings["reasoningTranslation"];
   view: TimelineMessage[];
+  userMessages: readonly string[];
   workspace?: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onCancelTool: (toolCallId: string) => Promise<void>;
@@ -101,6 +103,7 @@ export function ChatPage({
   onWorkspaceChange: (workspace: string) => void;
 }) {
   const { t } = useTranslation(),
+    predictionsQuery = usePredictions(activeId, sessionStatus === "idle"),
     actionState = deriveChatActionState({
       control,
       pausing,
@@ -108,10 +111,6 @@ export function ChatPage({
       sessionStatus,
     }),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
-    userMessages = useMemo(
-      () => view.filter((item) => item.role === "user").map((item) => item.content),
-      [view],
-    ),
     liveTranslation = useReasoningTranslation(activeId ?? "", view, translationSettings);
   if (!activeId) {
     if (newSession) {
@@ -128,6 +127,7 @@ export function ChatPage({
           onPickWorkspace={onPickWorkspace}
           onProfileChange={onProfileChange}
           onWorkspaceChange={onWorkspaceChange}
+          userMessages={userMessages}
         />
       );
     }
@@ -166,6 +166,7 @@ export function ChatPage({
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
         key={composerDraftKey(draftTarget)}
+        predictions={predictionsQuery.data?.predictions}
         userMessages={userMessages}
         usage={latestUsage}
         stepAvailable={actionState.stepAvailable}

@@ -12,12 +12,18 @@ export class UserMessageHistory {
   }
   reset() {
     this.index = undefined;
+    this.origin = undefined;
   }
+  isBrowsing() {
+    return this.index !== undefined;
+  }
+  private origin: string | undefined;
   private previous(current: string, messages: readonly string[]) {
     if (messages.length === 0) {
       return current;
     }
     if (this.index === undefined) {
+      this.origin = current;
       this.index = messages.length - 1;
     } else if (this.index > 0) {
       this.index -= 1;
@@ -34,7 +40,8 @@ export class UserMessageHistory {
       this.index += 1;
       return messages[this.index];
     }
+    const origin = this.origin ?? "";
     this.reset();
-    return "";
+    return origin;
   }
 }

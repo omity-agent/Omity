@@ -38,6 +38,7 @@ export function MarkdownEditor({
   onChange,
   onPasteFiles,
   onHistoryNavigate,
+  onPredictionNavigate,
   onSubmit,
   placeholder,
   value,
@@ -50,6 +51,7 @@ export function MarkdownEditor({
   onChange: (value: string) => void;
   onPasteFiles?: (files: File[]) => string | undefined;
   onHistoryNavigate?: (direction: HistoryDirection) => string | undefined;
+  onPredictionNavigate?: () => string | undefined;
   onSubmit: () => void;
   placeholder: string;
   value: string;
@@ -62,6 +64,7 @@ export function MarkdownEditor({
         disabled,
         onHistoryNavigate,
         onPasteFiles,
+        onPredictionNavigate,
         onSubmit,
       }),
   );
@@ -70,9 +73,10 @@ export function MarkdownEditor({
       disabled,
       onHistoryNavigate,
       onPasteFiles,
+      onPredictionNavigate,
       onSubmit,
     });
-  }, [disabled, handlers, onHistoryNavigate, onPasteFiles, onSubmit]);
+  }, [disabled, handlers, onHistoryNavigate, onPasteFiles, onPredictionNavigate, onSubmit]);
   const extensions = useMemo(
     () => [
       markdown(),

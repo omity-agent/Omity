@@ -12,8 +12,10 @@ import { PendingAttachments } from "../Chat/Composer/attachments";
 import { ProfilePicker } from "./ProfilePicker";
 import { SubmitButton } from "../Chat/Composer/controls/SubmitButton";
 import { Toggles } from "./options/Toggles";
+import { UserMessageHistory } from "../Chat/Composer/history";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { claimShortId } from "../../../../infrastructure/randomId";
+import { useHistoryNavigation } from "../Chat/Composer/hooks/history";
 import { useHookSelection } from "./options/selection";
 import { useNewSessionDraft } from "./draft";
 import { useSessionCreation } from "./creation";
@@ -27,6 +29,7 @@ export function NewSessionPage({
   availableProfiles,
   selectedProfile,
   workspace,
+  userMessages,
   onCreate,
   onPickWorkspace,
   onProfileChange,
@@ -39,6 +42,7 @@ export function NewSessionPage({
   availableProfiles: string[];
   selectedProfile?: string;
   workspace: string;
+  userMessages: readonly string[];
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
   onPickWorkspace: () => Promise<string | null>;
   onProfileChange: (profile?: string) => void;
@@ -54,9 +58,14 @@ export function NewSessionPage({
       update: setMessage,
     } = useNewSessionDraft(draftSaveDelayMs),
     [pairs, setPairs] = useState<EditablePair[]>([]),
+    messageRef = useRef(message),
+    historyRef = useRef(new UserMessageHistory()),
     scrollRef = useRef<HTMLDivElement>(null),
     attachmentsRef = useRef(new PendingAttachments(attachmentSettings)),
     previousPairCountRef = useRef(pairs.length);
+  useEffect(() => {
+    messageRef.current = message;
+  }, [message]);
   useEffect(() => {
     attachmentsRef.current.configure(attachmentSettings);
   }, [attachmentSettings]);
@@ -89,6 +98,21 @@ export function NewSessionPage({
       pairs,
       workspace,
     }),
+    updateMessage = useCallback(
+      (next: string) => {
+        messageRef.current = next;
+        setMessage(next);
+      },
+      [setMessage],
+    ),
+    handleMessageChange = useCallback(
+      (next: string) => {
+        historyRef.current.reset();
+        updateMessage(next);
+      },
+      [updateMessage],
+    ),
+    navigateHistory = useHistoryNavigation(historyRef, messageRef, updateMessage, userMessages),
     complete =
       workspace.trim().length > 0 &&
       message.trim().length > 0 &&
@@ -152,7 +176,8 @@ export function NewSessionPage({
       <div className={composerFrame}>
         <MarkdownEditor
           disabled={draftLoading || submitting}
-          onChange={setMessage}
+          onChange={handleMessageChange}
+          onHistoryNavigate={navigateHistory}
           onPasteFiles={attachmentSettings ? pasteFiles : undefined}
           onSubmit={handleSubmit}
           placeholder={t("messagePlaceholder")}

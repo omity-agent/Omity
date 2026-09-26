@@ -5,6 +5,7 @@ import { Prec } from "@codemirror/state";
 interface EditorHandlers {
   disabled: boolean;
   onHistoryNavigate?: (direction: HistoryDirection) => string | undefined;
+  onPredictionNavigate?: () => string | undefined;
   onPasteFiles?: (files: File[]) => string | undefined;
   onSubmit: () => void;
 }
@@ -24,7 +25,7 @@ export function editorInteractions(readHandlers: ReadHandlers) {
     Prec.highest(
       keymap.of([
         historyBinding("ArrowUp", "previous", readHandlers),
-        historyBinding("ArrowDown", "next", readHandlers),
+        predictionBinding(readHandlers),
         ...emptyEditorArrowBindings,
         {
           key: "Ctrl-Enter",
@@ -54,6 +55,31 @@ function historyBinding(
         return false;
       }
       const nextValue = onHistoryNavigate(direction);
+      if (nextValue === undefined) {
+        return false;
+      }
+      view.dispatch({
+        changes: {
+          from: 0,
+          insert: nextValue,
+          to: view.state.doc.length,
+        },
+        scrollIntoView: true,
+        selection: { anchor: nextValue.length },
+      });
+      return true;
+    },
+  };
+}
+function predictionBinding(readHandlers: ReadHandlers): KeyBinding {
+  return {
+    key: "ArrowDown",
+    run: (view) => {
+      const { disabled, onHistoryNavigate, onPredictionNavigate } = readHandlers();
+      if (view.composing || disabled || (!onPredictionNavigate && !onHistoryNavigate)) {
+        return false;
+      }
+      const nextValue = onPredictionNavigate?.() ?? onHistoryNavigate?.("next");
       if (nextValue === undefined) {
         return false;
       }

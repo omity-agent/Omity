@@ -26,6 +26,8 @@ export type ApiController = Pick<
   | "hookOptions"
   | "activateFileLink"
   | "sessions"
+  | "userMessages"
+  | "predictions"
   | "pickWorkspace"
   | "createSession"
   | "deleteSession"
@@ -61,6 +63,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.use("/api/sessions/:sessionId/transcript", compress());
   app.get("/api/bootstrap", (c) => c.json(controller.bootstrap()));
+  app.get("/api/user-messages", (c) => c.json(controller.userMessages()));
   app.get("/api/hooks", (c) => c.json({ hooks: controller.hookOptions(c.req.query("profile")) }));
   app.get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }));
   app.get("/api/events/state", (c) =>
@@ -83,6 +86,9 @@ export function createApi(controller: ApiController, access?: AccessService) {
   );
   app.get("/api/sessions/:sessionId/transcript", (c) =>
     c.json(controller.transcript(sessionId(c))),
+  );
+  app.get("/api/sessions/:sessionId/predictions", async (c) =>
+    c.json(await controller.predictions(sessionId(c))),
   );
   app.post("/api/sessions/:sessionId/file-links/activate", regularBodyLimit, async (c) => {
     const body = await readJson(c.req, fileLinkActionBody);

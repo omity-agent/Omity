@@ -31,6 +31,12 @@ export const bootstrapResponseSchema = z.object({
   }),
   sessions: z.array(sessionInfoSchema),
 });
+export const userMessagesResponseSchema = z.object({
+  messages: z.array(z.object({ content: z.string(), createdAt: integer.nonnegative() })),
+});
+export const predictionsResponseSchema = z.object({
+  predictions: z.array(z.string()),
+});
 export const sessionResponseSchema = z.object({ session: sessionInfoSchema });
 export const deletedResponseSchema = z.object({ deleted: z.string() });
 export const cleanupResponseSchema = z.object({ skipped: z.array(z.string()) });

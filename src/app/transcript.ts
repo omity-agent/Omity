@@ -1,6 +1,7 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
+import { messageContentParts, messageContentToText } from "../runtime/modelContent";
 import { queryAll, runTransaction } from "../infrastructure/database/sqlite/connection";
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { DisplayMessage } from "./timeline";
@@ -80,7 +81,9 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     throw new Error("无法还原消息");
   }
   const role = messageRole(message),
-    content = contentToText(message.content);
+    contentParts = message.type === "ai" ? messageContentParts(message) : undefined,
+    content = contentParts?.join("") ?? contentToText(message.content),
+    copyContent = message.type === "ai" ? messageContentToText(message) : content;
   if (role === "tool" && !ToolMessage.isInstance(message)) {
     throw new Error("工具消息类型无效");
   }
@@ -88,6 +91,8 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     id: row.id,
     ...(message.id ? { sourceId: message.id } : {}),
     content,
+    ...(copyContent === content ? {} : { copyContent }),
+    ...(contentParts && contentParts.length > 0 ? { contentParts } : {}),
     images: extractToolImages(message.content),
     inputId: row.input_id,
     reasoning: messageReasoning(message),

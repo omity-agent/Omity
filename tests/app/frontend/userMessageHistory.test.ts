@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { UserInputPrediction } from "../../../src/app/frontend/components/Chat/Composer/prediction";
 import { UserMessageHistory } from "../../../src/app/frontend/components/Chat/Composer/history";
 
 test("user message history moves backward and forward through messages", () => {
@@ -23,4 +24,20 @@ test("edited content leaves history browsing until the input is empty again", ()
   expect(history.navigate("previous", "edited", messages)).toBeUndefined();
   expect(history.navigate("previous", "", messages)).toBe("second");
   expect(history.navigate("next", "second", messages)).toBe("");
+});
+test("history returns to the original draft before predictions become available", () => {
+  const history = new UserMessageHistory(),
+    messages = ["first", "second"];
+  expect(history.navigate("previous", "", messages)).toBe("second");
+  expect(history.navigate("next", "second", messages)).toBe("");
+  expect(history.isBrowsing()).toBe(false);
+  expect(history.navigate("next", "", messages)).toBe("");
+});
+test("predictions start after the current draft and stay in order", () => {
+  const prediction = new UserInputPrediction(),
+    values = ["prediction one", "prediction two", "prediction three"];
+  expect(prediction.navigate("", values)).toBe("prediction one");
+  expect(prediction.navigate("prediction one", values)).toBe("prediction two");
+  expect(prediction.navigate("prediction two", values)).toBe("prediction three");
+  expect(prediction.navigate("prediction three", values)).toBe("prediction three");
 });

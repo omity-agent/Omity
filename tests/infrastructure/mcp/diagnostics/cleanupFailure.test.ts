@@ -2,6 +2,7 @@ import { expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpClientPool } from "../../../../src/infrastructure/mcp/client/pool";
+import { completeToolboxYaml } from "../../../support/builtins";
 import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../../support/artifacts";
 import { join } from "node:path";
@@ -16,12 +17,12 @@ test("MCP 清理失败保留原始工具加载错误", async () => {
   mkdirSync(join(root, "settings"));
   writeFileSync(
     join(root, "settings/toolbox.yaml"),
-    `
+    completeToolboxYaml(`
 mcpServers:
   broken:
     transport: http
     url: http://broken.invalid/mcp
-`,
+`),
   );
   try {
     expect(

@@ -21,8 +21,10 @@ export function persistedTimelineMessage(
   fileLinks: FileLinkUnit[],
   reasoningTranslations: ReasoningTranslation[],
 ): TimelineMessage {
+  const contentParts = message.contentParts ?? (message.content.trim() ? [message.content] : []);
   return {
     content: message.content,
+    ...(message.copyContent === undefined ? {} : { copyContent: message.copyContent }),
     createdAt: message.createdAt,
     id: message.id,
     key: `message-${message.id.toString()}`,
@@ -42,15 +44,17 @@ export function persistedTimelineMessage(
             } as const,
           ]
         : []),
-      ...(message.content.trim()
-        ? [
-            {
-              content: message.content,
-              ...optionalLinks(matchesFor(fileLinks, message.sourceId, "content")),
-              type: "content",
-            } as const,
-          ]
-        : []),
+      ...contentParts.flatMap((content) =>
+        content.trim()
+          ? [
+              {
+                content,
+                ...optionalLinks(matchesFor(fileLinks, message.sourceId, "content")),
+                type: "content",
+              } as const,
+            ]
+          : [],
+      ),
       ...message.toolCalls.map((call) => toolPart(call, outputs, lifecycle, fileLinks)),
     ],
   };

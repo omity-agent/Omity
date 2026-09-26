@@ -1,4 +1,4 @@
-import type { ModelApi, Settings } from "../../types";
+import type { ModelApi, ModelSettings, Settings } from "../../types";
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
 import { createAnthropic } from "@ai-sdk/anthropic";
@@ -6,13 +6,16 @@ import { createCodexClientFields } from "../../infrastructure/openai/codexAuthen
 import { createOpenAI } from "@ai-sdk/openai";
 
 export function buildAiModel(settings: Settings) {
-  if (modelApi(settings) === "messages") {
-    return createAnthropic(providerOptions(settings))(settings.model.model);
+  return buildConfiguredAiModel(settings.model);
+}
+export function buildConfiguredAiModel(model: ModelSettings) {
+  if (configuredModelApi(model) === "messages") {
+    return createAnthropic(providerOptions(model))(model.model);
   }
-  const provider = createOpenAI(providerOptions(settings));
-  return modelApi(settings) === "completions"
-    ? provider.chat(settings.model.model)
-    : provider.responses(settings.model.model);
+  const provider = createOpenAI(providerOptions(model));
+  return configuredModelApi(model) === "completions"
+    ? provider.chat(model.model)
+    : provider.responses(model.model);
 }
 export function aiRequestOptions(
   settings: Settings,
@@ -65,11 +68,42 @@ export function aiRequestOptions(
         },
       };
 }
-export function modelApi(settings: Settings): ModelApi {
-  return settings.model.adapter === "codex" ? "responses" : settings.model.adapter;
+export function structuredRequestOptions(model: ModelSettings): {
+  providerOptions: SharedV4ProviderOptions;
+} {
+  if (configuredModelApi(model) === "messages") {
+    const effort = model.reasoning_effort;
+    if (effort === "minimal") {
+      throw new Error("Messages API 不支持 reasoning_effort: minimal");
+    }
+    return {
+      providerOptions: {
+        anthropic:
+          effort === undefined
+            ? {}
+            : effort === "none"
+              ? { thinking: { type: "disabled" } }
+              : { effort, thinking: { display: "summarized", type: "adaptive" } },
+      },
+    };
+  }
+  return {
+    providerOptions: {
+      openai: {
+        reasoningEffort: model.reasoning_effort,
+        store: false,
+      },
+    },
+  };
 }
-function providerOptions(settings: Settings) {
-  if (settings.model.adapter === "codex") {
+export function modelApi(settings: Settings): ModelApi {
+  return configuredModelApi(settings.model);
+}
+export function configuredModelApi(model: ModelSettings): ModelApi {
+  return model.adapter === "codex" ? "responses" : model.adapter;
+}
+function providerOptions(model: ModelSettings) {
+  if (model.adapter === "codex") {
     const fields = createCodexClientFields();
     return {
       apiKey: fields.apiKey,
@@ -77,12 +111,12 @@ function providerOptions(settings: Settings) {
       fetch: fields.configuration.fetch,
     };
   }
-  const apiKey = process.env[settings.model.apiKeyEnv];
+  const apiKey = process.env[model.apiKeyEnv];
   if (!apiKey) {
-    throw new Error(`缺少环境变量 ${settings.model.apiKeyEnv}`);
+    throw new Error(`缺少环境变量 ${model.apiKeyEnv}`);
   }
   return {
     apiKey,
-    ...(settings.model.baseURL ? { baseURL: settings.model.baseURL } : {}),
+    ...(model.baseURL ? { baseURL: model.baseURL } : {}),
   };
 }

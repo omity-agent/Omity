@@ -1,5 +1,6 @@
 import type { RefObject, SubmitEvent } from "react";
 import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
+import type { UserInputPrediction } from "../prediction";
 import type { UserMessageHistory } from "../history";
 import { reportPromiseErrors } from "../../../../services/errors";
 
@@ -7,6 +8,7 @@ export function useComposerEvents({
   contentRef,
   handlePasteFiles,
   historyRef,
+  predictionRef,
   revisionRef,
   saverRef,
   setContent,
@@ -15,6 +17,7 @@ export function useComposerEvents({
   contentRef: RefObject<string>;
   handlePasteFiles: (files: File[], content: string) => string | undefined;
   historyRef: RefObject<UserMessageHistory>;
+  predictionRef: RefObject<UserInputPrediction>;
   revisionRef: RefObject<number>;
   saverRef: RefObject<DraftSaver | undefined>;
   setContent: (content: string) => void;
@@ -35,6 +38,7 @@ export function useComposerEvents({
         return;
       }
       historyRef.current.reset();
+      predictionRef.current.reset();
       updateContent(nextContent);
     },
     pasteFiles = (files: File[]) => handlePasteFiles(files, contentRef.current);

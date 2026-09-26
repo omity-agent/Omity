@@ -7,6 +7,7 @@ import type {
   TimelinePart,
 } from "../contracts/projection";
 import { type ToolPart, beginToolPart, extendToolPart, latestParsedInput } from "./callAssembly";
+import { allContent, lastContentGroup } from "../contentSelection";
 import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
 import type { FileLinkUnit } from "../../../fileLinks/types";
 import { countTokens } from "../../../runtime/tokenizer";
@@ -81,8 +82,11 @@ export function projectStreamMessage(
     }
     return [toolTimelinePart(part, partId, message.messageId, outputs, lifecycle, fileLinks)];
   });
+  const content = allContent(parts),
+    copyContent = lastContentGroup(parts);
   return {
-    content: parts.flatMap((part) => (part.type === "content" ? [part.content] : [])).join(""),
+    content,
+    ...(copyContent === content ? {} : { copyContent }),
     createdAt: 0,
     id: -1,
     key: `stream-${message.messageId}-${message.firstEventId.toString()}`,

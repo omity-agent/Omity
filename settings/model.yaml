@@ -1,3 +1,9 @@
+adapter:
+model:
+apiKeyEnv:
+baseURL:
+reasoning_effort:
+temperature:
 maxConcurrentRequests: 3
 retryDelayMs: 1000
 raceIntervalMs: 30000

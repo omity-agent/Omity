@@ -7,8 +7,7 @@ Do not chain shell commands with separators like `echo \"====\";` or `printf '--
 
 ## How to use ripgrep
 
-Prefer using ripgrep over grep.
-Prefer using `rg --files` over `Get-ChildItem`.
+Prefer using ripgrep over grep / Select-String / Get-ChildItem.
 
 - `--no-ignore`：不再遵守 `.gitignore`、`.ignore`、`.rgignore`、Git 全局 ignore 等忽略规则。
 - `--hidden`：搜索隐藏文件和隐藏目录。

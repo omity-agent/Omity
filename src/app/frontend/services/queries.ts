@@ -1,5 +1,11 @@
 import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type SessionInfo, bootstrap, stateEvents } from "./client";
+import {
+  type SessionInfo,
+  bootstrap,
+  loadPredictions,
+  loadUserMessages,
+  stateEvents,
+} from "./client";
 import {
   readDeletedEvent,
   readSessionEvent,
@@ -13,7 +19,22 @@ import { transcriptKey } from "./transcript/query";
 
 type BootstrapData = Awaited<ReturnType<typeof bootstrap>>;
 export { transcriptKey, type TranscriptData } from "./transcript/query";
-const bootstrapKey = ["bootstrap"] as const;
+const bootstrapKey = ["bootstrap"] as const,
+  userMessagesKey = ["user-messages"] as const,
+  predictionKey = (sessionId: string) => ["predictions", sessionId] as const;
+export function useUserMessages() {
+  return useQuery({
+    queryFn: ({ signal }) => loadUserMessages(signal),
+    queryKey: userMessagesKey,
+  });
+}
+export function usePredictions(sessionId: string | undefined, idle: boolean) {
+  return useQuery({
+    enabled: sessionId !== undefined && idle,
+    queryFn: ({ signal }) => loadPredictions(sessionId!, signal),
+    queryKey: predictionKey(sessionId ?? ""),
+  });
+}
 export function useBootstrap() {
   const queryClient = useQueryClient(),
     attention = sessionAttentionStore(queryClient),
@@ -37,6 +58,8 @@ export function useBootstrap() {
           }
           updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
           queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
+          queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
+          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
         },
         session(event) {
           const session = readSessionEvent(event);
@@ -45,12 +68,15 @@ export function useBootstrap() {
             streamedSessions.current = upsertSessionList(streamedSessions.current, session);
           }
           updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
+          void queryClient.invalidateQueries({ queryKey: predictionKey(session.id) });
+          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
         },
         sessions(event) {
           const sessions = readSessionsEvent(event);
           attention.replace(sessions);
           streamedSessions.current = sessions;
           updateCachedSessions(queryClient, () => sessions);
+          void queryClient.invalidateQueries({ queryKey: userMessagesKey });
         },
         warning(event) {
           reportBrowserWarning(readWarningEvent(event));
@@ -69,11 +95,14 @@ export function useBootstrap() {
 export function addSession(queryClient: QueryClient, session: SessionInfo) {
   sessionAttentionStore(queryClient).upsert(session);
   updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
+  void queryClient.invalidateQueries({ queryKey: userMessagesKey });
 }
 export function removeSession(queryClient: QueryClient, sessionId: string) {
   sessionAttentionStore(queryClient).remove(sessionId);
   updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));
   queryClient.removeQueries({ queryKey: transcriptKey(sessionId) });
+  queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
+  void queryClient.invalidateQueries({ queryKey: userMessagesKey });
 }
 function updateCachedSessions(
   queryClient: QueryClient,

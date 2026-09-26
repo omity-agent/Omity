@@ -12,9 +12,13 @@ function controllerHostEvents(
   events: AppEvents,
   sessionInfo: (sessionId: string) => SessionInfo,
   changed: (sessionId: string) => void,
+  prediction: (sessionId: string) => void,
 ): AppHostEvents {
   return {
-    activity: (sessionId) => {
+    activity: (sessionId, activity) => {
+      if (activity === "idle") {
+        prediction(sessionId);
+      }
       events.notifySession(sessionInfo(sessionId));
     },
     changed,
@@ -33,14 +37,25 @@ export function createControllerHosts(options: {
   context: SettingsContext;
   events: AppEvents;
   owner: ProcessOwner;
+  prediction?: (sessionId: string) => void;
   root: string;
   sessionInfo: (sessionId: string) => SessionInfo;
   settings: Settings;
 }) {
-  const { askUser, changed, context, events, owner, root, sessionInfo, settings } = options;
+  const {
+    askUser,
+    changed,
+    context,
+    events,
+    owner,
+    prediction = () => undefined,
+    root,
+    sessionInfo,
+    settings,
+  } = options;
   return new AppHosts(
     root,
-    controllerHostEvents(events, sessionInfo, changed),
+    controllerHostEvents(events, sessionInfo, changed, prediction),
     owner,
     settings.host.shutdownTimeoutMs,
     createAppMcp(root, settings.logging.level, context, askUser),

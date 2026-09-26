@@ -30,6 +30,8 @@ const integer = z.number().int(),
   }),
   messageSchema = z.object({
     content: z.string(),
+    contentParts: z.array(z.string()).optional(),
+    copyContent: z.string().optional(),
     createdAt: integer,
     id: integer.nonnegative(),
     images: z.array(z.object({ mimeType: z.string(), src: z.string() })),

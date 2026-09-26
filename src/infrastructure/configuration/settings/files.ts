@@ -8,6 +8,7 @@ import { existsSync, statSync } from "node:fs";
 import type { SettingsContext } from "./context";
 import { deepmergeCustom } from "deepmerge-ts";
 import { homedir } from "node:os";
+import { isPlainObject as isRecord } from "es-toolkit";
 import { config as loadDotenv } from "dotenv";
 import untildify from "untildify";
 
@@ -15,6 +16,10 @@ const mergeSettings = deepmergeCustom({
   filterValues: false,
   mergeArrays: false,
   mergeMaps: false,
+  mergeRecords(values, utils, meta) {
+    const reset = values.findLastIndex((value) => Object.keys(value).length === 0);
+    return utils.defaultMergeFunctions.mergeRecords(values.slice(Math.max(0, reset)), utils, meta);
+  },
   mergeSets: false,
 });
 interface LayeredSettingsFile {
@@ -66,17 +71,27 @@ export function readLayeredSettingsYaml(
       })),
     ]
       .filter(({ path }) => existsSync(path))
-      .map((layer) => Object.assign(layer, { value: readSettingsLayer(layer.path) }));
+      .map((layer) => {
+        const file = readSettingsYamlFile(layer.path);
+        return Object.assign(layer, file, {
+          empty: file.empty || (isRecord(file.value) && Object.keys(file.value).length === 0),
+        });
+      });
   if (layers.length === 0) {
     return undefined;
   }
   let value: unknown;
-  for (const [index, layer] of layers.entries()) {
-    value = index === 0 ? layer.value : mergeSettings(value, layer.value);
+  for (const layer of layers) {
+    if (!layer.empty) {
+      value = value === undefined ? layer.value : mergeSettings(value, layer.value);
+    }
   }
   const source = layers.at(-1)?.path;
   if (!source) {
     throw new Error(`配置层解析失败：${relativePath}`);
+  }
+  if (value === undefined) {
+    value = {};
   }
   const prepared = transforms.beforePlaceholders ? transforms.beforePlaceholders(value) : value;
   let resolved = resolvePlaceholders(prepared, {
@@ -85,7 +100,7 @@ export function readLayeredSettingsYaml(
   });
   if (transforms.override) {
     for (const layer of layers.toReversed()) {
-      if (layer.override) {
+      if (layer.override && !layer.empty) {
         resolved = transforms.override(resolved, layer.value, dirname(layer.path));
       }
     }
@@ -111,8 +126,4 @@ export function resolveLayeredSettingsText(
     throw new Error(`文本配置文件不存在：${relativePath}`);
   }
   return path;
-}
-function readSettingsLayer(path: string) {
-  const file = readSettingsYamlFile(path);
-  return file.empty ? {} : file.value;
 }

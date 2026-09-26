@@ -14,10 +14,12 @@ export function loadBuiltInTools(settings: BuiltInPreferences, options: BuiltInT
   if (settings.update_title?.enabled) {
     tools.push(createTitleTool(settings.update_title));
   }
-  for (const preferences of Object.values(settings)) {
-    const tool = tools.find(({ name }) => name === preferences.name);
-    if (tool && preferences.defer_loading) {
-      tool.extras = { ...tool.extras, defer_loading: true };
+  for (const preferences of Object.values<BuiltInPreferences[keyof BuiltInPreferences]>(settings)) {
+    if (preferences?.defer_loading) {
+      const tool = tools.find(({ name }) => name === preferences.name);
+      if (tool) {
+        tool.extras = { ...tool.extras, defer_loading: true };
+      }
     }
   }
   return tools;

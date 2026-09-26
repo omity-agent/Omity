@@ -33,6 +33,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
     hookOptions: () => [],
     materializeFork: notConfigured,
     pickWorkspace: notConfigured,
+    predictions: async () => ({ predictions: [] }),
     saveComposerDraft: notConfigured,
     sendMessage: notConfigured,
     sessions: () => [],
@@ -46,6 +47,7 @@ export function createApiController(overrides: Partial<ApiController> = {}): Api
       reasoningTranslations: [],
       transcriptRevision: 0,
     }),
+    userMessages: () => ({ messages: [] }),
   };
   return { ...controller, ...overrides };
 }

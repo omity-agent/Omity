@@ -2,6 +2,7 @@ import { createMcpLoadError, loadMcp } from "../../../src/infrastructure/mcp/too
 import { expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { Logger } from "../../../src/infrastructure/logging/logger";
+import { completeToolboxYaml } from "../../support/builtins";
 import { connectStdioClient } from "../../../src/infrastructure/mcp/client/stdio";
 import { createSettingsContext } from "../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../support/artifacts";
@@ -55,13 +56,13 @@ test("MCP loading propagates captured stderr", async () => {
   const output = "error: invalid argument from configured server";
   writeFileSync(
     join(settings, "toolbox.yaml"),
-    `mcpServers:
+    completeToolboxYaml(`mcpServers:
   diff:
     command: ${JSON.stringify(process.execPath)}
     args:
       - -e
       - ${JSON.stringify(`process.stderr.write(${JSON.stringify(output)}); process.exit(2)`)}
-`,
+`),
   );
   try {
     expect(
@@ -79,7 +80,7 @@ test("configured MCP cwd and tool prefix are scoped to their server", async () =
   mkdirSync(workspace);
   writeFileSync(
     join(settings, "toolbox.yaml"),
-    `mcpServers:
+    completeToolboxYaml(`mcpServers:
   default:
     command: ${JSON.stringify(process.execPath)}
     env:
@@ -96,7 +97,7 @@ test("configured MCP cwd and tool prefix are scoped to their server", async () =
     args:
       - -e
       - ${JSON.stringify(modernMcpServer)}
-`,
+`),
   );
   const mcp = await loadMcp(
     root,

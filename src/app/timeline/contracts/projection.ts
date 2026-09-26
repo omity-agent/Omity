@@ -24,6 +24,7 @@ export interface TimelineMessage {
   pending?: true;
   role: DisplayRole;
   content: string;
+  copyContent?: string;
   createdAt: number;
   usage?: TokenUsage;
   parts: TimelinePart[];

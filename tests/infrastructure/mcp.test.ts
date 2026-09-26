@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { rmSync, writeFileSync } from "node:fs";
 import { DynamicStructuredTool } from "@langchain/core/tools";
+import { completeToolboxYaml } from "../support/builtins";
 import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
 import { readMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
@@ -31,7 +32,7 @@ test("mcp config expands env placeholders recursively", () => {
   try {
     writeFileSync(
       path,
-      `mcpServers:
+      completeToolboxYaml(`mcpServers:
   search:
     command: npx
     args: ["server", "--key=\${MCP_API_KEY}"]
@@ -39,7 +40,7 @@ test("mcp config expands env placeholders recursively", () => {
       API_KEY: "\${MCP_API_KEY}"
     headers:
       Authorization: "Bearer \${MCP_TOKEN}"
-`,
+`),
     );
     expect(readMcpConfiguration(path).mcpServers).toEqual({
       search: {

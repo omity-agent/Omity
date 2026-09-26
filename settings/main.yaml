@@ -48,3 +48,23 @@ logging:
 
 leases:
   hostTtlMs: 30000
+
+prediction:
+  enabled: false
+  sampleContextTokens: 50000
+  maxUserMessageTokens: 200
+  sampleCount: 10
+  refreshIntervalHours: 1
+  outputCount: 3
+  task: >-
+    以已有的 Assistant-User 消息对为样本，学习 User 的行为习惯与表达方式并预测 User 面对 Current Assistant Response 时最可能发送的消息。你的多个预测应彼此之间有区别。
+  model:
+    adapter:
+    model:
+    apiKeyEnv:
+    baseURL:
+    maxConcurrentRequests:
+    raceIntervalMs:
+    retryDelayMs:
+    reasoning_effort:
+    temperature:

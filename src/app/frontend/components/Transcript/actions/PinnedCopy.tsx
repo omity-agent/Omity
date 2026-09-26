@@ -127,7 +127,7 @@ function PinnedCopy({
     >
       <div className={inset}>
         <div className={toolbar}>
-          <CopyButton className={button} value={span.message.content} />
+          <CopyButton className={button} value={span.message.copyContent ?? span.message.content} />
         </div>
       </div>
     </div>

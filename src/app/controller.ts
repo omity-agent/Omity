@@ -17,6 +17,7 @@ import type { AppInstanceOwner } from "./runtime/instanceLock";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
+import { PredictionService } from "./prediction/service";
 import { RetainedRegistry } from "./runtime/resources/retainedRegistry";
 import { activateFileLink } from "./fileLinks/launch";
 import { cancelSessionTool } from "./sessionCommands";
@@ -26,6 +27,7 @@ import { deleteHostSession } from "../storedSessions";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { loadSessionTranscript } from "./transcript";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
+import { loadUserMessages } from "./userMessages";
 import { materializeAppFork } from "./runtime/sessionActions";
 import { setSessionControl } from "../client";
 
@@ -35,6 +37,7 @@ export class AppController {
   private readonly registry: RetainedRegistry;
   private readonly hosts: AppHosts;
   private readonly askUser: AskUserRuntime;
+  private readonly prediction: PredictionService;
   private readonly settingsContext: SettingsContext;
   constructor(
     private readonly appRoot: string,
@@ -51,12 +54,14 @@ export class AppController {
     this.registry = new RetainedRegistry();
     this.events = new AppEvents();
     this.askUser = new AskUserRuntime((sessionId) => this.publishChange(sessionId));
+    this.prediction = new PredictionService(this.settings);
     this.hosts = createControllerHosts({
       askUser: this.askUser,
       changed: (id) => this.publishChange(id),
       context: this.settingsContext,
       events: this.events,
       owner: options.owner ?? appOwner(),
+      prediction: (sessionId) => this.prediction.onIdle(sessionId),
       root: appRoot,
       sessionInfo: (id) => this.sessionInfo(this.registry.require(id)),
       settings: this.settings,
@@ -78,6 +83,13 @@ export class AppController {
     return this.registry.list().map((session) => this.sessionInfo(session));
   }
   hookOptions = (profile?: string) => sessionHookOptions(this.settingsContext, profile);
+  userMessages() {
+    return { messages: loadUserMessages() };
+  }
+  async predictions(sessionId: string) {
+    this.registry.require(sessionId);
+    return { predictions: await this.prediction.get(sessionId) };
+  }
   assertSession(sessionId: string) {
     this.registry.require(sessionId);
   }

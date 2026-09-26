@@ -8,7 +8,7 @@ import {
   usePageNavigation,
   usePageNavigator,
 } from "./route";
-import { removeSession, useBootstrap } from "./services/queries";
+import { removeSession, useBootstrap, useUserMessages } from "./services/queries";
 import { AccessGate } from "./components/Access/AccessGate";
 import { ChatPage } from "./components/Chat/ChatPage";
 import { Sidebar } from "./components/Sidebar";
@@ -36,6 +36,7 @@ export function App() {
 function AuthenticatedApp() {
   const queryClient = useQueryClient(),
     bootstrap = useBootstrap(),
+    userMessages = useUserMessages(),
     [page, setPage] = useState(readPage),
     [pausingSessionId, setPausingSessionId] = useState<string>(),
     [deletingId, setDeletingId] = useState<string>(),
@@ -93,6 +94,10 @@ function AuthenticatedApp() {
     ),
     unreadSessionIds = useSessionAttention(queryClient, activeSession?.id),
     workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
+    userMessageContents = useMemo(
+      () => userMessages.data?.messages.map(({ content }) => content) ?? [],
+      [userMessages.data],
+    ),
     selectSession = useCallback((id: string) => navigate({ id, kind: "session" }), [navigate]),
     toolActions = useSessionToolActions(activeSession),
     changeControl = useCallback<ChatPageProps["onControl"]>(
@@ -180,6 +185,7 @@ function AuthenticatedApp() {
           sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
           translationSettings={bootstrap.data?.frontend.reasoningTranslation}
           view={pendingPreview?.view ?? submissions.view}
+          userMessages={userMessageContents}
           workspace={newWorkspace ?? cwd}
           onCreate={createNewSession}
           onCancelTool={toolActions.handleCancel}
