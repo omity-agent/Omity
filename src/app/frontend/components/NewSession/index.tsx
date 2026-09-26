@@ -107,6 +107,9 @@ export function NewSessionPage({
     ),
     handleMessageChange = useCallback(
       (next: string) => {
+        if (next === messageRef.current) {
+          return;
+        }
         historyRef.current.reset();
         updateMessage(next);
       },
