@@ -76,7 +76,7 @@ test.each(["responses", "messages"] as const)(
       expect(executions.cancel("search-1")).toBe(false);
       expect(response.tool_calls?.map((call) => call.id)).toEqual(["call-1"]);
       await db.syncHistory("target", [user, response]);
-      const transcript = transcriptResponseSchema.parse(loadTranscript(db, "target"));
+      const transcript = transcriptResponseSchema.parse(loadTranscript(db.db, "target"));
       for (const persistedEvents of [transcript.events, []]) {
         const tools = buildTimeline(transcript.messages, transcript.queue, persistedEvents)
           .flatMap((message) => message.parts)

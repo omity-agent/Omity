@@ -41,7 +41,7 @@ test("empty system instructions are omitted from the timeline", () => {
   definition.prefix.systemPrompt = " \n";
   db.resetSession("empty-instructions", workspace, [], definition);
   db.appendUser("empty-instructions", "message");
-  const transcript = loadTranscript(db, "empty-instructions");
+  const transcript = loadTranscript(db.db, "empty-instructions");
   expect(buildTimeline(transcript.messages, transcript.queue, []).map(({ role }) => role)).toEqual([
     "user",
   ]);
@@ -55,7 +55,7 @@ test("session prefix exposes instructions as a system message", async () => {
   await db.syncHistory("system-session", [
     new HumanMessage({ content: "Implement the feature.", id: "user-1" }),
   ]);
-  const transcript = loadTranscript(db, "system-session"),
+  const transcript = loadTranscript(db.db, "system-session"),
     messages = buildTimeline(transcript.messages, transcript.queue, []);
   expect(messages.map(({ role }) => role)).toEqual(["system", "user"]);
   expect(messages[0]).toMatchObject({

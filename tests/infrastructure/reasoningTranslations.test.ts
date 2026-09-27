@@ -40,7 +40,7 @@ test("reasoning translations only persist completed messages", async () => {
     targetLanguage: "zh-CN",
     translated: "分析",
   });
-  expect(loadTranscript(db, sessionId).reasoningTranslations).toEqual([
+  expect(loadTranscript(db.db, sessionId).reasoningTranslations).toEqual([
     {
       messageId: "assistant",
       source: "analysis",

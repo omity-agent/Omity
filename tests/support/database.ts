@@ -22,9 +22,9 @@ export function afterQuery(
           }
           return new Proxy(statement, {
             get(statementTarget, statementProperty) {
-              if (statementProperty === "all") {
+              if (statementProperty === "all" || statementProperty === "values") {
                 return (...params: SQLQueryBindings[]) => {
-                  const rows = statementTarget.all(...params);
+                  const rows = statementTarget[statementProperty](...params);
                   if (!completed) {
                     completed = true;
                     operation();

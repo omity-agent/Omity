@@ -45,7 +45,7 @@ test("模型完整行实时写入索引，最终末行只补算一次并可重�
   const rows = indexRows(db, "message-1", "content");
   expect(rows).toHaveLength(2);
   expect(rows[0]?.id).toBe(persistedFirst?.id);
-  const transcript = loadTranscript(reopened, sessionId);
+  const transcript = loadTranscript(reopened.db, sessionId);
   expect(
     transcript.fileLinks.filter(
       (unit) => unit.ownerId === "message-1" && unit.surface === "content",
@@ -75,7 +75,7 @@ test("格式化后的工具输入与完整工具输出由后端索引并持久�
       tool_call_id: "call-1",
     }),
   ]);
-  const transcript = loadTranscript(database, sessionId),
+  const transcript = loadTranscript(database.db, sessionId),
     surfaces = transcript.fileLinks
       .filter((unit) => unit.ownerId === "call-1")
       .map(({ surface }) => surface);

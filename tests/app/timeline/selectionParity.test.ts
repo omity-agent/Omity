@@ -32,7 +32,7 @@ test.each(cases)(
     db.createSession("selection", workspace);
     const source = fromModelMessages([{ content: parts, role: "assistant" }], "response");
     await db.syncHistory("selection", source);
-    const snapshot = loadTranscript(db, "selection"),
+    const snapshot = loadTranscript(db.db, "selection"),
       [message] = buildTimeline(snapshot.messages, [], []);
     expect(message?.copyContent ?? message?.content).toBe(expected);
     expect(
@@ -56,7 +56,7 @@ test("copy keeps adjacent persisted assistant messages together but stops at a t
     new AIMessage({ content: "正文三", id: "third" }),
     new AIMessage({ content: "正文四", id: "fourth" }),
   ]);
-  const snapshot = loadTranscript(db, "group-selection"),
+  const snapshot = loadTranscript(db.db, "group-selection"),
     message = required(
       buildTimeline(snapshot.messages, [], []).find((item) => item.role === "assistant"),
     );

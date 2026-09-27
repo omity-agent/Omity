@@ -35,7 +35,7 @@ test("transcript exposes Responses API token and cache usage", async () => {
       },
     }),
   ]);
-  const transcript = loadTranscript(db, "usage-session");
+  const transcript = loadTranscript(db.db, "usage-session");
   expect(view(transcript).at(-1)?.usage).toEqual({
     cacheReadTokens: 900,
     estimatedCacheHitRate: 0.9,
@@ -57,7 +57,7 @@ test("transcript counts raw tool input and output text", async () => {
     }),
     new ToolMessage({ content: output, tool_call_id: "call-1" }),
   ]);
-  const transcript = loadTranscript(db, "tool-token-session"),
+  const transcript = loadTranscript(db.db, "tool-token-session"),
     part = view(transcript)
       .flatMap((message) => message.parts)
       .find((item) => item.type === "tool");
@@ -86,7 +86,7 @@ test("transcript exposes original Freeform tool input", async () => {
       tool_calls: [toolCall],
     }),
   ]);
-  const part = view(loadTranscript(db, "freeform-session"))
+  const part = view(loadTranscript(db.db, "freeform-session"))
     .flatMap((message) => message.parts)
     .find((item) => item.type === "tool");
   expect(part?.type === "tool" ? part.call.rawInput : undefined).toBe(input);
@@ -106,7 +106,7 @@ test("transcript keeps the original token count for redirected output", async ()
       tool_call_id: "call-1",
     }),
   ]);
-  const part = view(loadTranscript(db, "large-output-session"))
+  const part = view(loadTranscript(db.db, "large-output-session"))
     .flatMap((message) => message.parts)
     .find((item) => item.type === "tool");
   expect(part?.output?.outputTokens).toBe(12_345);
@@ -126,7 +126,7 @@ test("live stream events match persisted snapshots and keep their cursor", async
       partId: "text-1",
       value: "hello",
     }),
-    streaming = loadTranscript(db, "stream-session");
+    streaming = loadTranscript(db.db, "stream-session");
   expect(emitted).toEqual([event]);
   expect(streaming.events.map(({ kind }) => kind)).toEqual([
     "user_appended",
@@ -135,7 +135,7 @@ test("live stream events match persisted snapshots and keep their cursor", async
   expect(streaming.events[1]).toEqual(event);
   expect(streaming.eventCursor).toBe(event.id);
   await db.syncHistory("stream-session", [new HumanMessage("question"), new AIMessage("hello")]);
-  const completed = loadTranscript(db, "stream-session");
+  const completed = loadTranscript(db.db, "stream-session");
   expect(completed.events.map(({ kind }) => kind)).toEqual(["user_appended"]);
   expect(completed.eventCursor).toBe(event.id);
   expect(completed.transcriptRevision).toBeGreaterThan(streaming.transcriptRevision);
@@ -151,7 +151,7 @@ test("snapshot refresh does not discard a tool event committed after its events 
   reader.consumeInput(sessionId, required(reader.nextInput(sessionId)));
   const emitted: StreamEvent[] = [];
   writer.onChange((event) => emitted.push(event));
-  const racingReader = afterQuery(reader, "FROM events WHERE session_id", () => {
+  const racingReader = afterQuery(reader, 'from "events" where', () => {
       void writer.appendStream(sessionId, {
         inputId,
         kind: "tool_call_delta",
@@ -167,7 +167,7 @@ test("snapshot refresh does not discard a tool event committed after its events 
     }),
     snapshot = (() => {
       try {
-        return loadTranscript(racingReader, sessionId);
+        return loadTranscript(racingReader.db, sessionId);
       } finally {
         reader.close();
         writer.close();

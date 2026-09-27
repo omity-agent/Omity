@@ -40,8 +40,8 @@ test("runtime publishes a derived title after committing tool results and restor
       paths = sessionPaths(id),
       db = new AgentDatabase(paths.dbPath);
     db.createSession(id, root);
-    const registry = new AppRegistry(),
-      info = (sessionId: string) => projectSession(registry.require(sessionId), "idle", null),
+    using registry = new AppRegistry();
+    const info = (sessionId: string) => projectSession(registry.require(sessionId), "idle", null),
       controller = createApiController({
         sessions: () => registry.list().map((session) => info(session.id)),
       }),
@@ -99,7 +99,8 @@ test("runtime publishes a derived title after committing tool results and restor
       expect(await sessionsResponse.json()).toMatchObject({
         sessions: [{ id, title: updatedTitle }],
       });
-      expect(new AppRegistry().require(id).title).toBe(updatedTitle);
+      using reopened = new AppRegistry();
+      expect(reopened.require(id).title).toBe(updatedTitle);
       abort.abort();
       await reader.cancel();
     } finally {

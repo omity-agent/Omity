@@ -1,59 +1,42 @@
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
-import { type PersistedEventRow, persistedDisplayEvent } from "./timeline/persistedEvent";
 import { contentToText, messageReasoning } from "../runtime/content";
 import { messageContentParts, messageContentToText } from "../runtime/modelContent";
-import { queryAll, runTransaction } from "../infrastructure/database/sqlite/connection";
-import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import {
+  readControlRecord,
+  readDefinitionRecord,
+  readTranscriptRevisionRecord,
+} from "../infrastructure/database/records/session/metadata";
+import {
+  transcriptEvents,
+  transcriptMessageRows,
+} from "../infrastructure/database/projections/transcriptRows";
+import type { Database } from "bun:sqlite";
 import type { DisplayMessage } from "./timeline";
+import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { extractToolActivity } from "./timeline/tool/extraction";
 import { extractToolImages } from "../runtime/multimodal";
 import { loadFileLinkUnits } from "../infrastructure/database/records/transcript/fileLinks";
 import { loadReasoningTranslations } from "../infrastructure/database/records/transcript/reasoningTranslations";
-import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 import { modelTokenUsage } from "./timeline/tokenCounts";
-import { openStoredSession } from "../storedSessions";
 import { prependInstructions } from "./timeline/build/instructions";
-import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
+import { runTransaction } from "../infrastructure/database/sqlite/connection";
+import { streamEventCursor } from "../infrastructure/database/records/transcript/streamEvents";
 import { toolOutputTokens } from "../runtime/toolOutput";
 import { transcriptInputRows } from "../infrastructure/database/records/execution/queue/workItems";
 
-interface MessageRow {
-  id: number;
-  source_id: string;
-  message_json: string;
-  input_id: number | null;
-  created_at: number;
-  token_count: number | null;
-}
-export function loadSessionTranscript(sessionId: string) {
-  using db = openStoredSession(sessionId);
-  return loadTranscript(db, sessionId);
-}
-export function loadTranscript(db: AgentDatabase, sessionId: string) {
-  return runTransaction(db.db, () => {
-    const control = db.control(sessionId),
-      transcriptRevision = db.transcriptRevision(sessionId),
+export function loadTranscript(db: Database, sessionId: string) {
+  return runTransaction(db, () => {
+    const control = readControlRecord(db, sessionId),
+      transcriptRevision = readTranscriptRevisionRecord(db, sessionId),
       messages = prependInstructions(
-        queryAll<MessageRow>(
-          db.db,
-          `SELECT m.id, m.source_id, m.message_json, m.input_id, m.created_at, m.token_count
-	       FROM messages m
-	       WHERE m.session_id = ? AND m.position IS NOT NULL
-	       ORDER BY m.position`,
-          sessionId,
-        ).map(toDisplayMessage),
-        readDefinitionRecord(db.db, sessionId).prefix.systemPrompt,
+        transcriptMessageRows(db, sessionId).map(toDisplayMessage),
+        readDefinitionRecord(db, sessionId).prefix.systemPrompt,
       ),
-      queue = transcriptInputRows(db.db, sessionId),
-      events = queryAll<PersistedEventRow>(
-        db.db,
-        `SELECT id, input_id, message_id, part_id, kind, payload_json, file_links_json
-       FROM events WHERE session_id = ? ORDER BY id`,
-        sessionId,
-      ).map(persistedDisplayEvent),
-      fileLinks = loadFileLinkUnits(db.db, sessionId),
-      reasoningTranslations = loadReasoningTranslations(db.db, sessionId),
-      eventCursor = db.eventCursor();
+      queue = transcriptInputRows(db, sessionId),
+      events = transcriptEvents(db, sessionId),
+      fileLinks = loadFileLinkUnits(db, sessionId),
+      reasoningTranslations = loadReasoningTranslations(db, sessionId),
+      eventCursor = streamEventCursor(db);
     return {
       control,
       eventCursor,
@@ -66,12 +49,9 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
     };
   });
 }
-function toDisplayMessage(row: MessageRow): DisplayMessage {
-  const [message] = messageRowsToChatMessages([row]);
-  if (!message) {
-    throw new Error("无法还原消息");
-  }
-  const role = messageRole(message),
+function toDisplayMessage(row: ReturnType<typeof transcriptMessageRows>[number]): DisplayMessage {
+  const message = decodeMessage(row.messageJson, row.sourceId),
+    role = messageRole(message),
     contentParts = message.type === "ai" ? messageContentParts(message) : undefined,
     content = contentParts?.join("") ?? contentToText(message.content),
     copyContent = message.type === "ai" ? messageContentToText(message) : content;
@@ -85,7 +65,7 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     ...(copyContent === content ? {} : { copyContent }),
     ...(contentParts && contentParts.length > 0 ? { contentParts } : {}),
     images: extractToolImages(message.content),
-    inputId: row.input_id,
+    inputId: row.inputId,
     reasoning: messageReasoning(message),
     role,
     ...(ToolMessage.isInstance(message) ? { toolCallId: message.tool_call_id } : {}),
@@ -93,8 +73,8 @@ function toDisplayMessage(row: MessageRow): DisplayMessage {
     ...(ToolMessage.isInstance(message)
       ? { outputTokens: toolOutputTokens(message, content) }
       : {}),
-    createdAt: row.created_at,
-    tokenCount: row.token_count,
+    createdAt: row.createdAt,
+    tokenCount: row.tokenCount,
     usage: modelTokenUsage(message),
   };
 }

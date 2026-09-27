@@ -46,7 +46,7 @@ test("paused cancellation is visible immediately and survives host reconstructio
     expect(called).toBe(0);
     expect(db.nextInput("target")?.status).toBe("paused");
     db.requestToolCancellation("target", "echo-call");
-    const snapshot = loadTranscript(db, "target"),
+    const snapshot = loadTranscript(db.db, "target"),
       parts = buildTimeline(snapshot.messages, snapshot.queue, snapshot.events).flatMap(
         (message) => message.parts,
       );

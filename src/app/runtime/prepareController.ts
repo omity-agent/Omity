@@ -6,7 +6,6 @@ import {
 import type { AppInstanceOwner } from "./instanceLock";
 import { AppRegistry } from "../registry";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import { RetainedRegistry } from "./resources/retainedRegistry";
 import type { SessionInfo } from "../sessionState";
 import type { Settings } from "../../types";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
@@ -20,9 +19,15 @@ export interface ControllerOptions {
 export function prepareController(root: string, options: ControllerOptions) {
   const settingsContext = options.settingsContext ?? createSettingsContext(root),
     settings = loadSettings(root, { settingsContext }),
-    discovered = new AppRegistry();
-  recoverAppSessions(discovered.list(), options.abandonedOwner);
-  return { registry: new RetainedRegistry(), settings, settingsContext };
+    registry = new AppRegistry();
+  try {
+    recoverAppSessions(registry.list(), options.abandonedOwner);
+    registry.reload();
+    return { registry, settings, settingsContext };
+  } catch (error) {
+    registry.close();
+    throw error;
+  }
 }
 export function bootstrapPayload(
   cwd: string,

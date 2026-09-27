@@ -41,7 +41,7 @@ test("syncing tool output emits a versioned completion event", async () => {
     }),
     new ToolMessage({ content: "done", id: "tool-1", tool_call_id: "call-1" }),
   ]);
-  const transcript = loadTranscript(db, sessionId);
+  const transcript = loadTranscript(db.db, sessionId);
   expect(emitted).toHaveLength(1);
   expect(emitted[0]).toMatchObject({
     kind: "tool_finished",
@@ -65,7 +65,7 @@ test("syncing tool output emits a versioned completion event", async () => {
   const appendedQueueId = db.appendUser(sessionId, "next"),
     appended = required(db.pendingInputs(sessionId).find(({ id }) => id === appendedQueueId));
   db.consumeInput(sessionId, appended);
-  const withAppend = loadTranscript(db, sessionId),
+  const withAppend = loadTranscript(db.db, sessionId),
     timeline = buildTimeline(withAppend.messages, withAppend.queue, withAppend.events);
   expect(timeline.map(({ role }) => role)).toEqual(["user", "assistant", "user"]);
   expect(
@@ -131,7 +131,7 @@ test("syncing one tool does not drop the remaining parallel tool calls", async (
       }),
       new ToolMessage({ content: "done", id: "tool-1", tool_call_id: "call-1" }),
     ]);
-    const transcript = loadTranscript(db, sessionId),
+    const transcript = loadTranscript(db.db, sessionId),
       callIds = buildTimeline(transcript.messages, transcript.queue, transcript.events).flatMap(
         (message) => message.parts.flatMap((part) => (part.type === "tool" ? [part.call.id] : [])),
       );
@@ -146,7 +146,7 @@ test("syncing one tool does not drop the remaining parallel tool calls", async (
     expect(callIds).toEqual(["call-1", "call-2", "call-3"]);
     await db.syncHistory(sessionId, db.history(sessionId));
     expect(
-      loadTranscript(db, sessionId).events.filter(({ kind }) => kind === "tool_finished"),
+      loadTranscript(db.db, sessionId).events.filter(({ kind }) => kind === "tool_finished"),
     ).toHaveLength(1);
   } finally {
     db.close();

@@ -1,3 +1,4 @@
+import type { AppRegistry, RegisteredSession } from "./registry";
 import type { Control, Settings } from "../types";
 import {
   type ControllerOptions,
@@ -7,15 +8,12 @@ import {
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
-import { readSessionDraft, writeSessionDraft } from "./composerDraft";
 import { AppEvents } from "./events";
 import type { AppHosts } from "./hosts";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
 import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { PredictionService } from "./prediction/service";
-import type { RegisteredSession } from "./registry";
-import type { RetainedRegistry } from "./runtime/resources/retainedRegistry";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { activateFileLink } from "./fileLinks/launch";
 import { appOwner } from "../infrastructure/process/ownership";
@@ -25,15 +23,17 @@ import { closeControllerResources } from "./runtime/shutdown";
 import { deleteHostSession } from "../storedSessions";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { hasLiveHostLease } from "./runtime/recovery";
-import { loadSessionTranscript } from "./transcript";
+import { loadTranscript } from "./transcript";
 import { loadUserMessages } from "./userMessages";
 import { materializeAppFork } from "./runtime/sessionActions";
+import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 import { setSessionControl } from "../client";
+import { writeSessionDraft } from "./composerDraft";
 
 export class AppController {
   readonly events: AppEvents;
   private readonly settings: Settings;
-  private readonly registry: RetainedRegistry;
+  private readonly registry: AppRegistry;
   private readonly hosts: AppHosts;
   private readonly askUser: AskUserRuntime;
   private readonly prediction: PredictionService;
@@ -116,8 +116,7 @@ export class AppController {
     return result;
   }
   composerDraft(sessionId: string) {
-    this.registry.require(sessionId);
-    return readSessionDraft(sessionId);
+    return this.registry.read(sessionId, (db) => readComposerDraftRecord(db, sessionId));
   }
   saveComposerDraft(sessionId: string, content: string, revision: number) {
     this.registry.require(sessionId);
@@ -160,7 +159,6 @@ export class AppController {
   async deleteSession(sessionId: string) {
     this.registry.require(sessionId);
     await this.hosts.stop(sessionId);
-    this.registry.release(sessionId);
     deleteHostSession(sessionId);
     this.hosts.clearError(sessionId);
     this.registry.remove(sessionId);
@@ -172,8 +170,7 @@ export class AppController {
     return clearAgentTemporaryFiles(sessionId);
   }
   transcript(sessionId: string) {
-    this.registry.require(sessionId);
-    return loadSessionTranscript(sessionId);
+    return this.registry.read(sessionId, (db) => loadTranscript(db, sessionId));
   }
   eventCursor(sessionId: string) {
     return this.registry.eventCursor(sessionId);

@@ -56,7 +56,7 @@ test("paused pending tool calls can be cancelled before execution starts", () =>
     });
     db.requestToolCancellation("session", "call-1");
     expect(db.toolCancellation("session", "call-1")).toBeNumber();
-    const transcript = loadTranscript(db, "session"),
+    const transcript = loadTranscript(db.db, "session"),
       parts = buildTimeline(transcript.messages, transcript.queue, transcript.events).flatMap(
         (message) => message.parts,
       );

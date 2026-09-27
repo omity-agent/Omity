@@ -66,8 +66,8 @@ test("app registry serves a memory projection refreshed one session at a time", 
     db = new AgentDatabase(paths.dbPath);
   db.createSession("cli-session", workspace);
   db.close();
-  const registry = new AppRegistry(),
-    sessions = registry.list();
+  using registry = new AppRegistry();
+  const sessions = registry.list();
   expect(sessions).toHaveLength(1);
   const session = required(sessions[0]);
   expect(session.id).toBe("cli-session");
@@ -80,6 +80,9 @@ test("app registry serves a memory projection refreshed one session at a time", 
   second.close();
   expect(registry.list()).toHaveLength(1);
   expect(registry.refresh("second-session").control).toBe("running");
+  const sharedReader = registry.read("cli-session", (database) => database);
+  expect(registry.read("second-session", (database) => database)).toBe(sharedReader);
+  expect(() => sharedReader.run("UPDATE sessions SET updated_at = 0")).toThrow("readonly");
   const changed = new AgentDatabase(secondPaths.dbPath);
   changed.setControl("second-session", "pause");
   changed.close();
@@ -88,7 +91,12 @@ test("app registry serves a memory projection refreshed one session at a time", 
   rmSync(secondPaths.dir, { force: true, recursive: true });
   registry.remove("second-session");
   expect(() => registry.require("second-session")).toThrow("会话不存在");
+  expect(registry.read("cli-session", (database) => database)).toBe(sharedReader);
+  expect(registry.refresh("cli-session").id).toBe("cli-session");
   expect(existsSync(join(userDataDirectory(), "app.sqlite"))).toBe(false);
+  registry.close();
+  registry.close();
+  expect(() => registry.refresh("cli-session")).toThrow("已关闭");
 });
 test("app registry includes the latest persisted message in the session activity time", () => {
   const root = makeRoot(),
@@ -101,7 +109,8 @@ test("app registry includes the latest persisted message in the session activity
   db.db.run("UPDATE sessions SET updated_at = 1");
   db.db.run("UPDATE messages SET created_at = 50");
   db.close();
-  const session = required(new AppRegistry().list()[0]);
+  using registry = new AppRegistry();
+  const session = required(registry.list()[0]);
   expect(session.updatedAt).toBe(50);
 });
 test("app instance lock rejects a second server for the same data directory", () => {

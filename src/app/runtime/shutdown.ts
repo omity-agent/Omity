@@ -1,6 +1,6 @@
 import type { AppHosts } from "../hosts";
+import type { AppRegistry } from "../registry";
 import { Logger } from "../../infrastructure/logging/logger";
-import type { RetainedRegistry } from "./resources/retainedRegistry";
 import type { Server } from "node:http";
 import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
@@ -28,7 +28,7 @@ export function createShutdownLogger() {
 }
 export async function closeControllerResources(
   hosts: Pick<AppHosts, "close">,
-  registry: Pick<RetainedRegistry, "close">,
+  registry: Pick<AppRegistry, "close">,
   ...background: { close: () => Promise<void> }[]
 ) {
   await pMap([...background, hosts, registry], (resource) => resource.close(), {
