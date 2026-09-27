@@ -2,8 +2,8 @@ import { configureReadonlyDatabase, queryAll } from "../infrastructure/database/
 import { Database } from "bun:sqlite";
 import { contentToText } from "../runtime/content";
 import { databasePath } from "../infrastructure/configuration/sessionPaths";
+import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { existsSync } from "node:fs";
-import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 
 interface UserMessageRow {
   created_at: number;
@@ -25,10 +25,7 @@ export function loadUserMessages() {
      WHERE position IS NOT NULL AND json_extract(message_json, '$.type') = 'human'
      ORDER BY created_at, id`,
   ).map((row) => {
-    const [message] = messageRowsToChatMessages([row]);
-    if (!message) {
-      throw new Error(`无法还原用户消息：${row.id.toString()}`);
-    }
+    const message = decodeMessage(row.message_json, row.source_id);
     return { content: contentToText(message.content), createdAt: row.created_at };
   });
 }

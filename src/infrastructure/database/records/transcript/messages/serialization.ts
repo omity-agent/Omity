@@ -2,12 +2,7 @@ import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, encodeMessage } from "./payload";
 import { contentToText } from "../../../../../runtime/content";
 import { countTokens } from "../../../../../runtime/tokenizer";
-import { decodeMessage } from "./hydration";
 
-interface MessageRow {
-  message_json: string;
-  source_id?: string;
-}
 export interface MessageInsert {
   messageJson: string;
   sourceId: string;
@@ -28,7 +23,4 @@ export function messageInsert(
       ? countTokens(contentToText(message.content))
       : null,
   };
-}
-export function messageRowsToChatMessages(rows: MessageRow[]): BaseMessage[] {
-  return rows.map((row) => decodeMessage(row.message_json, row.source_id));
 }

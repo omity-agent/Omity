@@ -5,6 +5,7 @@ import {
   parseModelSettings,
 } from "../../src/infrastructure/configuration/settings/schema";
 import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
+import { emptyMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
 import { join } from "node:path";
 import { z } from "zod";
 
@@ -86,6 +87,7 @@ export async function prepareBenchmarkSettings(
       "hooks.yaml": { hooks: [] },
       "model.yaml": profile.model,
       "toolbox.yaml": {
+        ...emptyMcpConfiguration(),
         mcpServers: {
           bench: {
             args: [join(import.meta.dir, "emptyStdio.ts"), toolsPath],

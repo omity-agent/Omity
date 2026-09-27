@@ -1,13 +1,11 @@
 import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
-import { type MessageStorageMode, messageInsert, messageRowsToChatMessages } from "./serialization";
-import { cachedQuery, queryAll } from "../../../sqlite/connection";
+import { type MessageStorageMode, messageInsert } from "./serialization";
 import type { Database } from "bun:sqlite";
+import { decodeMessage } from "./hydration";
+import { messageMutations } from "./writing";
 import { randomUUID } from "node:crypto";
+import { transcriptMessageRows } from "../../../projections/transcriptRows";
 
-interface StoredRow {
-  message_json: string;
-  source_id: string;
-}
 export function insertUserMessage(
   db: Database,
   sessionId: string,
@@ -51,13 +49,9 @@ export function appendAssistantMessage(db: Database, sessionId: string, content:
   );
 }
 export function loadMessages(db: Database, sessionId: string): BaseMessage[] {
-  const rows = queryAll<StoredRow>(
-    db,
-    `SELECT source_id, message_json FROM messages
-     WHERE session_id = ? AND position IS NOT NULL ORDER BY position`,
-    sessionId,
+  return transcriptMessageRows(db, sessionId).map((row) =>
+    decodeMessage(row.messageJson, row.sourceId),
   );
-  return messageRowsToChatMessages(rows);
 }
 export function storeMessage(
   db: Database,
@@ -78,14 +72,6 @@ export function storeMessage(
     createdAt,
   );
 }
-export function pruneUnreferencedMessages(db: Database, sessionId?: string) {
-  db.run(
-    `DELETE FROM messages
-     WHERE position IS NULL
-       AND (? IS NULL OR session_id = ?)`,
-    [sessionId ?? null, sessionId ?? null],
-  );
-}
 export function storePreparedMessage(
   db: Database,
   sessionId: string,
@@ -94,42 +80,20 @@ export function storePreparedMessage(
   inputId?: number,
   createdAt?: number,
 ) {
-  const row = cachedQuery<{ id: number }>(
-    db,
-    `INSERT INTO messages
-       (session_id, source_id, message_json, input_id, position, created_at, token_count)
-     VALUES (?, ?, ?, ?, ?, COALESCE(?, unixepoch()), ?)
-     ON CONFLICT(session_id, source_id) DO UPDATE SET
-       message_json = excluded.message_json,
-       input_id = COALESCE(excluded.input_id, messages.input_id),
-       position = COALESCE(excluded.position, messages.position),
-       token_count = excluded.token_count
-     RETURNING id`,
-  ).get(
+  const row = messageMutations(db).store.get({
+    ...item,
+    createdAt: createdAt ?? null,
+    inputId: inputId ?? null,
+    position: position ?? null,
     sessionId,
-    item.sourceId,
-    item.messageJson,
-    inputId ?? null,
-    position ?? null,
-    createdAt ?? null,
-    item.tokenCount,
-  );
-  if (!row) {
-    throw new Error(`消息写入失败：${item.sourceId}`);
-  }
+  });
   if (inputId !== undefined) {
-    db.run(
-      "UPDATE inputs SET delivery = 'consumed' WHERE id = ? AND session_id = ? AND delivery = 'pending'",
-      [inputId, sessionId],
-    );
+    messageMutations(db).consume.run({ inputId, sessionId });
   }
   return row.id;
 }
 function nextPosition(db: Database, sessionId: string) {
-  const row = cachedQuery<{ position: number }>(
-    db,
-    "SELECT COALESCE(MAX(position), -1) + 1 AS position FROM messages WHERE session_id = ?",
-  ).get(sessionId);
+  const row = messageMutations(db).nextPosition.get({ sessionId });
   if (!row) {
     throw new Error("无法分配消息位置");
   }

@@ -2,8 +2,8 @@ import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
 import { contentToText } from "../../runtime/content";
 import { countTokens } from "../../runtime/tokenizer";
+import { decodeMessage } from "../../infrastructure/database/records/transcript/messages/hydration";
 import { messageContentToText } from "../../runtime/modelContent";
-import { messageRowsToChatMessages } from "../../infrastructure/database/records/transcript/messages/serialization";
 import { queryAll } from "../../infrastructure/database/sqlite/connection";
 
 interface MessageRow {
@@ -55,13 +55,10 @@ export function loadPredictionSnapshot(db: Database) {
     let contextTokens = 0,
       latestModel: { content: string; id: string } | undefined;
     for (const row of sessionMessages) {
-      const [message] = messageRowsToChatMessages([row]),
+      const message = decodeMessage(row.message_json, row.source_id),
         content =
-          message?.type === "ai" ? messageContentToText(message) : contentToText(message?.content);
-      if (!message) {
-        throw new Error(`无法还原预测样本消息：${row.id.toString()}`);
-      }
-      const tokenCount = row.token_count ?? countTokens(content);
+          message.type === "ai" ? messageContentToText(message) : contentToText(message.content),
+        tokenCount = row.token_count ?? countTokens(content);
       contextTokens = addTokens(contextTokens, tokenCount);
       if (AIMessage.isInstance(message)) {
         latestModel =

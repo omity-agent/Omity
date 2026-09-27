@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+import { decodeMessage } from "./messages/hydration";
 import { messageReasoning } from "../../../../runtime/content";
-import { messageRowsToChatMessages } from "./messages/serialization";
 import { reasoningTranslations } from "../../schema";
 import { sessionDatabase } from "../../sqlite/connection";
 
@@ -63,9 +63,5 @@ function persistedReasoningSource(db: Database, sessionId: string, messageId: st
   if (!message) {
     throw new Error(`思维链消息不存在：${messageId}`);
   }
-  const [restored] = messageRowsToChatMessages([{ ...message, source_id: messageId }]);
-  if (!restored) {
-    throw new Error(`思维链消息无法还原：${messageId}`);
-  }
-  return messageReasoning(restored);
+  return messageReasoning(decodeMessage(message.message_json, messageId));
 }

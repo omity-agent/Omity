@@ -5,20 +5,20 @@ import type {
   CheckpointTuple,
   SerializerProtocol,
 } from "@langchain/langgraph-checkpoint";
-import type { CheckpointRow, WriteRow } from "./sql";
 import { BaseMessage } from "@langchain/core/messages";
+import type { RecoverySnapshot } from "../infrastructure/database/records/restoration";
 import { cloneDeepWith } from "es-toolkit";
 import { z } from "zod";
 
 interface DecodedHead {
   checkpoint: Checkpoint;
   metadata: CheckpointMetadata;
-  row: CheckpointRow;
+  row: RecoverySnapshot;
   serde: SerializerProtocol;
 }
 export class CheckpointDecoder {
   private head?: DecodedHead;
-  async decode(row: CheckpointRow, serde: SerializerProtocol): Promise<CheckpointTuple> {
+  async decode(row: RecoverySnapshot, serde: SerializerProtocol): Promise<CheckpointTuple> {
     let { head } = this;
     if (
       !head ||
@@ -39,20 +39,19 @@ export class CheckpointDecoder {
       };
       this.head = head;
     }
-    const pending = writeRowsSchema.parse(JSON.parse(row.pending_writes)),
-      pendingWrites = await Promise.all(
-        pending.map(async (write) => {
-          const value = await serde.loadsTyped(write.type, write.value);
-          return [write.task_id, write.channel, value] as [string, string, unknown];
-        }),
-      );
+    const pendingWrites = await Promise.all(
+      row.pendingWrites.map(async (write) => {
+        const value = await serde.loadsTyped(write.type, write.value);
+        return [write.taskId, write.channel, value] as [string, string, unknown];
+      }),
+    );
     return {
       checkpoint: cloneDeepWith(head.checkpoint, cloneMessage),
       config: {
         configurable: {
-          checkpoint_id: row.checkpoint_id,
-          checkpoint_ns: row.checkpoint_ns,
-          thread_id: row.run_id.toString(),
+          checkpoint_id: row.checkpointId,
+          checkpoint_ns: row.checkpointNs,
+          thread_id: row.runId.toString(),
         },
       },
       metadata: cloneDeepWith(head.metadata, cloneMessage),
@@ -83,12 +82,4 @@ const channelVersionSchema = z.union([z.number(), z.string()]),
     parents: z.record(z.string(), z.string()),
     source: z.enum(["input", "loop", "update", "fork"]),
     step: z.number(),
-  }),
-  writeRowsSchema: z.ZodType<WriteRow[]> = z.array(
-    z.object({
-      channel: z.string(),
-      task_id: z.string(),
-      type: z.string(),
-      value: z.string(),
-    }),
-  );
+  });

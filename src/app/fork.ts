@@ -13,8 +13,8 @@ import { DomainError } from "../errors";
 import { contentToText } from "../runtime/content";
 import { copyHookUsage } from "../hooks/storage/usage";
 import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
+import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 import { randomUUID } from "node:crypto";
 import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
 import { writeComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
@@ -110,11 +110,8 @@ function insertMessages(db: Database, sessionId: string, messages: MessageRow[])
       ).lastInsertRowid,
     );
   for (const [position, message] of messages.entries()) {
-    const [chatMessage] = messageRowsToChatMessages([message]);
-    if (!chatMessage) {
-      throw new Error("无法还原 Fork 消息");
-    }
-    const continuation = position === lastUserIndex;
+    const chatMessage = decodeMessage(message.message_json, message.source_id),
+      continuation = position === lastUserIndex;
     chatMessage.id = continuation ? inputMessageId(sessionId, inputId) : randomUUID();
     storeMessage(
       db,
@@ -134,9 +131,5 @@ function storedMessageType(value: string) {
   return parsed["type"];
 }
 function messageContent(value: string) {
-  const [message] = messageRowsToChatMessages([{ message_json: value }]);
-  if (!message) {
-    throw new Error("无法还原 Fork 消息");
-  }
-  return contentToText(message.content);
+  return contentToText(decodeMessage(value).content);
 }

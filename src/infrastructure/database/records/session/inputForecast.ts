@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { AIMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
+import { decodeMessage } from "../transcript/messages/hydration";
 import { inputPredictions } from "../../schema";
 import { messageContentToText } from "../../../../runtime/modelContent";
-import { messageRowsToChatMessages } from "../transcript/messages/serialization";
 import { sessionDatabase } from "../../sqlite/connection";
 import { z } from "zod";
 
@@ -27,8 +27,8 @@ export function readPredictionContext(db: Database, sessionId: string) {
   if (!row) {
     return undefined;
   }
-  const [message] = messageRowsToChatMessages([row]);
-  if (!message || !AIMessage.isInstance(message) || message.tool_calls?.length) {
+  const message = decodeMessage(row.message_json);
+  if (!AIMessage.isInstance(message) || message.tool_calls?.length) {
     return undefined;
   }
   const content = messageContentToText(message);

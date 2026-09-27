@@ -20,7 +20,7 @@ import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../../failures/details";
 import { activeInputRows } from "./queue/workItems";
 import { pauseRunRecord } from "./runs/mutations";
-import { pruneUnreferencedMessages } from "../transcript/messages/history";
+import { pruneUnreferencedMessages } from "../transcript/messages/writing";
 
 interface InterruptedSessionClaim {
   sessionId: string;
