@@ -1,12 +1,13 @@
+import { type SQL, and, eq, lt, ne, sql } from "drizzle-orm";
 import { type SessionDefinition, emptySessionDefinition } from "../../session/sessionDefinition";
+import { inputs, sessions } from "../../schema";
 import { sessionConflict, sessionNotFound } from "../../../../errors";
 import type { Control } from "../../../../types";
 import type { Database } from "bun:sqlite";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
-import { eq } from "drizzle-orm";
 import { sessionDatabase } from "../../sqlite/connection";
-import { sessions } from "../../schema";
 
+const statements = new WeakMap<Database, ReturnType<typeof prepareSessionStatements>>();
 export function createSessionRecord(
   db: Database,
   sessionId: string,
@@ -36,13 +37,7 @@ export function createSessionRecord(
   }
 }
 export function hasSessionRecord(db: Database, sessionId: string) {
-  return Boolean(
-    sessionDatabase(db)
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .get(),
-  );
+  return Boolean(queries(db).id.get({ sessionId }));
 }
 export function requireSessionRecord(db: Database, sessionId: string) {
   if (!hasSessionRecord(db, sessionId)) {
@@ -50,60 +45,44 @@ export function requireSessionRecord(db: Database, sessionId: string) {
   }
 }
 export function readWorkspaceRecord(db: Database, sessionId: string) {
-  return readSessionField(db, sessionId, sessions.workspace);
+  return readSessionField(sessionId, queries(db).workspace);
 }
 export function readProfilesRecord(db: Database, sessionId: string) {
-  return readSessionField(db, sessionId, sessions.profiles);
+  return readSessionField(sessionId, queries(db).profiles);
 }
 export function readDefinitionRecord(db: Database, sessionId: string) {
-  return readSessionField(db, sessionId, sessions.definition);
+  return readSessionField(sessionId, queries(db).definition);
 }
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  const result = db.run(
-    `UPDATE sessions
-     SET transcript_revision = transcript_revision + 1,
-       updated_at = MAX(updated_at, unixepoch())
-     WHERE id = ? AND transcript_revision < ?`,
-    [sessionId, Number.MAX_SAFE_INTEGER],
-  );
-  if (result.changes !== 1) {
+  if (queries(db).touch.run({ sessionId }).changes !== 1) {
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }
 }
 export function touchInputSessionRecord(db: Database, inputId: number) {
-  const result = db.run(
-    `UPDATE sessions
-     SET updated_at = MAX(updated_at, unixepoch()),
-       transcript_revision = transcript_revision + 1
-     WHERE id = (SELECT session_id FROM inputs WHERE id = ?)
-       AND transcript_revision < ?`,
-    [inputId, Number.MAX_SAFE_INTEGER],
-  );
-  if (result.changes !== 1) {
+  const sessionId = sessionDatabase(db)
+    .select({ id: inputs.sessionId })
+    .from(inputs)
+    .where(eq(inputs.id, inputId));
+  if (reviseSessionRecord(db, sql`(${sessionId})`) !== 1) {
     throw new Error(`队列不存在或 Transcript 版本已耗尽：${inputId.toString()}`);
   }
 }
 export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
-  const revision = readSessionField(db, sessionId, sessions.transcriptRevision);
+  const revision = readSessionField(sessionId, queries(db).revision);
   if (!Number.isSafeInteger(revision)) {
     throw new Error(`Transcript 版本无效：${sessionId}`);
   }
   return revision;
 }
 export function readControlRecord(db: Database, sessionId: string): Control {
-  return readSessionField(db, sessionId, sessions.control);
+  return readSessionField(sessionId, queries(db).control);
 }
-function readSessionField<Column extends SQLiteColumn>(
-  db: Database,
+function readSessionField<Value>(
   sessionId: string,
-  column: Column,
+  query: { get: (params: { sessionId: string }) => { value: Value } | undefined },
 ) {
-  const row = sessionDatabase(db)
-    .select({ value: column })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .get();
+  const row = query.get({ sessionId });
   if (!row) {
     throw sessionNotFound(sessionId);
   }
@@ -111,14 +90,7 @@ function readSessionField<Column extends SQLiteColumn>(
 }
 export function writeControlRecord(db: Database, sessionId: string, control: Control) {
   requireSessionRecord(db, sessionId);
-  const result = db.run(
-    `UPDATE sessions
-     SET control = ?, transcript_revision = transcript_revision + 1,
-       updated_at = MAX(updated_at, unixepoch())
-     WHERE id = ? AND control <> ? AND transcript_revision < ?`,
-    [control, sessionId, control, Number.MAX_SAFE_INTEGER],
-  );
-  if (result.changes === 1) {
+  if (reviseSessionRecord(db, sessionId, control, ne(sessions.control, control)) === 1) {
     return true;
   }
   if (readControlRecord(db, sessionId) === control) {
@@ -128,18 +100,58 @@ export function writeControlRecord(db: Database, sessionId: string, control: Con
 }
 export function consumeStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  const result = db.run(
-    `UPDATE sessions
-     SET control = 'pause', transcript_revision = transcript_revision + 1,
-       updated_at = MAX(updated_at, unixepoch())
-     WHERE id = ? AND control = 'step' AND transcript_revision < ?`,
-    [sessionId, Number.MAX_SAFE_INTEGER],
-  );
-  if (result.changes === 1) {
+  if (reviseSessionRecord(db, sessionId, "pause", eq(sessions.control, "step")) === 1) {
     return true;
   }
   if (readControlRecord(db, sessionId) === "step") {
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }
   return false;
+}
+export function reviseSessionRecord(
+  db: Database,
+  sessionId: string | SQL,
+  control?: Control,
+  condition?: SQL,
+) {
+  return sessionRevisionUpdate(db, sessionId, control, condition).run().changes;
+}
+function sessionRevisionUpdate(
+  db: Database,
+  sessionId: string | SQL,
+  control?: Control,
+  condition?: SQL,
+) {
+  return sessionDatabase(db)
+    .update(sessions)
+    .set({
+      ...(control === undefined ? {} : { control }),
+      transcriptRevision: sql`${sessions.transcriptRevision} + 1`,
+      updatedAt: sql`max(${sessions.updatedAt}, unixepoch())`,
+    })
+    .where(
+      and(
+        eq(sessions.id, sessionId),
+        lt(sessions.transcriptRevision, Number.MAX_SAFE_INTEGER),
+        condition,
+      ),
+    );
+}
+function queries(db: Database) {
+  return statements.getOrInsertComputed(db, prepareSessionStatements);
+}
+function prepareSessionStatements(db: Database) {
+  const orm = sessionDatabase(db),
+    sessionId = sql.placeholder("sessionId"),
+    field = <Column extends SQLiteColumn>(column: Column) =>
+      orm.select({ value: column }).from(sessions).where(eq(sessions.id, sessionId)).prepare();
+  return {
+    control: field(sessions.control),
+    definition: field(sessions.definition),
+    id: field(sessions.id),
+    profiles: field(sessions.profiles),
+    revision: field(sessions.transcriptRevision),
+    touch: sessionRevisionUpdate(db, sql`${sessionId}`).prepare(),
+    workspace: field(sessions.workspace),
+  };
 }

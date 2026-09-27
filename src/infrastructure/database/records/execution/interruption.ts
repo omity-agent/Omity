@@ -6,18 +6,21 @@ import {
   releaseHostLeaseRecord,
   renewHostLeaseRecord,
 } from "./hostLeases";
+import { activeRuns, inputs, runs } from "../../schema/execution";
+import { and, eq, inArray, ne } from "drizzle-orm";
+import { checkpoints, events } from "../../schema";
 import {
   consumeStepControlRecord,
   readControlRecord,
   touchSessionRecord,
   writeControlRecord,
 } from "../session/metadata";
+import { runTransaction, sessionDatabase } from "../../sqlite/connection";
 import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../../failures/details";
-import { activeInputRows } from "./readWorkItems";
-import { pauseRunRecord } from "./transitions";
+import { activeInputRows } from "./queue/workItems";
+import { pauseRunRecord } from "./runs/mutations";
 import { pruneUnreferencedMessages } from "../transcript/messages/history";
-import { runTransaction } from "../../sqlite/connection";
 
 interface InterruptedSessionClaim {
   sessionId: string;
@@ -47,11 +50,11 @@ function recoverInterruptedSessionRecord(
     writeControlRecord(db, claim.sessionId, "running");
     action = active.length > 0 ? "canceled" : "none";
   } else if (active.length > 0) {
-    const paused = db.run(
-        `UPDATE runs SET status = 'paused'
-       WHERE session_id = ? AND status = 'running'`,
-        [claim.sessionId],
-      ),
+    const paused = sessionDatabase(db)
+        .update(runs)
+        .set({ status: "paused" })
+        .where(and(eq(runs.sessionId, claim.sessionId), eq(runs.status, "running")))
+        .run(),
       controlChanged = writeControlRecord(db, claim.sessionId, "pause");
     if (paused.changes > 0 && !controlChanged) {
       touchSessionRecord(db, claim.sessionId);
@@ -61,10 +64,7 @@ function recoverInterruptedSessionRecord(
     writeControlRecord(db, claim.sessionId, "pause");
   }
   if (lease) {
-    db.run("DELETE FROM host_leases WHERE session_id = ? AND owner_id = ?", [
-      claim.sessionId,
-      lease.ownerId,
-    ]);
+    releaseHostLeaseRecord(db, claim.sessionId, lease.ownerId);
   }
   return { action, activeItems: active.length, status: "recovered" };
 }
@@ -76,24 +76,27 @@ function cancelActiveRuns(
   if (active.length === 0) {
     return;
   }
-  db.run(
-    `UPDATE runs SET status = 'canceled', error_json = NULL
-     WHERE session_id = ? AND status IN ('pending', 'running', 'paused')`,
-    [sessionId],
-  );
-  db.run(
-    `UPDATE inputs SET delivery = 'canceled'
-     WHERE session_id = ? AND delivery = 'pending'`,
-    [sessionId],
-  );
-  db.run(
-    "DELETE FROM checkpoints WHERE run_id IN (SELECT id FROM runs WHERE session_id = ? AND status = 'canceled')",
-    [sessionId],
-  );
-  const removeEvent = db.query("DELETE FROM events WHERE input_id = ?");
-  for (const item of active) {
-    removeEvent.run(item.id);
-  }
+  const orm = sessionDatabase(db),
+    ownedRuns = orm
+      .select({ id: runs.id })
+      .from(runs)
+      .where(and(eq(runs.sessionId, sessionId), activeRuns())),
+    activeInputs = orm
+      .select({ id: inputs.id })
+      .from(inputs)
+      .where(and(inArray(inputs.runId, ownedRuns), ne(inputs.delivery, "canceled")));
+  orm.delete(events).where(inArray(events.inputId, activeInputs)).run();
+  orm.delete(checkpoints).where(inArray(checkpoints.runId, ownedRuns)).run();
+  orm
+    .update(runs)
+    .set({ error: null, status: "canceled" })
+    .where(and(eq(runs.sessionId, sessionId), activeRuns()))
+    .run();
+  orm
+    .update(inputs)
+    .set({ delivery: "canceled" })
+    .where(and(eq(inputs.sessionId, sessionId), eq(inputs.delivery, "pending")))
+    .run();
   pruneUnreferencedMessages(db, sessionId);
 }
 export class RecoverableDatabase {

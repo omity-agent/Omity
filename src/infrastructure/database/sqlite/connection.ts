@@ -1,6 +1,7 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite";
 import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { parse, resolve } from "node:path";
+import { DrizzleQueryError } from "drizzle-orm";
 import { initializeDatabase } from "./initialization";
 import { rmSync } from "node:fs";
 
@@ -43,12 +44,16 @@ export function cachedQuery<Row>(db: Database, sql: string) {
 }
 export function runTransaction<T>(db: Database, operation: () => T): T {
   let result!: T;
-  transactions.getOrInsertComputed(
-    db,
-    createTransaction,
-  )(() => {
-    result = operation();
-  });
+  try {
+    transactions.getOrInsertComputed(
+      db,
+      createTransaction,
+    )(() => {
+      result = operation();
+    });
+  } catch (error) {
+    throw error instanceof DrizzleQueryError && error.cause ? error.cause : error;
+  }
   return result;
 }
 function createTransaction(db: Database) {

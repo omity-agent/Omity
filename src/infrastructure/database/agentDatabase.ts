@@ -11,7 +11,7 @@ import {
   consumedInputRows,
   nextInputRow,
   pendingInputRows,
-} from "./records/execution/readWorkItems";
+} from "./records/execution/queue/workItems";
 import {
   createSessionRecord,
   hasSessionRecord,
@@ -30,20 +30,21 @@ import {
   streamEventCursor,
 } from "./records/transcript/streamEvents";
 import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
-import { discardInputLinks, syncIndexedHistory } from "./indexing/historySync";
 import {
   readToolCancellation,
   requestToolCancellation,
 } from "./records/execution/toolCancellations";
-import { runInputIds, runStatusRecord, setRunStatusRecord } from "./records/execution/transitions";
+import { runStatusRecord, setRunStatusRecord } from "./records/execution/runs/mutations";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import { FileLinkIndexer } from "./indexing/linkScanner";
 import { InputSubmissionStore } from "./records/execution/acceptance";
 import { RecoverableDatabase } from "./records/execution/interruption";
 import { appendFileLinkStream } from "./indexing/streamAppend";
-import { consumeInputRecord } from "./records/execution/inbox";
+import { consumeInputRecord } from "./records/execution/queue/admission";
+import { deleteInputFileLinkUnits } from "./records/transcript/fileLinks";
 import { loadMessages } from "./records/transcript/messages/history";
+import { syncIndexedHistory } from "./indexing/historySync";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
@@ -132,18 +133,12 @@ export class AgentDatabase extends RecoverableDatabase {
     return result.userMessageId;
   }
   setRunStatus(runId: number, status: RunStatus, error?: ErrorDetails) {
-    runTransaction(this.db, () => {
-      setRunStatusRecord(this.db, runId, status, error);
-      for (const inputId of runInputIds(this.db, runId)) {
-        touchInputSessionRecord(this.db, inputId);
-        if (status === "done" || status === "canceled") {
-          deleteInputStream(this.db, inputId);
-        }
-        if (status === "canceled") {
-          discardInputLinks(this.db, this.fileLinks, inputId);
-        }
-      }
+    const discarded = runTransaction(this.db, () => {
+      const result = setRunStatusRecord(this.db, runId, status, error);
+      touchSessionRecord(this.db, result.sessionId);
+      return result.discardedInputIds;
     });
+    this.fileLinks.discardInputs(discarded);
   }
   runStatus(runId: number) {
     return runStatusRecord(this.db, runId);
@@ -198,7 +193,8 @@ export class AgentDatabase extends RecoverableDatabase {
     runTransaction(this.db, () => {
       touchInputSessionRecord(this.db, inputId);
       deleteInputStream(this.db, inputId);
+      deleteInputFileLinkUnits(this.db, inputId);
     });
-    discardInputLinks(this.db, this.fileLinks, inputId);
+    this.fileLinks.discardInputs([inputId]);
   }
 }

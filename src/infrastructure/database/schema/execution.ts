@@ -1,32 +1,32 @@
+import { type ErrorDetails, parseError, stringifyError } from "../../../failures/details";
 import {
+  type SQLiteColumn,
   check,
+  customType,
   foreignKey,
   integer,
   sqliteTable,
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import type { ErrorDetails } from "../../../failures/details";
 import type { RunStatus } from "../../../types";
 import { sessions } from "./session";
 import { sql } from "drizzle-orm";
 
-const statuses = [
-  "pending",
-  "running",
-  "paused",
-  "done",
-  "canceled",
-] as const satisfies readonly RunStatus[];
+const errorDetails = customType<{ data: ErrorDetails; driverData: string }>({
+  dataType: () => "text",
+  fromDriver: parseError,
+  toDriver: stringifyError,
+});
 export const runs = sqliteTable(
   "runs",
   {
-    error: text("error_json", { mode: "json" }).$type<ErrorDetails>(),
+    error: errorDetails("error_json"),
     id: integer().primaryKey({ autoIncrement: true }),
     sessionId: text("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
-    status: text({ enum: statuses }).notNull(),
+    status: text().$type<RunStatus>().notNull(),
   },
   (table) => [
     check(
@@ -34,11 +34,12 @@ export const runs = sqliteTable(
       sql`${table.status} in ('pending', 'running', 'paused', 'done', 'canceled')`,
     ),
     uniqueIndex("runs_owner").on(table.sessionId, table.id),
-    uniqueIndex("runs_active_session")
-      .on(table.sessionId)
-      .where(sql`${table.status} in ('pending', 'running', 'paused')`),
+    uniqueIndex("runs_active_session").on(table.sessionId).where(activeRuns(table.status)),
   ],
 );
+export function activeRuns(status: SQLiteColumn = runs.status) {
+  return sql`${status} in ('pending', 'running', 'paused')`;
+}
 export const inputs = sqliteTable(
   "inputs",
   {

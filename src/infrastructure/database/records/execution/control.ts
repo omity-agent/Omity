@@ -1,31 +1,36 @@
-import { readControlRecord, requireSessionRecord } from "../session/metadata";
+import { and, eq, exists, inArray, not } from "drizzle-orm";
+import { readControlRecord, requireSessionRecord, reviseSessionRecord } from "../session/metadata";
+import { runs, sessions } from "../../schema";
 import type { Database } from "bun:sqlite";
-import { cachedQuery } from "../../sqlite/connection";
 import { controlNotReady } from "../../../../errors";
+import { sessionDatabase } from "../../sqlite/connection";
 
 export function requestStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
-  const result = db.run(
-    `UPDATE sessions
-     SET control = 'step', transcript_revision = transcript_revision + 1,
-       updated_at = MAX(updated_at, unixepoch())
-     WHERE id = ? AND control IN ('running', 'pause')
-       AND EXISTS (
-         SELECT 1 FROM runs
-         WHERE session_id = ? AND status = 'paused'
-       )
-       AND NOT EXISTS (
-         SELECT 1 FROM runs
-         WHERE session_id = ? AND status = 'running'
-       )
-       AND transcript_revision < ?`,
-    [sessionId, sessionId, sessionId, Number.MAX_SAFE_INTEGER],
-  );
-  if (result.changes === 1) {
+  const orm = sessionDatabase(db),
+    run = (status: "paused" | "running") =>
+      orm
+        .select({ id: runs.id })
+        .from(runs)
+        .where(and(eq(runs.sessionId, sessionId), eq(runs.status, status))),
+    steppable = and(exists(run("paused")), not(exists(run("running")))),
+    changed = reviseSessionRecord(
+      db,
+      sessionId,
+      "step",
+      and(inArray(sessions.control, ["running", "pause"]), steppable),
+    );
+  if (changed === 1) {
     return;
   }
   const control = readControlRecord(db, sessionId),
-    ready = hasSteppableRunRecord(db, sessionId);
+    ready = Boolean(
+      orm
+        .select({ id: sessions.id })
+        .from(sessions)
+        .where(and(eq(sessions.id, sessionId), steppable))
+        .get(),
+    );
   if (control === "step" && ready) {
     return;
   }
@@ -33,14 +38,4 @@ export function requestStepControlRecord(db: Database, sessionId: string) {
     throw new Error(`Transcript 版本已耗尽：${sessionId}`);
   }
   throw controlNotReady("step");
-}
-function hasSteppableRunRecord(db: Database, sessionId: string) {
-  const row = cachedQuery<{ ready: number }>(
-    db,
-    `SELECT
-       EXISTS(SELECT 1 FROM runs WHERE session_id = ? AND status = 'paused')
-       AND NOT EXISTS(SELECT 1 FROM runs WHERE session_id = ? AND status = 'running')
-       AS ready`,
-  ).get(sessionId, sessionId);
-  return row?.ready === 1;
 }

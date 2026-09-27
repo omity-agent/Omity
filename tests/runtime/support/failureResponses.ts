@@ -59,10 +59,13 @@ export const providerFailures = [
   },
 ];
 function apiFailure(error: Record<string, string>, status: number) {
-  return new Response(JSON.stringify({ error }), {
-    headers: { "content-type": "text/event-stream" },
-    status,
-  });
+  return Response.json(
+    { error },
+    {
+      headers: { "content-type": "text/event-stream" },
+      status,
+    },
+  );
 }
 function failedEvent(error: Record<string, string>) {
   const event = {

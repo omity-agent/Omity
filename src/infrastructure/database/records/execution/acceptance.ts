@@ -2,7 +2,7 @@ import { requireSessionRecord, touchSessionRecord } from "../session/metadata";
 import type { Database } from "bun:sqlite";
 import { UserMessageStorage } from "../../session/userMessages";
 import { clearComposerDraftRecord } from "../session/composerDrafts";
-import { enqueueInputRecord } from "./inbox";
+import { enqueueInputRecord } from "./queue/admission";
 import { resolveSessionPaths } from "../../../configuration/sessionPaths";
 import { runTransaction } from "../../sqlite/connection";
 

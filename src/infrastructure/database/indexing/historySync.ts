@@ -1,9 +1,5 @@
 import type { StreamEvent, StreamEventDraft } from "../../../types";
-import {
-  deleteInputFileLinkUnits,
-  publicFileLinkUnits,
-  upsertFileLinkUnits,
-} from "../records/transcript/fileLinks";
+import { publicFileLinkUnits, upsertFileLinkUnits } from "../records/transcript/fileLinks";
 import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
 import type { FileLinkIndexer } from "./linkScanner";
@@ -85,8 +81,4 @@ export function insertPlainStream(
     touchSessionRecord(db, sessionId);
     return inserted;
   });
-}
-export function discardInputLinks(db: Database, fileLinks: FileLinkIndexer, inputId: number) {
-  fileLinks.discardQueue(inputId);
-  deleteInputFileLinkUnits(db, inputId);
 }

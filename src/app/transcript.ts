@@ -12,11 +12,10 @@ import { loadReasoningTranslations } from "../infrastructure/database/records/tr
 import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 import { modelTokenUsage } from "./timeline/tokenCounts";
 import { openStoredSession } from "../storedSessions";
-import { parseError } from "../failures/details";
 import { prependInstructions } from "./timeline/build/instructions";
 import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
 import { toolOutputTokens } from "../runtime/toolOutput";
-import { transcriptInputRows } from "../infrastructure/database/records/execution/readWorkItems";
+import { transcriptInputRows } from "../infrastructure/database/records/execution/queue/workItems";
 
 interface MessageRow {
   id: number;
@@ -45,15 +44,7 @@ export function loadTranscript(db: AgentDatabase, sessionId: string) {
         ).map(toDisplayMessage),
         readDefinitionRecord(db.db, sessionId).prefix.systemPrompt,
       ),
-      queue = transcriptInputRows(db.db, sessionId).map((row) => ({
-        content: row.content,
-        error: row.error ? parseError(row.error) : null,
-        id: row.id,
-        runId: row.run_id,
-        status: row.status,
-        submissionId: row.submission_id,
-        userMessageId: row.user_message_id,
-      })),
+      queue = transcriptInputRows(db.db, sessionId),
       events = queryAll<PersistedEventRow>(
         db.db,
         `SELECT id, input_id, message_id, part_id, kind, payload_json, file_links_json

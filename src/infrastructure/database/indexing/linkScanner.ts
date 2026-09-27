@@ -77,9 +77,10 @@ export class FileLinkIndexer {
     }
     return result;
   }
-  discardQueue(inputId: number) {
+  discardInputs(inputIds: Iterable<number>) {
+    const discarded = new Set(inputIds);
     for (const [key, state] of this.streams) {
-      if (state.inputId === inputId) {
+      if (discarded.has(state.inputId)) {
         this.streams.delete(key);
       }
     }

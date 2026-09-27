@@ -12,7 +12,7 @@ import type { Database } from "bun:sqlite";
 import { DomainError } from "../errors";
 import { contentToText } from "../runtime/content";
 import { copyHookUsage } from "../hooks/storage/usage";
-import { createRunRecord } from "../infrastructure/database/records/execution/transitions";
+import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { messageRowsToChatMessages } from "../infrastructure/database/records/transcript/messages/serialization";
 import { randomUUID } from "node:crypto";
