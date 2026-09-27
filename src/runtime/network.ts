@@ -7,7 +7,13 @@ const retryableNames = new Set([
     "ModelEmptyResponseError",
     "TimeoutError",
   ]),
-  retryableApiCodes = new Set(["bad_response_status_code", "server_error", "server_is_overloaded"]),
+  retryableApiCodes = new Set([
+    "bad_response_status_code",
+    "basispoints_upstream_error",
+    "server_error",
+    "server_is_overloaded",
+  ]),
+  retryableApiErrorTypes = new Set(["service_unavailable_error"]),
   retryableHttpStatuses = new Set([520]),
   retryableMessages = new Set(["Received empty response from chat model call."]),
   nonRetryableApiErrorTypes = new Set(["usage_limit_reached"]);
@@ -36,57 +42,54 @@ const retryableCodes = new Set([
 export function isRetryableModelError(error: unknown): boolean {
   const pending = [error],
     visited = new Set<unknown>();
+  let retryable = false;
   while (pending.length > 0) {
     const current = pending.pop();
-    if (isNetworkError(current)) {
-      return true;
-    }
-    if (APICallError.isInstance(current)) {
-      if (isNonRetryableApiError(current)) {
-        return false;
-      }
-      if (current.isRetryable) {
-        return true;
-      }
+    if (isNetworkError(current) || (APICallError.isInstance(current) && current.isRetryable)) {
+      retryable = true;
     }
     if (isRecord(current) && !visited.has(current)) {
       visited.add(current);
+      const { type } = current;
+      if (typeof type === "string") {
+        if (nonRetryableApiErrorTypes.has(type)) {
+          return false;
+        }
+        if (retryableApiErrorTypes.has(type)) {
+          retryable = true;
+        }
+      }
       const { name } = current;
       if (name !== "AbortError" && typeof name === "string" && retryableNames.has(name)) {
-        return true;
+        retryable = true;
       }
       const { code } = current;
       if (typeof code === "string" && (retryableCodes.has(code) || retryableApiCodes.has(code))) {
-        return true;
+        retryable = true;
       }
       const { status } = current;
       if (typeof status === "number" && retryableHttpStatuses.has(status)) {
-        return true;
+        retryable = true;
       }
       const { message } = current;
       if (typeof message === "string" && retryableMessages.has(message)) {
-        return true;
+        retryable = true;
       }
-      pending.push(current["cause"], current["error"], current["details"]);
+      pending.push(
+        current["cause"],
+        current["error"],
+        current["details"],
+        current["data"],
+        current["value"],
+        current["response"],
+        parseResponseBody(current["responseBody"]),
+      );
     }
   }
-  return false;
+  return retryable;
 }
-function isNonRetryableApiError(error: APICallError): boolean {
-  return (
-    hasNonRetryableApiErrorType(error.data) ||
-    hasNonRetryableApiErrorType(parseResponseBody(error.responseBody))
-  );
-}
-function hasNonRetryableApiErrorType(value: unknown): boolean {
-  if (!isRecord(value) || !isRecord(value["error"])) {
-    return false;
-  }
-  const { type } = value["error"];
-  return typeof type === "string" && nonRetryableApiErrorTypes.has(type);
-}
-function parseResponseBody(responseBody: string | undefined): unknown {
-  if (!responseBody) {
+function parseResponseBody(responseBody: unknown): unknown {
+  if (typeof responseBody !== "string" || !responseBody) {
     return undefined;
   }
   try {
