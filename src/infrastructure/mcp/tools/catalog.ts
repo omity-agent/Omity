@@ -15,7 +15,6 @@ import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { cleanupFailedInitialization } from "../lifecycle";
 import { collectReadableZodIssues } from "./issues";
-import { disableAdapterRequestTimeout } from "../client/requestPolicy";
 import { omit } from "es-toolkit";
 import { omitExcludedToolCustomizations } from "../configuration/exclusions";
 import { resolve } from "node:path";
@@ -110,7 +109,6 @@ async function connectMcp(
   const end = logger.child("MCP 工具加载");
   let pool: McpClientPool | undefined;
   try {
-    disableAdapterRequestTimeout();
     const connections = Object.fromEntries(
         Object.entries(configuration.mcpServers).map(([name, connection]) => [
           name,

@@ -6,7 +6,7 @@ import {
 } from "../../../src/infrastructure/mcp/tools/definitions";
 import { expect, mock, test } from "bun:test";
 import { AppMcp } from "../../../src/app/runtime/resources/toolPool";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { Client } from "@modelcontextprotocol/client";
 import { emptyMcpConfiguration } from "../../../src/infrastructure/mcp/configuration";
 import { renameMcpTools } from "../../../src/infrastructure/mcp/tools/descriptions";
 
@@ -55,7 +55,7 @@ test.each([true, false])(
     ]);
     renameMcpTools(tools, { [prefix ? "first__tool" : "tool"]: "renamed" });
     await tools[0]!.invoke({});
-    expect(callTool).toHaveBeenCalledWith({ arguments: {}, name: "tool" });
+    expect(callTool).toHaveBeenCalledWith({ arguments: {}, name: "tool" }, undefined);
     const definitions = modelToolDefinitions(tools, new Map());
     expect(definitions.map(({ deferLoading, name }) => ({ deferLoading, name }))).toEqual([
       { deferLoading: true, name: "renamed" },

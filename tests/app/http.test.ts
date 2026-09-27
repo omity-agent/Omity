@@ -1,8 +1,9 @@
 import { type ApiController, createApi } from "../../src/app/http/handler";
-import { decodeSessionId, requestBodyLimit } from "../../src/app/http/request";
 import { expect, test } from "bun:test";
 import { createApiController } from "./support/apiController";
 import { createStaticApp } from "../../src/app/http/static";
+import { decodeSessionId } from "../../src/app/http/request";
+import { requestBodyLimit } from "../../settings/networking";
 import { submissionForm } from "../../src/app/attachments/submission";
 
 test("API JSON validation rejects invalid controls and empty messages", async () => {
@@ -138,6 +139,24 @@ test("API JSON reader enforces the body size limit", async () => {
       message: `请求体不能超过 ${requestBodyLimit.toString()} 字节`,
     },
   });
+});
+test("page exit beacons save drafts through the POST endpoint", async () => {
+  const calls: Parameters<ApiController["saveComposerDraft"]>[] = [],
+    controller = createApiController({
+      saveComposerDraft: (...args) => {
+        calls.push(args);
+        return { revision: args[2] };
+      },
+    }),
+    response = await createApi(controller).request("/api/sessions/test/composer-draft", {
+      body: new Blob([JSON.stringify({ content: "离开页面前的草稿", revision: 7 })], {
+        type: "application/json",
+      }),
+      method: "POST",
+    });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ revision: 7 });
+  expect(calls).toEqual([["test", "离开页面前的草稿", 7]]);
 });
 test("API returns the existing JSON 404 contract", async () => {
   const response = await createApi(createApiController()).request("/api/unknown");

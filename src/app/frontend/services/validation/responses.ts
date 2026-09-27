@@ -50,5 +50,5 @@ export const messageResponseSchema = z.object({ content: z.string(), inputId: in
 export const controlResponseSchema = z.object({
   control: controlCommandSchema,
 });
-export const cancellationResponseSchema = z.object({ toolCallId: z.string() });
-export const answerResponseSchema = z.object({ toolCallId: z.string() });
+export const toolCallResponseSchema = z.object({ toolCallId: z.string() });
+export const activatedFileResponseSchema = z.object({ path: z.string() });

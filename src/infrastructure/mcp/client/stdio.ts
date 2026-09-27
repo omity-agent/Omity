@@ -1,11 +1,9 @@
-import { Client } from "@modelcontextprotocol/client";
+import type { Client } from "@modelcontextprotocol/client";
 import { StderrCapture } from "./diagnostics";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import type { StdioConnection } from "@langchain/mcp-adapters";
+import type { StdioConnection } from "../configuration/connections";
 import { Writable } from "node:stream";
-import { cleanupFailedInitialization } from "../lifecycle";
-import { disableClientRequestTimeout } from "./requestPolicy";
-import { isPlainObject as isRecord } from "es-toolkit";
+import { connectProtocolClient } from "./protocol";
 
 const maximumStderrBytes = 64 * 1024;
 export interface ConnectedStdioClient {
@@ -44,17 +42,11 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
   const closed = Promise.withResolvers<void>();
   let isClosed = false;
   const closeTransport = () => {
-      isClosed = true;
-      closed.resolve();
-    },
-    client = new Client(
-      { name: "omity-agent", version: "1.0.0" },
-      { versionNegotiation: { mode: "auto" } },
-    );
-  Reflect.set(client, "onclose", closeTransport);
+    isClosed = true;
+    closed.resolve();
+  };
   try {
-    await client.connect(transport, signal ? { signal } : undefined);
-    disableClientRequestTimeout(client);
+    const client = await connectProtocolClient(transport, { onclose: closeTransport, signal });
     return {
       client,
       close: async () => {
@@ -69,22 +61,11 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
   } catch (error) {
     const output = diagnostics.text(),
       message = error instanceof Error ? error.message : String(error);
-    return cleanupFailedInitialization(
-      new Error(
-        output
-          ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
-          : `MCP stdio 服务器 "${serverName}" 连接失败：${message}`,
-        { cause: error },
-      ),
-      () => client.close(),
+    throw new Error(
+      output
+        ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
+        : `MCP stdio 服务器 "${serverName}" 连接失败：${message}`,
+      { cause: error },
     );
   }
 };
-export function isStdioConnection(value: unknown): value is StdioConnection {
-  return (
-    isRecord(value) &&
-    typeof value["command"] === "string" &&
-    Array.isArray(value["args"]) &&
-    value["args"].every((argument) => typeof argument === "string")
-  );
-}

@@ -1,21 +1,30 @@
+import type { AccessEnvironment } from "./access";
 import type { HonoRequest } from "hono/request";
 import { HttpError } from "./errors";
+import { bodyLimit } from "hono/body-limit";
 import { controlCommandSchema } from "../../types";
+import { createMiddleware } from "hono/factory";
 import { fileLinkActionSchema } from "../../fileLinks/types";
+import { requestBodyLimit } from "../../../settings/networking";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { z } from "zod";
 
-export const requestBodyLimit = 1024 * 1024;
+export function limitRequestBody(maxSize = requestBodyLimit, label = "请求体") {
+  return bodyLimit({
+    maxSize,
+    onError() {
+      throw new HttpError(413, `${label}不能超过 ${maxSize.toString()} 字节`);
+    },
+  });
+}
+const regularBodyLimit = limitRequestBody();
 export const composerDraftBody = z.strictObject({
   content: z.string(),
   revision: z.number().int().positive(),
 });
 export const controlBody = z.strictObject({ control: controlCommandSchema });
 export const cancelToolBody = z.strictObject({ toolCallId: z.string().min(1).max(1024) });
-export const answerToolBody = z.strictObject({
-  answer: z.unknown(),
-  toolCallId: z.string().min(1).max(1024),
-});
+export const answerToolBody = cancelToolBody.extend({ answer: z.unknown() });
 export const fileLinkActionBody = z.strictObject({
   action: fileLinkActionSchema,
   path: z.string().min(1).max(32_767),
@@ -29,7 +38,7 @@ export const reasoningTranslationBody = z.strictObject({
   targetLanguage: z.string().min(1).max(255),
   translated: z.string().min(1).max(requestBodyLimit),
 });
-export async function readJson<T>(request: HonoRequest, schema: z.ZodType<T>): Promise<T> {
+async function readJson<T>(request: HonoRequest, schema: z.ZodType<T>): Promise<T> {
   let parsed: unknown;
   try {
     parsed = await request.json<unknown>();
@@ -38,12 +47,18 @@ export async function readJson<T>(request: HonoRequest, schema: z.ZodType<T>): P
   }
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    const details = result.error.issues
-      .map((issue) => `${issue.path.join(".") || "body"}: ${issue.message}`)
-      .join("; ");
-    throw new HttpError(400, `请求参数无效：${details}`);
+    throw new HttpError(400, `请求参数无效：${z.prettifyError(result.error)}`);
   }
   return result.data;
+}
+export function jsonBody<T extends object>(schema: z.ZodType<T>) {
+  return createMiddleware<AccessEnvironment, string, { in: { json: T }; out: { json: T } }>(
+    (c, next) =>
+      regularBodyLimit(c, async () => {
+        c.req.addValidatedData("json", await readJson(c.req, schema));
+        await next();
+      }),
+  );
 }
 export function decodeSessionId(value: string) {
   let decoded: string;

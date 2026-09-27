@@ -17,13 +17,13 @@ const first: Part = { text: "正文一", type: "text" },
     toolCallId: "hosted",
     toolName: "inspect",
     type: "tool-call",
-  };
-const cases: { expected: string; parts: Part[] }[] = [
-  { expected: "正文一正文二", parts: [first, second] },
-  { expected: "正文二", parts: [first, tool, reasoning, second] },
-  { expected: "正文二正文三", parts: [first, reasoning, second, third] },
-  { expected: "正文一正文二", parts: [first, second, reasoning] },
-];
+  },
+  cases: { expected: string; parts: Part[] }[] = [
+    { expected: "正文一正文二", parts: [first, second] },
+    { expected: "正文二", parts: [first, tool, reasoning, second] },
+    { expected: "正文二正文三", parts: [first, reasoning, second, third] },
+    { expected: "正文一正文二", parts: [first, second, reasoning] },
+  ];
 afterEach(cleanupDatabaseDirs);
 test.each(cases)(
   "persisted copy respects body boundaries: $expected",

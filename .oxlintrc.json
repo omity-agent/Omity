@@ -87,6 +87,7 @@
     "@tanstack/query/no-void-query-fn": "error",
     "@tanstack/query/mutation-property-order": "error",
     "typescript/no-deprecated": "warn",
+    "capitalized-comments": "allow",
     "consistent-type-specifier-style": "allow",
     "exports-last": "allow",
     "filename-case": "allow",

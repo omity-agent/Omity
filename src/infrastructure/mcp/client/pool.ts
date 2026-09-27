@@ -1,17 +1,15 @@
-import { AsyncResourceCache, cleanupFailedInitialization } from "../lifecycle";
-import { type Connection, MultiServerMCPClient } from "@langchain/mcp-adapters";
+import { type McpOperations, connectProtocolClient } from "./protocol";
+import { AsyncResourceCache } from "../lifecycle";
 import type { Logger } from "../../logging/logger";
 import { RestartingStdioClient } from "./restarting";
 import type { StdioRestartPolicy } from "./availability";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { isStdioConnection } from "./stdio";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { mcpHttpReconnection } from "../../../../settings/networking";
+import { parseMcpConnection } from "../configuration/connections";
 
-interface McpClient {
-  listTools: (...args: never[]) => unknown;
-}
 export class McpClientPool {
   private readonly resources = new AsyncResourceCache<{
-    client: McpClient;
+    client: McpOperations;
     close: () => Promise<void>;
   }>("MCP 连接池");
   constructor(
@@ -28,35 +26,22 @@ export class McpClientPool {
     return this.resources.close();
   }
   private async connect(name: string) {
-    const connection = this.connections[name];
-    if (isStdioConnection(connection)) {
+    const connection = parseMcpConnection(this.connections[name]);
+    if (connection.kind === "stdio") {
       const client = await RestartingStdioClient.create(
         name,
-        { cwd: this.cwd, ...connection },
+        { ...connection.options, cwd: connection.options.cwd ?? this.cwd },
         this.restartPolicy,
         this.logger,
       );
       return { client, close: () => client.close() };
     }
-    if (!isHttpConnection(connection)) {
-      throw new Error(`MCP 服务器配置无法识别：${name}`);
-    }
-    const owner = new MultiServerMCPClient({
-      mcpServers: { [name]: connection },
-      prefixToolNameWithServerName: true,
-      throwOnLoadError: false,
-    });
-    try {
-      const client = await owner.getClient(name);
-      if (!client) {
-        throw new Error(`MCP 服务器客户端未建立：${name}`);
-      }
-      return { client, close: () => owner.close() };
-    } catch (error) {
-      return cleanupFailedInitialization(error, () => owner.close());
-    }
+    const transport = new StreamableHTTPClientTransport(new URL(connection.options.url), {
+        fetch: (input, init) => globalThis.fetch(input, init),
+        reconnectionOptions: mcpHttpReconnection,
+        requestInit: { headers: connection.options.headers },
+      }),
+      client = await connectProtocolClient(transport);
+    return { client, close: () => client.close() };
   }
-}
-function isHttpConnection(value: unknown): value is Connection {
-  return isRecord(value) && !("command" in value) && typeof value["url"] === "string";
 }

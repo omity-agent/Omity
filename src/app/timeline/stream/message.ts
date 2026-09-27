@@ -64,25 +64,31 @@ export function projectStreamMessage(
   reasoningTranslations: ReasoningTranslation[],
 ): TimelineMessage {
   const parts = message.order.flatMap((partId): TimelinePart[] => {
-    const part = message.parts.get(partId);
-    if (!part) {
-      throw new Error(`流消息缺少片段：${partId}`);
-    }
-    if (part.kind === "assistant_reasoning_delta") {
-      return textTimelinePart(
-        part,
-        message.messageId,
-        "reasoning",
-        fileLinks,
-        reasoningTranslations,
-      );
-    }
-    if (part.kind === "assistant_text_delta") {
-      return textTimelinePart(part, message.messageId, "content", fileLinks, reasoningTranslations);
-    }
-    return [toolTimelinePart(part, partId, message.messageId, outputs, lifecycle, fileLinks)];
-  });
-  const content = allContent(parts),
+      const part = message.parts.get(partId);
+      if (!part) {
+        throw new Error(`流消息缺少片段：${partId}`);
+      }
+      if (part.kind === "assistant_reasoning_delta") {
+        return textTimelinePart(
+          part,
+          message.messageId,
+          "reasoning",
+          fileLinks,
+          reasoningTranslations,
+        );
+      }
+      if (part.kind === "assistant_text_delta") {
+        return textTimelinePart(
+          part,
+          message.messageId,
+          "content",
+          fileLinks,
+          reasoningTranslations,
+        );
+      }
+      return [toolTimelinePart(part, partId, message.messageId, outputs, lifecycle, fileLinks)];
+    }),
+    content = allContent(parts),
     copyContent = lastContentGroup(parts);
   return {
     content,

@@ -5,7 +5,7 @@ import {
   startAuthentication,
   startRegistration,
 } from "@simplewebauthn/browser";
-import { request } from "./request";
+import { api, request } from "./httpTransport";
 import { z } from "./validation";
 
 const accessStatusSchema = z.object({
@@ -30,50 +30,31 @@ const accessStatusSchema = z.object({
   ticketSchema = z.object({ ticket: z.string().min(1) });
 export type AccessStatus = z.infer<typeof accessStatusSchema>;
 export async function accessStatus() {
-  return request("api/access", accessStatusSchema);
+  return request(api.access.$get(), accessStatusSchema);
 }
 export async function login() {
   requireWebAuthn();
-  const { options } = await request("api/access/login/options", loginOptionsSchema, {
-      body: "{}",
-      method: "POST",
-    }),
+  const { options } = await request(api.access.login.options.$post(), loginOptionsSchema),
     response = await startAuthentication({ optionsJSON: options });
-  return request("api/access/login", authenticatedSchema, {
-    body: JSON.stringify(response),
-    method: "POST",
-  });
+  return request(api.access.login.$post({ json: response }), authenticatedSchema);
 }
 export async function register(ticket?: string) {
   requireWebAuthn();
   const { options, origin } = await request(
-    "api/access/register/options",
+    api.access.register.options.$post({ json: ticket ? { ticket } : {} }),
     registrationOptionsSchema,
-    {
-      body: JSON.stringify(ticket ? { ticket } : {}),
-      method: "POST",
-    },
   );
   if (origin !== globalThis.location.origin) {
     throw new Error(`请通过 ${origin} 打开 WebUI 后注册通行密钥`);
   }
   const response = await startRegistration({ optionsJSON: options });
-  return request("api/access/register", registeredSchema, {
-    body: JSON.stringify(response),
-    method: "POST",
-  });
+  return request(api.access.register.$post({ json: response }), registeredSchema);
 }
 export async function registrationTicket() {
-  return request("api/access/register/ticket", ticketSchema, {
-    body: "{}",
-    method: "POST",
-  });
+  return request(api.access.register.ticket.$post(), ticketSchema);
 }
 export async function logout() {
-  return request("api/access/logout", authenticatedSchema, {
-    body: "{}",
-    method: "POST",
-  });
+  return request(api.access.logout.$post(), authenticatedSchema);
 }
 function requireWebAuthn() {
   if (!browserSupportsWebAuthn()) {

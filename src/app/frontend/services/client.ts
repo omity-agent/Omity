@@ -1,8 +1,7 @@
 import type { Control, Settings } from "../../../types";
 import {
-  answerResponseSchema,
+  activatedFileResponseSchema,
   bootstrapResponseSchema,
-  cancellationResponseSchema,
   cleanupResponseSchema,
   controlResponseSchema,
   deletedResponseSchema,
@@ -12,26 +11,30 @@ import {
   reasoningTranslationResponseSchema,
   revisionResponseSchema,
   sessionResponseSchema,
+  toolCallResponseSchema,
   transcriptResponseSchema,
   userMessagesResponseSchema,
   workspaceResponseSchema,
 } from "./validation/responses";
+import { api, request } from "./httpTransport";
 import type { FileLinkAction } from "../../../fileLinks/types";
 import type { InitialSessionState } from "../../initialState";
 import type { PendingAttachment } from "../../attachments/contract";
 import type { ReasoningTranslation } from "../../timeline";
-import { request } from "./request";
 import { submissionForm } from "../../attachments/submission";
-import { z } from "./validation";
 
 export type { SessionInfo } from "../../sessionState";
-const fileLinkActionSchema = z.object({ path: z.string() });
+const sessions = api.sessions[":sessionId"];
 export type FrontendSettings = Settings["frontend"];
 export async function bootstrap(signal?: AbortSignal) {
-  return request("api/bootstrap", bootstrapResponseSchema, { signal });
+  return request(api.bootstrap.$get({}, { init: { signal } }), bootstrapResponseSchema, signal);
 }
 export async function loadUserMessages(signal?: AbortSignal) {
-  return request("api/user-messages", userMessagesResponseSchema, { signal });
+  return request(
+    api["user-messages"].$get({}, { init: { signal } }),
+    userMessagesResponseSchema,
+    signal,
+  );
 }
 export async function createSession(
   workspace: string,
@@ -39,76 +42,60 @@ export async function createSession(
   initialState: InitialSessionState,
   attachments: PendingAttachment[],
 ) {
-  return request("api/sessions", sessionResponseSchema, {
-    body: submissionForm({ ...initialState, profile, workspace }, attachments),
-    method: "POST",
-  });
+  return request(
+    api.sessions.$post(
+      {},
+      { init: { body: submissionForm({ ...initialState, profile, workspace }, attachments) } },
+    ),
+    sessionResponseSchema,
+  );
 }
 export async function deleteSession(sessionId: string) {
-  return request(`api/sessions/${encodeURIComponent(sessionId)}`, deletedResponseSchema, {
-    method: "DELETE",
-  });
+  return request(sessions.$delete(sessionRequest(sessionId)), deletedResponseSchema);
 }
 export async function clearTemporaryFiles(sessionId: string) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/temporary-files`,
+    sessions["temporary-files"].$delete(sessionRequest(sessionId)),
     cleanupResponseSchema,
-    { method: "DELETE" },
   );
 }
-async function pickWorkspace() {
-  return request("api/workspace-picker", workspaceResponseSchema, {
-    method: "POST",
-  });
-}
 export async function pickWorkspacePath() {
-  const result = await pickWorkspace();
+  const result = await request(api["workspace-picker"].$post(), workspaceResponseSchema);
   return result.workspace;
 }
 export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/transcript`,
+    sessions.transcript.$get(sessionRequest(sessionId), { init: { signal } }),
     transcriptResponseSchema,
-    { signal },
+    signal,
   );
 }
 export async function loadPredictions(sessionId: string, signal?: AbortSignal) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/predictions`,
+    sessions.predictions.$get(sessionRequest(sessionId), { init: { signal } }),
     predictionsResponseSchema,
-    { signal },
+    signal,
   );
 }
 export async function activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/file-links/activate`,
-    fileLinkActionSchema,
-    {
-      body: JSON.stringify({ action, path }),
-      method: "POST",
-    },
+    sessions["file-links"].activate.$post({ ...sessionRequest(sessionId), json: { action, path } }),
+    activatedFileResponseSchema,
   );
 }
 export function contentEvents(sessionId: string) {
-  return eventSource(`api/sessions/${encodeURIComponent(sessionId)}/events/content`);
+  return new EventSource(`.${sessions.events.content.$path(sessionRequest(sessionId))}`);
 }
 export function stateEvents() {
-  return eventSource("api/events/state");
+  return new EventSource(`.${api.events.state.$path()}`);
 }
 export async function loadComposerDraft(sessionId: string) {
-  return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/composer-draft`,
-    draftResponseSchema,
-  );
+  return request(sessions["composer-draft"].$get(sessionRequest(sessionId)), draftResponseSchema);
 }
 export async function saveComposerDraft(sessionId: string, content: string, revision: number) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/composer-draft`,
+    sessions["composer-draft"].$put({ ...sessionRequest(sessionId), json: { content, revision } }),
     revisionResponseSchema,
-    {
-      body: JSON.stringify({ content, revision }),
-      method: "PUT",
-    },
   );
 }
 export async function saveReasoningTranslation(
@@ -116,19 +103,18 @@ export async function saveReasoningTranslation(
   translation: ReasoningTranslation,
 ) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/reasoning-translation`,
+    sessions["reasoning-translation"].$put({ ...sessionRequest(sessionId), json: translation }),
     reasoningTranslationResponseSchema,
-    {
-      body: JSON.stringify(translation),
-      method: "PUT",
-    },
   );
 }
 export function beaconComposerDraft(sessionId: string, content: string, revision: number) {
   const body = new Blob([JSON.stringify({ content, revision })], {
     type: "application/json",
   });
-  return navigator.sendBeacon(`api/sessions/${encodeURIComponent(sessionId)}/composer-draft`, body);
+  return navigator.sendBeacon(
+    `.${sessions["composer-draft"].$path(sessionRequest(sessionId))}`,
+    body,
+  );
 }
 export async function sendMessage(
   sessionId: string,
@@ -137,50 +123,40 @@ export async function sendMessage(
   submissionId: string,
   attachments: PendingAttachment[],
 ) {
-  return request(`api/sessions/${encodeURIComponent(sessionId)}/messages`, messageResponseSchema, {
-    body: submissionForm({ content, draftRevision, submissionId }, attachments),
-    method: "POST",
-  });
+  return request(
+    sessions.messages.$post(sessionRequest(sessionId), {
+      init: { body: submissionForm({ content, draftRevision, submissionId }, attachments) },
+    }),
+    messageResponseSchema,
+  );
 }
 export async function setControl(
   sessionId: string,
   control: Extract<Control, "running" | "step" | "pause" | "cancel">,
 ) {
-  return request(`api/sessions/${encodeURIComponent(sessionId)}/control`, controlResponseSchema, {
-    body: JSON.stringify({ control }),
-    method: "POST",
-  });
+  return request(
+    sessions.control.$post({ ...sessionRequest(sessionId), json: { control } }),
+    controlResponseSchema,
+  );
 }
 export async function cancelTool(sessionId: string, toolCallId: string) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/tools/cancel`,
-    cancellationResponseSchema,
-    {
-      body: JSON.stringify({ toolCallId }),
-      method: "POST",
-    },
+    sessions.tools.cancel.$post({ ...sessionRequest(sessionId), json: { toolCallId } }),
+    toolCallResponseSchema,
   );
 }
 export async function answerTool(sessionId: string, toolCallId: string, answer: unknown) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/tools/answer`,
-    answerResponseSchema,
-    {
-      body: JSON.stringify({ answer, toolCallId }),
-      method: "POST",
-    },
+    sessions.tools.answer.$post({ ...sessionRequest(sessionId), json: { answer, toolCallId } }),
+    toolCallResponseSchema,
   );
 }
 export async function materializeFork(sessionId: string, beforeMessageId: number) {
   return request(
-    `api/sessions/${encodeURIComponent(sessionId)}/fork/materialize`,
+    sessions.fork.materialize.$post({ ...sessionRequest(sessionId), json: { beforeMessageId } }),
     sessionResponseSchema,
-    {
-      body: JSON.stringify({ beforeMessageId }),
-      method: "POST",
-    },
   );
 }
-function eventSource(path: string) {
-  return new EventSource(path);
+function sessionRequest(sessionId: string) {
+  return { param: { sessionId: encodeURIComponent(sessionId) } };
 }

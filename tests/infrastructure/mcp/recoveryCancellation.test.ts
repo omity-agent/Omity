@@ -2,7 +2,6 @@ import { expect, mock, test } from "bun:test";
 import { Client } from "@modelcontextprotocol/client";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
-import { requestSignal } from "../../../src/infrastructure/mcp/client/requestPolicy";
 
 test("canceling a waiter preserves the reason without canceling shared MCP recovery", async () => {
   const first = connection(),
@@ -28,7 +27,7 @@ test("canceling a waiter preserves the reason without canceling shared MCP recov
   try {
     await first.close();
     await connecting.promise;
-    const canceled = client.listTools({ signal: controller.signal }),
+    const canceled = client.listTools({}, { signal: controller.signal }),
       waiting = client.listTools();
     controller.abort(reason);
     expect(canceled).rejects.toBe(reason);
@@ -64,12 +63,29 @@ test("closing MCP interrupts a long restart backoff", async () => {
   await client.close();
   expect(connect).toHaveBeenCalledTimes(2);
 });
-test("request signals are selected from the last matching options without modifying arguments", () => {
-  const first = new AbortController().signal,
-    last = new AbortController().signal,
-    args = Object.freeze([{ signal: first }, null, { signal: "invalid" }, { signal: last }]);
-  expect(requestSignal([...args])).toBe(last);
-  expect(requestSignal([null, {}, { signal: "invalid" }])).toBeUndefined();
+test("typed request options are forwarded and pre-canceled requests are not dispatched", async () => {
+  const connected = connection(),
+    listTools = mock(() => Promise.resolve({ tools: [] })),
+    controller = new AbortController(),
+    options = Object.freeze({ signal: controller.signal }),
+    client = await RestartingStdioClient.create(
+      "request-options",
+      { args: [], command: "test" },
+      { delayMs: 0, maxAttempts: 1 },
+      new Logger("error", true),
+      () => Promise.resolve(connected),
+    );
+  connected.client.listTools = listTools;
+  try {
+    await client.listTools({}, options);
+    expect(listTools).toHaveBeenCalledWith({}, options);
+    const reason = new Error("already canceled");
+    controller.abort(reason);
+    expect(client.listTools({}, options)).rejects.toBe(reason);
+    expect(listTools).toHaveBeenCalledTimes(1);
+  } finally {
+    await client.close();
+  }
 });
 function connection() {
   const closed = Promise.withResolvers<void>(),

@@ -13,9 +13,26 @@ export const mcpServerSchema = z.looseObject({
   prefixToolNameWithServerName: z.boolean().optional(),
 });
 const stdioSchema = z.looseObject({
-  args: emptyAs(z.array(z.string()).default([]), []),
-  command: z.string(),
-});
+    args: emptyAs(z.array(z.string()).default([]), []),
+    command: z.string(),
+    cwd: z.string().optional(),
+    env: z.record(z.string(), z.string()).optional(),
+    transport: z.literal("stdio").optional(),
+    type: z.literal("stdio").optional(),
+  }),
+  httpSchema = z.looseObject({
+    headers: z.record(z.string(), z.string()).optional(),
+    transport: z.literal("http").optional(),
+    type: z.literal("http").optional(),
+    url: z.url({ protocol: /^https?$/u }),
+  });
+export type StdioConnection = z.output<typeof stdioSchema>;
+export function parseMcpConnection(value: unknown) {
+  const connection = z.record(z.string(), z.unknown()).parse(value);
+  return "command" in connection
+    ? { kind: "stdio" as const, options: stdioSchema.parse(connection) }
+    : { kind: "http" as const, options: httpSchema.parse(normalizeConnection(connection)) };
+}
 export function normalizeMcpServers(servers: Record<string, unknown>): Record<
   string,
   Record<string, unknown> & {

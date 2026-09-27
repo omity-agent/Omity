@@ -1,4 +1,11 @@
+export const requestBodyLimit = 1024 * 1024;
 export const outboundAgentOptions = {
   bodyTimeout: 0,
   headersTimeout: 0,
+};
+export const mcpHttpReconnection = {
+  initialReconnectionDelay: 0,
+  maxReconnectionDelay: 0,
+  maxRetries: 0,
+  reconnectionDelayGrowFactor: 1,
 };

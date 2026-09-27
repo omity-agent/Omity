@@ -6,12 +6,12 @@ import {
 } from "./availability";
 import { captureError, summarizeError } from "../../../failures/details";
 import type { Logger } from "../../logging/logger";
-import type { StdioConnection } from "@langchain/mcp-adapters";
+import type { McpOperations } from "./protocol";
+import type { StdioConnection } from "../configuration/connections";
 import { raceSignal } from "race-signal";
-import { requestSignal } from "./requestPolicy";
 import { setTimeout as sleep } from "node:timers/promises";
 
-export class RestartingStdioClient {
+export class RestartingStdioClient implements McpOperations {
   private readonly controller = new AbortController();
   private current?: ConnectedStdioClient;
   private lastFailure?: unknown;
@@ -36,10 +36,12 @@ export class RestartingStdioClient {
     client.install(await connect(serverName, connection, client.controller.signal));
     return client;
   }
-  callTool = (params: unknown, _resultSchema?: unknown, options?: unknown) =>
-    this.invoke("callTool", [params, options]);
-  listTools = (...args: unknown[]) => this.invoke("listTools", args);
-  readResource = (...args: unknown[]) => this.invoke("readResource", args);
+  callTool: McpOperations["callTool"] = (params, options) =>
+    this.invoke("callTool", (client) => client.callTool(params, options), options?.signal);
+  listTools: McpOperations["listTools"] = (params, options) =>
+    this.invoke("listTools", (client) => client.listTools(params, options), options?.signal);
+  readResource: McpOperations["readResource"] = (params, options) =>
+    this.invoke("readResource", (client) => client.readResource(params, options), options?.signal);
   async close() {
     this.controller.abort(new Error(`正在关闭 MCP stdio 服务器 "${this.serverName}"`));
     try {
@@ -53,8 +55,11 @@ export class RestartingStdioClient {
     this.current = undefined;
     await current?.close();
   }
-  private async invoke(method: "callTool" | "listTools" | "readResource", args: unknown[]) {
-    const signal = requestSignal(args);
+  private async invoke<Result>(
+    method: keyof McpOperations,
+    operation: (client: McpOperations) => Promise<Result>,
+    signal?: AbortSignal,
+  ) {
     if (this.unavailable) {
       this.unavailable = undefined;
       this.restartAttempts = 0;
@@ -62,11 +67,7 @@ export class RestartingStdioClient {
     signal?.throwIfAborted();
     const connection = this.current ?? (await raceSignal(this.ensureRecovery(), signal));
     try {
-      const operation: unknown = connection.client[method];
-      if (typeof operation !== "function") {
-        throw new TypeError(`MCP 客户端缺少 ${method} 方法`);
-      }
-      const result: unknown = await Reflect.apply(operation, connection.client, args);
+      const result = await operation(connection.client);
       this.restartAttempts = 0;
       this.lastFailure = undefined;
       return result;

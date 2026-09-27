@@ -1,12 +1,11 @@
 import { expect, test } from "bun:test";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { InMemoryTransport } from "@modelcontextprotocol/client";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ToolExecutions } from "../../src/agent/toolExecutions";
+import { connectProtocolClient } from "../../src/infrastructure/mcp/client/protocol";
 
 test("aborting a cancellable MCP request sends notifications/cancelled", async () => {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair(),
-    client = new Client({ name: "test-client", version: "1" }),
     server = new McpServer({ name: "test-server", version: "1" }),
     cancellation = Promise.withResolvers<unknown>();
   server.registerTool("wait", {}, (extra) => {
@@ -21,14 +20,20 @@ test("aborting a cancellable MCP request sends notifications/cancelled", async (
     );
     return aborted.promise;
   });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  const [, client] = await Promise.all([
+    server.connect(serverTransport),
+    connectProtocolClient(clientTransport),
+  ]);
   try {
     const executions = new ToolExecutions();
     executions.announce("call-1");
     const execution = executions.begin("call-1"),
-      request = client.callTool({ arguments: {}, name: "wait" }, undefined, {
-        signal: execution.signal,
-      });
+      request = client.callTool(
+        { arguments: {}, name: "wait" },
+        {
+          signal: execution.signal,
+        },
+      );
     await Bun.sleep(0);
     expect(executions.cancel("call-1")).toBe(true);
     let rejection: unknown;

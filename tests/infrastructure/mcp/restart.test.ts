@@ -7,6 +7,7 @@ import { Client } from "@modelcontextprotocol/client";
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
 import { captureError } from "../../../src/failures/details";
+import { langChainClient } from "../../../src/infrastructure/mcp/tools/langchain";
 
 test("stdio client does not replay failed calls and opens a fresh round after exhaustion", async () => {
   let generation = 0;
@@ -105,7 +106,7 @@ test("stdio client adapts LangChain call options to the modern client signature"
     () => Promise.resolve(connected),
   );
   try {
-    await client.callTool({ arguments: {}, name: "run" }, undefined, {
+    await langChainClient(client).callTool({ arguments: {}, name: "run" }, undefined, {
       onprogress,
       signal,
       timeout: 123,

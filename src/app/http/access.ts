@@ -1,21 +1,17 @@
 import { type AccessService, accessChallengeCookie, accessSessionCookie } from "../access/service";
-import { type Context, type Hono, type MiddlewareHandler } from "hono";
+import { type Context, type Hono } from "hono";
 import { authenticationBody, registrationBody, registrationOptionsBody } from "./accessRequest";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { jsonBody, limitRequestBody } from "./request";
 import type { ClientIdentity } from "../access/network";
 import type { HttpBindings } from "@hono/node-server";
 import { HttpError } from "./errors";
-import { readJson } from "./request";
 
 export interface AccessEnvironment {
   Bindings: HttpBindings;
   Variables: { client: ClientIdentity };
 }
-export function mountAccess(
-  app: Hono<AccessEnvironment>,
-  access: AccessService | undefined,
-  bodyLimit: MiddlewareHandler<AccessEnvironment>,
-) {
+export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService | undefined) {
   app.use("/api/*", async (c, next) => {
     c.header("cache-control", "no-store");
     c.header("x-content-type-options", "nosniff");
@@ -34,56 +30,54 @@ export function mountAccess(
     }
     await next();
   });
-  app.get("/api/access", (c) =>
-    c.json(
-      access?.status(c.get("client"), getCookie(c, accessSessionCookie)) ?? {
-        authenticated: true,
-        configured: false,
-        credentialCount: 0,
-        local: true,
-        publicOrigin: null,
-      },
-    ),
-  );
-  app.post("/api/access/register/options", bodyLimit, async (c) => {
-    const body = await readJson(c.req, registrationOptionsBody),
-      result = await required(access).registrationOptions(c.get("client"), body.ticket);
-    setChallengeCookie(c, result.challengeId, access);
-    return c.json({ options: result.options, origin: result.origin });
-  });
-  app.post("/api/access/register/ticket", bodyLimit, (c) =>
-    c.json(required(access).registrationTicket(c.get("client"))),
-  );
-  app.post("/api/access/register", bodyLimit, async (c) => {
-    const result = await required(access).register(
-      challengeCookie(c),
-      await readJson(c.req, registrationBody),
-    );
-    setSessionCookie(c, result.token, access);
-    clearChallengeCookie(c);
-    return c.json({ credentialCount: result.credentialCount, verified: result.verified });
-  });
-  app.post("/api/access/login/options", bodyLimit, async (c) => {
-    const result = await required(access).authenticationOptions(c.get("client"));
-    setChallengeCookie(c, result.challengeId, access);
-    return c.json({ options: result.options });
-  });
-  app.post("/api/access/login", bodyLimit, async (c) => {
-    const service = required(access),
-      token = await service.authenticate(
-        c.get("client"),
-        challengeCookie(c),
-        await readJson(c.req, authenticationBody),
-      );
-    setSessionCookie(c, token, access);
-    clearChallengeCookie(c);
-    return c.json({ authenticated: true });
-  });
-  app.post("/api/access/logout", (c) => {
-    access?.logout(getCookie(c, accessSessionCookie));
-    deleteCookie(c, accessSessionCookie, { path: "/", secure: true });
-    return c.json({ authenticated: false });
-  });
+  return app
+    .get("/api/access", (c) =>
+      c.json(
+        access?.status(c.get("client"), getCookie(c, accessSessionCookie)) ?? {
+          authenticated: true,
+          configured: false,
+          credentialCount: 0,
+          local: true,
+          publicOrigin: null,
+        },
+      ),
+    )
+    .post("/api/access/register/options", jsonBody(registrationOptionsBody), async (c) => {
+      const body = c.req.valid("json"),
+        result = await required(access).registrationOptions(c.get("client"), body.ticket);
+      setChallengeCookie(c, result.challengeId, access);
+      return c.json({ options: result.options, origin: result.origin });
+    })
+    .post("/api/access/register/ticket", limitRequestBody(), (c) =>
+      c.json(required(access).registrationTicket(c.get("client"))),
+    )
+    .post("/api/access/register", jsonBody(registrationBody), async (c) => {
+      const result = await required(access).register(challengeCookie(c), c.req.valid("json"));
+      setSessionCookie(c, result.token, access);
+      clearChallengeCookie(c);
+      return c.json({ credentialCount: result.credentialCount, verified: result.verified });
+    })
+    .post("/api/access/login/options", limitRequestBody(), async (c) => {
+      const result = await required(access).authenticationOptions(c.get("client"));
+      setChallengeCookie(c, result.challengeId, access);
+      return c.json({ options: result.options });
+    })
+    .post("/api/access/login", jsonBody(authenticationBody), async (c) => {
+      const service = required(access),
+        token = await service.authenticate(
+          c.get("client"),
+          challengeCookie(c),
+          c.req.valid("json"),
+        );
+      setSessionCookie(c, token, access);
+      clearChallengeCookie(c);
+      return c.json({ authenticated: true });
+    })
+    .post("/api/access/logout", (c) => {
+      access?.logout(getCookie(c, accessSessionCookie));
+      deleteCookie(c, accessSessionCookie, { path: "/", secure: true });
+      return c.json({ authenticated: false });
+    });
 }
 function isPublicEndpoint(path: string) {
   return (

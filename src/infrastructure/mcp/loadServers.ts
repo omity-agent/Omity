@@ -1,25 +1,23 @@
 import type { McpConfiguration } from "./configuration";
+import type { McpOperations } from "./client/protocol";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { createMcpToolFailureClient } from "./tools/invocation";
 import { excludedServerToolNames } from "./configuration/exclusions";
+import { langChainClient } from "./tools/langchain";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 
 export async function loadServerTools(
   client: {
-    getClient: (name: string) => Promise<object | undefined>;
+    getClient: (name: string) => Promise<McpOperations>;
   },
   servers: McpConfiguration["mcpServers"],
 ) {
   const tools: StructuredToolInterface[] = [];
   for (const [name, configuration] of Object.entries(servers)) {
-    const serverClient = await client.getClient(name);
-    if (serverClient === undefined) {
-      throw new Error(`MCP 服务器客户端未建立：${name}`);
-    }
-    const excludedNames = new Set(excludedServerToolNames(name, configuration)),
-      loaded = await loadMcpTools(name, createMcpToolFailureClient(serverClient), {
+    const serverClient = await client.getClient(name),
+      excludedNames = new Set(excludedServerToolNames(name, configuration)),
+      loaded = await loadMcpTools(name, langChainClient(serverClient), {
         prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
-        throwOnLoadError: false,
+        throwOnLoadError: true,
         useStandardContentBlocks: true,
       }),
       serverTools = loaded.filter((tool) => !excludedNames.has(tool.name));

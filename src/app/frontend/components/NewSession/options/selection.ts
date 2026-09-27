@@ -1,5 +1,5 @@
+import { api, request } from "../../../services/httpTransport";
 import { useCallback, useState } from "react";
-import { request } from "../../../services/request";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "../../../services/validation";
 
@@ -14,11 +14,11 @@ const hookOptionsSchema = z.object({
 });
 export type HookOption = z.infer<typeof hookOptionsSchema>["hooks"][number];
 export async function readHookOptions(profile?: string, signal?: AbortSignal) {
-  const query = new URLSearchParams();
-  if (profile !== undefined) {
-    query.set("profile", profile);
-  }
-  return request(`api/hooks?${query.toString()}`, hookOptionsSchema, { signal });
+  return request(
+    api.hooks.$get({ query: { profile } }, { init: { signal } }),
+    hookOptionsSchema,
+    signal,
+  );
 }
 export function resolveHookSelection(hooks: HookOption[], overrides: ReadonlyMap<string, boolean>) {
   return hooks.map((hook) => ({ ...hook, enable: overrides.get(hook.id) ?? hook.enable }));
