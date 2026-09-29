@@ -14,7 +14,7 @@ interface TranslationSettings {
   minimumIntervalMs: number;
 }
 let unsupportedWarningPrinted = false;
-export const reasoningTranslationKey = (sessionId: string) =>
+const reasoningTranslationKey = (sessionId: string) =>
   [...transcriptKey(sessionId), "reasoningTranslation"] as const;
 export function useReasoningTranslation(
   sessionId: string,

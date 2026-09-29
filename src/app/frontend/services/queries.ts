@@ -19,7 +19,6 @@ import { sessionAttentionStore } from "./events/attention";
 import { transcriptKey } from "./transcript/query";
 
 type BootstrapData = Awaited<ReturnType<typeof bootstrap>>;
-export { transcriptKey, type TranscriptData } from "./transcript/query";
 const bootstrapKey = ["bootstrap"] as const,
   userMessagesKey = ["user-messages"] as const,
   predictionKey = (sessionId: string) => ["predictions", sessionId] as const;

@@ -18,12 +18,12 @@ test("real HTTP access rejects public reads and cross-site writes while registra
     body: unknown = await ticket.json();
   expect(ticket.status).toBe(200);
   const request = () =>
-    fetch(`${app.url}/api/access/register/options`, {
-      body: JSON.stringify(body),
-      headers: { ...remote, "content-type": "application/json", origin },
-      method: "POST",
-    });
-  const options = await request();
+      fetch(`${app.url}/api/access/register/options`, {
+        body: JSON.stringify(body),
+        headers: { ...remote, "content-type": "application/json", origin },
+        method: "POST",
+      }),
+    options = await request();
   expect(options.status).toBe(200);
   expect(options.headers.get("set-cookie")).toContain("HttpOnly");
   expect(options.headers.get("set-cookie")).toContain("Secure");

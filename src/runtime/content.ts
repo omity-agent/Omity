@@ -73,19 +73,6 @@ export function appendReasoningDelta(id: string, text: string, state: ReasoningS
   }
   return appendReasoningPart({ text }, state);
 }
-export function streamedMessageReasoning(message: BaseMessage, state: ReasoningStreamState) {
-  const summary = readReasoningSummary(message.additional_kwargs["reasoning"]);
-  if (summary?.id && summary.id !== state.itemId) {
-    state.breakBeforeNext = state.hasText;
-    state.itemId = summary.id;
-    state.partIndex = undefined;
-  }
-  if (summary && summary.parts.length > 0) {
-    return summary.parts.map((part) => appendReasoningPart(part, state)).join("");
-  }
-  const reasoning = contentBlocksToReasoning(message.contentBlocks);
-  return reasoning ? appendReasoningPart({ text: reasoning }, state) : flushReasoning(state);
-}
 function contentBlocksToReasoning(content: unknown): string {
   if (!Array.isArray(content)) {
     return "";

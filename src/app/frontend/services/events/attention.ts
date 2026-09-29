@@ -7,7 +7,7 @@ import mitt from "mitt";
 
 type Listener = () => void;
 const stores = new WeakMap<QueryClient, SessionAttentionStore>();
-export class SessionAttentionStore {
+class SessionAttentionStore {
   private activeId?: string;
   private readonly changes = mitt<{ unread: undefined }>();
   private statuses = new Map<string, SessionStatus>();

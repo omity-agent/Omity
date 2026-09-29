@@ -6,6 +6,7 @@ import { installNetworking } from "./infrastructure/network/installNetworking";
 import { loadUserEnvironment } from "./infrastructure/configuration/settings/files";
 import { message } from "@optique/core/message";
 import { run } from "@optique/run";
+import { workspaceDialogArgument } from "./app/workspaceDialog/bridge";
 
 async function main() {
   loadUserEnvironment();
@@ -23,4 +24,9 @@ async function main() {
     await closeNetworking();
   }
 }
-await main();
+if (process.argv[2] === workspaceDialogArgument) {
+  const { showNativeFolderDialog } = await import("./app/workspaceDialog/nativeFolder");
+  await showNativeFolderDialog();
+} else {
+  await main();
+}

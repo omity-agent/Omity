@@ -55,7 +55,7 @@ export function errorResponse(error: unknown) {
     status: normalized.status,
   };
 }
-export function normalizeError(error: unknown) {
+function normalizeError(error: unknown) {
   if (error instanceof HttpError) {
     return error;
   }

@@ -32,7 +32,7 @@ const forkPrefix = "/fork/",
 export function readPage(): Page {
   return pageFromHash(globalThis.location.hash);
 }
-export function pageFromHash(hash: string): Page {
+function pageFromHash(hash: string): Page {
   const path = hash.startsWith("#") ? hash.slice(1) : hash;
   if (path === "/new") {
     return { kind: "new" };
@@ -94,7 +94,7 @@ export function sessionPage(id: string): Page {
 export function forkPage(sourceSessionId: string, beforeMessageId: number): ForkPage {
   return { beforeMessageId, kind: "fork", sourceSessionId };
 }
-export function pageSessionId(page: Page) {
+function pageSessionId(page: Page) {
   if (page.kind === "new") {
     return undefined;
   }

@@ -21,7 +21,7 @@ import { requestBodyLimit } from "../../../settings/networking";
 import { validator } from "hono/validator";
 import { writeReasoningTranslation } from "../reasoningTranslation";
 
-export type ApiController = Pick<
+type ApiController = Pick<
   AppController,
   | "bootstrap"
   | "hookOptions"

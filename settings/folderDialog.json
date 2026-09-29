@@ -1,0 +1,5 @@
+{
+  "title": "选择工作目录",
+  "failureMessage": "文件夹选择进程异常退出",
+  "ignoredWarning": "libpng warning: iCCP: known incorrect sRGB profile"
+}

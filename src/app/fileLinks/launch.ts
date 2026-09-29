@@ -14,7 +14,7 @@ export async function activateFileLink(path: string, action: FileLinkAction) {
   await startLauncher(launcher);
   return target.path;
 }
-export function fileLinkLauncher(
+function fileLinkLauncher(
   path: string,
   action: FileLinkAction,
   platform = process.platform,

@@ -76,7 +76,7 @@ export function resolvePlaceholders(value: unknown, options: PlaceholderOptions)
     ]),
   );
 }
-export function appDataRoot() {
+function appDataRoot() {
   if (process.platform === "win32") {
     const path = process.env["APPDATA"];
     if (!path) {

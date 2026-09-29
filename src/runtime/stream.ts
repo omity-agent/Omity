@@ -1,7 +1,6 @@
 import type { HostContext } from "./context";
 import { createStreamPartState } from "./stream/parts";
 
-export { incrementalSummary } from "./stream/debug";
 export interface StreamLogState {
   aiToolIndexes: Map<string, number>;
   modelResponding: boolean;

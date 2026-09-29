@@ -28,7 +28,7 @@ export function readProfileMcpConfiguration(context: SettingsContext) {
   );
   return file ? parseMcpConfiguration(file.value, file.path) : undefined;
 }
-export function parseMcpConfiguration(parsed: unknown, path: string) {
+function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {
     error: (issue) =>
       issue.code === "invalid_type" && issue.input === parsed

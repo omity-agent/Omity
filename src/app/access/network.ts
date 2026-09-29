@@ -7,7 +7,7 @@ export interface ClientIdentity {
   address: string;
   local: boolean;
 }
-export interface PeerRequest {
+interface PeerRequest {
   headers: IncomingHttpHeaders;
   socket: { remoteAddress?: string };
 }

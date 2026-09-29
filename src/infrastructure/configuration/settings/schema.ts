@@ -120,4 +120,3 @@ export function parseMainSettings(value: unknown) {
 export function parseAgentSettings(value: unknown) {
   return agentSettingsSchema.parse(value);
 }
-export { agentSettingsSchema, mainSettingsSchema };

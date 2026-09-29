@@ -11,7 +11,6 @@ import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnap
 import { AppEvents } from "./events";
 import type { AppHosts } from "./hosts";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
-import { AsyncFileDialog } from "@bindrs/rfd";
 import type { FileLinkAction } from "../fileLinks/types";
 import { PredictionService } from "./prediction/service";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
@@ -26,6 +25,7 @@ import { hasLiveHostLease } from "./runtime/recovery";
 import { loadTranscript } from "./transcript";
 import { loadUserMessages } from "./userMessages";
 import { materializeAppFork } from "./runtime/sessionActions";
+import { pickWorkspaceDirectory } from "./workspaceDialog/bridge";
 import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 import { setSessionControl } from "../client";
 import { writeSessionDraft } from "./composerDraft";
@@ -79,9 +79,8 @@ export class AppController {
   assertSession(sessionId: string) {
     this.registry.require(sessionId);
   }
-  async pickWorkspace() {
-    const directory = await new AsyncFileDialog().setTitle("选择工作目录").pickFolder();
-    return directory?.path() ?? null;
+  pickWorkspace() {
+    return pickWorkspaceDirectory();
   }
   async activateFileLink(sessionId: string, path: string, action: FileLinkAction) {
     this.registry.require(sessionId);

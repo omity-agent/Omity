@@ -96,7 +96,7 @@ function preferredTranslation(
   }
   return undefined;
 }
-export function translatedReasoning(
+function translatedReasoning(
   part: Extract<TimelinePart, { type: "reasoning" }>,
   preferredLanguages: readonly string[],
   liveTranslation?: ReasoningTranslation,

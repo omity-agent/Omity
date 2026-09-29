@@ -33,10 +33,9 @@ const argsSchema = z.record(z.string(), z.unknown()),
         ids.add(hook.id);
       }
     });
-export function parseHookRules(value: unknown): HookRule[] {
+function parseHookRules(value: unknown): HookRule[] {
   return hooksFileSchema.parse(value).hooks;
 }
-export { hooksFileSchema };
 export function loadConfiguredHookRules(
   context: SettingsContext,
   placeholders: Omit<PlaceholderOptions, "source"> = { deferSession: true },

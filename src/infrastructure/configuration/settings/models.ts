@@ -4,26 +4,26 @@ import { emptyAs } from "./values";
 import { z } from "zod";
 
 const sharedModelSettings = {
-  maxConcurrentRequests: z.number().int().positive(),
-  model: z.string().min(1),
-  raceIntervalMs: z.number().int().positive(),
-  reasoning_effort: emptyAs(reasoningEffortSchema.optional(), undefined).optional(),
-  retryDelayMs: z.number().int().positive(),
-  temperature: emptyAs(z.number().optional(), undefined).optional(),
-};
-export const modelSettingsSchema = z.discriminatedUnion("adapter", [
-  z.strictObject({
-    adapter: modelApiSchema,
-    apiKeyEnv: z.string().min(1),
-    baseURL: emptyAs(z.url().nullable(), null),
-    ...sharedModelSettings,
-  }),
-  z.strictObject({
-    adapter: z.literal("codex"),
-    ...sharedModelSettings,
-  }),
-]);
-const predictionFields = {
+    maxConcurrentRequests: z.number().int().positive(),
+    model: z.string().min(1),
+    raceIntervalMs: z.number().int().positive(),
+    reasoning_effort: emptyAs(reasoningEffortSchema.optional(), undefined).optional(),
+    retryDelayMs: z.number().int().positive(),
+    temperature: emptyAs(z.number().optional(), undefined).optional(),
+  },
+  modelSettingsSchema = z.discriminatedUnion("adapter", [
+    z.strictObject({
+      adapter: modelApiSchema,
+      apiKeyEnv: z.string().min(1),
+      baseURL: emptyAs(z.url().nullable(), null),
+      ...sharedModelSettings,
+    }),
+    z.strictObject({
+      adapter: z.literal("codex"),
+      ...sharedModelSettings,
+    }),
+  ]),
+  predictionFields = {
     maxUserMessageTokens: z.number().int().positive(),
     outputCount: z.number().int().positive(),
     refreshIntervalHours: z.number().positive(),

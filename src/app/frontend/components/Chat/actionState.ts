@@ -16,7 +16,7 @@ interface ChatActionInput {
   queue: QueueState[];
   sessionStatus?: SessionStatus;
 }
-export interface ChatActionState {
+interface ChatActionState {
   controlDisabled: boolean;
   controlState: ChatControlState;
   sessionActionDisabled: boolean;

@@ -4,7 +4,6 @@ import type { FileLinkUnit } from "../../../../fileLinks/types";
 import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 import { replaceEqualDeep } from "@tanstack/react-query";
 
-export type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 export interface TranscriptData extends TranscriptSnapshot {
   snapshotCursor: number;
   view: TimelineMessage[];

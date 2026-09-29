@@ -13,14 +13,14 @@ const hookOptionsSchema = z.object({
   ),
 });
 export type HookOption = z.infer<typeof hookOptionsSchema>["hooks"][number];
-export async function readHookOptions(profile?: string, signal?: AbortSignal) {
+async function readHookOptions(profile?: string, signal?: AbortSignal) {
   return request(
     api.hooks.$get({ query: { profile } }, { init: { signal } }),
     hookOptionsSchema,
     signal,
   );
 }
-export function resolveHookSelection(hooks: HookOption[], overrides: ReadonlyMap<string, boolean>) {
+function resolveHookSelection(hooks: HookOption[], overrides: ReadonlyMap<string, boolean>) {
   return hooks.map((hook) => ({ ...hook, enable: overrides.get(hook.id) ?? hook.enable }));
 }
 export function useHookSelection(profile?: string) {

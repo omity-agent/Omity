@@ -14,7 +14,6 @@ import { reportError } from "../errors";
 import { subscribeEvents } from "../events/delivery";
 import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
 
-export type { TranscriptData } from "./cache";
 export const transcriptKey = (sessionId: string) => ["transcript", sessionId] as const;
 const emptyTranscript = emptyTranscriptData();
 export function useSessionTranscript(

@@ -15,8 +15,8 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   const { session } = z
       .object({ session: z.object({ id: z.string() }) })
       .parse(await created.json()),
-    endpoint = `${app.url}/api/sessions/${session.id}`;
-  const deadline = Date.now() + 5000;
+    endpoint = `${app.url}/api/sessions/${session.id}`,
+    deadline = Date.now() + 5000;
   while (!app.controller.transcript(session.id).queue.every(({ status }) => status === "done")) {
     if (Date.now() >= deadline) {
       throw new Error("HTTP 会话未在期限内完成模型调用");
@@ -83,8 +83,8 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   });
   expect(invalid.status).toBe(400);
   expect(app.requests).toHaveLength(1);
-  const paths = sessionPaths(session.id);
-  const deleted = await fetch(endpoint, { method: "DELETE" }),
+  const paths = sessionPaths(session.id),
+    deleted = await fetch(endpoint, { method: "DELETE" }),
     deletedTranscript = await fetch(`${endpoint}/transcript`),
     sessions = await fetch(`${app.url}/api/sessions`);
   expect(deleted.status).toBe(200);

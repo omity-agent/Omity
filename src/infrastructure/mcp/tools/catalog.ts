@@ -20,7 +20,6 @@ import { omitExcludedToolCustomizations } from "../configuration/exclusions";
 import { resolve } from "node:path";
 import { suppressTerminalError } from "../../../failures/output";
 
-export { loadServerTools } from "../loadServers";
 export interface LoadedMcp {
   configuration: McpConfiguration;
   close: () => Promise<void>;
@@ -31,7 +30,7 @@ export interface LoadedMcp {
 export interface LoadMcpOptions extends BuiltInToolOptions {
   cwd?: string;
 }
-export function createMcpLoadError(error: unknown): Error {
+function createMcpLoadError(error: unknown): Error {
   const details = collectReadableZodIssues(error);
   if (details.length === 0) {
     const message = error instanceof Error ? error.message : String(error);

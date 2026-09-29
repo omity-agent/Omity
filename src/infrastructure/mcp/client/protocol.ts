@@ -24,7 +24,7 @@ const setupTimeoutMethod = "_setupTimeout";
 function skipRequestTimeout() {
   return undefined;
 }
-export function disableClientRequestTimeout(client: Client) {
+function disableClientRequestTimeout(client: Client) {
   const setupTimeout: unknown = Reflect.get(client, setupTimeoutMethod);
   if (setupTimeout === skipRequestTimeout) {
     return;

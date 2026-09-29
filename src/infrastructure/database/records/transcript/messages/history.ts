@@ -1,4 +1,4 @@
-import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
+import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, messageInsert } from "./serialization";
 import type { Database } from "bun:sqlite";
 import { decodeMessage } from "./hydration";
@@ -39,14 +39,6 @@ export function messageInputId(sessionId: string, message: BaseMessage) {
     throw new Error(`用户消息 Queue ID 无效：${message.id}`);
   }
   return inputId;
-}
-export function appendAssistantMessage(db: Database, sessionId: string, content: string) {
-  storeMessage(
-    db,
-    sessionId,
-    new AIMessage({ content, id: randomUUID() }),
-    nextPosition(db, sessionId),
-  );
 }
 export function loadMessages(db: Database, sessionId: string): BaseMessage[] {
   return transcriptMessageRows(db, sessionId).map((row) =>

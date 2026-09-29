@@ -22,7 +22,7 @@ export function projectSession(
     ...resolveSessionState(session, activity, hostError),
   };
 }
-export function resolveSessionState(
+function resolveSessionState(
   session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
   activity: HostActivity,
   hostError: ErrorDetails | null,
@@ -32,7 +32,7 @@ export function resolveSessionState(
     status: resolveSessionStatus(session, activity, hostError),
   };
 }
-export function resolveSessionStatus(
+function resolveSessionStatus(
   session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
   activity: HostActivity,
   hostError: ErrorDetails | null,
