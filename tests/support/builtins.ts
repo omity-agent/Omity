@@ -1,14 +1,8 @@
-import {
-  emptyMcpConfiguration,
-  readMcpConfiguration,
-} from "../../src/infrastructure/mcp/configuration";
 import { join, resolve } from "node:path";
-import { parse, stringify } from "yaml";
-import type { StructuredToolInterface } from "@langchain/core/tools";
 import { deepmerge } from "deepmerge-ts";
-import { toJsonSchema } from "@langchain/core/utils/json_schema";
+import { readMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
+import { stringify } from "yaml";
 import { writeFileSync } from "node:fs";
-import { z } from "zod";
 
 function repositoryToolbox() {
   return readMcpConfiguration(resolve(import.meta.dir, "../../settings/toolbox.yaml"));
@@ -21,15 +15,4 @@ export function writeToolboxConfiguration(root: string, overrides: Record<string
     join(root, "settings", "toolbox.yaml"),
     stringify(deepmerge(repositoryToolbox(), overrides)),
   );
-}
-export function completeToolboxYaml(value: string | Record<string, unknown>) {
-  const overrides = z
-    .record(z.string(), z.unknown())
-    .parse(typeof value === "string" ? parse(value) : value);
-  return stringify({ ...emptyMcpConfiguration(), ...overrides });
-}
-export function toolProperties(tool: StructuredToolInterface) {
-  return z
-    .object({ properties: z.record(z.string(), z.unknown()) })
-    .parse(toJsonSchema(tool.schema)).properties;
 }

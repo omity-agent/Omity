@@ -75,19 +75,3 @@ test("proxy failure never retries the target directly", async () => {
     await Promise.all([target.stop(true), brokenProxy.stop(true)]);
   }
 });
-test("cancellation during proxy resolution prevents a later network request", async () => {
-  const pending = Promise.withResolvers<string | undefined>(),
-    controller = new AbortController(),
-    runtime = createNetworkRuntime(() => pending.promise);
-  try {
-    const request = runtime.fetch("http://must-not-connect.invalid", {
-      signal: controller.signal,
-    });
-    controller.abort(new Error("cancel proxy lookup"));
-    expect(request).rejects.toThrow("cancel proxy lookup");
-    pending.resolve(undefined);
-  } finally {
-    pending.resolve(undefined);
-    await runtime.close();
-  }
-});

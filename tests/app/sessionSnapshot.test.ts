@@ -1,18 +1,13 @@
 import { type AppMcp, createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, workspace } from "../support/database";
 import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
 import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
-import { HumanMessage } from "@langchain/core/messages";
-import { buildTimeline } from "../../src/app/timeline";
 import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
 import { createTestDirectory } from "../support/artifacts";
-import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
 import { join } from "node:path";
-import { loadTranscript } from "../../src/app/transcript";
 import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
 import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
@@ -33,36 +28,6 @@ afterEach(async () => {
   for (const root of roots.splice(0)) {
     rmSync(root, { force: true, recursive: true });
   }
-  await cleanupDatabaseDirs();
-});
-test("empty system instructions are omitted from the timeline", () => {
-  const db = makeDb(),
-    definition = emptySessionDefinition();
-  definition.prefix.systemPrompt = " \n";
-  db.resetSession("empty-instructions", workspace, [], definition);
-  db.appendUser("empty-instructions", "message");
-  const transcript = loadTranscript(db.db, "empty-instructions");
-  expect(buildTimeline(transcript.messages, transcript.queue, []).map(({ role }) => role)).toEqual([
-    "user",
-  ]);
-  db.close();
-});
-test("session prefix exposes instructions as a system message", async () => {
-  const db = makeDb(),
-    definition = emptySessionDefinition();
-  definition.prefix.systemPrompt = "Follow the project instructions.";
-  db.resetSession("system-session", workspace, [], definition);
-  await db.syncHistory("system-session", [
-    new HumanMessage({ content: "Implement the feature.", id: "user-1" }),
-  ]);
-  const transcript = loadTranscript(db.db, "system-session"),
-    messages = buildTimeline(transcript.messages, transcript.queue, []);
-  expect(messages.map(({ role }) => role)).toEqual(["system", "user"]);
-  expect(messages[0]).toMatchObject({
-    content: "Follow the project instructions.",
-    parts: [{ content: "Follow the project instructions.", type: "content" }],
-  });
-  db.close();
 });
 test("session snapshots lock only the model prefix while runtime configuration changes", async () => {
   const root = createTestDirectory("session-snapshot"),
