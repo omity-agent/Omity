@@ -9,9 +9,7 @@ import {
   sessionPaths,
 } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
-import { HumanMessage } from "@langchain/core/messages";
 import { UserMessageStorage } from "../../infrastructure/database/session/userMessages";
-import { contentToText } from "../../runtime/content";
 import { existsSync } from "node:fs";
 import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/session/initialConversation";
@@ -61,7 +59,7 @@ export function forkSessionStorage({
   try {
     using source = openStoredSession(sourceSessionId),
       target = new AgentDatabase(targetPaths.dbPath);
-    forkDatabaseBeforeMessage({
+    const userMessages = forkDatabaseBeforeMessage({
       beforeMessageId,
       profiles,
       source,
@@ -70,12 +68,7 @@ export function forkSessionStorage({
       targetSessionId,
       workspace,
     });
-    new UserMessageStorage(targetPaths.userMessagesDir).writeAll(
-      target
-        .history(targetSessionId)
-        .filter((message) => HumanMessage.isInstance(message))
-        .map((message) => contentToText(message.content)),
-    );
+    new UserMessageStorage(targetPaths.userMessagesDir).writeAll(userMessages);
     created = true;
   } finally {
     if (!created) {

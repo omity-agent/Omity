@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 export interface EditablePair extends InitialMessagePair {
   id: string;
 }
-const stack = css({ alignSelf: "end" });
+const stack = css({ alignSelf: "stretch" });
 export function MessageStack({
   pairs,
   onPairChange,

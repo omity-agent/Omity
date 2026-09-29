@@ -25,6 +25,7 @@ export interface AppHostEvents {
 const noToolCancellation: RunningHost["cancelTool"] = () => false;
 export class AppHosts {
   private readonly running = new Map<string, RunningHost>();
+  private readonly scheduled = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly errors = new Map<string, ErrorDetails>();
   private closing = false;
   constructor(
@@ -48,9 +49,25 @@ export class AppHosts {
     this.errors.delete(sessionId);
   }
   ensure(sessionId: string, root: string) {
-    return this.running.get(sessionId)?.ready ?? this.start(sessionId, root, "load");
+    const ready = this.running.get(sessionId)?.ready;
+    if (ready) {
+      return ready;
+    }
+    this.cancelScheduledStart(sessionId);
+    return this.start(sessionId, root, "load");
+  }
+  startDetached(sessionId: string, root: string, kind: HostMode["kind"]) {
+    if (this.running.has(sessionId) || this.scheduled.has(sessionId)) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      this.scheduled.delete(sessionId);
+      void this.startDetachedHost(sessionId, root, kind);
+    }, 0);
+    this.scheduled.set(sessionId, timer);
   }
   start(sessionId: string, root: string, kind: HostMode["kind"]) {
+    this.cancelScheduledStart(sessionId);
     if (this.closing) {
       return Promise.reject(new Error("App 正在关闭，不能启动 Host"));
     }
@@ -97,6 +114,7 @@ export class AppHosts {
     return host?.cancelTool(callId) ?? false;
   }
   async stop(sessionId: string) {
+    this.cancelScheduledStart(sessionId);
     const host = this.running.get(sessionId);
     if (!host) {
       return;
@@ -107,6 +125,10 @@ export class AppHosts {
   }
   close = once(async () => {
     this.closing = true;
+    for (const timer of this.scheduled.values()) {
+      clearTimeout(timer);
+    }
+    this.scheduled.clear();
     const hosts = [...this.running.entries()];
     for (const [sessionId, host] of hosts) {
       host.stopping.abort(new Error("App 正在关闭"));
@@ -191,6 +213,20 @@ export class AppHosts {
       await host.done;
     } finally {
       clearTimeout(timer);
+    }
+  }
+  private async startDetachedHost(sessionId: string, root: string, kind: HostMode["kind"]) {
+    try {
+      await this.start(sessionId, root, kind);
+    } catch {
+      this.events.changed(sessionId);
+    }
+  }
+  private cancelScheduledStart(sessionId: string) {
+    const timer = this.scheduled.get(sessionId);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.scheduled.delete(sessionId);
     }
   }
 }

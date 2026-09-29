@@ -55,6 +55,7 @@ test("takeover hooks bracket an Agent tool cycle without recursive hooks", async
     .map((call) => call.id)
     .filter(isHookCallId);
   expect(hookIds).toHaveLength(2);
+  expect(hookIds.every((id) => /^[A-Za-z0-9_-]+$/.test(id))).toBe(true);
   assertToolProtocol(result.messages);
   db.close();
 });

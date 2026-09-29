@@ -1,8 +1,8 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import { type EditablePair, MessageStack } from "./MessageStack";
 import { Plus, UserRound } from "lucide-react";
+import { composer, scroll, scrollContent, setup } from "./layout";
 import { composerFrame, composerRole } from "../Chat/Composer/layout";
-import { scroll, scrollContent, setup } from "./layout";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
 import { IconButton } from "../ParkUI";
@@ -168,6 +168,32 @@ export function NewSessionPage({
             />
             <Toggles disabled={submitting} selection={hookSelection} />
           </div>
+          <div className={`${composerFrame} ${composer}`}>
+            <MarkdownEditor
+              disabled={draftLoading || submitting}
+              onChange={handleMessageChange}
+              onHistoryNavigate={navigateHistory}
+              onPasteFiles={attachmentSettings ? pasteFiles : undefined}
+              onSubmit={handleSubmit}
+              placeholder={t("messagePlaceholder")}
+              value={message}
+            />
+            <ActionPanel footer={footer}>
+              <IconButton
+                aria-label={t("addMessagePair")}
+                disabled={submitting}
+                onClick={addPair}
+                title={t("addMessagePair")}
+                type="button"
+              >
+                <Plus aria-hidden size={16} />
+              </IconButton>
+              <SubmitButton
+                disabled={draftLoading || !hookSelection.ready || !complete || submitting}
+                label={submitting ? t("creating") : t("createAndSend")}
+              />
+            </ActionPanel>
+          </div>
           <MessageStack
             pairs={pairs}
             onPairChange={changePair}
@@ -175,32 +201,6 @@ export function NewSessionPage({
             onSubmit={handleSubmit}
           />
         </div>
-      </div>
-      <div className={composerFrame}>
-        <MarkdownEditor
-          disabled={draftLoading || submitting}
-          onChange={handleMessageChange}
-          onHistoryNavigate={navigateHistory}
-          onPasteFiles={attachmentSettings ? pasteFiles : undefined}
-          onSubmit={handleSubmit}
-          placeholder={t("messagePlaceholder")}
-          value={message}
-        />
-        <ActionPanel footer={footer}>
-          <IconButton
-            aria-label={t("addMessagePair")}
-            disabled={submitting}
-            onClick={addPair}
-            title={t("addMessagePair")}
-            type="button"
-          >
-            <Plus aria-hidden size={16} />
-          </IconButton>
-          <SubmitButton
-            disabled={draftLoading || !hookSelection.ready || !complete || submitting}
-            label={submitting ? t("creating") : t("createAndSend")}
-          />
-        </ActionPanel>
       </div>
     </form>
   );

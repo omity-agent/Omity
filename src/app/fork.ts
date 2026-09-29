@@ -10,6 +10,7 @@ import {
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import type { Database } from "bun:sqlite";
 import { DomainError } from "../errors";
+import { HumanMessage } from "@langchain/core/messages";
 import { contentToText } from "../runtime/content";
 import { copyHookUsage } from "../hooks/storage/usage";
 import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
@@ -42,28 +43,33 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
       options.sourceSessionId,
       options.beforeMessageId,
     ),
-    messages = forkMessages(options.source.db, options.sourceSessionId, forkPoint.position);
-  if (!messages.some((message) => storedMessageType(message.message_json) === "human")) {
-    throw new Error("每个 session 的第一条用户消息不能 Fork");
-  }
-  runTransaction(options.target.db, () => {
-    options.target.createSession(
-      options.targetSessionId,
-      options.workspace,
-      options.profiles,
-      readDefinitionRecord(options.source.db, options.sourceSessionId),
-      "pause",
-    );
-    insertMessages(options.target.db, options.targetSessionId, messages);
-    copyHookUsage(
-      options.source.db,
-      options.sourceSessionId,
-      options.target.db,
-      options.targetSessionId,
-    );
-    const content = messageContent(forkPoint.message_json);
-    writeComposerDraftRecord(options.target.db, options.targetSessionId, content, 1);
-  });
+    messages = forkMessages(options.source.db, options.sourceSessionId, forkPoint.position).map(
+      (row) => ({ message: decodeMessage(row.message_json, row.source_id), row }),
+    ),
+    userMessages = runTransaction(options.target.db, () => {
+      options.target.createSession(
+        options.targetSessionId,
+        options.workspace,
+        options.profiles,
+        readDefinitionRecord(options.source.db, options.sourceSessionId),
+        "pause",
+      );
+      const copiedUserMessages = insertMessages(
+        options.target.db,
+        options.targetSessionId,
+        messages,
+      );
+      copyHookUsage(
+        options.source.db,
+        options.sourceSessionId,
+        options.target.db,
+        options.targetSessionId,
+      );
+      const content = messageContent(forkPoint.message_json);
+      writeComposerDraftRecord(options.target.db, options.targetSessionId, content, 0);
+      return copiedUserMessages;
+    });
+  return userMessages;
 }
 function assertForkPoint(db: Database, sessionId: string, messageId: number) {
   if (!Number.isSafeInteger(messageId) || messageId <= 0) {
@@ -93,11 +99,13 @@ function forkMessages(db: Database, sessionId: string, beforePosition: number) {
     beforePosition,
   );
 }
-function insertMessages(db: Database, sessionId: string, messages: MessageRow[]) {
-  const lastUserIndex = messages.findLastIndex(
-      (message) => storedMessageType(message.message_json) === "human",
-    ),
-    lastUser = messages[lastUserIndex];
+function insertMessages(
+  db: Database,
+  sessionId: string,
+  messages: { row: MessageRow; message: ReturnType<typeof decodeMessage> }[],
+) {
+  const lastUserIndex = messages.findLastIndex(({ message }) => HumanMessage.isInstance(message)),
+    lastUser = messages[lastUserIndex]?.message;
   if (!lastUser) {
     throw new Error("Fork 历史缺少用户输入");
   }
@@ -106,11 +114,12 @@ function insertMessages(db: Database, sessionId: string, messages: MessageRow[])
       db.run(
         `INSERT INTO inputs (session_id, run_id, ordinal, content, delivery)
        VALUES (?, ?, 0, ?, 'consumed')`,
-        [sessionId, runId, messageContent(lastUser.message_json)],
+        [sessionId, runId, contentToText(lastUser.content)],
       ).lastInsertRowid,
-    );
+    ),
+    userMessages: string[] = [];
   for (const [position, message] of messages.entries()) {
-    const chatMessage = decodeMessage(message.message_json, message.source_id),
+    const chatMessage = message.message,
       continuation = position === lastUserIndex;
     chatMessage.id = continuation ? inputMessageId(sessionId, inputId) : randomUUID();
     storeMessage(
@@ -119,9 +128,13 @@ function insertMessages(db: Database, sessionId: string, messages: MessageRow[])
       chatMessage,
       position,
       continuation ? inputId : undefined,
-      message.created_at,
+      message.row.created_at,
     );
+    if (HumanMessage.isInstance(chatMessage)) {
+      userMessages.push(contentToText(chatMessage.content));
+    }
   }
+  return userMessages;
 }
 function storedMessageType(value: string) {
   const parsed = JSON.parse(value) as unknown;

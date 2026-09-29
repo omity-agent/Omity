@@ -1,4 +1,5 @@
 import type { ForkPage, Page } from "../../route";
+import { type OptimisticUser, optimisticTimelineMessage } from "./optimistic";
 import { forkDraftTarget, forkSubmissionKey, usePendingFork } from "./pendingFork";
 import type { ComposerDraftTarget } from "../composerDrafts";
 import type { TimelineMessage } from "../../../timeline";
@@ -12,13 +13,23 @@ function chatDraftTarget(page: ForkPage | undefined, sessionId: string | undefin
   }
   return sessionId ? ({ kind: "session", sessionId } as const) : ({ kind: "new" } as const);
 }
-function previewFork(view: TimelineMessage[], beforeMessageId: number) {
+function previewFork(
+  view: TimelineMessage[],
+  beforeMessageId: number,
+  pendingMessage: OptimisticUser | null,
+) {
   const index = view.findIndex(
     (message) => message.id === beforeMessageId && message.role === "user",
   );
   return {
     draft: index === -1 ? undefined : view[index]?.content,
-    view: index === -1 ? [] : view.slice(0, index),
+    view:
+      index === -1
+        ? []
+        : [
+            ...view.slice(0, index),
+            ...(pendingMessage ? [optimisticTimelineMessage(pendingMessage)] : []),
+          ],
   };
 }
 export function useForkableTranscript({
@@ -38,7 +49,9 @@ export function useForkableTranscript({
     draftTarget: ComposerDraftTarget = chatDraftTarget(page, activeSessionId),
     submissionSessionId = page ? forkSubmissionKey(page) : activeSessionId,
     submissions = useUserMessageSubmissions(submissionSessionId, transcript),
-    pendingPreview = page ? previewFork(submissions.view, page.beforeMessageId) : undefined,
-    { busy, ...flow } = usePendingFork({ navigate, page, submit: submissions.send });
+    { busy, ...flow } = usePendingFork({ navigate, page, submit: submissions.send }),
+    pendingPreview = page
+      ? previewFork(submissions.view, page.beforeMessageId, flow.pendingMessage)
+      : undefined;
   return { busy, draftTarget, flow, pendingPreview, submissions, transcript };
 }

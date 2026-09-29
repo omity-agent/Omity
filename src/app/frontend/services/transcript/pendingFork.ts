@@ -48,6 +48,7 @@ export function usePendingFork({
   "use no memo";
   const queryClient = useQueryClient(),
     [busy, setBusy] = useState(false),
+    [pendingMessage, setPendingMessage] = useState<OptimisticUser | null>(null),
     activating = useRef(false),
     materializations = useRef(new Map<string, Promise<MaterializedSession>>()),
     navigateRef = useLatest(navigate),
@@ -119,18 +120,24 @@ export function usePendingFork({
       navigate(sessionPage(pending.sourceSessionId), true);
     }, [navigate, pageRef, queryClientRef]),
     send = useCallback(
-      (optimistic: OptimisticUser, draftRevision: number, attachments: PendingAttachment[]) =>
-        activate(async (sessionId) => {
-          const persistedRevision = await saveMaterializedDraft(
-            sessionId,
-            optimistic.content,
-            draftRevision,
-          );
-          await submit({ ...optimistic, sessionId }, persistedRevision, attachments);
-        }),
+      async (
+        optimistic: OptimisticUser,
+        draftRevision: number,
+        attachments: PendingAttachment[],
+      ) => {
+        setPendingMessage(optimistic);
+        try {
+          await activate(async (sessionId) => {
+            await submit({ ...optimistic, sessionId }, draftRevision, attachments);
+          });
+        } finally {
+          setPendingMessage(null);
+        }
+      },
+      // oxlint-disable-next-line react/memo-dependencies
       [activate, submit],
     );
-  return { begin, busy, control, discard, send };
+  return { begin, busy, control, discard, pendingMessage, send };
 }
 function useLatest<Value>(value: Value) {
   const reference = useRef(value);

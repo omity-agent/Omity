@@ -94,7 +94,7 @@ export class AppController {
         submission,
       }),
       session = this.registry.refresh(created.sessionId);
-    await this.hosts.start(created.sessionId, created.workspace, "load");
+    this.hosts.startDetached(created.sessionId, created.workspace, "load");
     const info = this.sessionInfo(session);
     this.events.notifySession(info);
     return info;
