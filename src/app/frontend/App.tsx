@@ -1,7 +1,7 @@
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import { type SessionInfo, deleteSession, pickWorkspacePath, setControl } from "./services/client";
-import { layout, main, sidebar } from "./design";
 import {
+  pagePath,
   readPage,
   resolvePage,
   transcriptSessionId,
@@ -10,15 +10,13 @@ import {
 } from "./route";
 import { removeSession, useBootstrap, useUserMessages } from "./services/queries";
 import { AccessGate } from "./components/Access/AccessGate";
+import { ApplicationFrame } from "./components/Application";
 import { ChatPage } from "./components/Chat/ChatPage";
-import { Sidebar } from "./components/Sidebar";
-import { cx } from "styled-system/css";
 import { pauseRequestPending } from "./components/Chat/actionState";
 import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
 import { useNewSession } from "./services/newSession";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSessionAttention } from "./services/events/attention";
 import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import { useSessionToolActions } from "./components/Chat/toolActions";
 
@@ -44,6 +42,7 @@ function AuthenticatedApp() {
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
     currentPage = resolvePage(page, sessions, bootstrap.data !== undefined),
+    pageKey = pagePath(currentPage),
     pendingFork = currentPage.kind === "fork" ? currentPage : undefined,
     activeSession =
       currentPage.kind === "session"
@@ -92,7 +91,6 @@ function AuthenticatedApp() {
       activeSession?.id,
       pausing,
     ),
-    unreadSessionIds = useSessionAttention(queryClient, activeSession?.id),
     workspaces = useMemo(() => recentWorkspaces(sessions), [sessions]),
     userMessageContents = useMemo(
       () => userMessages.data?.messages.map(({ content }) => content) ?? [],
@@ -154,52 +152,48 @@ function AuthenticatedApp() {
     ),
     sendSessionMessage = pendingFork ? sendPendingFork : submissions.send;
   return (
-    <div className={cx("dark", layout)}>
-      <aside className={sidebar}>
-        <Sidebar
-          activeId={activeSession?.id}
-          showCreate={currentPage.kind !== "new"}
-          sessions={displayedSessions}
-          unreadIds={unreadSessionIds}
-          onCreate={openNewSession}
-          onSelect={selectSession}
-        />
-      </aside>
-      <main className={main}>
-        <ChatPage
-          activeId={sourceSession?.id}
-          actionPending={forkActionPending}
-          allowFork={!pendingFork}
-          attachmentSettings={bootstrap.data?.attachments}
-          cacheHitWarningRatio={bootstrap.data?.frontend.cacheHitWarningRatio}
-          control={pendingFork ? "running" : transcript.control}
-          draft={pendingPreview?.draft}
-          draftSaveDelayMs={bootstrap.data?.frontend.draftSaveDelayMs}
-          draftTarget={draftTarget}
-          newSession={currentPage.kind === "new"}
-          pausing={pausing}
-          queue={pendingFork ? emptyQueue : transcript.queue}
-          recentWorkspaces={workspaces}
-          availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
-          selectedProfile={newProfile}
-          sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
-          translationSettings={bootstrap.data?.frontend.reasoningTranslation}
-          view={pendingPreview?.view ?? submissions.view}
-          userMessages={userMessageContents}
-          workspace={newWorkspace ?? cwd}
-          onCreate={createNewSession}
-          onCancelTool={toolActions.handleCancel}
-          askUser={activeSession?.askUser ?? null}
-          onAnswer={toolActions.handleAnswer}
-          onControl={changeControl}
-          onDelete={deleteActiveSession}
-          onFork={beginFork}
-          onPickWorkspace={pickWorkspacePath}
-          onProfileChange={setNewProfile}
-          onSend={sendSessionMessage}
-          onWorkspaceChange={setNewWorkspace}
-        />
-      </main>
-    </div>
+    <ApplicationFrame
+      activeId={activeSession?.id}
+      pageKey={pageKey}
+      showCreate={currentPage.kind !== "new"}
+      sessions={displayedSessions}
+      title={sourceSession?.title}
+      onCreate={openNewSession}
+      onSelect={selectSession}
+    >
+      <ChatPage
+        activeId={sourceSession?.id}
+        actionPending={forkActionPending}
+        allowFork={!pendingFork}
+        attachmentSettings={bootstrap.data?.attachments}
+        cacheHitWarningRatio={bootstrap.data?.frontend.cacheHitWarningRatio}
+        control={pendingFork ? "running" : transcript.control}
+        draft={pendingPreview?.draft}
+        draftSaveDelayMs={bootstrap.data?.frontend.draftSaveDelayMs}
+        draftTarget={draftTarget}
+        newSession={currentPage.kind === "new"}
+        pausing={pausing}
+        queue={pendingFork ? emptyQueue : transcript.queue}
+        recentWorkspaces={workspaces}
+        availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
+        selectedProfile={newProfile}
+        sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
+        translationSettings={bootstrap.data?.frontend.reasoningTranslation}
+        view={pendingPreview?.view ?? submissions.view}
+        userMessages={userMessageContents}
+        workspace={newWorkspace ?? cwd}
+        onCreate={createNewSession}
+        onCancelTool={toolActions.handleCancel}
+        askUser={activeSession?.askUser ?? null}
+        onAnswer={toolActions.handleAnswer}
+        onControl={changeControl}
+        onDelete={deleteActiveSession}
+        onFork={beginFork}
+        onPickWorkspace={pickWorkspacePath}
+        onProfileChange={setNewProfile}
+        onSend={sendSessionMessage}
+        onWorkspaceChange={setNewWorkspace}
+      />
+    </ApplicationFrame>
   );
 }

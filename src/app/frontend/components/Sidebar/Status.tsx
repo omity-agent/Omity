@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 
 const indicator = cva({
     base: {
+      "& svg": { h: "smallIcon", w: "smallIcon" },
       alignItems: "center",
       display: "inline-flex",
       flexShrink: 0,

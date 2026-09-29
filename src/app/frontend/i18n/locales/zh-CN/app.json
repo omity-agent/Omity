@@ -2,6 +2,7 @@
   "brand": "Omity",
   "new": "新建",
   "sessions": "会话列表",
+  "returnToMain": "返回主界面",
   "showHistory": "显示 {{count}} 条历史会话",
   "hideHistory": "收起历史会话",
   "newSession": "新建会话",

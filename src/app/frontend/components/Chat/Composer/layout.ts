@@ -10,7 +10,7 @@ export const composerFrame = css({
     base: "minmax(0, 1fr)",
     md: "minmax(0, 1fr) auto",
   },
-  p: { _short: "3", base: "3", md: "6" },
+  p: { _short: "2", base: "3", lg: "6", md: "4" },
   w: "full",
 });
 export const composerActions = css({
@@ -19,16 +19,17 @@ export const composerActions = css({
   gap: "3",
   h: "full",
   justifyContent: "space-between",
-  minW: { md: { _coarse: "60" } },
-  w: { base: "full", md: "controlColumn" },
+  minW: 0,
+  w: { base: "full", md: "calc(5 * token(sizes.controlTarget) + 4 * token(spacing.1))" },
 });
 export const composerControls = css({
   "& button": { borderWidth: "1px", flexShrink: 0 },
   alignItems: "center",
   display: "flex",
+  flexWrap: "wrap",
   gap: "1",
   justifyContent: "flex-end",
-  minH: { _coarse: "11", base: "8" },
+  minH: "controlTarget",
   order: { base: 1, md: 0 },
   w: "full",
 });
@@ -37,17 +38,14 @@ export const runtimeControls = css({
   flexShrink: 0,
   gap: "1",
   justifyContent: "flex-end",
-  w: {
-    _coarse: "calc(token(sizes.11) + token(sizes.11) + token(spacing.1))",
-    base: "calc(token(sizes.8) + token(sizes.8) + token(spacing.1))",
-  },
+  w: "calc(2 * token(sizes.controlTarget) + token(spacing.1))",
 });
 export const composerRole = css({
   alignItems: "center",
   color: "mutedStrong",
   display: { base: "none", md: "flex" },
   justifyContent: "flex-end",
-  minH: { _coarse: "11", base: "8" },
+  minH: "controlTarget",
   mt: { md: "auto" },
   pr: { _coarse: "3", base: "1.5" },
 });

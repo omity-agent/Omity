@@ -18,7 +18,7 @@ export const setup = css({
   },
   alignContent: "start",
   display: "grid",
-  gap: "6",
+  gap: { base: "4", md: "6" },
   gridTemplateColumns: {
     base: "minmax(0, 1fr)",
     md: "repeat(2, minmax(0, 1fr))",

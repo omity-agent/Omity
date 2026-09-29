@@ -1,6 +1,10 @@
 import { css } from "styled-system/css";
 
 export const layout = css({
+  _compact: {
+    '&[data-panel="main"] > aside': { display: "none" },
+    '&[data-panel="sessions"] > main': { display: "none" },
+  },
   bg: "canvas",
   color: "text",
   display: "grid",
@@ -11,12 +15,34 @@ export const layout = css({
     lg: "auto minmax(0, 1fr)",
   },
   gridTemplateRows: {
-    _topNav: "clamp(12rem, 28dvh, 24rem) minmax(0, 1fr)",
-    base: "clamp(7.5rem, 26dvh, 9rem) minmax(0, 1fr)",
+    _topNav: { lg: "clamp(12rem, 28dvh, 24rem) minmax(0, 1fr)" },
+    base: "auto minmax(0, 1fr)",
     lg: "minmax(0, 1fr)",
   },
   h: "100dvh",
   overflow: "hidden",
+  pb: "env(safe-area-inset-bottom)",
+  pl: "env(safe-area-inset-left)",
+  pr: "env(safe-area-inset-right)",
+  pt: "env(safe-area-inset-top)",
+});
+export const panelToolbar = css({
+  alignItems: "center",
+  bg: "sidebar",
+  borderBottomColor: "line",
+  borderBottomWidth: "1px",
+  display: { base: "flex", lg: "none" },
+  gap: "3",
+  minW: 0,
+  px: "3",
+  py: "1",
+});
+export const panelCaption = css({
+  fontSize: "interface",
+  minW: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 });
 export const sidebar = css({
   bg: "sidebar",

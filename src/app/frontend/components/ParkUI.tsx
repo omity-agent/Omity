@@ -28,8 +28,9 @@ const fieldClasses = fieldRecipe(),
     borderRadius: "0",
     color: "text",
     fontFamily: "body",
+    fontSize: "interface",
     fontWeight: "normal",
-    minH: { _coarse: "11" },
+    minH: "controlTarget",
     minW: 0,
     touchAction: "manipulation",
   }),
@@ -103,10 +104,10 @@ export function IconButton(props: ButtonProps) {
       color: "muted",
       opacity: 0.55,
     },
-    h: { _coarse: "11", base: "8" },
-    minW: { _coarse: "11", base: "8" },
+    h: "controlTarget",
+    minW: "controlTarget",
     p: "0",
-    w: { _coarse: "11", base: "8" },
+    w: "controlTarget",
   });
   return createElement(Button, {
     size: "sm",
@@ -116,17 +117,18 @@ export function IconButton(props: ButtonProps) {
   });
 }
 type InputProps = Omit<ComponentProps<"input">, "size"> & InputVariantProps;
+const inputText = css({ fontSize: "editor" });
 export function Input({ className, size = "sm", ...props }: InputProps) {
   return createElement("input", {
     ...props,
-    className: cx(inputRecipe({ size }), compactControl, surfacedControl, className),
+    className: cx(inputRecipe({ size }), compactControl, surfacedControl, inputText, className),
   });
 }
 type SelectProps = Omit<ComponentProps<"select">, "size"> & InputVariantProps;
 export function Select({ className, size = "sm", ...props }: SelectProps) {
   return createElement("select", {
     ...props,
-    className: cx(inputRecipe({ size }), compactControl, surfacedControl, className),
+    className: cx(inputRecipe({ size }), compactControl, surfacedControl, inputText, className),
   });
 }
 function FieldRoot({ className, ...props }: ComponentProps<"div">) {

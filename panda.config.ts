@@ -1,3 +1,4 @@
+import { compactViewport, interfaceMetrics } from "./settings/appearance";
 import { createPreset } from "@park-ui/panda-preset";
 import { defineConfig } from "@pandacss/dev";
 import neutral from "@park-ui/panda-preset/colors/neutral";
@@ -6,6 +7,7 @@ export default defineConfig({
   conditions: {
     extend: {
       coarse: "@media (pointer: coarse)",
+      compact: `@media ${compactViewport}`,
       hover: {
         "@media (hover: hover) and (pointer: fine)": {
           "&:is(:hover, [data-hover])": "@slot",
@@ -21,6 +23,7 @@ export default defineConfig({
     "*": {
       boxSizing: "border-box",
     },
+    ".lucide": { flexShrink: 0, height: "interfaceIcon", width: "interfaceIcon" },
     body: {
       color: "text",
       colorScheme: "dark",
@@ -61,6 +64,7 @@ export default defineConfig({
         },
       },
       semanticTokens: {
+        ...interfaceMetrics,
         colors: {
           activeLine: {
             value: "color-mix(in srgb, {colors.ink.900} 20%, transparent)",
@@ -135,7 +139,7 @@ export default defineConfig({
         sizes: {
           appSidebar: { value: "clamp(15rem, 22vw, 20rem)" },
           chatCanvas: { value: "120rem" },
-          composerEditor: { value: "12rem" },
+          composerEditor: { value: "clamp(5rem, 24dvh, 12rem)" },
           content: { value: "52rem" },
           controlColumn: { value: "11rem" },
           detailHeader: { value: "2.25rem" },

@@ -15,8 +15,8 @@ export const root = css({
   overflow: "hidden",
 });
 export const fixedRoot = css({
-  h: { _short: "6rem", base: "composerEditor", smDown: "8rem" },
-  minH: { _coarse: "7rem" },
+  h: "composerEditor",
+  maxH: { _short: "24dvh", smDown: "8rem" },
 });
 export const fillRoot = css({
   alignSelf: "stretch",
@@ -43,7 +43,7 @@ export const editorTheme = EditorView.theme(
       backgroundColor: "var(--colors-surface)",
       color: "var(--colors-text)",
       fontFamily: "var(--fonts-mono)",
-      fontSize: "0.875rem",
+      fontSize: "var(--font-sizes-editor)",
     },
     ".cm-activeLine": {
       backgroundColor: "var(--colors-active-line)",

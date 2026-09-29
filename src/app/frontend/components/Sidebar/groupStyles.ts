@@ -11,11 +11,11 @@ export const header = css({
   borderWidth: 0,
   color: "mutedStrong",
   display: "grid",
-  fontSize: "xs",
+  fontSize: "metadata",
   gap: "1.5",
   gridTemplateColumns: "auto minmax(0, 1fr) auto",
   h: "7",
-  minH: { _coarse: "11" },
+  minH: "controlTarget",
   position: "sticky",
   px: "2",
   textAlign: "left",
@@ -23,7 +23,7 @@ export const header = css({
   w: "full",
   zIndex: 1,
 });
-export const chevron = css({ transition: "transform 150ms ease" });
+export const chevron = css({ h: "smallIcon", transition: "transform 150ms ease", w: "smallIcon" });
 export const collapsedChevron = css({ transform: "rotate(-90deg)" });
 export const workspaceName = css({
   overflow: "hidden",
@@ -43,10 +43,10 @@ export const historyToggle = css({
   bg: "transparent",
   borderWidth: 0,
   color: "muted",
-  fontSize: "2xs",
+  fontSize: "metadata",
   h: "7",
   justifyContent: "flex-start",
-  minH: { _coarse: "11" },
+  minH: "controlTarget",
   ml: "2px",
   px: "3",
 });
@@ -79,12 +79,12 @@ export const row = css({
   bg: "transparent",
   borderWidth: 0,
   display: "grid",
-  fontSize: "xs",
+  fontSize: "interface",
   gap: "2",
   gridTemplateColumns: "minmax(0, 1fr) auto auto",
   h: "8",
   justifyContent: "stretch",
-  minH: { _coarse: "11" },
+  minH: "controlTarget",
   px: "2.5",
   textAlign: "left",
   w: "full",
@@ -114,6 +114,6 @@ export const unreadCaption = css({
 });
 export const time = css({
   color: "muted",
-  fontSize: "2xs",
+  fontSize: "metadata",
   whiteSpace: "nowrap",
 });

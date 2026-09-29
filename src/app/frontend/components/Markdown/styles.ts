@@ -95,7 +95,7 @@ export const source = css({
 });
 export const inlineCode = css({
   display: "inline",
-  fontSize: "sm",
+  fontSize: "source",
   lineHeight: "1.25",
   px: "1.5",
   py: "0.5",

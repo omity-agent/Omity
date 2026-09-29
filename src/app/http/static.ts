@@ -20,8 +20,11 @@ export function createStaticApp(root: string) {
   return app;
 }
 async function fileResponse(file: Bun.BunFile) {
-  return new Response(file.stream(), {
-    headers: { "content-type": file.type || "application/octet-stream" },
+  return new Response(file, {
+    headers: {
+      "content-length": file.size.toString(),
+      "content-type": file.type || "application/octet-stream",
+    },
   });
 }
 function resolveStaticAsset(root: string, requestPath: string) {

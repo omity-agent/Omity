@@ -19,7 +19,7 @@ export const block = cva({
     color: "text",
     display: "block",
     fontFamily: "mono",
-    fontSize: "sm",
+    fontSize: "source",
     lineHeight: "1.65",
     m: 0,
     maxW: "full",
