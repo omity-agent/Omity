@@ -1,18 +1,38 @@
+import type { McpClientPool } from "./client/pool";
 import type { McpConfiguration } from "./configuration";
-import type { McpOperations } from "./client/protocol";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { collectReadableZodIssues } from "./tools/issues";
 import { excludedServerToolNames } from "./configuration/exclusions";
 import { langChainClient } from "./tools/langchain";
 import { loadMcpTools } from "@langchain/mcp-adapters";
+import pMap from "p-map";
 
 export async function loadServerTools(
-  client: {
-    getClient: (name: string) => Promise<McpOperations>;
-  },
+  client: Pick<McpClientPool, "getClient">,
   servers: McpConfiguration["mcpServers"],
 ) {
-  const tools: StructuredToolInterface[] = [];
-  for (const [name, configuration] of Object.entries(servers)) {
+  try {
+    const catalogs = await pMap(
+      Object.entries(servers),
+      ([name, configuration]) => loadServerCatalog(client, name, configuration),
+      { stopOnError: false },
+    );
+    return catalogs.flat();
+  } catch (error) {
+    if (error instanceof AggregateError) {
+      error.message = error.errors
+        .map((failure: unknown) => (failure instanceof Error ? failure.message : String(failure)))
+        .join("\n");
+    }
+    throw error;
+  }
+}
+async function loadServerCatalog(
+  client: Pick<McpClientPool, "getClient">,
+  name: string,
+  configuration: McpConfiguration["mcpServers"][string],
+): Promise<StructuredToolInterface[]> {
+  try {
     const serverClient = await client.getClient(name),
       excludedNames = new Set(excludedServerToolNames(name, configuration)),
       loaded = await loadMcpTools(name, langChainClient(serverClient), {
@@ -26,9 +46,17 @@ export async function loadServerTools(
         tool.extras = { ...tool.extras, defer_loading: true };
       }
     }
-    tools.push(...serverTools);
+    return serverTools;
+  } catch (error) {
+    const issues = collectReadableZodIssues(error),
+      message =
+        issues.length > 0
+          ? issues.join("\n")
+          : error instanceof Error
+            ? error.message
+            : String(error);
+    throw new Error(`MCP 服务器 "${name}" 初始化失败：${message}`, { cause: error });
   }
-  return tools;
 }
 export function validateConfiguredServers(
   configuration: McpConfiguration,
