@@ -1,7 +1,7 @@
 import { Button, Field, Input } from "../ParkUI";
 import { type ChangeEvent, useCallback, useState } from "react";
 import { Check, FolderOpen, History } from "lucide-react";
-import { css } from "styled-system/css";
+import { css, cx } from "styled-system/css";
 import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
 
@@ -12,18 +12,18 @@ const row = css({
       base: "minmax(0, 1fr)",
       sm: "minmax(0, 1fr) auto",
     },
-    minW: 0,
+    minWidth: "zero",
   }),
-  pathInput = css({ minW: 0, textOverflow: "ellipsis" }),
+  pathInput = css({ minWidth: "zero", textOverflow: "ellipsis" }),
   recent = css({ display: "grid", gap: "2" }),
   recentLabel = css({ color: "muted", fontSize: "xs" }),
+  recentItem = css({ flexGrow: { base: 1, sm: 0 } }),
   recentList = css({
-    "& > button": { flexGrow: { base: 1, sm: 0 } },
     display: "flex",
     flexWrap: "wrap",
     gap: "2",
   }),
-  recentButton = css({ maxW: "full", minW: 0 }),
+  recentButton = css({ maxWidth: "full", minWidth: "zero" }),
   recentPath = css({
     overflow: "hidden",
     textOverflow: "ellipsis",
@@ -46,10 +46,12 @@ async function pickWorkspace(
 }
 export function WorkspacePicker({
   recentWorkspaces,
+  className,
   workspace,
   onChange,
   onPick,
 }: {
+  className?: string;
   recentWorkspaces: string[];
   workspace: string;
   onChange: (workspace: string) => void;
@@ -67,7 +69,7 @@ export function WorkspacePicker({
       [onChange],
     );
   return (
-    <Field.Root>
+    <Field.Root className={className}>
       <Field.Label>{t("workspace")}</Field.Label>
       <span className={row}>
         <Input className={pathInput} value={workspace} onChange={handleInputChange} />
@@ -108,7 +110,7 @@ function RecentWorkspaceButton({
   return (
     <Button
       aria-pressed={selected}
-      className={recentButton}
+      className={cx(recentButton, recentItem)}
       onClick={select}
       title={item}
       type="button"

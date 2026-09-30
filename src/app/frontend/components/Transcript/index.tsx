@@ -13,10 +13,10 @@ import { transcriptWindow } from "../../../../../settings/rendering";
 import { useTranscriptScroll } from "./scrolling/viewportTracking";
 
 const viewport = css({ containerType: "size", overflowAnchor: "none" }),
-  content = css({ minW: 0, position: "relative", w: "full" }),
+  content = css({ minWidth: "zero", position: "relative", width: "full" }),
   segment = css({
-    '&[data-first="true"]': { pt: { _short: "3", base: "4", md: "6" } },
-    '&[data-last="true"]': { pb: { _short: "3", base: "4", md: "6" } },
+    '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
+    '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
     display: "flow-root",
   });
 type MessageActions = Pick<

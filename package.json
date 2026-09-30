@@ -91,7 +91,8 @@
   "devDependencies": {
     "@babel/core": "latest",
     "@pandacss/dev": "beta",
-    "@pandacss/eslint-plugin": "latest",
+    "@pandacss/eslint-plugin": "beta",
+    "@pandacss/preset-base": "beta",
     "@rolldown/plugin-babel": "latest",
     "@tanstack/eslint-plugin-query": "latest",
     "@types/bun": "latest",

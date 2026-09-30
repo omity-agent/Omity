@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 
 const indicator = cva({
     base: {
-      "& svg": { h: "smallIcon", w: "smallIcon" },
       alignItems: "center",
       display: "inline-flex",
       flexShrink: 0,
@@ -35,7 +34,8 @@ const indicator = cva({
       },
     },
   }),
-  activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" }),
+  icon = css({ height: "smallIcon", width: "smallIcon" }),
+  activeIcon = css({ animation: "progressPulse" }),
   statusMeta: Record<SessionStatus, { icon: LucideIcon; active?: boolean }> = {
     error: { icon: CircleAlert },
     idle: { icon: Circle },
@@ -67,7 +67,7 @@ export function Status({
     >
       <Icon
         aria-hidden="true"
-        className={cx(meta.active && activeIcon)}
+        className={cx(icon, meta.active && activeIcon)}
         size={12}
         strokeWidth={2}
       />

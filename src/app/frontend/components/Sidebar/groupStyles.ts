@@ -1,29 +1,34 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Sidebar controls use deliberate external and indicator spacing. */
 import { css } from "styled-system/css";
 
 export const root = css({
   display: "grid",
-  minW: 0,
+  minWidth: "zero",
 });
 export const header = css({
-  _hover: { bg: "control" },
+  _hover: { background: "control" },
   alignItems: "center",
-  bg: "sidebar",
-  borderWidth: 0,
+  background: "sidebar",
+  borderWidth: "zero",
   color: "mutedStrong",
   display: "grid",
   fontSize: "metadata",
   gap: "1.5",
   gridTemplateColumns: "auto minmax(0, 1fr) auto",
-  h: "7",
-  minH: "controlTarget",
+  height: "7",
+  insetBlockStart: "zero",
+  minHeight: "controlTarget",
+  paddingInline: "2",
   position: "sticky",
-  px: "2",
   textAlign: "left",
-  top: 0,
-  w: "full",
-  zIndex: 1,
+  width: "full",
+  zIndex: "base",
 });
-export const chevron = css({ h: "smallIcon", transition: "transform 150ms ease", w: "smallIcon" });
+export const chevron = css({
+  height: "smallIcon",
+  transition: "[transform 150ms ease]",
+  width: "smallIcon",
+});
 export const collapsedChevron = css({ transform: "rotate(-90deg)" });
 export const workspaceName = css({
   overflow: "hidden",
@@ -37,71 +42,70 @@ export const counts = css({
   gap: "1.5",
 });
 export const runningCount = css({ color: "statusModel" });
-export const sessions = css({ display: "grid", gap: "0.5", pb: "2" });
+export const sessions = css({ display: "grid", gap: "0.5", paddingBlockEnd: "2" });
 export const historyToggle = css({
-  _hover: { bg: "control", color: "mutedStrong" },
-  bg: "transparent",
-  borderWidth: 0,
+  _hover: { background: "control", color: "mutedStrong" },
+  background: "clear",
+  borderWidth: "zero",
   color: "muted",
   fontSize: "metadata",
-  h: "7",
+  height: "7",
   justifyContent: "flex-start",
-  minH: "controlTarget",
-  ml: "2px",
-  px: "3",
+  marginInlineStart: "sidebarInset",
+  minHeight: "controlTarget",
+  paddingInline: "3",
 });
 export const item = css({
-  _focusWithin: { bg: "control" },
-  _hover: { bg: "control" },
+  _focusWithin: { background: "control" },
+  _hover: { background: "control" },
   alignItems: "stretch",
+  borderBlockEndWidth: "hairline",
   borderBottomColor: "line",
-  borderBottomWidth: "1px",
-  borderLeftColor: "transparent",
-  borderLeftWidth: "4px",
+  borderInlineStartWidth: "accent",
+  borderLeftColor: "clear",
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
-  minW: 0,
+  minWidth: "zero",
   overflow: "hidden",
-  transition: "background 120ms ease",
+  transition: "[background 120ms ease]",
 });
 export const selected = css({
-  _focusWithin: { bg: "transparent" },
-  _hover: { bg: "transparent" },
-  bg: "transparent",
+  _focusWithin: { background: "clear" },
+  _hover: { background: "clear" },
+  background: "clear",
   borderLeftColor: "text",
 });
 export const row = css({
   _focusVisible: {
-    bg: "transparent",
+    background: "clear",
     outline: "none",
   },
-  _hover: { bg: "transparent" },
-  bg: "transparent",
-  borderWidth: 0,
+  _hover: { background: "clear" },
+  background: "clear",
+  borderWidth: "zero",
   display: "grid",
   fontSize: "interface",
   gap: "2",
   gridTemplateColumns: "minmax(0, 1fr) auto auto",
-  h: "8",
+  height: "8",
   justifyContent: "stretch",
-  minH: "controlTarget",
-  px: "2.5",
+  minHeight: "controlTarget",
+  paddingInline: "2.5",
   textAlign: "left",
-  w: "full",
+  width: "full",
 });
 export const caption = css({
   alignItems: "center",
   color: "mutedStrong",
   display: "flex",
-  letterSpacing: "0.04em",
-  minW: 0,
+  letterSpacing: "caption",
+  minWidth: "zero",
   overflow: "hidden",
   whiteSpace: "nowrap",
 });
 export const selectedCaption = css({
   color: "text",
-  fontWeight: "bold",
-  letterSpacing: "0.08em",
+  textStyle: "selectedCaption",
 });
 export const unreadCaption = css({
   _after: {
@@ -109,7 +113,7 @@ export const unreadCaption = css({
     content: '"●"',
     flexShrink: 0,
     fontSize: "2xs",
-    ml: "1.5",
+    marginInlineStart: "1.5",
   },
 });
 export const time = css({

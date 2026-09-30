@@ -1,3 +1,4 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Message separation is part of the transcript layout. */
 import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
 import { css, cva, cx } from "styled-system/css";
 import { Body } from "../Transcript/Body";
@@ -9,46 +10,46 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 const row = css({
-    '&[data-last="true"]': { mb: "4" },
+    '&[data-last="true"]': { marginBlockEnd: "4" },
     alignItems: "start",
     display: "flex",
     gap: "2",
-    minW: 0,
-    w: "full",
+    minWidth: "zero",
+    width: "full",
   }),
   inputRow = css({ justifyContent: "flex-end" }),
   forkButton = css({
-    borderWidth: "0",
+    borderWidth: "zero",
     flexShrink: 0,
   }),
   message = cva({
     base: {
-      '&[data-first="false"]': { borderTopWidth: 0, pt: "3" },
-      '&[data-last="false"]': { borderBottomWidth: 0, pb: 0 },
-      bg: "surface",
+      '&[data-first="false"]': { borderBlockStartWidth: "zero", paddingBlockStart: "3" },
+      '&[data-last="false"]': { borderBlockEndWidth: "zero", paddingBlockEnd: "zero" },
+      background: "surface",
       borderColor: "line",
-      borderWidth: "1px",
+      borderWidth: "hairline",
       display: "grid",
       gap: "3",
       justifyItems: "start",
-      maxW: "content",
-      minW: 0,
-      p: { base: "3", md: "4" },
+      maxWidth: "content",
+      minWidth: "zero",
+      padding: { base: "3", md: "4" },
       textAlign: "left",
-      w: "fit-content",
+      width: "fitContent",
     },
     variants: {
       pending: {
         true: { opacity: 0.55 },
       },
       role: {
-        assistant: { maxW: { base: "full", lg: "2/3" }, w: "full" },
+        assistant: { maxWidth: { base: "full", lg: "twoThirds" }, width: "full" },
         tool: {},
         user: {
-          bg: "surfaceRaised",
+          background: "surfaceRaised",
           borderColor: "lineStrong",
-          maxH: "66.666667cqh",
-          maxW: { base: "full", lg: "2/3" },
+          maxHeight: "messageLimit",
+          maxWidth: { base: "full", lg: "twoThirds" },
           overflowY: "auto",
           overscrollBehaviorY: "contain",
           scrollbarGutter: "stable",
@@ -68,13 +69,13 @@ const row = css({
   header = css({
     alignItems: "center",
     display: "flex",
+    insetBlockStart: "zero",
     justifyContent: "flex-end",
-    minH: "8",
+    minHeight: "8",
     pointerEvents: "none",
     position: "sticky",
-    top: "0",
-    w: "full",
-    zIndex: "1",
+    width: "full",
+    zIndex: "base",
   }),
   actions = cva({
     base: {
@@ -85,9 +86,9 @@ const row = css({
     },
     variants: {
       role: {
-        assistant: { bg: "surface" },
-        tool: { bg: "surface" },
-        user: { bg: "surfaceRaised" },
+        assistant: { background: "surface" },
+        tool: { background: "surface" },
+        user: { background: "surfaceRaised" },
       },
     },
   });

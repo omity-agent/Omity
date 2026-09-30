@@ -1,7 +1,7 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import { type EditablePair, MessageStack } from "./MessageStack";
 import { Plus, UserRound } from "lucide-react";
-import { composer, scroll, scrollContent, setup } from "./layout";
+import { composer, scroll, scrollContent, setup, setupFirst } from "./layout";
 import { composerFrame, composerRole } from "../Chat/Composer/layout";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
@@ -156,6 +156,7 @@ export function NewSessionPage({
         <div className={scrollContent}>
           <div className={setup}>
             <WorkspacePicker
+              className={setupFirst}
               recentWorkspaces={recentWorkspaces}
               workspace={workspace}
               onChange={onWorkspaceChange}

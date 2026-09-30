@@ -1,3 +1,4 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Reasoning content uses a deliberate inset and native reset. */
 import { MarkdownInline, MarkdownView } from "../MarkdownView";
 import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
 import { BrainCircuit } from "lucide-react";
@@ -9,25 +10,26 @@ import { useCollapsibleContext } from "@ark-ui/react/collapsible";
 import { useTranslation } from "react-i18next";
 
 const content = css({
+    borderBlockStartWidth: "hairline",
     borderTopColor: "line",
-    borderTopWidth: "1px",
-    m: "3",
-    minW: 0,
-    mt: 0,
-    pt: "3",
+    marginBlockEnd: "3",
+    marginBlockStart: "zero",
+    marginInline: "3",
+    minWidth: "zero",
+    paddingBlockStart: "3",
   }),
   summary = css({
     display: "flex",
     justifyContent: "flex-end",
-    minW: 0,
+    minWidth: "zero",
     overflow: "hidden",
   }),
   summaryText = css({
     display: "block",
     flexShrink: 0,
-    minW: "full",
-    w: "max-content",
+    minWidth: "full",
     whiteSpace: "nowrap",
+    width: "intrinsicContent",
   });
 export function Reasoning({
   part,

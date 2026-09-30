@@ -9,7 +9,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
-const activeIcon = css({ animation: "pulse 1.8s ease-in-out infinite" });
+const activeIcon = css({ animation: "progressPulse" });
 export function RuntimeControl({
   controlDisabled,
   controlState,

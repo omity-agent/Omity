@@ -16,6 +16,7 @@ import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
 import { once } from "node:events";
+import { requestListenerOptions } from "../../settings/networking";
 import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
 interface AppServerOptions {
@@ -55,8 +56,11 @@ export async function startAppServer(options: AppServerOptions) {
         connections.delete(socket);
       });
     });
-    const handleApi = getRequestListener(createApi(controller, access).fetch),
-      handleStatic = getRequestListener(createStaticApp(staticRoot).fetch);
+    const handleApi = getRequestListener(
+        createApi(controller, access).fetch,
+        requestListenerOptions,
+      ),
+      handleStatic = getRequestListener(createStaticApp(staticRoot).fetch, requestListenerOptions);
     server.on(
       "request",
       (req, res) =>

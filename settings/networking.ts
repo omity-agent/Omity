@@ -1,4 +1,5 @@
 export const requestBodyLimit = 1024 * 1024;
+export const requestListenerOptions = { overrideGlobalObjects: false };
 export const outboundAgentOptions = {
   bodyTimeout: 0,
   headersTimeout: 0,

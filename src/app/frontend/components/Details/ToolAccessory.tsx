@@ -8,11 +8,11 @@ import { useTranslation } from "react-i18next";
 
 const accessory = css({ alignItems: "center", display: "flex", gap: "2" }),
   stopButton = css({
-    borderWidth: "0",
+    borderWidth: "zero",
     color: "statusTool",
-    h: "6",
-    minW: "6",
-    p: 0,
+    height: "6",
+    minWidth: "6",
+    padding: "zero",
   });
 export function useToolAccessory({
   callId,

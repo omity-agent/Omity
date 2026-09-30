@@ -19,18 +19,18 @@ import { useTranslation } from "react-i18next";
 const page = css({
     display: "grid",
     gridTemplateRows: "minmax(0, 1fr) auto",
-    h: "full",
-    maxW: { _largeCanvas: "chatCanvas" },
-    minH: 0,
-    minW: 0,
-    mx: "auto",
+    height: "full",
+    justifySelf: "center",
+    maxWidth: { _largeCanvas: "chatCanvas" },
+    minHeight: "zero",
+    minWidth: "zero",
     overflow: "hidden",
-    w: "full",
+    width: "full",
   }),
   empty = css({
     color: "muted",
     display: "grid",
-    h: "full",
+    height: "full",
     placeItems: "center",
   });
 export function ChatPage({

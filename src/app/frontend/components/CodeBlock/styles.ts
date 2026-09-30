@@ -1,39 +1,37 @@
 import { css, cva } from "styled-system/css";
 
 export const container = css({
-  maxW: "full",
-  minW: 0,
+  maxWidth: "full",
+  minWidth: "zero",
   position: "relative",
 });
 export const copyButton = css({
+  insetBlockStart: "2",
+  insetInlineEnd: "2",
   position: "absolute",
-  right: "2",
-  top: "2",
-  zIndex: "1",
+  zIndex: "base",
 });
 export const block = cva({
   base: {
-    bg: "surfaceInset",
+    background: "surfaceInset",
     borderColor: "line",
-    borderWidth: "1px",
+    borderWidth: "hairline",
     color: "text",
     display: "block",
-    fontFamily: "mono",
-    fontSize: "source",
-    lineHeight: "1.65",
-    m: 0,
-    maxW: "full",
-    minW: 0,
+    maxWidth: "full",
+    minWidth: "zero",
     overflowAnchor: "none",
-    p: "3",
-    pr: "12",
+    paddingBlock: "3",
+    paddingInlineEnd: "12",
+    paddingInlineStart: "3",
+    textStyle: "codeBlock",
   },
   defaultVariants: { layout: "contained" },
   variants: {
     layout: {
-      contained: { maxH: "toolOutput", overflow: "auto", whiteSpace: "pre" },
+      contained: { maxHeight: "toolOutput", overflow: "auto", whiteSpace: "pre" },
       flow: {
-        maxH: "none",
+        maxHeight: "unbounded",
         overflow: "visible",
         overflowWrap: "anywhere",
         whiteSpace: "pre-wrap",
@@ -43,31 +41,29 @@ export const block = cva({
 });
 export const codeElement = cva({
   base: {
-    bg: "transparent",
+    background: "clear",
     color: "text",
     display: "block",
-    fontFamily: "inherit",
-    fontSize: "inherit",
-    lineHeight: "inherit",
     position: "relative",
+    textStyle: "codeElement",
     whiteSpace: "inherit",
   },
   defaultVariants: { layout: "contained" },
   variants: {
     layout: {
-      contained: { minW: "fit-content" },
-      flow: { minW: 0 },
+      contained: { minWidth: "fitContent" },
+      flow: { minWidth: "zero" },
     },
   },
 });
 export const sourceLine = css({
   display: "block",
-  minH: "1lh",
+  minHeight: "sourceLine",
   whiteSpace: "inherit",
 });
 export const widthSizer = css({
   display: "block",
-  h: 0,
+  height: "zero",
   overflow: "hidden",
   visibility: "hidden",
   whiteSpace: "inherit",

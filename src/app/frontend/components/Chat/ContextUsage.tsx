@@ -6,20 +6,18 @@ import { useTranslation } from "react-i18next";
 
 const panel = css({
     alignItems: "end",
+    borderBlockStartWidth: "hairline",
     borderTopColor: "line",
-    borderTopWidth: "1px",
     color: "muted",
     display: { base: "flex", md: "grid" },
     flexWrap: "wrap",
-    fontFamily: "mono",
-    fontSize: "metadata",
     gap: "2",
     gridTemplateColumns: { base: "repeat(2, auto)", md: "1fr" },
     justifyContent: "space-between",
-    mt: { base: 0, md: "auto" },
-    pt: "3",
-    w: "full",
+    paddingBlockStart: "3",
+    textStyle: "contextUsage",
     whiteSpace: "nowrap",
+    width: "full",
   }),
   row = css({
     alignItems: "center",
@@ -28,8 +26,8 @@ const panel = css({
     justifyContent: "space-between",
   }),
   value = css({ color: "mutedStrong" }),
-  cacheNormal = css({ color: "accent.green" }),
-  cacheWarning = css({ color: "accent.red" });
+  cacheNormal = css({ color: "statusTool" }),
+  cacheWarning = css({ color: "statusError" });
 export function ContextUsage({
   cacheHitWarningRatio,
   usage,

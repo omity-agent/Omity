@@ -1,4 +1,4 @@
-import { compactViewport, interfaceMetrics } from "./settings/appearance";
+import { compactViewport, interfaceMetrics, interfaceTextStyles } from "./settings/appearance";
 import { createPreset } from "@park-ui/panda-preset";
 import { defineConfig } from "@pandacss/dev";
 import neutral from "@park-ui/panda-preset/colors/neutral";
@@ -51,6 +51,8 @@ export default defineConfig({
       radius: "none",
     }),
   ],
+  strictPropertyValues: true,
+  strictTokens: true,
   theme: {
     extend: {
       keyframes: {
@@ -70,8 +72,10 @@ export default defineConfig({
             value: "color-mix(in srgb, {colors.ink.900} 20%, transparent)",
           },
           canvas: { value: "{colors.ink.1000}" },
+          clear: { value: "{colors.transparent}" },
           control: { value: "{colors.ink.900}" },
           controlHover: { value: "{colors.ink.875}" },
+          currentText: { value: "{colors.current}" },
           line: { value: "{colors.ink.850}" },
           lineStrong: { value: "{colors.ink.800}" },
           muted: { value: "{colors.ink.500}" },
@@ -97,7 +101,11 @@ export default defineConfig({
           syntaxTitle: { value: "{colors.accent.cyan}" },
           text: { value: "{colors.ink.50}" },
         },
+        radii: {
+          circle: { value: "{radii.full}" },
+        },
       },
+      textStyles: interfaceTextStyles,
       tokens: {
         animations: {
           detailCollapse: { value: "detailCollapse 140ms ease-in" },

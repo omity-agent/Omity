@@ -1,51 +1,51 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Auto margin pins the role control to the composer edge. */
 import { css } from "styled-system/css";
 
 export const composerFrame = css({
-  bg: "surface",
+  background: "surface",
+  borderBlockStartWidth: "hairline",
   borderTopColor: "line",
-  borderTopWidth: "1px",
   display: "grid",
   gap: { _short: "2", base: "3" },
   gridTemplateColumns: {
     base: "minmax(0, 1fr)",
     md: "minmax(0, 1fr) auto",
   },
-  p: { _short: "2", base: "3", lg: "6", md: "4" },
-  w: "full",
+  padding: { _short: "2", base: "3", lg: "6", md: "4" },
+  width: "full",
 });
 export const composerActions = css({
   display: "flex",
   flexDirection: "column",
   gap: "3",
-  h: "full",
+  height: "full",
   justifyContent: "space-between",
-  minW: 0,
-  w: { base: "full", md: "calc(5 * token(sizes.controlTarget) + 4 * token(spacing.1))" },
+  minWidth: "zero",
+  width: { base: "full", md: "composerActions" },
 });
 export const composerControls = css({
-  "& button": { borderWidth: "1px", flexShrink: 0 },
   alignItems: "center",
   display: "flex",
   flexWrap: "wrap",
   gap: "1",
   justifyContent: "flex-end",
-  minH: "controlTarget",
+  minHeight: "controlTarget",
   order: { base: 1, md: 0 },
-  w: "full",
+  width: "full",
 });
 export const runtimeControls = css({
   display: "flex",
   flexShrink: 0,
   gap: "1",
   justifyContent: "flex-end",
-  w: "calc(2 * token(sizes.controlTarget) + token(spacing.1))",
+  width: "runtimeControls",
 });
 export const composerRole = css({
   alignItems: "center",
   color: "mutedStrong",
   display: { base: "none", md: "flex" },
   justifyContent: "flex-end",
-  minH: "controlTarget",
-  mt: { md: "auto" },
-  pr: { _coarse: "3", base: "1.5" },
+  marginBlockStart: { md: "auto" },
+  minHeight: "controlTarget",
+  paddingInlineEnd: { _coarse: "3", base: "1.5" },
 });

@@ -1,7 +1,8 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Auto margin anchors the composer below the setup form. */
 import { css } from "styled-system/css";
 
 export const scroll = css({
-  minH: 0,
+  minHeight: "zero",
   overflowY: "auto",
   overscrollBehavior: "contain",
   scrollbarGutter: "stable",
@@ -9,13 +10,10 @@ export const scroll = css({
 export const scrollContent = css({
   display: "flex",
   flexDirection: "column",
-  minH: "full",
+  minHeight: "full",
 });
-export const composer = css({ mt: "auto" });
+export const composer = css({ marginBlockStart: "auto" });
 export const setup = css({
-  "& > :first-child": {
-    gridColumn: { md: "1 / -1" },
-  },
   alignContent: "start",
   display: "grid",
   gap: { base: "4", md: "6" },
@@ -23,8 +21,9 @@ export const setup = css({
     base: "minmax(0, 1fr)",
     md: "repeat(2, minmax(0, 1fr))",
   },
-  maxW: "content",
-  mx: "auto",
-  p: { _short: "4", base: "4", md: "8" },
-  w: "full",
+  justifySelf: "center",
+  maxWidth: "content",
+  padding: { _short: "4", base: "4", md: "8" },
+  width: "full",
 });
+export const setupFirst = css({ gridColumn: { md: "1 / -1" } });

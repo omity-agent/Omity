@@ -10,33 +10,33 @@ interface MountedCopy {
   span: MessageSpan;
 }
 const boundary = css({
-    '&[data-first="true"]': { pt: { _short: "3", base: "4", md: "6" } },
-    '&[data-last="true"]': { pb: { _short: "3", base: "4", md: "6" } },
-    left: 0,
+    '&[data-first="true"]': { paddingBlockStart: { _short: "3", base: "4", md: "6" } },
+    '&[data-last="true"]': { paddingBlockEnd: { _short: "3", base: "4", md: "6" } },
+    insetBlockStart: "zero",
+    insetInlineStart: "zero",
     pointerEvents: "none",
     position: "absolute",
-    top: 0,
-    w: "full",
-    zIndex: "2",
+    width: "full",
+    zIndex: "pinned",
   }),
   inset = css({
-    borderColor: "transparent",
-    borderWidth: "1px",
-    h: "full",
-    maxW: { base: "full", sm: "2/3" },
-    pb: "8",
-    pt: "4",
-    px: "4",
-    w: "full",
+    borderColor: "clear",
+    borderWidth: "hairline",
+    height: "full",
+    maxWidth: { base: "full", sm: "twoThirds" },
+    paddingBlockEnd: "8",
+    paddingBlockStart: "4",
+    paddingInline: "4",
+    width: "full",
   }),
   toolbar = css({
     display: "flex",
+    insetBlockStart: "zero",
     justifyContent: "flex-end",
-    minH: "8",
+    minHeight: "8",
     position: "sticky",
-    top: "0",
   }),
-  button = css({ bg: "surface", color: "statusModel", pointerEvents: "auto" });
+  button = css({ background: "surface", color: "statusModel", pointerEvents: "auto" });
 function placeCopy(instance: VirtualizerHandle, { element, span }: MountedCopy) {
   const first = instance.getItemOffset(span.first),
     end = instance.getItemOffset(span.last) + instance.getItemSize(span.last);

@@ -15,11 +15,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 const accessButton = css({
-  h: "8",
+  height: "8",
+  insetBlockStart: "3",
+  insetInlineEnd: "3",
   position: "fixed",
-  right: "3",
-  top: "3",
-  w: "8",
+  width: "8",
   zIndex: "overlay",
 });
 export function AccessGate({ children }: { children: ReactNode }) {

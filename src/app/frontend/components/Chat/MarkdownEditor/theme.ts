@@ -1,41 +1,42 @@
+/* oxlint-disable @pandacss/no-descendant-selectors -- CodeMirror owns the nested editor DOM. */
 import { EditorView } from "@codemirror/view";
 import { css } from "styled-system/css";
 
 export const root = css({
   _focusWithin: {
     outlineColor: "mutedStrong",
-    outlineOffset: "2px",
+    outlineOffset: "0.5",
     outlineStyle: "solid",
-    outlineWidth: "1px",
+    outlineWidth: "hairline",
   },
-  bg: "surfaceInset",
+  background: "surfaceInset",
   borderColor: "lineStrong",
-  borderWidth: "1px",
-  minW: 0,
+  borderWidth: "hairline",
+  minWidth: "zero",
   overflow: "hidden",
 });
 export const fixedRoot = css({
-  h: "composerEditor",
-  maxH: { _short: "24dvh", smDown: "8rem" },
+  height: "composerEditor",
+  maxHeight: { _short: "editorShort", smDown: "editorCompact" },
 });
 export const fillRoot = css({
   alignSelf: "stretch",
-  h: "full",
-  minH: 0,
+  height: "full",
+  minHeight: "zero",
 });
 export const disabledRoot = css({
   borderColor: "line",
   opacity: 0.65,
 });
 export const bareRoot = css({
-  _focusWithin: { outlineOffset: "-1px" },
+  _focusWithin: { outlineOffset: "focusInset" },
   alignSelf: "start",
-  borderWidth: "0",
+  borderWidth: "zero",
 });
 export const codeMirror = css({ cursor: "text" });
 export const fixedCodeMirror = css({
-  "& > .cm-editor": { h: "full" },
-  h: "full",
+  "& > .cm-editor": { height: "full" },
+  height: "full",
 });
 export const editorTheme = EditorView.theme(
   {

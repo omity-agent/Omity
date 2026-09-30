@@ -6,31 +6,31 @@ import { useTranslation } from "react-i18next";
 
 const page = css({
     alignItems: "center",
-    bg: "canvas",
+    background: "canvas",
     color: "text",
     display: "grid",
     fontFamily: "body",
-    minH: "100dvh",
+    minHeight: "viewport",
     overflowY: "auto",
-    p: { _short: "3", base: "4", sm: "6" },
+    padding: { _short: "3", base: "4", sm: "6" },
   }),
   card = css({
-    bg: "surface",
+    background: "surface",
     borderColor: "lineStrong",
-    borderWidth: "1px",
+    borderWidth: "hairline",
     display: "grid",
     gap: "5",
-    maxW: "32rem",
-    mx: "auto",
-    p: { _short: "5", base: "5", sm: "8" },
-    w: "full",
+    justifySelf: "center",
+    maxWidth: "accessCard",
+    padding: { _short: "5", base: "5", sm: "8" },
+    width: "full",
   }),
   icon = css({ color: "mutedStrong" }),
-  heading = css({ fontSize: "xl", fontWeight: "medium", m: 0 }),
-  description = css({ color: "mutedStrong", lineHeight: "1.7", m: 0 }),
-  errorText = css({ color: "statusError", fontSize: "sm", m: 0 }),
+  heading = css({ textStyle: "accessHeading" }),
+  description = css({ color: "mutedStrong", lineHeight: "markdown" }),
+  errorText = css({ color: "statusError", fontSize: "sm" }),
+  action = css({ flexGrow: { base: 1, sm: 0 } }),
   actions = css({
-    "& > *": { flexGrow: { base: 1, sm: 0 } },
     display: "flex",
     flexWrap: "wrap",
     gap: "3",
@@ -82,28 +82,44 @@ export function AccessPage(props: AccessPageProps) {
           {setup ? (
             <>
               {localSetup && (
-                <Button disabled={busy || !status.configured} onClick={onTicket} type="button">
+                <Button
+                  className={action}
+                  disabled={busy || !status.configured}
+                  onClick={onTicket}
+                  type="button"
+                >
                   {t("accessCreateSetupLink")}
                 </Button>
               )}
               {localSetup && setupLink && (
-                <LinkButton href={setupLink}>
+                <LinkButton className={action} href={setupLink}>
                   {t(ticketUrl ? "accessOpenSetupLink" : "accessOpenPublicOrigin")}
                 </LinkButton>
               )}
               {!localSetup && (
-                <Button disabled={busy} onClick={onRegister} type="button">
+                <Button className={action} disabled={busy} onClick={onRegister} type="button">
                   {t("accessRegister")}
                 </Button>
               )}
               {localSetup && (
-                <Button disabled={busy} onClick={onContinue} type="button" variant="ghost">
+                <Button
+                  className={action}
+                  disabled={busy}
+                  onClick={onContinue}
+                  type="button"
+                  variant="ghost"
+                >
                   {t("accessContinueLocal")}
                 </Button>
               )}
             </>
           ) : (
-            <Button disabled={busy || !status?.configured} onClick={onLogin} type="button">
+            <Button
+              className={action}
+              disabled={busy || !status?.configured}
+              onClick={onLogin}
+              type="button"
+            >
               {t("accessVerify")}
             </Button>
           )}

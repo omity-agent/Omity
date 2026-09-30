@@ -1,3 +1,4 @@
+/* oxlint-disable @pandacss/no-margin-properties -- Tool input and output panels use deliberate transcript spacing. */
 import {
   type DisplayToolCall,
   type DisplayToolOutput,
@@ -14,24 +15,25 @@ import { useToolAccessory } from "./ToolAccessory";
 import { useTranslation } from "react-i18next";
 
 const ioGrid = css({
+    borderBlockStartWidth: "hairline",
     borderTopColor: "line",
-    borderTopWidth: "1px",
     display: "grid",
     gap: "3",
     gridTemplateColumns: {
       base: "minmax(0, 1fr)",
       xl: "repeat(2, minmax(0, 1fr))",
     },
-    m: "3",
-    minW: 0,
-    mt: 0,
-    pt: "3",
+    marginBlockEnd: "3",
+    marginBlockStart: "zero",
+    marginInline: "3",
+    minWidth: "zero",
+    paddingBlockStart: "3",
   }),
   ioPanel = css({
     alignContent: "start",
     display: "grid",
     gap: "2",
-    minW: 0,
+    minWidth: "zero",
   }),
   panelTitle = css({
     alignItems: "center",
@@ -39,17 +41,17 @@ const ioGrid = css({
     display: "flex",
     fontSize: "xs",
     justifyContent: "space-between",
-    m: 0,
+    margin: "zero",
   }),
   tokenCount = css({ color: "muted", fontFamily: "mono" }),
   codeBlock = css({
-    maxH: "toolOutput",
-    minH: "3rem",
+    maxHeight: "toolOutput",
+    minHeight: "toolOutputMinimum",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
   }),
   imageList = css({ display: "grid", gap: "2" }),
-  outputImage = css({ display: "block", h: "auto", maxW: "full" });
+  outputImage = css({ display: "block", height: "auto", maxWidth: "full" });
 export function ToolCall({
   call,
   latest,

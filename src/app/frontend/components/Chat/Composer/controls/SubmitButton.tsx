@@ -4,8 +4,8 @@ import { css } from "styled-system/css";
 
 const primary = css({
   _enabled: {
-    _hover: { bg: "mutedStrong", borderColor: "mutedStrong" },
-    bg: "text",
+    _hover: { background: "mutedStrong", borderColor: "mutedStrong" },
+    background: "text",
     borderColor: "text",
     color: "canvas",
   },

@@ -6,7 +6,7 @@ import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
 
 const button = css({
-    borderWidth: "0",
+    borderWidth: "zero",
     flexShrink: 0,
   }),
   copiedDurationMs = 1600;

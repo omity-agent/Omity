@@ -9,6 +9,7 @@ import { getRequestListener } from "@hono/node-server";
 import { join } from "node:path";
 import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
 import { once } from "node:events";
+import { requestListenerOptions } from "../../../settings/networking";
 import { rmSync } from "node:fs";
 import { writeTestConfiguration } from "../../support/configuration";
 
@@ -60,7 +61,7 @@ retryDelayMs: 1000
   const controller = new AppController(root),
     access = new AccessService(loadSettings(root)),
     server = createServer(
-      getRequestListener(createApi(controller, access).fetch, { overrideGlobalObjects: false }),
+      getRequestListener(createApi(controller, access).fetch, requestListenerOptions),
     ),
     connections = new Set<Socket>();
   server.on("connection", (socket) => {

@@ -1,58 +1,62 @@
+/* oxlint-disable @pandacss/no-descendant-selectors -- The frame styles generated pre content and owns disclosure state. */
+/* oxlint-disable @pandacss/no-margin-properties -- The detail overlap aligns content with its disclosure header. */
 import { ChevronUp, type LucideIcon } from "lucide-react";
 import { type ReactNode, useId, useMemo } from "react";
+import { css, cx, sva } from "styled-system/css";
 import { Collapsible } from "@ark-ui/react/collapsible";
-import { sva } from "styled-system/css";
 import { useDisclosure } from "../Transcript/disclosures";
 
+const openDisclosure = css({ transform: "rotate(180deg)" });
 const frame = sva({
   base: {
     accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
     content: {
       _closed: {
-        _motionReduce: { animation: "none" },
+        _motionReduce: { animation: "disabled" },
         animation: "detailCollapse",
       },
       _open: {
-        _motionReduce: { animation: "none" },
+        _motionReduce: { animation: "disabled" },
         animation: "detailExpand",
       },
       overflow: "hidden",
     },
     disclosure: {
-      'button[data-state="open"] &': { transform: "rotate(180deg)" },
       color: "muted",
       flexShrink: 0,
-      h: "smallIcon",
-      transition: "transform 120ms ease",
-      w: "smallIcon",
+      height: "smallIcon",
+      transition: "[transform 120ms ease]",
+      width: "smallIcon",
     },
     header: {
-      _hover: { bg: "controlHover" },
+      _hover: { background: "controlHover" },
       alignItems: "center",
       display: "flex",
-      h: "detailHeader",
-      maxW: "full",
-      minH: "controlTarget",
+      height: "detailHeader",
+      maxWidth: "full",
+      minHeight: "controlTarget",
+      paddingInline: "2",
       position: "relative",
-      px: "2",
-      zIndex: "1",
+      zIndex: "base",
     },
-    icon: { flexShrink: 0, h: "smallIcon", w: "smallIcon" },
+    icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
     root: {
-      "& pre": { m: 0, maxW: "full" },
+      "& pre": { maxWidth: "full" },
       color: "muted",
       fontSize: "interface",
-      maxW: "full",
-      minW: 0,
-      mt: "-2",
-      p: 0,
-      w: "full",
+      marginBlockStart: "detailOverlap",
+      maxWidth: "full",
+      minWidth: "zero",
+      padding: "zero",
+      width: "full",
     },
     title: {
       color: "mutedStrong",
-      flex: "1",
+      flexBasis: "zero",
+      flexGrow: 1,
+      flexShrink: 1,
       lineHeight: "normal",
-      minW: 0,
+      minWidth: "zero",
       overflow: "hidden",
       textOverflow: "ellipsis",
       whiteSpace: "nowrap",
@@ -60,18 +64,20 @@ const frame = sva({
     trigger: {
       alignItems: "center",
       appearance: "none",
-      bg: "transparent",
-      borderWidth: 0,
+      background: "clear",
+      borderWidth: "zero",
       color: "muted",
       cursor: "pointer",
       display: "flex",
-      flex: "1",
+      flexBasis: "zero",
+      flexGrow: 1,
+      flexShrink: 1,
       font: "inherit",
       gap: "2",
-      h: "full",
-      maxW: "full",
-      minW: 0,
-      p: 0,
+      height: "full",
+      maxWidth: "full",
+      minWidth: "zero",
+      padding: "zero",
       textAlign: "left",
     },
   },
@@ -130,7 +136,11 @@ export function Frame({
           onClick={toggle}
           type="button"
         >
-          <ChevronUp aria-hidden className={classes.disclosure} size={12} />
+          <ChevronUp
+            aria-hidden
+            className={cx(classes.disclosure, open && openDisclosure)}
+            size={12}
+          />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
         </button>

@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "styled-system/css";
 
-const viewport = css({ flex: "1", minW: 0, overflow: "hidden" }),
+const viewport = css({
+    flexBasis: "zero",
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: "zero",
+    overflow: "hidden",
+  }),
   content = css({
     display: "block",
     overflow: "hidden",

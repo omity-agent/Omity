@@ -14,10 +14,10 @@ const classes = switchRecipe({ size: "sm" }),
     colorPalette: "neutral",
     cursor: "pointer",
     gap: "3",
-    minW: 0,
-    w: "full",
+    minWidth: "zero",
+    width: "full",
   }),
-  details = css({ display: "grid", gap: "1", minW: 0, overflowWrap: "anywhere" }),
+  details = css({ display: "grid", gap: "1", minWidth: "zero", overflowWrap: "anywhere" }),
   description = css({ color: "mutedStrong", fontSize: "sm", whiteSpace: "pre-wrap" });
 export function Toggles({
   selection,

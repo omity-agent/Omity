@@ -7,12 +7,12 @@ import { useTranslation } from "react-i18next";
 
 const armed = css({
     _enabled: {
-      _hover: { bg: "statusError", color: "canvas" },
-      bg: "statusError",
+      _hover: { background: "statusError", color: "canvas" },
+      background: "statusError",
       color: "canvas",
     },
   }),
-  busyIcon = css({ animation: "spin 1s linear infinite" });
+  busyIcon = css({ animation: "spin" });
 export function ConfirmAction({
   children,
   disabled = false,

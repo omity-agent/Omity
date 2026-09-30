@@ -1,3 +1,4 @@
+/* oxlint-disable @pandacss/no-descendant-selectors -- Responsive panels hide their layout-owned child regions. */
 import { css } from "styled-system/css";
 
 export const layout = css({
@@ -5,7 +6,7 @@ export const layout = css({
     '&[data-panel="main"] > aside': { display: "none" },
     '&[data-panel="sessions"] > main': { display: "none" },
   },
-  bg: "canvas",
+  background: "canvas",
   color: "text",
   display: "grid",
   fontFamily: "body",
@@ -19,55 +20,55 @@ export const layout = css({
     base: "auto minmax(0, 1fr)",
     lg: "minmax(0, 1fr)",
   },
-  h: "100dvh",
+  height: "viewport",
   overflow: "hidden",
-  pb: "env(safe-area-inset-bottom)",
-  pl: "env(safe-area-inset-left)",
-  pr: "env(safe-area-inset-right)",
-  pt: "env(safe-area-inset-top)",
+  paddingBlockEnd: "safeAreaBlockEnd",
+  paddingBlockStart: "safeAreaBlockStart",
+  paddingInlineEnd: "safeAreaInlineEnd",
+  paddingInlineStart: "safeAreaInlineStart",
 });
 export const panelToolbar = css({
   alignItems: "center",
-  bg: "sidebar",
+  background: "sidebar",
+  borderBlockEndWidth: "hairline",
   borderBottomColor: "line",
-  borderBottomWidth: "1px",
   display: { base: "flex", lg: "none" },
   gap: "3",
-  minW: 0,
-  px: "3",
-  py: "1",
+  minWidth: "zero",
+  paddingBlock: "1",
+  paddingInline: "3",
 });
 export const panelCaption = css({
   fontSize: "interface",
-  minW: 0,
+  minWidth: "zero",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
 export const sidebar = css({
-  bg: "sidebar",
+  background: "sidebar",
+  borderBlockEndWidth: "hairline",
   borderBottomColor: "line",
-  borderBottomWidth: "1px",
+  borderInlineEndWidth: { _topNav: "zero", base: "zero", lg: "hairline" },
   borderRightColor: "line",
-  borderRightWidth: { _topNav: "0", base: "0", lg: "1px" },
   display: "grid",
   gridTemplateRows: "auto minmax(0, 1fr)",
-  minH: 0,
-  minW: 0,
+  minHeight: "zero",
+  minWidth: "zero",
   overflow: "hidden",
-  w: { _topNav: "full", lg: "appSidebar" },
+  width: { _topNav: "full", lg: "appSidebar" },
 });
 export const main = css({
-  bg: "surfaceInset",
-  h: "full",
-  minH: 0,
-  minW: 0,
+  background: "surfaceInset",
+  height: "full",
+  minHeight: "zero",
+  minWidth: "zero",
   overflow: "hidden",
 });
 export const scroll = css({
-  minH: 0,
+  minHeight: "zero",
   overflowY: "auto",
   overscrollBehavior: "contain",
-  px: { _short: "3", base: "4", md: "6" },
+  paddingInline: { _short: "3", base: "4", md: "6" },
   scrollbarGutter: "stable",
 });
