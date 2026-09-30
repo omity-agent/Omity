@@ -1,8 +1,8 @@
 import type { ModelApi, Settings } from "../../../src/types";
 import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createOpenAI } from "@ai-sdk/openai";
+import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
 import { isPlainObject } from "es-toolkit";
+import { randomUUID } from "node:crypto";
 import { testSettings } from "../../support/settings";
 
 export const deferredDefinition: ModelToolDefinition = {
@@ -54,12 +54,22 @@ export function wireModel(api: ModelApi, events: Record<string, unknown>[] = [])
       hostname: "127.0.0.1",
       port: 0,
     }),
-    options = { apiKey: "test", baseURL: new URL("/v1", server.url).href },
-    model =
-      api === "messages"
-        ? createAnthropic(options)("claude-sonnet-4-6")
-        : createOpenAI(options).responses("gpt-5.4");
-  return { model, requests, [Symbol.asyncDispose]: () => server.stop(true) };
+    apiKeyEnv = `WIRE_MODEL_${randomUUID()}`;
+  process.env[apiKeyEnv] = "test";
+  try {
+    const model = buildConfiguredAiModel({
+      ...discoverySettings(api).model,
+      adapter: api,
+      apiKeyEnv,
+      baseURL: new URL("/v1", server.url).href,
+    });
+    return { model, requests, [Symbol.asyncDispose]: () => server.stop(true) };
+  } catch (error) {
+    void server.stop(true);
+    throw error;
+  } finally {
+    delete process.env[apiKeyEnv];
+  }
 }
 export function responsesSearchEvents() {
   const search = {

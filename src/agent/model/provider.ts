@@ -4,6 +4,7 @@ import { conversationHeaders } from "../../infrastructure/openai/conversationHea
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
 import { createOpenAI } from "@ai-sdk/openai";
+import { restrictedModelFetch } from "./restrictedFetch";
 
 export function buildAiModel(settings: Settings) {
   return buildConfiguredAiModel(settings.model);
@@ -108,7 +109,7 @@ function providerOptions(model: ModelSettings) {
     return {
       apiKey: fields.apiKey,
       baseURL: fields.configuration.baseURL,
-      fetch: fields.configuration.fetch,
+      fetch: restrictedModelFetch("responses", fields.configuration.fetch),
     };
   }
   const apiKey = process.env[model.apiKeyEnv];
@@ -118,5 +119,6 @@ function providerOptions(model: ModelSettings) {
   return {
     apiKey,
     ...(model.baseURL ? { baseURL: model.baseURL } : {}),
+    fetch: restrictedModelFetch(configuredModelApi(model)),
   };
 }
