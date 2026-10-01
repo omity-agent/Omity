@@ -5,11 +5,13 @@ import {
 } from "./explicitHeaders";
 import { type ResolveOutboundProxy, createProxyDispatcher } from "./dispatchProxied";
 import { type RequestInit as UndiciRequestInit, fetch as undiciFetch } from "undici/index.js";
+import { createSocketTransport, registerSocketTransport } from "./socketTransport";
 import { OutboundRouting } from "./resolveOutbound";
 
 export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
   const routing = resolveProxy ? undefined : new OutboundRouting(),
     transport = createProxyDispatcher(resolveProxy ?? ((url) => routing!.resolve(url))),
+    sockets = createSocketTransport(transport.dispatcher),
     originalFetch = globalThis.fetch,
     routedFetch = async (
       input: RequestInfo | URL,
@@ -49,8 +51,10 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
       },
     });
   registerExplicitFetch(fetch);
+  registerSocketTransport(fetch, sockets.connect);
   return {
     async close() {
+      sockets.close();
       try {
         await transport.close();
       } finally {

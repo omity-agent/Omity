@@ -56,7 +56,7 @@ const positive = z.number().int().positive(),
       .unknown()
       .transform(parseModelSettings)
       .transform((model) => {
-        if (model.adapter !== "responses" || model.baseURL !== "https://benchmark.invalid/v1") {
+        if (model.adapter !== "responses-sse" || model.baseURL !== "https://benchmark.invalid/v1") {
           throw new Error("性能测试只允许本地模拟的 Responses API 配置");
         }
         return model;

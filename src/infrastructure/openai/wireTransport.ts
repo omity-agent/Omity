@@ -1,4 +1,5 @@
 import { type CloudflareCookieStore, sharedCloudflareStore } from "./cloudflareStore";
+import { type CodexVersionResolver, createCodexVersionResolver } from "./codexVersion";
 import { type OutboundFetch, fetchWithExplicitHeaders } from "../network/explicitHeaders";
 import { DEFAULT_CODEX_BASE_URL } from "openai-codex-oauth";
 import { codexDefaultHeaders } from "./clientIdentity";
@@ -7,6 +8,7 @@ import { codexProtocol } from "../../../settings/openai/codexProtocol";
 export function createCodexTransport(
   fetch: OutboundFetch = fetchWithExplicitHeaders,
   store: CloudflareCookieStore = sharedCloudflareStore,
+  resolveVersion: CodexVersionResolver = createCodexVersionResolver(),
 ) {
   let turn: { key: string; state?: string } | undefined;
   return async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -14,7 +16,7 @@ export function createCodexTransport(
     if (!request.url.startsWith(`${DEFAULT_CODEX_BASE_URL}/`)) {
       return fetch(input, init);
     }
-    const headers = codexDefaultHeaders();
+    const headers = codexDefaultHeaders(await resolveVersion());
     for (const name of codexProtocol.requestHeaders) {
       const value = request.headers.get(name);
       if (value !== null) {

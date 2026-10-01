@@ -81,7 +81,7 @@ context:
     ]
 
 model:
-  adapter: responses # 使用真实适配器；所有 fetch 均被本地替身截获。
+  adapter: responses-sse # 使用真实适配器；所有 fetch 均被本地替身截获。
   model: gpt-5.6-luna # 仅用于构造模拟协议，不访问模型服务。
   apiKeyEnv: OMITY_BENCHMARK_KEY # 运行期间设置临时占位值，结束后恢复。
   baseURL: https://benchmark.invalid/v1

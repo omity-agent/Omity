@@ -7,6 +7,7 @@ import { Logger } from "./infrastructure/logging/logger";
 import { ToolExecutions } from "./agent/toolExecutions";
 import { buildGraph } from "./agent";
 import { createSessionDefinition } from "./infrastructure/database/session/sessionDefinition";
+import { fetchLatestCodexVersion } from "./infrastructure/openai/codexVersion";
 import { hostLoop } from "./runtime/loop";
 import { prepareHostSession } from "./runtime/execution/sessionPreparation";
 import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";
@@ -47,6 +48,7 @@ export async function runHostSession(
       pollMs: settings.host.pollMs,
     });
   let lease: HostLease | undefined,
+    codexVersion: string | undefined,
     ownedMcp: Awaited<ReturnType<typeof loadMcp>> | undefined,
     sessionCreated = definition !== undefined;
   const unwireSignals = wireHostSignals({
@@ -57,6 +59,9 @@ export async function runHostSession(
     timeoutMs: settings.host.shutdownTimeoutMs,
   });
   try {
+    if (settings.model.adapter === "codex") {
+      codexVersion = await fetchLatestCodexVersion();
+    }
     if (definition) {
       lease = createLease();
     }
@@ -94,6 +99,7 @@ export async function runHostSession(
         db.db,
         hooks,
         {
+          codexVersion,
           freeformToolParameters: mcp.freeformToolParameters,
           toolExecutions,
         },

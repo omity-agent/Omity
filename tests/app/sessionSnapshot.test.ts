@@ -80,7 +80,7 @@ raceIntervalMs: 1000
   writeFileSync(join(root, "settings", "prompts", "system.md"), "changed prompt");
   writeFileSync(
     join(root, "settings", "model.yaml"),
-    `adapter: responses
+    `adapter: responses-sse
 model: changed-model
 apiKeyEnv: CURRENT_KEY
 baseURL: https://changed.example.test

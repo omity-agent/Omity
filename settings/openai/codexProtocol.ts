@@ -1,4 +1,4 @@
-// HTTP/SSE 基准：openai/codex main 29f056c26c09b51db123069ed3ec2095b227d6db。
+// openai/codex main 标识与请求头
 export const codexProtocol = {
   cookieHostSuffixes: [".chatgpt.com", ".chatgpt-staging.com"],
   cookieHosts: ["chatgpt.com", "chat.openai.com", "chatgpt-staging.com"],
@@ -16,6 +16,7 @@ export const codexProtocol = {
     "cf_use_ob",
   ],
   maxRedirects: 10,
+  npmLatestUrl: "https://registry.npmjs.org/@openai%2fcodex/latest",
   originator: "codex_cli_rs",
   requestHeaders: [
     "authorization",
@@ -39,5 +40,5 @@ export const codexProtocol = {
     "x-responsesapi-include-timing-metrics",
     "x-client-request-id",
   ],
-  version: "0.0.0",
+  websocketBeta: "responses_websockets=2026-02-06",
 } as const;

@@ -4,16 +4,17 @@ import { conversationHeaders } from "../../infrastructure/openai/conversationHea
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createResponsesWebsocketFetch } from "./responsesWebsocket";
 import { restrictedModelFetch } from "./restrictedFetch";
 
-export function buildAiModel(settings: Settings) {
-  return buildConfiguredAiModel(settings.model);
+export function buildAiModel(settings: Settings, codexVersion?: string) {
+  return buildConfiguredAiModel(settings.model, codexVersion);
 }
-export function buildConfiguredAiModel(model: ModelSettings) {
+export function buildConfiguredAiModel(model: ModelSettings, codexVersion?: string) {
   if (configuredModelApi(model) === "messages") {
-    return createAnthropic(providerOptions(model))(model.model);
+    return createAnthropic(providerOptions(model, codexVersion))(model.model);
   }
-  const provider = createOpenAI(providerOptions(model));
+  const provider = createOpenAI(providerOptions(model, codexVersion));
   return configuredModelApi(model) === "completions"
     ? provider.chat(model.model)
     : provider.responses(model.model);
@@ -100,25 +101,43 @@ export function structuredRequestOptions(model: ModelSettings): {
 export function modelApi(settings: Settings): ModelApi {
   return configuredModelApi(settings.model);
 }
-export function configuredModelApi(model: ModelSettings): ModelApi {
-  return model.adapter === "codex" ? "responses" : model.adapter;
+function configuredModelApi(model: ModelSettings): ModelApi {
+  switch (model.adapter) {
+    case "codex":
+    case "responses-sse":
+    case "responses-websocket": {
+      return "responses";
+    }
+    case "completions":
+    case "messages": {
+      return model.adapter;
+    }
+    default: {
+      throw new Error("模型适配器分支未覆盖");
+    }
+  }
 }
-function providerOptions(model: ModelSettings) {
+function providerOptions(model: ModelSettings, codexVersion?: string) {
   if (model.adapter === "codex") {
-    const fields = createCodexClientFields();
+    const fields = createCodexClientFields({ codexVersion });
     return {
       apiKey: fields.apiKey,
       baseURL: fields.configuration.baseURL,
-      fetch: restrictedModelFetch("responses", fields.configuration.fetch),
+      fetch: restrictedModelFetch("responses", createResponsesWebsocketFetch(fields.websocket)),
     };
   }
   const apiKey = process.env[model.apiKeyEnv];
   if (!apiKey) {
     throw new Error(`缺少环境变量 ${model.apiKeyEnv}`);
   }
+  const api = configuredModelApi(model),
+    fetch =
+      model.adapter === "responses-websocket"
+        ? restrictedModelFetch(api, createResponsesWebsocketFetch({ apiKey }))
+        : restrictedModelFetch(api);
   return {
     apiKey,
     ...(model.baseURL ? { baseURL: model.baseURL } : {}),
-    fetch: restrictedModelFetch(configuredModelApi(model)),
+    fetch,
   };
 }

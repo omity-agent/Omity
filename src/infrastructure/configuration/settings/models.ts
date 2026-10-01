@@ -1,5 +1,5 @@
 import { isPlainObject as isRecord, omit } from "es-toolkit";
-import { modelApiSchema, reasoningEffortSchema } from "../../../types";
+import { modelAdapterSchema, reasoningEffortSchema } from "../../../types";
 import { emptyAs } from "./values";
 import { z } from "zod";
 
@@ -13,7 +13,7 @@ const sharedModelSettings = {
   },
   modelSettingsSchema = z.discriminatedUnion("adapter", [
     z.strictObject({
-      adapter: modelApiSchema,
+      adapter: modelAdapterSchema,
       apiKeyEnv: z.string().min(1),
       baseURL: emptyAs(z.url().nullable(), null),
       ...sharedModelSettings,
@@ -42,7 +42,7 @@ const sharedModelSettings = {
           )
         : value,
     modelSettingsSchema.options[0]
-      .extend({ adapter: z.union([modelApiSchema, z.literal("codex")]) })
+      .extend({ adapter: z.union([modelAdapterSchema, z.literal("codex")]) })
       .partial(),
   );
 export const predictionSettingsSchema = z.discriminatedUnion("enabled", [

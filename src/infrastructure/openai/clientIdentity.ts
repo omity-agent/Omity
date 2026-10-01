@@ -30,14 +30,14 @@ function withVersion(name: string, version?: string) {
 function sanitizeTerminal(value: string) {
   return value.replaceAll(/[^a-zA-Z0-9._/-]/gu, "_");
 }
-export function codexDefaultHeaders() {
+export function codexDefaultHeaders(version: string) {
   const originator = process.env["CODEX_INTERNAL_ORIGINATOR_OVERRIDE"] ?? codexProtocol.originator,
     os = platform(),
     osName = os === "win32" ? "Windows" : os === "darwin" ? "Mac OS" : os,
     headers = new Headers({
       originator,
-      "user-agent": `${originator}/${codexProtocol.version} (${osName} ${release()}; ${machine()}) ${terminalIdentity()}`,
-      version: codexProtocol.version,
+      "user-agent": `${originator}/${version} (${osName} ${release()}; ${machine()}) ${terminalIdentity()}`,
+      version,
     });
   for (const [name, variable] of [
     ["OpenAI-Organization", "OPENAI_ORGANIZATION"],

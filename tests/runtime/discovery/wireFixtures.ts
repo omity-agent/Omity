@@ -1,4 +1,4 @@
-import type { ModelApi, Settings } from "../../../src/types";
+import type { ModelAdapter, ModelApi, Settings } from "../../../src/types";
 import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
 import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
 import { isPlainObject } from "es-toolkit";
@@ -12,11 +12,14 @@ export const deferredDefinition: ModelToolDefinition = {
   inputSchema: { properties: { query: { type: "string" } }, required: ["query"], type: "object" },
   name: "find_file",
 };
+function adapterForApi(api: ModelApi): ModelAdapter {
+  return api === "responses" ? "responses-sse" : api;
+}
 export function discoverySettings(api: ModelApi): Settings {
   const settings = testSettings();
   settings.model = {
     ...settings.model,
-    adapter: api,
+    adapter: adapterForApi(api),
     apiKeyEnv: "TEST_KEY",
     baseURL: null,
     model: api === "messages" ? "claude-sonnet-4-6" : "gpt-5.4",
@@ -59,7 +62,7 @@ export function wireModel(api: ModelApi, events: Record<string, unknown>[] = [])
   try {
     const model = buildConfiguredAiModel({
       ...discoverySettings(api).model,
-      adapter: api,
+      adapter: adapterForApi(api),
       apiKeyEnv,
       baseURL: new URL("/v1", server.url).href,
     });

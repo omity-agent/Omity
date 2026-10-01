@@ -53,7 +53,6 @@
     "dotenv": "latest",
     "drizzle-orm": "rc",
     "es-toolkit": "dev",
-    "fast-json-stable-stringify": "latest",
     "gpt-tokenizer": "latest",
     "gray-matter": "latest",
     "hono": "latest",
@@ -66,6 +65,7 @@
     "magika": "latest",
     "mitt": "latest",
     "nanoid": "latest",
+    "openai": "latest",
     "openai-codex-oauth": "latest",
     "p-map": "latest",
     "pathprobe": "latest",
@@ -84,6 +84,7 @@
     "undici": "latest",
     "untildify": "latest",
     "virtua": "latest",
+    "ws": "latest",
     "yaml": "next",
     "zod": "latest",
     "zod-form-data": "latest"

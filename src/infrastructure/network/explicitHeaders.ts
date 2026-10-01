@@ -18,8 +18,12 @@ export const fetchWithExplicitHeaders: OutboundFetch = (input, init) => {
   }
   return fetch(input, init, "explicit");
 };
-export function explicitHeaderDispatcher(dispatcher: Dispatcher, headers: Headers) {
-  const names = new Set(headers.keys());
+export function explicitHeaderDispatcher(
+  dispatcher: Dispatcher,
+  headers: Headers,
+  transportHeaders: readonly string[] = [],
+) {
+  const names = new Set([...headers.keys(), ...transportHeaders]);
   return dispatcher.compose((dispatch) => (options, handler) => {
     // Undici Fetch 在 dispatch 前补齐浏览器默认头；仅保留调用者提供的头和正文长度。
     // 读取 Fetch 传入的 header record，保留重定向时已经移除的认证头。

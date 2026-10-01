@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/knip/schema.json",
   "entry": ["scripts/**/*.ts", "tests/**/*.{ts,tsx}"],
-  "ignoreDependencies": ["drizzle-kit"],
+  "ignoreDependencies": ["drizzle-kit", "@pandacss/preset-base"],
   "includeEntryExports": true,
   "ignoreExportsUsedInFile": false,
   "project": [

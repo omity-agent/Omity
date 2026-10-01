@@ -51,6 +51,7 @@ const AgentState = Annotation.Root({
 type GraphState = typeof AgentState.State;
 interface GraphOptions {
   checkpointer?: BaseCheckpointSaver;
+  codexVersion?: string;
   freeformToolParameters?: ReadonlyMap<string, string>;
   hooks: HookRuntime;
   model?: LanguageModel;
@@ -65,7 +66,7 @@ export function buildGraph(
   toolDefinitions: ModelToolDefinition[],
   database: Database,
   hooks: HookRuntime,
-  options: Pick<GraphOptions, "freeformToolParameters" | "toolExecutions"> = {},
+  options: Pick<GraphOptions, "codexVersion" | "freeformToolParameters" | "toolExecutions"> = {},
 ) {
   const checkpointer = new BunSqliteSaver(database),
     graph = createAgentGraph({
@@ -80,7 +81,7 @@ export function buildGraph(
 }
 export function createAgentGraph(options: GraphOptions) {
   const freeform = options.freeformToolParameters ?? new Map(),
-    model = options.model ?? buildAiModel(options.settings),
+    model = options.model ?? buildAiModel(options.settings, options.codexVersion),
     definitions = options.toolDefinitions ?? modelToolDefinitions(options.tools, freeform),
     modelTools = aiModelTools(definitions, modelApi(options.settings)),
     invokeTool = createToolInvoker(options.tools, {

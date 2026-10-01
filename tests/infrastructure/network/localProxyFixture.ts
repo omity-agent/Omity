@@ -1,17 +1,21 @@
-import { Agent, request as requestDirect } from "undici/index.js";
-import { type Socket, connect } from "node:net";
+import { Agent, request as requestDirect, upgrade as upgradeDirect } from "undici/index.js";
+import type { Duplex } from "node:stream";
+import { connect } from "node:net";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { promisify } from "node:util";
 
 export async function startRecordingProxy(targetPort: number) {
   const requests: { authority: string; authorization?: string }[] = [],
-    sockets = new Set<Socket>(),
+    methods: string[] = [],
+    failures: Error[] = [],
+    sockets = new Set<Duplex>(),
     direct = new Agent(),
     server = createServer((request, response) => {
       void (async () => {
         try {
           const url = new URL(request.url ?? "");
+          methods.push(request.method ?? "GET");
           requests.push({
             authority: `${url.hostname}:${url.port || "80"}`,
             authorization: request.headers["proxy-authorization"],
@@ -34,6 +38,7 @@ export async function startRecordingProxy(targetPort: number) {
     socket.once("close", () => sockets.delete(socket));
   });
   server.on("connect", (request, downstream, head) => {
+    methods.push("CONNECT");
     requests.push({
       authority: request.url ?? "",
       authorization: request.headers["proxy-authorization"],
@@ -49,6 +54,44 @@ export async function startRecordingProxy(targetPort: number) {
     downstream.on("error", () => upstream.destroy());
     downstream.once("close", () => upstream.destroy());
   });
+  server.on("upgrade", (request, downstream, head) => {
+    void (async () => {
+      try {
+        const url = new URL(request.url ?? "");
+        methods.push(request.method ?? "GET");
+        requests.push({
+          authority: `${url.hostname}:${url.port || "80"}`,
+          authorization: request.headers["proxy-authorization"],
+        });
+        const headers = { ...request.headers };
+        delete headers["proxy-authorization"];
+        delete headers.connection;
+        delete headers.upgrade;
+        const upstream = await upgradeDirect(
+            `http://127.0.0.1:${targetPort.toString()}${url.pathname}${url.search}`,
+            { dispatcher: direct, headers, protocol: "websocket" },
+          ),
+          responseHeaders = Object.entries(upstream.headers)
+            .flatMap(([name, value]) =>
+              (Array.isArray(value) ? value : value === undefined ? [] : [value]).map(
+                (entry) => `${name}: ${entry}`,
+              ),
+            )
+            .join("\r\n");
+        downstream.write(`HTTP/1.1 101 Switching Protocols\r\n${responseHeaders}\r\n\r\n`);
+        upstream.socket.write(head);
+        downstream.pipe(upstream.socket).pipe(downstream);
+        sockets.add(upstream.socket);
+        upstream.socket.once("close", () => sockets.delete(upstream.socket));
+        upstream.socket.on("error", (error) => downstream.destroy(error));
+        downstream.on("error", () => upstream.socket.destroy());
+        downstream.once("close", () => upstream.socket.destroy());
+      } catch (error) {
+        failures.push(error instanceof Error ? error : new Error(String(error)));
+        downstream.destroy();
+      }
+    })();
+  });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();
@@ -63,7 +106,11 @@ export async function startRecordingProxy(targetPort: number) {
         socket.destroy();
       }
       await closed;
+      if (failures.length > 0) {
+        throw new AggregateError(failures, "测试代理 Upgrade 转发失败");
+      }
     },
+    methods,
     requests,
     url: `http://127.0.0.1:${address.port.toString()}`,
   };

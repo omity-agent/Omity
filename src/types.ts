@@ -28,13 +28,19 @@ export const controlSchema = z.enum(["running", "step", "pause", "cancel", "paus
   runStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
   logLevelSchema = z.enum(["debug", "info", "warn", "error"]),
   reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
-  modelApiSchema = z.enum(["responses", "completions", "messages"]);
+  modelAdapterSchema = z.enum([
+    "responses-sse",
+    "responses-websocket",
+    "completions",
+    "messages",
+  ]);
 export type Control = z.infer<typeof controlSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export type HostActivity = Extract<SessionStatus, "tool" | "waiting" | "streaming" | "idle">;
 export type RunStatus = z.infer<typeof runStatusSchema>;
 export type LogLevel = z.infer<typeof logLevelSchema>;
-export type ModelApi = z.infer<typeof modelApiSchema>;
+export type ModelAdapter = z.infer<typeof modelAdapterSchema>;
+export type ModelApi = "responses" | "completions" | "messages";
 export function isRunningStatus(status: SessionStatus | undefined) {
   return (
     status === "waiting" || status === "streaming" || status === "pausing" || status === "tool"
