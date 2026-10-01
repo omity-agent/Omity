@@ -1,17 +1,17 @@
 import type { BuiltInPreferences } from "./metadata";
+import { countTokens } from "../../runtime/tokenizer";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 export function createTitleTool(settings: NonNullable<BuiltInPreferences["update_title"]>) {
   const { title } = settings.parameters,
-    segmenter = new Intl.Segmenter("und", { granularity: "grapheme" }),
-    range = `${title.minLength.toString()}–${title.maxLength.toString()}`,
+    range = `${title.minTokens.toString()}–${title.maxTokens.toString()} tokens`,
     titleTool = tool(
       ({ title: input }, config) => {
         config.signal?.throwIfAborted();
         const normalized = input.trim(),
-          { length } = [...segmenter.segment(normalized)];
-        if (length < title.minLength || length > title.maxLength) {
+          tokens = countTokens(normalized);
+        if (tokens < title.minTokens || tokens > title.maxTokens) {
           throw new Error(`${settings.errors.invalidLength} (${range})`);
         }
         return "ok";

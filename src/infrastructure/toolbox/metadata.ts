@@ -28,9 +28,13 @@ const description = emptyAs(z.string(), ""),
       invalidLength: z.string().min(1),
     }),
     parameters: z.strictObject({
-      title: parameter
-        .extend({ maxLength: count, minLength: count.min(1) })
-        .refine(({ minLength, maxLength }) => minLength <= maxLength, { path: ["maxLength"] }),
+      title: z
+        .strictObject({
+          description,
+          maxTokens: count,
+          minTokens: count.min(1),
+        })
+        .refine(({ minTokens, maxTokens }) => minTokens <= maxTokens, { path: ["maxTokens"] }),
     }),
   });
 export const builtInPreferencesSchema = z.strictObject({
