@@ -5,6 +5,7 @@ import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolExecutions } from "./toolExecutions";
 import { cancelledToolMessage } from "../runtime/toolOutput";
 import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
+import { isContentBlockArray } from "../runtime/outputText";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { requireCallId } from "../hooks/plan";
@@ -103,7 +104,7 @@ function toolMessage(
   });
 }
 function messageContent(value: unknown): BaseMessage["content"] {
-  if (typeof value === "string" || Array.isArray(value)) {
+  if (typeof value === "string" || isContentBlockArray(value)) {
     return value;
   }
   return JSON.stringify(value);

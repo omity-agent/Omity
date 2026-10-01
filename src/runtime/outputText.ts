@@ -7,7 +7,7 @@ interface ToolTextContent {
   normalized: MessageContent;
   replaceText: (replacement: string) => MessageContent;
 }
-export function inspectToolTextContent(content: MessageContent): ToolTextContent | null {
+export function inspectToolTextContent(content: unknown): ToolTextContent | null {
   const parsed = parseMcpContent(content);
   if (parsed === null) {
     return null;
@@ -25,17 +25,20 @@ export function inspectToolTextContent(content: MessageContent): ToolTextContent
     hasNonText = value.some((block) => blockText(block) === null);
   return {
     isError: parsed.isError,
-    normalized: hasNonText ? asContentBlocks(value) : text,
+    normalized: hasNonText ? value : text,
     replaceText: (replacement) =>
       hasNonText ? replaceTextBlocks(value, replacement) : replacement,
     text,
   };
 }
 function parseMcpContent(
-  content: MessageContent,
-): { value: string | unknown[]; isError: boolean } | null {
-  if (typeof content !== "string") {
+  content: unknown,
+): { value: string | ContentBlock[]; isError: boolean } | null {
+  if (isContentBlockArray(content)) {
     return { isError: false, value: content };
+  }
+  if (typeof content !== "string") {
+    return null;
   }
   let parsed: unknown;
   try {
@@ -43,10 +46,10 @@ function parseMcpContent(
   } catch {
     return { isError: false, value: content };
   }
-  if (Array.isArray(parsed)) {
+  if (isContentBlockArray(parsed)) {
     return { isError: false, value: parsed };
   }
-  if (isRecord(parsed) && Array.isArray(parsed["content"])) {
+  if (isRecord(parsed) && isContentBlockArray(parsed["content"])) {
     return { isError: parsed["isError"] === true, value: parsed["content"] };
   }
   if (isTextBlock(parsed)) {
@@ -54,43 +57,32 @@ function parseMcpContent(
   }
   return { isError: false, value: content };
 }
-function replaceTextBlocks(blocks: unknown[], replacement: string) {
+function replaceTextBlocks(blocks: ContentBlock[], replacement: string): MessageContent {
   const firstText = blocks.findIndex((block) => blockText(block) !== null);
   if (firstText === -1) {
-    return asContentBlocks([{ text: replacement, type: "text" }, ...blocks]);
+    return [{ text: replacement, type: "text" }, ...blocks];
   }
-  return asContentBlocks(
-    blocks.flatMap((block, index) => {
-      if (blockText(block) === null) {
-        return [block];
-      }
-      return index === firstText ? [{ text: replacement, type: "text" }] : [];
-    }),
-  );
+  return blocks.flatMap((block, index) => {
+    if (blockText(block) === null) {
+      return [block];
+    }
+    return index === firstText ? [{ text: replacement, type: "text" }] : [];
+  });
 }
-function blockText(block: unknown): string | null {
-  if (typeof block === "string") {
-    return block;
-  }
+function blockText(block: ContentBlock): string | null {
   return isTextBlock(block) ? block.text : null;
 }
-function isTextBlock(value: unknown): value is { text: string } {
+function isTextBlock(
+  value: unknown,
+): value is ContentBlock & { text: string; type: "input_text" | "text" } {
   return (
     isRecord(value) &&
     (value["type"] === "text" || value["type"] === "input_text") &&
     typeof value["text"] === "string"
   );
 }
-function asContentBlocks(value: unknown[]) {
-  return value.map((block): ContentBlock => {
-    if (typeof block === "string") {
-      return { text: block, type: "text" };
-    }
-    if (!isContentBlock(block)) {
-      throw new Error("MCP 内容块缺少字符串 type");
-    }
-    return block;
-  });
+export function isContentBlockArray(value: unknown): value is ContentBlock[] {
+  return Array.isArray(value) && value.every(isContentBlock);
 }
 function isContentBlock(value: unknown): value is ContentBlock {
   return isRecord(value) && typeof value["type"] === "string";
