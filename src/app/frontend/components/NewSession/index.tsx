@@ -1,25 +1,16 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
-import { type EditablePair, MessageStack } from "./MessageStack";
-import { Plus, UserRound } from "lucide-react";
-import { composer, scroll, scrollContent, setup, setupFirst } from "./layout";
-import { composerFrame, composerRole } from "../Chat/Composer/layout";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
-import { IconButton } from "../ParkUI";
+import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { InitialSessionState } from "../../../initialState";
-import { MarkdownEditor } from "../Chat/MarkdownEditor";
+import { LatestMessage } from "./editor/LatestMessage";
+import { MessageStack } from "./MessageStack";
 import { PendingAttachments } from "../Chat/Composer/attachments";
 import { ProfilePicker } from "./ProfilePicker";
-import { SubmitButton } from "../Chat/Composer/controls/SubmitButton";
 import { Toggles } from "./options/Toggles";
-import { UserMessageHistory } from "../Chat/Composer/history";
 import { WorkspacePicker } from "./WorkspacePicker";
-import { claimShortId } from "../../../../infrastructure/randomId";
-import { useHistoryNavigation } from "../Chat/Composer/hooks/history";
 import { useHookSelection } from "./options/selection";
-import { useNewSessionDraft } from "./draft";
-import { useSessionCreation } from "./creation";
-import { useTranslation } from "react-i18next";
+import { useNewSessionDraft } from "./editor/preparationState";
+import { useSessionCreation } from "./editor/submission";
 
 export function NewSessionPage({
   attachmentSettings,
@@ -48,24 +39,21 @@ export function NewSessionPage({
   onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
-  const { t } = useTranslation(),
-    hookSelection = useHookSelection(selectedProfile),
+  const hookSelection = useHookSelection(selectedProfile),
     {
+      addPair,
+      changePair,
       clear: clearDraft,
-      content: message,
+      draft: { message, pairs },
       flush: flushDraft,
       loading: draftLoading,
-      update: setMessage,
+      removePair,
+      revision: draftRevision,
+      updateMessage,
     } = useNewSessionDraft(draftSaveDelayMs),
-    [pairs, setPairs] = useState<EditablePair[]>([]),
-    messageRef = useRef(message),
-    historyRef = useRef(new UserMessageHistory()),
     scrollRef = useRef<HTMLDivElement>(null),
     attachmentsRef = useRef(new PendingAttachments(attachmentSettings)),
     previousPairCountRef = useRef(pairs.length);
-  useEffect(() => {
-    messageRef.current = message;
-  }, [message]);
   useEffect(() => {
     attachmentsRef.current.configure(attachmentSettings);
   }, [attachmentSettings]);
@@ -90,6 +78,7 @@ export function NewSessionPage({
   const { handleFormSubmit, handleSubmit, submitting } = useSessionCreation({
       attachmentsRef,
       clearDraft,
+      draftRevision,
       flushDraft,
       hookOverrides: hookSelection.overrides,
       hooksReady: hookSelection.ready,
@@ -98,57 +87,13 @@ export function NewSessionPage({
       pairs,
       workspace,
     }),
-    updateMessage = useCallback(
-      (next: string) => {
-        messageRef.current = next;
-        setMessage(next);
-      },
-      [setMessage],
-    ),
-    handleMessageChange = useCallback(
-      (next: string) => {
-        if (next === messageRef.current) {
-          return;
-        }
-        historyRef.current.reset();
-        updateMessage(next);
-      },
-      [updateMessage],
-    ),
-    navigateHistory = useHistoryNavigation(historyRef, messageRef, updateMessage, userMessages),
     complete =
       workspace.trim().length > 0 &&
       message.trim().length > 0 &&
       pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0),
-    changePair = useCallback(
-      (id: string, next: InitialSessionState["history"][number]) => {
-        setPairs((current) => current.map((item) => (item.id === id ? { id, ...next } : item)));
-      },
-      [setPairs],
-    ),
-    removePair = useCallback(
-      (id: string) => {
-        setPairs((current) => current.filter((item) => item.id !== id));
-      },
-      [setPairs],
-    ),
     pasteFiles = useCallback(
       (files: File[]) => attachmentsRef.current.paste(files, message),
       [attachmentsRef, message],
-    ),
-    addPair = useCallback(() => {
-      setPairs((current) => {
-        const id = claimShortId((candidate) => !current.some((item) => item.id === candidate));
-        return [...current, { assistant: "", id, user: "" }];
-      });
-    }, [setPairs]),
-    footer = useMemo(
-      () => (
-        <span aria-label={t("user")} className={composerRole} title={t("user")}>
-          <UserRound aria-hidden size={20} />
-        </span>
-      ),
-      [t],
     );
   return (
     <form className={pageClassName} onSubmit={handleFormSubmit}>
@@ -169,38 +114,26 @@ export function NewSessionPage({
             />
             <Toggles disabled={submitting} selection={hookSelection} />
           </div>
-          <div className={`${composerFrame} ${composer}`}>
-            <MarkdownEditor
+          <div className={conversation}>
+            <MessageStack
               disabled={draftLoading || submitting}
-              onChange={handleMessageChange}
-              onHistoryNavigate={navigateHistory}
+              pairs={pairs}
+              onPairChange={changePair}
+              onRemove={removePair}
+              onSubmit={handleSubmit}
+            />
+            <LatestMessage
+              disabled={draftLoading || submitting}
+              message={message}
+              submitDisabled={draftLoading || !hookSelection.ready || !complete || submitting}
+              submitting={submitting}
+              userMessages={userMessages}
+              onAddPair={addPair}
+              onChange={updateMessage}
               onPasteFiles={attachmentSettings ? pasteFiles : undefined}
               onSubmit={handleSubmit}
-              placeholder={t("messagePlaceholder")}
-              value={message}
             />
-            <ActionPanel footer={footer}>
-              <IconButton
-                aria-label={t("addMessagePair")}
-                disabled={submitting}
-                onClick={addPair}
-                title={t("addMessagePair")}
-                type="button"
-              >
-                <Plus aria-hidden size={16} />
-              </IconButton>
-              <SubmitButton
-                disabled={draftLoading || !hookSelection.ready || !complete || submitting}
-                label={submitting ? t("creating") : t("createAndSend")}
-              />
-            </ActionPanel>
           </div>
-          <MessageStack
-            pairs={pairs}
-            onPairChange={changePair}
-            onRemove={removePair}
-            onSubmit={handleSubmit}
-          />
         </div>
       </div>
     </form>

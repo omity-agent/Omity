@@ -1,4 +1,4 @@
-/* oxlint-disable @pandacss/no-margin-properties -- Auto margin anchors the composer below the setup form. */
+/* oxlint-disable @pandacss/no-margin-properties -- Auto margin anchors the conversation below the setup form. */
 import { css } from "styled-system/css";
 
 export const scroll = css({
@@ -12,7 +12,7 @@ export const scrollContent = css({
   flexDirection: "column",
   minHeight: "full",
 });
-export const composer = css({ marginBlockStart: "auto" });
+export const conversation = css({ marginBlockStart: "auto" });
 export const setup = css({
   alignContent: "start",
   display: "grid",

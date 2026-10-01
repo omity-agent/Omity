@@ -6,93 +6,93 @@ import { css, cx, sva } from "styled-system/css";
 import { Collapsible } from "@ark-ui/react/collapsible";
 import { useDisclosure } from "../Transcript/disclosures";
 
-const openDisclosure = css({ transform: "rotate(180deg)" });
-const frame = sva({
-  base: {
-    accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
-    content: {
-      _closed: {
-        _motionReduce: { animation: "disabled" },
-        animation: "detailCollapse",
+const openDisclosure = css({ transform: "rotate(180deg)" }),
+  frame = sva({
+    base: {
+      accessory: { alignItems: "center", display: "flex", flexShrink: 0 },
+      content: {
+        _closed: {
+          _motionReduce: { animation: "disabled" },
+          animation: "detailCollapse",
+        },
+        _open: {
+          _motionReduce: { animation: "disabled" },
+          animation: "detailExpand",
+        },
+        overflow: "hidden",
       },
-      _open: {
-        _motionReduce: { animation: "disabled" },
-        animation: "detailExpand",
+      disclosure: {
+        color: "muted",
+        flexShrink: 0,
+        height: "smallIcon",
+        transition: "[transform 120ms ease]",
+        width: "smallIcon",
       },
-      overflow: "hidden",
-    },
-    disclosure: {
-      color: "muted",
-      flexShrink: 0,
-      height: "smallIcon",
-      transition: "[transform 120ms ease]",
-      width: "smallIcon",
-    },
-    header: {
-      _hover: { background: "controlHover" },
-      alignItems: "center",
-      display: "flex",
-      height: "detailHeader",
-      maxWidth: "full",
-      minHeight: "controlTarget",
-      paddingInline: "2",
-      position: "relative",
-      zIndex: "base",
-    },
-    icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
-    root: {
-      "& pre": { maxWidth: "full" },
-      color: "muted",
-      fontSize: "interface",
-      marginBlockStart: "detailOverlap",
-      maxWidth: "full",
-      minWidth: "zero",
-      padding: "zero",
-      width: "full",
-    },
-    title: {
-      color: "mutedStrong",
-      flexBasis: "zero",
-      flexGrow: 1,
-      flexShrink: 1,
-      lineHeight: "normal",
-      minWidth: "zero",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap",
-    },
-    trigger: {
-      alignItems: "center",
-      appearance: "none",
-      background: "clear",
-      borderWidth: "zero",
-      color: "muted",
-      cursor: "pointer",
-      display: "flex",
-      flexBasis: "zero",
-      flexGrow: 1,
-      flexShrink: 1,
-      font: "inherit",
-      gap: "2",
-      height: "full",
-      maxWidth: "full",
-      minWidth: "zero",
-      padding: "zero",
-      textAlign: "left",
-    },
-  },
-  slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory", "content"],
-  variants: {
-    tone: {
-      model: {
-        icon: { color: "statusModel" },
+      header: {
+        _hover: { background: "controlHover" },
+        alignItems: "center",
+        display: "flex",
+        height: "detailHeader",
+        maxWidth: "full",
+        minHeight: "controlTarget",
+        paddingInline: "2",
+        position: "relative",
+        zIndex: "base",
       },
-      tool: {
-        icon: { color: "statusTool" },
+      icon: { flexShrink: 0, height: "smallIcon", width: "smallIcon" },
+      root: {
+        "& pre": { maxWidth: "full" },
+        color: "muted",
+        fontSize: "interface",
+        marginBlockStart: "detailOverlap",
+        maxWidth: "full",
+        minWidth: "zero",
+        padding: "zero",
+        width: "full",
+      },
+      title: {
+        color: "mutedStrong",
+        flexBasis: "zero",
+        flexGrow: 1,
+        flexShrink: 1,
+        lineHeight: "normal",
+        minWidth: "zero",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      },
+      trigger: {
+        alignItems: "center",
+        appearance: "none",
+        background: "clear",
+        borderWidth: "zero",
+        color: "muted",
+        cursor: "pointer",
+        display: "flex",
+        flexBasis: "zero",
+        flexGrow: 1,
+        flexShrink: 1,
+        font: "inherit",
+        gap: "2",
+        height: "full",
+        maxWidth: "full",
+        minWidth: "zero",
+        padding: "zero",
+        textAlign: "left",
       },
     },
-  },
-});
+    slots: ["root", "header", "trigger", "disclosure", "icon", "title", "accessory", "content"],
+    variants: {
+      tone: {
+        model: {
+          icon: { color: "statusModel" },
+        },
+        tool: {
+          icon: { color: "statusTool" },
+        },
+      },
+    },
+  });
 export function Frame({
   accessory,
   children,

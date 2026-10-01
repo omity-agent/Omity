@@ -116,6 +116,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
             aria-label={t("accessManageCredentials")}
             className={accessButton}
             href="?setup=manage#/new"
+            iconOnly
             title={t("accessManageCredentials")}
           >
             <KeyRound size={14} />

@@ -2,22 +2,22 @@ import { Bot, Trash2, UserRound } from "lucide-react";
 import { composerFrame, composerRole } from "../Chat/Composer/layout";
 import { useCallback, useMemo } from "react";
 import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
+import type { EditablePair } from "../../../composition/preparation";
 import { IconButton } from "../ParkUI";
 import type { InitialMessagePair } from "../../../initialState";
 import { MarkdownEditor } from "../Chat/MarkdownEditor";
 import { css } from "styled-system/css";
 import { useTranslation } from "react-i18next";
 
-export interface EditablePair extends InitialMessagePair {
-  id: string;
-}
 const stack = css({ alignSelf: "stretch" });
 export function MessageStack({
+  disabled,
   pairs,
   onPairChange,
   onRemove,
   onSubmit,
 }: {
+  disabled: boolean;
   pairs: EditablePair[];
   onPairChange: (id: string, pair: InitialMessagePair) => void;
   onRemove: (id: string) => void;
@@ -29,6 +29,7 @@ export function MessageStack({
       {pairs.map((item) => (
         <MessagePairEditor
           assistantLabel={t("assistant")}
+          disabled={disabled}
           item={item}
           key={item.id}
           userLabel={t("user")}
@@ -42,6 +43,7 @@ export function MessageStack({
 }
 function MessagePairEditor({
   assistantLabel,
+  disabled,
   item,
   userLabel,
   onPairChange,
@@ -49,6 +51,7 @@ function MessagePairEditor({
   onSubmit,
 }: {
   assistantLabel: string;
+  disabled: boolean;
   item: EditablePair;
   userLabel: string;
   onPairChange: (id: string, pair: InitialMessagePair) => void;
@@ -73,6 +76,7 @@ function MessagePairEditor({
   return (
     <section>
       <MessageEditor
+        disabled={disabled}
         label={userLabel}
         role="user"
         value={item.user}
@@ -80,6 +84,7 @@ function MessagePairEditor({
         onSubmit={onSubmit}
       />
       <MessageEditor
+        disabled={disabled}
         label={assistantLabel}
         role="assistant"
         value={item.assistant}
@@ -91,6 +96,7 @@ function MessagePairEditor({
   );
 }
 function MessageEditor({
+  disabled,
   label,
   role,
   value,
@@ -98,6 +104,7 @@ function MessageEditor({
   onRemove,
   onSubmit,
 }: {
+  disabled: boolean;
   label: string;
   role: "user" | "assistant";
   value: string;
@@ -118,7 +125,7 @@ function MessageEditor({
   return (
     <div className={composerFrame}>
       <MarkdownEditor
-        disabled={false}
+        disabled={disabled}
         label={label}
         onChange={onChange}
         onSubmit={onSubmit}
@@ -129,6 +136,7 @@ function MessageEditor({
         {onRemove ? (
           <IconButton
             aria-label={t("removeMessagePair")}
+            disabled={disabled}
             onClick={onRemove}
             title={t("removeMessagePair")}
             type="button"

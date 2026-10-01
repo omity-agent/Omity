@@ -98,6 +98,21 @@ export async function saveComposerDraft(sessionId: string, content: string, revi
     revisionResponseSchema,
   );
 }
+export async function loadPreparationDraft() {
+  return request(api["session-preparation"].$get(), draftResponseSchema);
+}
+export async function savePreparationDraft(content: string, revision: number) {
+  return request(
+    api["session-preparation"].$put({ json: { content, revision } }),
+    revisionResponseSchema,
+  );
+}
+export function beaconPreparationDraft(content: string, revision: number) {
+  return navigator.sendBeacon(
+    `.${api["session-preparation"].$path()}`,
+    new Blob([JSON.stringify({ content, revision })], { type: "application/json" }),
+  );
+}
 export async function saveReasoningTranslation(
   sessionId: string,
   translation: ReasoningTranslation,

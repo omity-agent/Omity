@@ -1,13 +1,14 @@
 import { type RefObject, type SubmitEvent, useLayoutEffect, useRef, useState } from "react";
-import type { EditablePair } from "./MessageStack";
-import type { InitialSessionState } from "../../../initialState";
-import type { PendingAttachment } from "../../../attachments/contract";
-import type { PendingAttachments } from "../Chat/Composer/attachments";
-import { reportPromiseErrors } from "../../services/errors";
+import type { EditablePair } from "../../../../composition/preparation";
+import type { InitialSessionState } from "../../../../initialState";
+import type { PendingAttachment } from "../../../../attachments/contract";
+import type { PendingAttachments } from "../../Chat/Composer/attachments";
+import { reportPromiseErrors } from "../../../services/errors";
 
 export function useSessionCreation({
   attachmentsRef,
   clearDraft,
+  draftRevision,
   flushDraft,
   hookOverrides,
   hooksReady,
@@ -18,6 +19,7 @@ export function useSessionCreation({
 }: {
   attachmentsRef: RefObject<PendingAttachments>;
   clearDraft: () => void;
+  draftRevision: number;
   flushDraft: () => Promise<void>;
   hookOverrides: Record<string, boolean>;
   hooksReady: boolean;
@@ -50,6 +52,7 @@ export function useSessionCreation({
         await draftActionsRef.current.flush();
         await createRef.current(
           {
+            draftRevision,
             history: pairs.map(({ user, assistant }) => ({ assistant, user })),
             hookOverrides,
             message,

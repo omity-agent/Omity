@@ -5,6 +5,7 @@ import { bodyLimit } from "hono/body-limit";
 import { controlCommandSchema } from "../../types";
 import { createMiddleware } from "hono/factory";
 import { fileLinkActionSchema } from "../../fileLinks/types";
+import { preparationContentSchema } from "../composition/preparation";
 import { requestBodyLimit } from "../../../settings/networking";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { z } from "zod";
@@ -21,6 +22,9 @@ const regularBodyLimit = limitRequestBody();
 export const composerDraftBody = z.strictObject({
   content: z.string(),
   revision: z.number().int().positive(),
+});
+export const preparationDraftBody = composerDraftBody.extend({
+  content: preparationContentSchema,
 });
 export const controlBody = z.strictObject({ control: controlCommandSchema });
 export const cancelToolBody = z.strictObject({ toolCallId: z.string().min(1).max(1024) });

@@ -1,6 +1,6 @@
 import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { join, resolve } from "node:path";
-import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { build } from "vite";
 import { prepareMagikaAssets } from "./magikaModel";
 
@@ -110,6 +110,15 @@ async function flattenMigration(specification: typeof database) {
         join(generatedDirectory, file),
         join(databaseDirectory, file === "migration.sql" ? "schema.sql" : file),
       ),
+    ),
+  );
+  const schemaPath = join(databaseDirectory, "schema.sql"),
+    schema = await readFile(schemaPath, "utf8");
+  await writeFile(
+    schemaPath,
+    schema.replaceAll(
+      /CREATE (?<kind>TABLE|(?:UNIQUE )?INDEX) /gu,
+      "CREATE $<kind> IF NOT EXISTS ",
     ),
   );
   await rm(generatedDirectory, { recursive: true });

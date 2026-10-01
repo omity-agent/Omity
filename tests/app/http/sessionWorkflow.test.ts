@@ -47,7 +47,6 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
     content: "newer draft",
     revision: 4,
   });
-
   const sent = await fetch(`${endpoint}/messages`, {
     body: submissionForm(
       { content: "read {{file:a1b2c3d4:notes.txt}}", draftRevision: 3, submissionId: "s1b2c3d4" },
@@ -92,7 +91,6 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(deletedTranscript.status).toBe(404);
   expect(await sessions.json()).toEqual({ sessions: [] });
 }, 15_000);
-
 function json(body: unknown): RequestInit {
   return {
     body: JSON.stringify(body),

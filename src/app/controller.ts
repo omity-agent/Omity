@@ -8,6 +8,11 @@ import {
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
 import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
+import {
+  readPreparationDraft,
+  writePreparationDraft,
+  writeSessionDraft,
+} from "./composition/draftStorage";
 import { AppEvents } from "./events";
 import type { AppHosts } from "./hosts";
 import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
@@ -28,7 +33,6 @@ import { materializeAppFork } from "./runtime/sessionActions";
 import { pickWorkspaceDirectory } from "./workspaceDialog/bridge";
 import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 import { setSessionControl } from "../client";
-import { writeSessionDraft } from "./composerDraft";
 
 export class AppController {
   readonly events: AppEvents;
@@ -121,6 +125,8 @@ export class AppController {
     this.registry.require(sessionId);
     return writeSessionDraft(sessionId, content, revision);
   }
+  preparationDraft = readPreparationDraft;
+  savePreparationDraft = writePreparationDraft;
   async control(sessionId: string, control: Control) {
     const session = this.registry.require(sessionId);
     if (control === "running" || control === "step") {

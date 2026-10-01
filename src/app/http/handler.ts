@@ -11,6 +11,7 @@ import {
   forkMaterializationBody,
   jsonBody,
   limitRequestBody,
+  preparationDraftBody,
   reasoningTranslationBody,
 } from "./request";
 import { readMessageForm, readSessionForm } from "./multipart";
@@ -37,6 +38,8 @@ type ApiController = Pick<
   | "eventCursor"
   | "composerDraft"
   | "saveComposerDraft"
+  | "preparationDraft"
+  | "savePreparationDraft"
   | "sendMessage"
   | "control"
   | "cancelTool"
@@ -59,6 +62,11 @@ export function createApi(controller: ApiController, access?: AccessService) {
   return routes
     .get("/api/bootstrap", (c) => c.json(controller.bootstrap()))
     .get("/api/user-messages", (c) => c.json(controller.userMessages()))
+    .get("/api/session-preparation", (c) => c.json(controller.preparationDraft()))
+    .on(["PUT", "POST"], "/api/session-preparation", jsonBody(preparationDraftBody), (c) => {
+      const body = c.req.valid("json");
+      return c.json(controller.savePreparationDraft(body.content, body.revision));
+    })
     .get(
       "/api/hooks",
       validator("query", (_query: { profile?: string }, c) => ({

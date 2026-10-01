@@ -10,27 +10,36 @@ import {
   input as inputRecipe,
 } from "styled-system/recipes";
 import { type ComponentProps, type ReactNode, createElement } from "react";
-import { css, cx } from "styled-system/css";
+import { css, cva, cx } from "styled-system/css";
 
 const fieldClasses = fieldRecipe(),
-  compactControl = css({
-    _disabled: {
-      color: "muted",
-      cursor: "not-allowed",
-      opacity: 0.4,
+  compactControl = cva({
+    base: {
+      _disabled: {
+        color: "muted",
+        cursor: "not-allowed",
+        opacity: 0.4,
+      },
+      _focusVisible: {
+        outlineColor: "mutedStrong",
+        outlineOffset: "0.5",
+        outlineStyle: "solid",
+        outlineWidth: "hairline",
+      },
+      borderRadius: "l1",
+      color: "text",
+      minHeight: "controlTarget",
+      minWidth: "zero",
+      textStyle: "control",
+      touchAction: "manipulation",
     },
-    _focusVisible: {
-      outlineColor: "mutedStrong",
-      outlineOffset: "0.5",
-      outlineStyle: "solid",
-      outlineWidth: "hairline",
+    defaultVariants: { content: "text" },
+    variants: {
+      content: {
+        icon: { paddingInline: "zero" },
+        text: { paddingInline: "3" },
+      },
     },
-    borderRadius: "l1",
-    color: "text",
-    minHeight: "controlTarget",
-    minWidth: "zero",
-    textStyle: "control",
-    touchAction: "manipulation",
   }),
   surfacedControl = css({
     _disabled: {
@@ -59,14 +68,23 @@ const fieldClasses = fieldRecipe(),
     color: "text",
     fontFamily: "mono",
   });
-type ButtonProps = ComponentProps<"button"> & ButtonVariantProps;
-type LinkButtonProps = ComponentProps<"a"> & ButtonVariantProps;
-export function Button({ className, size = "sm", variant = "outline", ...props }: ButtonProps) {
+interface ControlContent {
+  iconOnly?: boolean;
+}
+type ButtonProps = ComponentProps<"button"> & ButtonVariantProps & ControlContent;
+type LinkButtonProps = ComponentProps<"a"> & ButtonVariantProps & ControlContent;
+export function Button({
+  className,
+  iconOnly = false,
+  size = "sm",
+  variant = "outline",
+  ...props
+}: ButtonProps) {
   return createElement("button", {
     ...props,
     className: cx(
       buttonRecipe({ size, variant }),
-      compactControl,
+      compactControl({ content: iconOnly ? "icon" : "text" }),
       variant !== "ghost" && surfacedControl,
       className,
     ),
@@ -74,6 +92,7 @@ export function Button({ className, size = "sm", variant = "outline", ...props }
 }
 export function LinkButton({
   className,
+  iconOnly = false,
   size = "sm",
   variant = "outline",
   ...props
@@ -82,7 +101,7 @@ export function LinkButton({
     ...props,
     className: cx(
       buttonRecipe({ size, variant }),
-      compactControl,
+      compactControl({ content: iconOnly ? "icon" : "text" }),
       variant !== "ghost" && surfacedControl,
       className,
     ),
@@ -111,6 +130,7 @@ export function IconButton(props: ButtonProps) {
     variant: "outline",
     ...props,
     className: cx(className, props.className),
+    iconOnly: true,
   });
 }
 type InputProps = Omit<ComponentProps<"input">, "size"> & InputVariantProps;
@@ -118,14 +138,14 @@ const inputText = css({ fontSize: "editor" });
 export function Input({ className, size = "sm", ...props }: InputProps) {
   return createElement("input", {
     ...props,
-    className: cx(inputRecipe({ size }), compactControl, surfacedControl, inputText, className),
+    className: cx(inputRecipe({ size }), compactControl(), surfacedControl, inputText, className),
   });
 }
 type SelectProps = Omit<ComponentProps<"select">, "size"> & InputVariantProps;
 export function Select({ className, size = "sm", ...props }: SelectProps) {
   return createElement("select", {
     ...props,
-    className: cx(inputRecipe({ size }), compactControl, surfacedControl, inputText, className),
+    className: cx(inputRecipe({ size }), compactControl(), surfacedControl, inputText, className),
   });
 }
 function FieldRoot({ className, ...props }: ComponentProps<"div">) {

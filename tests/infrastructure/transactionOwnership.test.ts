@@ -22,14 +22,12 @@ test("independent SQLite connections enforce lease takeover, input claims and ro
   ).toBe(true);
   expect(owner.releaseHostLease("session", "first")).toBe(false);
   expect(contender.releaseHostLease("session", "second")).toBe(true);
-
   owner.submitUser("session", "once", 0, "a1b2c3d4");
   expect(() => contender.submitUser("session", "duplicate", 0, "a1b2c3d4")).toThrow("UNIQUE");
   const stale = required(contender.nextInput("session"));
   owner.consumeInput("session", required(owner.nextInput("session")));
   expect(() => contender.consumeInput("session", stale)).toThrow("输入认领冲突");
   expect(contender.history("session").map(({ text }) => text)).toEqual(["once"]);
-
   runTransaction(owner.db, () => {
     owner.createSession("committed", workspace);
     expect(contender.hasSession("committed")).toBe(false);

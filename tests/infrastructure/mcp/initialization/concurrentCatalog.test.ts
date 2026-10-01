@@ -52,7 +52,6 @@ test("session MCP pipelines overlap while preserving tool order and reusing the 
     await fixture.dispose(outcome);
   }
 }, 15_000);
-
 test.each([false, true])(
   "initialization failure drains other pipelines and closes all children (multiple errors: %s)",
   async (multipleErrors) => {

@@ -3,6 +3,7 @@ import type { SessionDefinition } from "../../infrastructure/database/session/se
 import type { SessionSubmission } from "../attachments/contract";
 import type { Settings } from "../../types";
 import { claimShortId } from "../../infrastructure/randomId";
+import { clearPreparationDraft } from "../composition/draftStorage";
 import { createSessionWithAttachments } from "../attachments/session";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
@@ -32,6 +33,9 @@ export async function createAppSession(
       settings,
       workspace,
     });
+    if (submission.draftRevision !== undefined) {
+      clearPreparationDraft(submission.draftRevision);
+    }
   } catch (error) {
     removeSessionStorage(sessionId);
     throw error;

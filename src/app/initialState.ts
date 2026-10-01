@@ -5,6 +5,7 @@ export interface InitialMessagePair {
   assistant: string;
 }
 export interface InitialSessionState {
+  draftRevision?: number;
   history: InitialMessagePair[];
   hookOverrides?: Record<string, boolean>;
   message: string;
