@@ -79,7 +79,12 @@ export function WorkspacePicker({
     <Field.Root className={className}>
       <Field.Label>{t("workspace")}</Field.Label>
       <span className={row}>
-        <Input className={pathInput} value={workspace} onChange={handleInputChange} />
+        <Input
+          className={pathInput}
+          name="workspace"
+          value={workspace}
+          onChange={handleInputChange}
+        />
         <Button disabled={picking} onClick={handlePick} type="button">
           <FolderOpen size={14} /> {t("chooseFolder")}
         </Button>

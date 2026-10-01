@@ -1,6 +1,6 @@
 import { Badge, IconButton } from "../ParkUI";
 import { CircleStop, LoaderCircle } from "lucide-react";
-import { type MouseEvent, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ToolCallPhase } from "../../../timeline";
 import { css } from "styled-system/css";
 import { reportPromiseErrors } from "../../services/errors";
@@ -27,7 +27,10 @@ export function useToolAccessory({
 }) {
   const { t } = useTranslation(),
     [cancelling, setCancelling] = useState(false),
-    handleCancel = useCancellationHandler(callId, onCancel, setCancelling);
+    handleCancel = useCallback(() => {
+      setCancelling(true);
+      reportPromiseErrors(cancelTool(callId, onCancel, setCancelling));
+    }, [callId, onCancel, setCancelling]);
   return phase === "streaming" || cancellable ? (
     <span className={accessory}>
       {phase === "streaming" ? <Badge>{t("streaming")}</Badge> : null}
@@ -50,18 +53,6 @@ export function useToolAccessory({
       ) : null}
     </span>
   ) : undefined;
-}
-function useCancellationHandler(
-  callId: string,
-  onCancel: (toolCallId: string) => Promise<void>,
-  setCancelling: (cancelling: boolean) => void,
-) {
-  return (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setCancelling(true);
-    reportPromiseErrors(cancelTool(callId, onCancel, setCancelling));
-  };
 }
 async function cancelTool(
   callId: string,

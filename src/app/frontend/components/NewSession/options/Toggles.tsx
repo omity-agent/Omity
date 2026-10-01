@@ -29,8 +29,8 @@ export function Toggles({
   const { t } = useTranslation(),
     handleRetry = useCallback(() => reportPromiseErrors(selection.reload()), [selection]);
   return (
-    <Field.Root>
-      <Field.Label>{t("hooks")}</Field.Label>
+    <Field.Group>
+      <Field.Legend>{t("hooks")}</Field.Legend>
       {selection.error ? (
         <div role="alert">
           <p>{t("hookLoadFailed", { message: selection.error.message })}</p>
@@ -54,7 +54,7 @@ export function Toggles({
           ))}
         </div>
       )}
-    </Field.Root>
+    </Field.Group>
   );
 }
 function HookToggle({

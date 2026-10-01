@@ -21,7 +21,7 @@ export function ProfilePicker({
   return (
     <Field.Root>
       <Field.Label>{t("profile")}</Field.Label>
-      <Select onChange={change} value={selected ?? ""}>
+      <Select name="profile" onChange={change} value={selected ?? ""}>
         <option value="">{t("defaultProfile")}</option>
         {available.map((name) => (
           <option key={name} value={name}>

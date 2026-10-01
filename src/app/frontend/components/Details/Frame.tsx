@@ -1,9 +1,9 @@
 /* oxlint-disable @pandacss/no-descendant-selectors -- The frame styles generated pre content and owns disclosure state. */
 /* oxlint-disable @pandacss/no-margin-properties -- The detail overlap aligns content with its disclosure header. */
 import { ChevronUp, type LucideIcon } from "lucide-react";
-import { type ReactNode, useId, useMemo } from "react";
 import { css, cx, sva } from "styled-system/css";
 import { Collapsible } from "@ark-ui/react/collapsible";
+import type { ReactNode } from "react";
 import { useDisclosure } from "../Transcript/disclosures";
 
 const openDisclosure = css({ transform: "rotate(180deg)" }),
@@ -112,14 +112,12 @@ export function Frame({
   title?: ReactNode;
   tone: "model" | "tool";
 }) {
-  const contentId = useId(),
-    ids = useMemo(() => ({ content: contentId }), [contentId]),
-    classes = frame({ tone }),
-    { open, registerDetail, toggle } = useDisclosure(stateKey, expandedInitially);
+  const classes = frame({ tone }),
+    { onOpenChange, open, registerDetail } = useDisclosure(stateKey, expandedInitially);
   return (
     <Collapsible.Root
       className={classes.root}
-      ids={ids}
+      onOpenChange={onOpenChange}
       open={open}
       ref={registerDetail}
       lazyMount
@@ -127,15 +125,7 @@ export function Frame({
     >
       <Collapsible.Content className={classes.content}>{children}</Collapsible.Content>
       <div className={classes.header}>
-        <button
-          aria-controls={contentId}
-          aria-expanded={open}
-          aria-label={label}
-          className={classes.trigger}
-          data-state={open ? "open" : "closed"}
-          onClick={toggle}
-          type="button"
-        >
+        <Collapsible.Trigger aria-label={label} className={classes.trigger} type="button">
           <ChevronUp
             aria-hidden
             className={cx(classes.disclosure, open && openDisclosure)}
@@ -143,7 +133,7 @@ export function Frame({
           />
           <Icon className={classes.icon} size={13} />
           {title ? <span className={classes.title}>{title}</span> : null}
-        </button>
+        </Collapsible.Trigger>
         {accessory ? <div className={classes.accessory}>{accessory}</div> : null}
       </div>
     </Collapsible.Root>

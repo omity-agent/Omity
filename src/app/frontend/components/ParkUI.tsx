@@ -11,6 +11,7 @@ import {
 } from "styled-system/recipes";
 import { type ComponentProps, type ReactNode, createElement } from "react";
 import { css, cva, cx } from "styled-system/css";
+import { Field as ArkField } from "@ark-ui/react/field";
 
 const fieldClasses = fieldRecipe(),
   compactControl = cva({
@@ -133,29 +134,39 @@ export function IconButton(props: ButtonProps) {
     iconOnly: true,
   });
 }
-type InputProps = Omit<ComponentProps<"input">, "size"> & InputVariantProps;
+type InputProps = Omit<ComponentProps<typeof ArkField.Input>, "name" | "size"> &
+  InputVariantProps & { name: string };
 const inputText = css({ fontSize: "editor" });
 export function Input({ className, size = "sm", ...props }: InputProps) {
-  return createElement("input", {
+  return createElement(ArkField.Input, {
     ...props,
     className: cx(inputRecipe({ size }), compactControl(), surfacedControl, inputText, className),
   });
 }
-type SelectProps = Omit<ComponentProps<"select">, "size"> & InputVariantProps;
+type SelectProps = Omit<ComponentProps<typeof ArkField.Select>, "name" | "size"> &
+  InputVariantProps & { name: string };
 export function Select({ className, size = "sm", ...props }: SelectProps) {
-  return createElement("select", {
+  return createElement(ArkField.Select, {
     ...props,
     className: cx(inputRecipe({ size }), compactControl(), surfacedControl, inputText, className),
   });
 }
-function FieldRoot({ className, ...props }: ComponentProps<"div">) {
-  return createElement("div", { ...props, className: cx(fieldClasses.root, className) });
+function FieldRoot({ className, ...props }: ComponentProps<typeof ArkField.Root>) {
+  return createElement(ArkField.Root, { ...props, className: cx(fieldClasses.root, className) });
 }
-function FieldLabel({ className, ...props }: ComponentProps<"span">) {
-  return createElement("span", { ...props, className: cx(fieldClasses.label, className) });
+function FieldLabel({ className, ...props }: ComponentProps<typeof ArkField.Label>) {
+  return createElement(ArkField.Label, { ...props, className: cx(fieldClasses.label, className) });
+}
+function FieldGroup({ className, ...props }: ComponentProps<"fieldset">) {
+  return createElement("fieldset", { ...props, className: cx(fieldClasses.root, className) });
+}
+function FieldLegend({ className, ...props }: ComponentProps<"legend">) {
+  return createElement("legend", { ...props, className: cx(fieldClasses.label, className) });
 }
 export const Field = {
+  Group: FieldGroup,
   Label: FieldLabel,
+  Legend: FieldLegend,
   Root: FieldRoot,
 };
 type BadgeProps = ComponentProps<"span"> & BadgeVariantProps;

@@ -31,10 +31,12 @@ export function useDisclosure(stateKey: string, expandedInitially: boolean) {
   }
   const { registerDetail, states } = context,
     [open, setOpen] = useState(() => states.current.get(stateKey) ?? expandedInitially),
-    toggle = useCallback(() => {
-      const next = !(states.current.get(stateKey) ?? expandedInitially);
-      states.current.set(stateKey, next);
-      setOpen(next);
-    }, [expandedInitially, setOpen, stateKey, states]);
-  return { open, registerDetail, toggle };
+    onOpenChange = useCallback(
+      ({ open: next }: { open: boolean }) => {
+        states.current.set(stateKey, next);
+        setOpen(next);
+      },
+      [setOpen, stateKey, states],
+    );
+  return { onOpenChange, open, registerDetail };
 }
