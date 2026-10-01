@@ -1,5 +1,6 @@
-import type { ErrorEvent, MessageEvent } from "undici/index.js";
+import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
+import { ResponsesWebsocketError } from "./websocketFailure";
 import { isPlainObject } from "es-toolkit";
 import { openOutboundSocket } from "../../infrastructure/network/socketTransport";
 
@@ -35,6 +36,7 @@ export function createResponsesWebsocketFetch(
     const { socket, handshake } = openOutboundSocket(url, headers),
       encoder = new TextEncoder();
     let done = false,
+      connected = false,
       cleanup = () => socket.close();
     return new Response(
       new ReadableStream({
@@ -57,9 +59,10 @@ export function createResponsesWebsocketFetch(
           };
           const abort = () => finish(signal.reason),
             opened = () => {
+              connected = true;
               try {
-                if (handshake.headers) {
-                  resolved.onHandshake?.(handshake.headers);
+                if (handshake.current?.headers) {
+                  resolved.onHandshake?.(handshake.current.headers);
                 }
                 socket.send(
                   JSON.stringify({
@@ -74,27 +77,24 @@ export function createResponsesWebsocketFetch(
             },
             failed = (event: ErrorEvent) => {
               try {
-                if (handshake.headers) {
-                  resolved.onHandshake?.(handshake.headers);
+                if (!connected && handshake.current?.headers) {
+                  resolved.onHandshake?.(handshake.current.headers);
                 }
-                const requestId = handshake.headers?.get("x-request-id"),
-                  status =
-                    handshake.status === undefined ? "" : `，HTTP ${handshake.status.toString()}`;
                 finish(
-                  new Error(
-                    `Responses WebSocket 连接失败：${url.origin}${url.pathname}${status}${requestId ? `，request ID: ${requestId}` : ""}`,
-                    { cause: handshake.error ?? event.error },
-                  ),
+                  new ResponsesWebsocketError(url, handshake, connected, {
+                    error: event.error,
+                    message: event.message,
+                  }),
                 );
               } catch (error) {
                 finish(error);
               }
             },
-            closed = (event: { code: number; reason: string }) =>
+            closed = (event: CloseEvent) =>
               finish(
-                new Error(
-                  `Responses WebSocket 在响应完成前关闭：${event.code.toString()} ${event.reason}`,
-                ),
+                new ResponsesWebsocketError(url, handshake, connected, {
+                  close: { code: event.code, reason: event.reason, wasClean: event.wasClean },
+                }),
               );
           const messageReceived = (event: MessageEvent) => {
             try {

@@ -1,12 +1,8 @@
 import { type Dispatcher, WebSocket } from "undici/index.js";
 import { type OutboundFetch, explicitHeaderDispatcher } from "./explicitHeaders";
+import { SocketHandshake, observeSocketHandshake } from "./handshakeObservation";
 import { websocketHandshakeHeaders } from "../../../settings/networking";
 
-interface SocketHandshake {
-  error?: Error;
-  headers?: Headers;
-  status?: number;
-}
 interface OutboundSocket {
   handshake: SocketHandshake;
   socket: WebSocket;
@@ -38,8 +34,8 @@ export function createSocketTransport(dispatcher: Dispatcher) {
       if (closed) {
         throw new Error("出站网络已关闭");
       }
-      const handshake: SocketHandshake = {},
-        observed = observeHandshake(dispatcher, handshake),
+      const handshake = new SocketHandshake(),
+        observed = observeSocketHandshake(dispatcher, handshake),
         socket = new WebSocket(url, {
           dispatcher: explicitHeaderDispatcher(observed, headers, websocketHandshakeHeaders),
           headers: [...headers],
@@ -49,42 +45,4 @@ export function createSocketTransport(dispatcher: Dispatcher) {
       return { handshake, socket };
     },
   };
-}
-function observeHandshake(dispatcher: Dispatcher, handshake: SocketHandshake) {
-  return dispatcher.compose((dispatch) => (options, handler) => 
-    dispatch(options, {
-      onBodySent: (chunk) => handler.onBodySent?.(chunk),
-      onRequestSent: () => handler.onRequestSent?.(),
-      onRequestStart: (...args) => handler.onRequestStart?.(...args),
-      onRequestUpgrade: (...args) => {
-        captureHandshake(handshake, args[1], args[2]);
-        handler.onRequestUpgrade?.(...args);
-      },
-      onResponseData: (...args) => handler.onResponseData?.(...args),
-      onResponseEnd: (...args) => handler.onResponseEnd?.(...args),
-      onResponseError: (controller, error) => {
-        handshake.error = error;
-        handler.onResponseError?.(controller, error);
-      },
-      onResponseStart: (...args) => {
-        captureHandshake(handshake, args[1], args[2]);
-        handler.onResponseStart?.(...args);
-      },
-      onResponseStarted: () => handler.onResponseStarted?.(),
-    })
-  );
-}
-function captureHandshake(
-  handshake: SocketHandshake,
-  status: number,
-  values: Record<string, string | string[] | undefined>,
-) {
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(values)) {
-    for (const entry of Array.isArray(value) ? value : value === undefined ? [] : [value]) {
-      headers.append(name, entry);
-    }
-  }
-  handshake.headers = headers;
-  handshake.status = status;
 }

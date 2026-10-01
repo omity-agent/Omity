@@ -12,6 +12,18 @@ export const websocketHandshakeHeaders = [
   "sec-websocket-version",
   "upgrade",
 ];
+export const handshakeDiagnosticHeaders = [
+  "cf-ray",
+  "connection",
+  "content-type",
+  "retry-after",
+  "sec-websocket-accept",
+  "sec-websocket-extensions",
+  "sec-websocket-protocol",
+  "server",
+  "upgrade",
+  "x-request-id",
+];
 export const mcpHttpReconnection = {
   initialReconnectionDelay: 0,
   maxReconnectionDelay: 0,
