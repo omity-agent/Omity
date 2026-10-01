@@ -38,6 +38,7 @@ export class RestartingStdioClient implements McpOperations {
   }
   callTool: McpOperations["callTool"] = (params, options) =>
     this.invoke("callTool", (client) => client.callTool(params, options), options?.signal);
+  getProtocolEra: McpOperations["getProtocolEra"] = () => this.current?.client.getProtocolEra();
   listTools: McpOperations["listTools"] = (params, options) =>
     this.invoke("listTools", (client) => client.listTools(params, options), options?.signal);
   readResource: McpOperations["readResource"] = (params, options) =>
@@ -56,7 +57,7 @@ export class RestartingStdioClient implements McpOperations {
     await current?.close();
   }
   private async invoke<Result>(
-    method: keyof McpOperations,
+    method: Exclude<keyof McpOperations, "getProtocolEra">,
     operation: (client: McpOperations) => Promise<Result>,
     signal?: AbortSignal,
   ) {

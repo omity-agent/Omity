@@ -47,6 +47,7 @@ test.each(["modern", "legacy"] as const)(
         pool.getClient("remote"),
       ]);
       expect(first).toBe(second);
+      expect(first.getProtocolEra()).toBe(era);
       expect(methods.filter((method) => method === "server/discover")).toHaveLength(1);
       expect(methods.filter((method) => method === "initialize")).toHaveLength(
         era === "legacy" ? 1 : 0,
@@ -70,16 +71,13 @@ test.each(["modern", "legacy"] as const)(
         throw new Error("工具适配器未生成 ToolMessage");
       }
       expect(result.content).toEqual([
-        { source_type: "text", text: "result", type: "text" },
-        { data: "AA==", mime_type: "image/png", source_type: "base64", type: "image" },
+        { text: "result", type: "text" },
+        { data: "AA==", mimeType: "image/png", type: "image" },
       ]);
       expect(structuredToolOutput(result.artifact)).toEqual({ answer: 42 });
       expect(result.artifact).toContainEqual({
-        metadata: { uri: "file:///result.txt" },
-        mime_type: "text/plain",
-        source_type: "text",
-        text: "resource",
-        type: "file",
+        resource: { mimeType: "text/plain", text: "resource", uri: "file:///result.txt" },
+        type: "resource",
       });
       expect(tools[1]!.invoke({})).rejects.toThrow("tool rejected");
       expect(tools[2]!.invoke({})).rejects.toThrow("upstream unavailable");

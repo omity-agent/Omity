@@ -38,7 +38,6 @@ async function loadServerCatalog(
       loaded = await loadMcpTools(name, langChainClient(serverClient), {
         prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
         throwOnLoadError: true,
-        useStandardContentBlocks: true,
       }),
       serverTools = loaded.filter((tool) => !excludedNames.has(tool.name));
     if (configuration.defer_loading) {

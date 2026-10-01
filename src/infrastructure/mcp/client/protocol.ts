@@ -1,7 +1,10 @@
 import { Client, type Transport } from "@modelcontextprotocol/client";
 import { cleanupFailedInitialization } from "../lifecycle";
 
-export type McpOperations = Pick<Client, "callTool" | "listTools" | "readResource">;
+export type McpOperations = Pick<
+  Client,
+  "callTool" | "getProtocolEra" | "listTools" | "readResource"
+>;
 export async function connectProtocolClient(
   transport: Transport,
   options: { signal?: AbortSignal; onclose?: () => void } = {},

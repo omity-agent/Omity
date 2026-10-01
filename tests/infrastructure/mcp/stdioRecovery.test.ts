@@ -12,6 +12,7 @@ test("real MCP process crash rejects the interrupted call and the next call uses
     new Logger("error", true),
   );
   try {
+    expect(client.getProtocolEra()).toBe("legacy");
     const catalog = await client.listTools({});
     expect(catalog.tools.map(({ name }) => name).toSorted()).toEqual(["crash", "identity"]);
     const before = await client.callTool({ arguments: {}, name: "identity" });
@@ -30,6 +31,7 @@ test("real MCP process crash rejects the interrupted call and the next call uses
     });
     const after = await client.callTool({ arguments: {}, name: "identity" }),
       schema = z.object({ content: z.array(z.object({ text: z.string() })) });
+    expect(client.getProtocolEra()).toBe("legacy");
     expect(schema.parse(after).content).not.toEqual(schema.parse(before).content);
   } finally {
     await client.close();
