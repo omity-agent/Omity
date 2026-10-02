@@ -77,6 +77,8 @@
     "react-markdown": "latest",
     "reflect-metadata": "latest",
     "remark-breaks": "latest",
+    "remark-cjk-friendly": "latest",
+    "remark-cjk-friendly-gfm-strikethrough": "latest",
     "remark-gfm": "latest",
     "serialize-error": "latest",
     "shiki": "latest",

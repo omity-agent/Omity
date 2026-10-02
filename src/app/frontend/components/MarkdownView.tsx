@@ -20,8 +20,8 @@ import { FileLinkMenu } from "./FileLink/Menu";
 import type { FilePathMatch } from "../../../fileLinks/types";
 import { HighlightedCode } from "./HighlightedCode";
 import { MarkdownSource } from "./Markdown/Source";
+import { markdownPlugins } from "../../../../settings/rendering";
 import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
 import { useMarkdownSource } from "./Markdown/DisplayMode";
 
 interface MarkdownRenderContext {
@@ -58,7 +58,7 @@ export function MarkdownView({
         content: result.code,
         context: { fileLinks: result.matches, source: result.code },
         remarkPlugins: [
-          remarkGfm,
+          ...markdownPlugins,
           fileLinkRemark(result.matches),
           ...(preserveLineBreaks ? [remarkBreaks] : []),
         ],
@@ -92,6 +92,7 @@ export function MarkdownInline({ content }: { content: string }) {
       <ReactMarkdown
         allowedElements={inlineElements}
         components={inlineComponents}
+        remarkPlugins={markdownPlugins}
         unwrapDisallowed
       >
         {normalized.source}
