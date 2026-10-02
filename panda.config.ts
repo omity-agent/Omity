@@ -1,4 +1,9 @@
-import { compactViewport, interfaceMetrics, interfaceTextStyles } from "./settings/appearance";
+import {
+  compactViewport,
+  interfaceLayerStyles,
+  interfaceMetrics,
+  interfaceTextStyles,
+} from "./settings/appearance";
 import { createPreset } from "@park-ui/panda-preset";
 import { defineConfig } from "@pandacss/dev";
 import neutral from "@park-ui/panda-preset/colors/neutral";
@@ -65,6 +70,7 @@ export default defineConfig({
           to: { opacity: "1", transform: "translate3d(0, 0, 0)" },
         },
       },
+      layerStyles: interfaceLayerStyles,
       semanticTokens: {
         ...interfaceMetrics,
         colors: {

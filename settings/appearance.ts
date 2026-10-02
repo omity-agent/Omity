@@ -1,3 +1,5 @@
+import { defineLayerStyles } from "@pandacss/dev";
+
 export const compactViewport = "(width < 64rem)";
 export const interfaceMetrics = {
   animations: {
@@ -68,6 +70,33 @@ export const interfaceMetrics = {
     pinned: { value: 2 },
   },
 };
+export const interfaceLayerStyles = defineLayerStyles({
+  reasoningText: {
+    value: {
+      "--colors-muted-strong": "currentColor",
+      "--colors-syntax-addition":
+        "color-mix(in srgb, {colors.accent.green} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-comment":
+        "color-mix(in srgb, {colors.accent.indigo} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-deletion":
+        "color-mix(in srgb, {colors.accent.red} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-keyword":
+        "color-mix(in srgb, {colors.accent.purple} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-meta":
+        "color-mix(in srgb, {colors.accent.blue} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-number":
+        "color-mix(in srgb, {colors.accent.orange} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-property":
+        "color-mix(in srgb, {colors.accent.blue} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-string":
+        "color-mix(in srgb, {colors.accent.green} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-syntax-title":
+        "color-mix(in srgb, {colors.accent.cyan} var(--reasoning-syntax-strength), {colors.canvas})",
+      "--colors-text": "currentColor",
+      "--reasoning-syntax-strength": "65%",
+    },
+  },
+});
 export const interfaceTextStyles = {
   accessHeading: { value: { fontSize: "xl", fontWeight: "medium" } },
   badge: { value: { fontFamily: "body", fontWeight: "normal" } },

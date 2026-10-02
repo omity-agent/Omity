@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 const content = css({
     borderBlockStartWidth: "hairline",
     borderTopColor: "line",
+    layerStyle: "reasoningText",
     marginBlockEnd: "3",
     marginBlockStart: "zero",
     marginInline: "3",
@@ -27,6 +28,7 @@ const content = css({
   summaryText = css({
     display: "block",
     flexShrink: 0,
+    layerStyle: "reasoningText",
     minWidth: "full",
     whiteSpace: "nowrap",
     width: "intrinsicContent",
