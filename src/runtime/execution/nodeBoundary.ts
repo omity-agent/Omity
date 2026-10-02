@@ -5,7 +5,7 @@ import { consumeBoundaryAppends, recoverConsumedAppends } from "../appends";
 import { pauseForStop, waitIfPaused } from "./pause";
 import { recordAiStreamPart, recordToolStarted } from "../aiStream";
 import { historyInput } from "../../agent/graph/historyInput";
-import { isRetryableModelError } from "../network";
+import { isRetryableModelError } from "../transientErrors";
 import { waitAfterCompletedStep } from "./step";
 import { waitBeforeModelRetry } from "../retry";
 

@@ -1,4 +1,5 @@
 import { isPlainObject as isRecord, omit } from "es-toolkit";
+import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
@@ -12,7 +13,7 @@ export interface ErrorDetails {
 }
 interface ErrorSummaryItem {
   name: string;
-  message: string;
+  message?: string;
   details?: Record<string, ErrorValue>;
 }
 interface ErrorSummary extends ErrorSummaryItem {
@@ -54,7 +55,12 @@ export function summarizeError(error: ErrorDetails): ErrorSummary {
   while (current) {
     const level = summarizeLevel(current),
       identity = JSON.stringify(level);
-    if (!seen.has(identity)) {
+    const uninformative =
+      current !== error &&
+      !level.message &&
+      !level.details &&
+      uninformativeCauseNames.has(level.name);
+    if (!uninformative && !seen.has(identity)) {
       seen.add(identity);
       levels.push(level);
     }
@@ -96,7 +102,9 @@ function summarizeLevel(error: ErrorDetails): ErrorSummaryItem {
   const details = omit(error.details ?? {}, hiddenDetailKeys);
   return {
     ...(Object.keys(details).length > 0 ? { details } : {}),
-    message: error.message,
+    ...(error.message.trim() && !structuredErrorNames.has(error.name)
+      ? { message: error.message }
+      : {}),
     name: error.name,
   };
 }

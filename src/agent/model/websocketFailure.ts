@@ -1,57 +1,64 @@
 import { captureError, summarizeError } from "../../failures/details";
+import {
+  nonRetryableWebsocketCloseCodes,
+  retryableHandshakeStatuses,
+} from "../../../settings/resilience";
 import type { SocketHandshake } from "../../infrastructure/network/handshakeObservation";
 import { handshakeDiagnosticHeaders } from "../../../settings/networking";
 
-interface FailureEvent {
+export interface FailureEvent {
   close?: { code: number; reason: string; wasClean: boolean };
   error?: unknown;
   message?: string;
 }
+export interface WebsocketStreamProgress {
+  lastEventType?: string;
+  messagesReceived: number;
+}
 export class ResponsesWebsocketError extends Error {
   override readonly name = "ResponsesWebsocketError";
   readonly attempts: ReturnType<typeof describeAttempt>[];
-  readonly close?: FailureEvent["close"];
+  readonly close?: { code: number; reason?: string; wasClean: boolean };
   readonly endpoint: string;
   readonly eventMessage?: string;
+  readonly isRetryable: boolean;
   readonly phase: "handshake" | "stream";
-  readonly reasonUnavailable: boolean;
-  readonly requestId?: string;
-  readonly status?: number;
-  constructor(url: URL, handshake: SocketHandshake, opened: boolean, event: FailureEvent) {
+  readonly stream?: WebsocketStreamProgress;
+  constructor(
+    url: URL,
+    handshake: SocketHandshake,
+    opened: boolean,
+    event: FailureEvent,
+    progress: WebsocketStreamProgress,
+  ) {
     const { current } = handshake,
       cause = current?.error ?? event.error,
-      reason = event.close?.reason || event.message?.trim() || errorMessage(cause),
-      endpoint = `${url.origin}${url.pathname}`,
-      requestId = current?.headers?.get("x-request-id") ?? undefined,
       status = current?.status,
-      upgraded = status === 101 || (status === 200 && current?.protocol === "HTTP/2"),
-      description = opened
-        ? event.close
-          ? "Responses WebSocket 在响应完成前关闭"
-          : "Responses WebSocket 传输失败"
-        : "Responses WebSocket 连接失败",
-      response =
-        status === undefined
-          ? ""
-          : !opened && upgraded
-            ? `，已收到 HTTP ${status.toString()} 协议升级响应，但 WebSocket 未建立`
-            : `，HTTP ${status.toString()}`,
-      closed = event.close
-        ? `，关闭码: ${event.close.code.toString()}${event.close.reason ? ` ${event.close.reason}` : ""}`
-        : "",
-      explanation = event.close?.reason ? "" : `，${reason || "底层未提供具体原因"}`;
-    super(
-      `${description}：${endpoint}${response}${requestId ? `，request ID: ${requestId}` : ""}${closed}${explanation}`,
-      { cause },
-    );
+      eventMessage = event.message?.trim(),
+      closeReason = event.close?.reason.trim();
+    super(opened ? "Responses WebSocket 在响应完成前关闭" : "Responses WebSocket 连接失败", {
+      cause,
+    });
     this.attempts = handshake.attempts.map(describeAttempt);
-    this.close = event.close;
-    this.endpoint = endpoint;
-    this.eventMessage = event.message || undefined;
+    this.close = event.close
+      ? {
+          code: event.close.code,
+          ...(closeReason ? { reason: closeReason } : {}),
+          wasClean: event.close.wasClean,
+        }
+      : undefined;
+    this.endpoint = `${url.origin}${url.pathname}`;
+    this.eventMessage =
+      eventMessage && eventMessage !== closeReason && eventMessage !== errorMessage(cause)
+        ? eventMessage
+        : undefined;
+    this.isRetryable = opened
+      ? !nonRetryableWebsocketCloseCodes.has(event.close?.code ?? 0)
+      : status === undefined ||
+        (status >= 500 && status < 600) ||
+        retryableHandshakeStatuses.has(status);
     this.phase = opened ? "stream" : "handshake";
-    this.reasonUnavailable = !reason;
-    this.requestId = requestId;
-    this.status = status;
+    this.stream = opened ? { ...progress } : undefined;
   }
 }
 function describeAttempt(attempt: NonNullable<SocketHandshake["current"]>) {

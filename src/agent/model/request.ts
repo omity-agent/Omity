@@ -1,7 +1,7 @@
 import { AIMessage, type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type LanguageModel, type TextStreamPart, type ToolSet, streamText } from "ai";
 import { aiRequestOptions, buildAiModel, modelApi } from "./provider";
-import { ModelEmptyResponseError } from "../../runtime/network";
+import { ModelEmptyResponseError } from "../../runtime/transientErrors";
 import type { Settings } from "../../types";
 import { estimateCacheHitRate } from "./cacheExpectation";
 import { fromModelMessages } from "../fromAiMessages";

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { captureError } from "../../../src/failures/details";
 import { createCodexClientFields } from "../../../src/infrastructure/openai/codexAuthentication";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
@@ -117,8 +118,12 @@ test("rejected WebSocket handshakes expose HTTP status and request ID", async ()
     if (!(failure instanceof Error)) {
       throw new Error("WebSocket 握手失败没有抛出 Error");
     }
-    expect(failure.message).toContain("HTTP 403");
-    expect(failure.message).toContain("handshake-rejected");
+    expect(failure.message).toBe("Responses WebSocket 连接失败");
+    expect(captureError(failure).details).toMatchObject({
+      attempts: [{ headers: { "x-request-id": "handshake-rejected" }, status: 403 }],
+      isRetryable: false,
+      phase: "handshake",
+    });
   } finally {
     globalThis.fetch = previousFetch;
     await runtime.close();

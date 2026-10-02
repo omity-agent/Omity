@@ -1,6 +1,6 @@
 import { DomainError, type DomainErrorCode } from "../../errors";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { isRetryableModelError } from "../../runtime/network";
+import { isRetryableModelError } from "../../runtime/transientErrors";
 import { isTerminalErrorSuppressed } from "../../failures/output";
 
 type ApiErrorCode =

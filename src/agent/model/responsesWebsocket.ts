@@ -1,6 +1,10 @@
 import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
+import {
+  type FailureEvent,
+  ResponsesWebsocketError,
+  type WebsocketStreamProgress,
+} from "./websocketFailure";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
-import { ResponsesWebsocketError } from "./websocketFailure";
 import { isPlainObject } from "es-toolkit";
 import { openOutboundSocket } from "../../infrastructure/network/socketTransport";
 
@@ -45,6 +49,8 @@ export function createResponsesWebsocketFetch(
           cleanup();
         },
         start(controller) {
+          let failure: FailureEvent = {};
+          const progress: WebsocketStreamProgress = { messagesReceived: 0 };
           const finish = (error?: unknown) => {
             if (done) {
               return;
@@ -80,23 +86,26 @@ export function createResponsesWebsocketFetch(
                 if (!connected && handshake.current?.headers) {
                   resolved.onHandshake?.(handshake.current.headers);
                 }
-                finish(
-                  new ResponsesWebsocketError(url, handshake, connected, {
-                    error: event.error,
-                    message: event.message,
-                  }),
-                );
+                failure = { error: event.error, message: event.message };
               } catch (error) {
                 finish(error);
               }
             },
             closed = (event: CloseEvent) =>
               finish(
-                new ResponsesWebsocketError(url, handshake, connected, {
-                  close: { code: event.code, reason: event.reason, wasClean: event.wasClean },
-                }),
+                new ResponsesWebsocketError(
+                  url,
+                  handshake,
+                  connected,
+                  {
+                    ...failure,
+                    close: { code: event.code, reason: event.reason, wasClean: event.wasClean },
+                  },
+                  progress,
+                ),
               );
           const messageReceived = (event: MessageEvent) => {
+            progress.messagesReceived += 1;
             try {
               if (typeof event.data !== "string") {
                 throw new TypeError("Responses WebSocket 响应应为文本帧");
@@ -105,6 +114,7 @@ export function createResponsesWebsocketFetch(
               if (!isPlainObject(message) || typeof message["type"] !== "string") {
                 throw new TypeError("Responses WebSocket 响应缺少事件类型");
               }
+              progress.lastEventType = message["type"];
               if (message["type"] === "error") {
                 throw new Error(`Responses WebSocket 服务端错误：${JSON.stringify(message)}`);
               }

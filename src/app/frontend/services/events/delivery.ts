@@ -48,5 +48,8 @@ export function reportSessionErrors(sessions: SessionInfo[], reported: Set<strin
   }
 }
 export function reportBrowserWarning(warning: BrowserWarning) {
-  console.warn(warning.message, warning.details);
+  console.warn(warning.message, {
+    ...warning.details,
+    error: summarizeError(warning.details.error),
+  });
 }
