@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DisplayEvent } from "../../../timeline";
 import { FrameBatcher } from "../scheduling/frameBatcher";
 import { reportError } from "../errors";
-import { subscribeEvents } from "../events/delivery";
+import { subscribeEvents } from "../events/subscription";
 import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
 
 export const transcriptKey = (sessionId: string) => ["transcript", sessionId] as const;

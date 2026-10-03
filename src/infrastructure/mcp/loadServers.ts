@@ -1,40 +1,40 @@
+import type { McpConnection, McpFailure } from "./failures/wireFormat";
 import type { McpClientPool } from "./client/pool";
 import type { McpConfiguration } from "./configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { collectReadableZodIssues } from "./tools/issues";
 import { excludedServerToolNames } from "./configuration/exclusions";
 import { langChainClient } from "./tools/langchain";
 import { loadMcpTools } from "@langchain/mcp-adapters";
 import pMap from "p-map";
+import { parseMcpConnection } from "./configuration/connections";
+import { reportMcpFailure } from "./failures/reportConstruction";
 
 export async function loadServerTools(
   client: Pick<McpClientPool, "getClient">,
   servers: McpConfiguration["mcpServers"],
+  cwd?: string,
 ) {
-  try {
-    const catalogs = await pMap(
-      Object.entries(servers),
-      ([name, configuration]) => loadServerCatalog(client, name, configuration),
-      { stopOnError: false },
-    );
-    return catalogs.flat();
-  } catch (error) {
-    if (error instanceof AggregateError) {
-      error.message = error.errors
-        .map((failure: unknown) => (failure instanceof Error ? failure.message : String(failure)))
-        .join("\n");
-    }
-    throw error;
-  }
+  const catalogs = await pMap(
+    Object.entries(servers),
+    ([name, configuration]) => loadServerCatalog(client, name, configuration, cwd),
+    { stopOnError: false },
+  );
+  return catalogs.flat();
 }
 async function loadServerCatalog(
   client: Pick<McpClientPool, "getClient">,
   name: string,
   configuration: McpConfiguration["mcpServers"][string],
+  cwd?: string,
 ): Promise<StructuredToolInterface[]> {
+  const started = performance.now();
+  let stage: McpFailure["stage"] = "initialize",
+    connection: McpConnection | undefined;
   try {
-    const serverClient = await client.getClient(name),
-      excludedNames = new Set(excludedServerToolNames(name, configuration)),
+    const serverClient = await client.getClient(name);
+    connection = parseMcpConnection(configuration);
+    stage = "list_tools";
+    const excludedNames = new Set(excludedServerToolNames(name, configuration)),
       loaded = await loadMcpTools(name, langChainClient(serverClient), {
         prefixToolNameWithServerName: configuration.prefixToolNameWithServerName ?? true,
         throwOnLoadError: true,
@@ -47,14 +47,13 @@ async function loadServerCatalog(
     }
     return serverTools;
   } catch (error) {
-    const issues = collectReadableZodIssues(error),
-      message =
-        issues.length > 0
-          ? issues.join("\n")
-          : error instanceof Error
-            ? error.message
-            : String(error);
-    throw new Error(`MCP 服务器 "${name}" 初始化失败：${message}`, { cause: error });
+    throw reportMcpFailure(error, {
+      connection,
+      cwd,
+      durationMs: performance.now() - started,
+      server: name,
+      stage,
+    });
   }
 }
 export function validateConfiguredServers(

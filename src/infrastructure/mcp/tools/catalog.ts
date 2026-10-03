@@ -4,21 +4,20 @@ import {
   emptyMcpConfiguration,
   readProfileMcpConfiguration,
 } from "../configuration";
+import { McpLoadError, createMcpLoadError, reportMcpFailure } from "../failures/reportConstruction";
 import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./definitions";
 import { type SettingsContext, createSettingsContext } from "../../configuration/settings/context";
 import { configureFreeformMcpTools, sessionModelTools } from "./freeform";
 import { loadServerTools, validateConfiguredServers } from "../loadServers";
 import { overrideMcpToolDescriptions, renameMcpTools } from "./descriptions";
+import { DomainError } from "../../../errors";
 import type { Logger } from "../../logging/logger";
 import { McpClientPool } from "../client/pool";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { cleanupFailedInitialization } from "../lifecycle";
-import { collectReadableZodIssues } from "./issues";
 import { omit } from "es-toolkit";
 import { omitExcludedToolCustomizations } from "../configuration/exclusions";
 import { resolve } from "node:path";
-import { suppressTerminalError } from "../../../failures/output";
 
 export interface LoadedMcp {
   configuration: McpConfiguration;
@@ -29,44 +28,46 @@ export interface LoadedMcp {
 }
 export interface LoadMcpOptions extends BuiltInToolOptions {
   cwd?: string;
+  serverOverrides?: Record<string, boolean>;
 }
-function createMcpLoadError(error: unknown): Error {
-  const details = collectReadableZodIssues(error);
-  if (details.length === 0) {
-    const message = error instanceof Error ? error.message : String(error);
-    return suppressTerminalError(new Error(`MCP 工具加载失败：${message}`, { cause: error }));
-  }
-  return suppressTerminalError(
-    new Error(["MCP 配置校验失败：", ...details.map((detail) => `- ${detail}`)].join("\n"), {
-      cause: error,
-    }),
-  );
-}
-export async function loadMcp(
+export function loadMcp(
   root: string,
   logger: Logger,
   context = createSettingsContext(root),
   options: LoadMcpOptions = {},
 ): Promise<LoadedMcp> {
-  const configuration = readProfileMcpConfiguration(context);
-  if (!configuration) {
-    logger.info("MCP 配置不存在，跳过工具加载");
-    return emptyMcp(emptyMcpConfiguration());
-  }
-  return loadMcpConfiguration(configuration, logger, context, options);
+  return initializeCatalog(logger, context, options);
 }
-export async function loadSessionMcp(
+export function loadSessionMcp(
   logger: Logger,
   context: SettingsContext,
   snapshot: McpToolSnapshot,
   options: LoadMcpOptions = {},
 ) {
-  const configuration = readProfileMcpConfiguration(context);
-  if (!configuration) {
-    logger.info("MCP 配置不存在，跳过工具加载");
-    return emptyMcp(emptyMcpConfiguration(), snapshot);
+  return initializeCatalog(logger, context, options, snapshot);
+}
+async function initializeCatalog(
+  logger: Logger,
+  context: SettingsContext,
+  options: LoadMcpOptions,
+  snapshot?: McpToolSnapshot,
+): Promise<LoadedMcp> {
+  try {
+    const configuration = readProfileMcpConfiguration(
+      context,
+      snapshot ? snapshot.serverOverrides : options.serverOverrides,
+    );
+    if (!configuration) {
+      logger.info("MCP 配置不存在，跳过工具加载");
+      return emptyMcp(emptyMcpConfiguration(), snapshot);
+    }
+    return await loadMcpConfiguration(configuration, logger, context, options, snapshot);
+  } catch (error) {
+    if (error instanceof McpLoadError || error instanceof DomainError) {
+      throw error;
+    }
+    throw createMcpLoadError([reportMcpFailure(error, { stage: "configuration" })]);
   }
-  return loadMcpConfiguration(configuration, logger, context, options, snapshot);
 }
 async function loadMcpConfiguration(
   configuration: McpConfiguration,
@@ -118,7 +119,7 @@ async function connectMcp(
     pool = connectedPool;
     const availableTools = [
         ...builtInTools,
-        ...(await loadServerTools(connectedPool, configuration.mcpServers)),
+        ...(await loadServerTools(connectedPool, configuration.mcpServers, cwd)),
       ],
       activeConfiguration = omitExcludedToolCustomizations(
         configuration,
@@ -143,7 +144,13 @@ async function connectMcp(
       tools,
     };
   } catch (error) {
-    return await cleanupFailedInitialization(createMcpLoadError(error), () => pool?.close());
+    const failures = [error];
+    try {
+      await pool?.close();
+    } catch (cleanupError) {
+      failures.push(reportMcpFailure(cleanupError, { stage: "cleanup" }));
+    }
+    throw createMcpLoadError(failures);
   } finally {
     end();
   }

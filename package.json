@@ -7,8 +7,8 @@
   "type": "module",
   "module": "src/cli.ts",
   "scripts": {
-    "format": "oxfmt",
-    "lint": "oxlint --fix --fix-suggestions --format=agent",
+    "format": "oxfmt --write .",
+    "lint": "oxlint --fix --fix-suggestions --format=agent .",
     "test": "cross-env AGENT=1 bun scripts/build.ts --test",
     "benchmark:mcp": "bun scripts/build.ts --benchmark-mcp",
     "omity": "bun src/cli.ts",

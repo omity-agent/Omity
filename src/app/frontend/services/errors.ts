@@ -1,12 +1,15 @@
-const reportedObjects = new WeakSet<object>();
+import { ApiError } from "./httpTransport";
+
 export function reportError(error: unknown, context?: Record<string, unknown>) {
-  if (isObject(error)) {
-    if (reportedObjects.has(error)) {
-      return;
-    }
-    reportedObjects.add(error);
-  }
-  if (context) {
+  if (error instanceof ApiError && error.details) {
+    console.error(error.message, {
+      ...context,
+      code: error.code,
+      failures: error.details.failures,
+      path: error.path,
+      status: error.status,
+    });
+  } else if (context) {
     console.error(error, context);
   } else {
     console.error(error);
@@ -21,7 +24,4 @@ async function reportPromise(promise: Promise<unknown>) {
   } catch (error: unknown) {
     reportError(error);
   }
-}
-function isObject(value: unknown): value is object {
-  return (typeof value === "object" && value !== null) || typeof value === "function";
 }

@@ -1,5 +1,6 @@
 import {
   deletedEventSchema,
+  sessionFailureSchema,
   sessionInfoSchema,
   sessionsEventSchema,
   syncEventSchema,
@@ -11,6 +12,14 @@ import type { z } from "../validation";
 export function readSessionsEvent(event: Event) {
   readStateEventId(event, "sessions");
   return readEventData(event, sessionsEventSchema, "sessions").sessions;
+}
+export function readRestorationEvent(event: Event) {
+  readStateEventId(event, "restore");
+  return readEventData(event, sessionsEventSchema, "restore").sessions;
+}
+export function readFailureEvent(event: Event) {
+  readStateEventId(event, "failure");
+  return readEventData(event, sessionFailureSchema, "failure");
 }
 export function readSessionEvent(event: Event) {
   readStateEventId(event, "session");

@@ -1,10 +1,7 @@
 import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
-import {
-  type FailureEvent,
-  ResponsesWebsocketError,
-  type WebsocketStreamProgress,
-} from "./websocketFailure";
+import { type FailureEvent, ResponsesWebsocketError } from "./websocketFailure";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
+import { StreamEvidence } from "./streamEvidence";
 import { isPlainObject } from "es-toolkit";
 import { openOutboundSocket } from "../../infrastructure/network/socketTransport";
 
@@ -37,7 +34,8 @@ export function createResponsesWebsocketFetch(
       throw new TypeError("Responses WebSocket 请求地址应使用 HTTP 或 HTTPS");
     }
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    const { socket, handshake } = openOutboundSocket(url, headers),
+    const progress = new StreamEvidence(),
+      { socket, handshake } = openOutboundSocket(url, headers),
       encoder = new TextEncoder();
     let done = false,
       connected = false,
@@ -50,22 +48,22 @@ export function createResponsesWebsocketFetch(
         },
         start(controller) {
           let failure: FailureEvent = {};
-          const progress: WebsocketStreamProgress = { messagesReceived: 0 };
           const finish = (error?: unknown) => {
-            if (done) {
-              return;
-            }
-            done = true;
-            cleanup();
-            if (error === undefined) {
-              controller.close();
-            } else {
-              controller.error(error);
-            }
-          };
-          const abort = () => finish(signal.reason),
+              if (done) {
+                return;
+              }
+              done = true;
+              cleanup();
+              if (error === undefined) {
+                controller.close();
+              } else {
+                controller.error(error);
+              }
+            },
+            abort = () => finish(signal.reason),
             opened = () => {
               connected = true;
+              progress.opened();
               try {
                 if (handshake.current?.headers) {
                   resolved.onHandshake?.(handshake.current.headers);
@@ -77,6 +75,7 @@ export function createResponsesWebsocketFetch(
                     type: "response.create",
                   }),
                 );
+                progress.sent();
               } catch (error) {
                 finish(error);
               }
@@ -103,35 +102,35 @@ export function createResponsesWebsocketFetch(
                   },
                   progress,
                 ),
-              );
-          const messageReceived = (event: MessageEvent) => {
-            progress.messagesReceived += 1;
-            try {
-              if (typeof event.data !== "string") {
-                throw new TypeError("Responses WebSocket 响应应为文本帧");
+              ),
+            messageReceived = (event: MessageEvent) => {
+              progress.received(event.data);
+              try {
+                if (typeof event.data !== "string") {
+                  throw new TypeError("Responses WebSocket 响应应为文本帧");
+                }
+                const message: unknown = JSON.parse(event.data);
+                if (!isPlainObject(message) || typeof message["type"] !== "string") {
+                  throw new TypeError("Responses WebSocket 响应缺少事件类型");
+                }
+                progress.event(message);
+                if (message["type"] === "error") {
+                  throw new Error(`Responses WebSocket 服务端错误：${JSON.stringify(message)}`);
+                }
+                controller.enqueue(
+                  encoder.encode(`event: ${message["type"]}\ndata: ${JSON.stringify(message)}\n\n`),
+                );
+                if (
+                  message["type"] === "response.completed" ||
+                  message["type"] === "response.failed" ||
+                  message["type"] === "response.incomplete"
+                ) {
+                  finish();
+                }
+              } catch (error) {
+                finish(error);
               }
-              const message: unknown = JSON.parse(event.data);
-              if (!isPlainObject(message) || typeof message["type"] !== "string") {
-                throw new TypeError("Responses WebSocket 响应缺少事件类型");
-              }
-              progress.lastEventType = message["type"];
-              if (message["type"] === "error") {
-                throw new Error(`Responses WebSocket 服务端错误：${JSON.stringify(message)}`);
-              }
-              controller.enqueue(
-                encoder.encode(`event: ${message["type"]}\ndata: ${JSON.stringify(message)}\n\n`),
-              );
-              if (
-                message["type"] === "response.completed" ||
-                message["type"] === "response.failed" ||
-                message["type"] === "response.incomplete"
-              ) {
-                finish();
-              }
-            } catch (error) {
-              finish(error);
-            }
-          };
+            };
           cleanup = () => {
             signal.removeEventListener("abort", abort);
             socket.removeEventListener("open", opened);

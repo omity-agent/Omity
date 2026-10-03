@@ -77,3 +77,7 @@ export function setRunStatus(
   }
   ctx.observer?.changed?.(ctx.sessionId);
 }
+export function pauseFailedRun(ctx: HostContext, run: ActiveRun, error: ErrorDetails) {
+  setRunStatus(ctx, run, "paused", error);
+  ctx.observer?.failure?.(ctx.sessionId, error);
+}

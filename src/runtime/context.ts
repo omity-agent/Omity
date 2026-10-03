@@ -2,6 +2,7 @@ import type { BrowserWarning, HostActivity, Settings, StreamEvent } from "../typ
 import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
 import { BaseMessage } from "@langchain/core/messages";
 import type { BunSqliteSaver } from "../checkpointer/saver";
+import type { ErrorDetails } from "../failures/details";
 import type { Logger } from "../infrastructure/logging/logger";
 import type { ToolExecutions } from "../agent/toolExecutions";
 import type { buildGraph } from "../agent";
@@ -20,6 +21,7 @@ type GraphStreamOptions = Omit<
 export interface HostObserver {
   activity?: (sessionId: string, status: HostActivity) => void;
   changed?: (sessionId: string) => void;
+  failure?: (sessionId: string, error: ErrorDetails) => void;
   transcript?: (sessionId: string, event: StreamEvent) => void;
   token: (sessionId: string, inputId: number, text: string) => void;
   warning?: (sessionId: string, warning: BrowserWarning) => void;

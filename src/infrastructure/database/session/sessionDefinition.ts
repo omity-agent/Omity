@@ -19,20 +19,23 @@ export function createSessionDefinition(
   settings: Settings,
   mcp: LoadedMcp,
   session: { cwd: string; session: string },
-  hookOverrides?: Record<string, boolean>,
+  overrides: {
+    hooks?: Record<string, boolean>;
+    servers?: Record<string, boolean>;
+  } = {},
 ): SessionDefinition {
   const ids = new Set(settings.hooks.map(({ id }) => id));
-  for (const id of Object.keys(hookOverrides ?? {})) {
+  for (const id of Object.keys(overrides.hooks ?? {})) {
     if (!ids.has(id)) {
       throw new DomainError("HOOK_SELECTION_INVALID", `Hook 不存在：${id}`);
     }
   }
   return {
-    hookOverrides,
+    hookOverrides: overrides.hooks,
     prefix: {
       model: snapshotModel(settings.model),
       systemPrompt: settings.agent.systemPrompt,
-      tools: snapshotMcpTools(mcp, session),
+      tools: snapshotMcpTools(mcp, session, overrides.servers),
     },
   };
 }

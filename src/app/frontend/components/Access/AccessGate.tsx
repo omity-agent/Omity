@@ -11,6 +11,7 @@ import { KeyRound, LogOut } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { AccessPage } from "./AccessPage";
 import { css } from "styled-system/css";
+import { reportError } from "../../services/errors";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -149,6 +150,7 @@ async function run(
   try {
     await action();
   } catch (error: unknown) {
+    reportError(error);
     setError(error instanceof Error ? error.message : String(error));
   } finally {
     setBusy(false);

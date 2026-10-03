@@ -1,6 +1,6 @@
 import { type Dispatcher, WebSocket } from "undici/index.js";
 import { type OutboundFetch, explicitHeaderDispatcher } from "./explicitHeaders";
-import { SocketHandshake, observeSocketHandshake } from "./handshakeObservation";
+import { SocketHandshake, registerHandshakeChannels } from "./handshakeChannels";
 import { websocketHandshakeHeaders } from "../../../settings/networking";
 
 interface OutboundSocket {
@@ -20,27 +20,38 @@ export function openOutboundSocket(url: URL, headers: Headers) {
   return connect(url, headers);
 }
 export function createSocketTransport(dispatcher: Dispatcher) {
-  const sockets = new Set<WebSocket>();
+  const sockets = new Map<WebSocket, SocketHandshake>(),
+    releaseChannels = registerHandshakeChannels();
   let closed = false;
   return {
     close() {
+      if (closed) {
+        return;
+      }
       closed = true;
-      for (const socket of sockets) {
+      for (const [socket, handshake] of sockets) {
+        if (handshake.current) {
+          handshake.current.closeRequestedBy = "network-runtime";
+        }
         socket.close();
       }
       sockets.clear();
+      releaseChannels();
     },
     connect: (url: URL, headers: Headers): OutboundSocket => {
       if (closed) {
         throw new Error("出站网络已关闭");
       }
       const handshake = new SocketHandshake(),
-        observed = observeSocketHandshake(dispatcher, handshake),
         socket = new WebSocket(url, {
-          dispatcher: explicitHeaderDispatcher(observed, headers, websocketHandshakeHeaders),
+          dispatcher: explicitHeaderDispatcher(
+            handshake.observe(dispatcher),
+            headers,
+            websocketHandshakeHeaders,
+          ),
           headers: [...headers],
         });
-      sockets.add(socket);
+      sockets.set(socket, handshake);
       socket.addEventListener("close", () => sockets.delete(socket), { once: true });
       return { handshake, socket };
     },

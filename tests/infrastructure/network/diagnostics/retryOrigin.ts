@@ -122,22 +122,22 @@ export async function startRetryOrigin(mode: RetryOriginMode) {
   if (!address || typeof address === "string") {
     throw new Error("重连测试服务未监听 TCP 端口");
   }
-  const url = `https://127.0.0.1:${address.port.toString()}`;
-  const close = async () => {
-    await dispatcher.destroy();
-    await target.stop(true);
-    const closed = promisify(server.close.bind(server))();
-    for (const session of sessions) {
-      session.destroy();
-    }
-    for (const socket of sockets) {
-      socket.destroy();
-    }
-    await closed;
-    if (failures.length > 0) {
-      throw new AggregateError(failures, "重连测试服务 Upgrade 转发失败");
-    }
-  };
+  const url = `https://127.0.0.1:${address.port.toString()}`,
+    close = async () => {
+      await dispatcher.destroy();
+      await target.stop(true);
+      const closed = promisify(server.close.bind(server))();
+      for (const session of sessions) {
+        session.destroy();
+      }
+      for (const socket of sockets) {
+        socket.destroy();
+      }
+      await closed;
+      if (failures.length > 0) {
+        throw new AggregateError(failures, "重连测试服务 Upgrade 转发失败");
+      }
+    };
   try {
     const response = await requestDirect(`${url}/warm`, { dispatcher });
     await response.body.text();

@@ -1,7 +1,6 @@
+import type { BrowserWarning, SessionFailure, SessionInfo } from "./contracts";
 import { type OutboundEvent, eventStream } from "./stream";
-import type { BrowserWarning } from "../../types";
 import type { Context } from "hono";
-import type { SessionInfo } from "../sessionState";
 import mitt from "mitt";
 import { randomUUID } from "node:crypto";
 
@@ -18,9 +17,13 @@ export class StateChannel {
   notifyWarning(warning: BrowserWarning) {
     this.bus.emit("broadcast", this.version("warning", warning));
   }
+  notifyFailure(failure: SessionFailure) {
+    this.bus.emit("broadcast", this.version("failure", failure));
+  }
   stream(c: Context, getSessions: () => SessionInfo[]) {
     return eventStream(c, (write) => {
-      const snapshot = this.version("sessions", { sessions: getSessions() });
+      const event = c.req.header("Last-Event-ID") ? "sessions" : "restore",
+        snapshot = this.version(event, { sessions: getSessions() });
       this.bus.on("broadcast", write);
       write(snapshot);
       return () => {

@@ -7,7 +7,7 @@ import { createNetworkRuntime } from "../../src/infrastructure/network/installNe
 import { createResponsesWebsocketFetch } from "../../src/agent/model/responsesWebsocket";
 import { isRetryableModelError } from "../../src/runtime/transientErrors";
 import { processInput } from "../../src/runtime/consumeInputs";
-import { reportBrowserWarning } from "../../src/app/frontend/services/events/delivery";
+import { reportBrowserWarning } from "../../src/app/frontend/services/events/console";
 import { summarizeError } from "../../src/failures/details";
 
 afterEach(cleanupDatabaseDirs);

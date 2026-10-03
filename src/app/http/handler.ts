@@ -25,7 +25,7 @@ import { writeReasoningTranslation } from "../reasoningTranslation";
 type ApiController = Pick<
   AppController,
   | "bootstrap"
-  | "hookOptions"
+  | "sessionOptions"
   | "activateFileLink"
   | "sessions"
   | "userMessages"
@@ -68,11 +68,11 @@ export function createApi(controller: ApiController, access?: AccessService) {
       return c.json(controller.savePreparationDraft(body.content, body.revision));
     })
     .get(
-      "/api/hooks",
+      "/api/session-options",
       validator("query", (_query: { profile?: string }, c) => ({
         profile: c.req.query("profile"),
       })),
-      (c) => c.json({ hooks: controller.hookOptions(c.req.valid("query").profile) }),
+      (c) => c.json(controller.sessionOptions(c.req.valid("query").profile)),
     )
     .get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }))
     .get("/api/events/state", (c) => controller.events.streamState(c, () => controller.sessions()))

@@ -1,5 +1,7 @@
 import { DomainError, type DomainErrorCode } from "../../errors";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { McpLoadDetails } from "../../infrastructure/mcp/failures/wireFormat";
+import { McpLoadError } from "../../infrastructure/mcp/failures/reportConstruction";
 import { isRetryableModelError } from "../../runtime/transientErrors";
 import { isTerminalErrorSuppressed } from "../../failures/output";
 
@@ -13,6 +15,7 @@ type ApiErrorCode =
   | "NOT_FOUND"
   | "PAYLOAD_TOO_LARGE"
   | "RATE_LIMITED"
+  | "MCP_LOAD_FAILED"
   | "INTERNAL_ERROR";
 const domainStatuses: Record<DomainErrorCode, ContentfulStatusCode> = {
   ASK_USER_ANSWER_INVALID: 400,
@@ -23,6 +26,7 @@ const domainStatuses: Record<DomainErrorCode, ContentfulStatusCode> = {
   HOOK_SELECTION_INVALID: 400,
   HOST_LEASE_CONFLICT: 409,
   INPUT_CLAIM_CONFLICT: 409,
+  MCP_SELECTION_INVALID: 400,
   SESSION_CONFLICT: 409,
   SESSION_NOT_FOUND: 404,
   TOOL_NOT_RUNNING: 409,
@@ -33,6 +37,7 @@ export class HttpError extends Error {
     readonly status: ContentfulStatusCode,
     message: string,
     code?: ApiErrorCode,
+    readonly details?: McpLoadDetails,
   ) {
     super(message);
     this.name = "HttpError";
@@ -50,7 +55,11 @@ export function errorResponse(error: unknown) {
   }
   return {
     body: {
-      error: { code: normalized.code, message: normalized.message },
+      error: {
+        code: normalized.code,
+        ...(normalized.details ? { details: normalized.details } : {}),
+        message: normalized.message,
+      },
     },
     status: normalized.status,
   };
@@ -61,6 +70,9 @@ function normalizeError(error: unknown) {
   }
   if (error instanceof DomainError) {
     return new HttpError(domainStatuses[error.code], error.message, error.code);
+  }
+  if (error instanceof McpLoadError) {
+    return new HttpError(500, error.message, error.code, error.details);
   }
   return new HttpError(500, errorMessage(error), "INTERNAL_ERROR");
 }

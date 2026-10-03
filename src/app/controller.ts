@@ -7,7 +7,6 @@ import {
 } from "./runtime/prepareController";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
 import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
-import { createSnapshotSession, sessionHookOptions } from "./runtime/sessionSnapshot";
 import {
   readPreparationDraft,
   writePreparationDraft,
@@ -21,9 +20,11 @@ import { PredictionService } from "./prediction/service";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { activateFileLink } from "./fileLinks/launch";
 import { appOwner } from "../infrastructure/process/ownership";
+import { availableSessionOptions } from "./runtime/availableOptions";
 import { cancelSessionTool } from "./sessionCommands";
 import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
 import { closeControllerResources } from "./runtime/shutdown";
+import { createSnapshotSession } from "./runtime/sessionSnapshot";
 import { deleteHostSession } from "../storedSessions";
 import { enqueueMessageWithAttachments } from "./attachments/message";
 import { hasLiveHostLease } from "./runtime/recovery";
@@ -72,7 +73,7 @@ export class AppController {
   sessions() {
     return this.registry.list().map((session) => this.sessionInfo(session));
   }
-  hookOptions = (profile?: string) => sessionHookOptions(this.settingsContext, profile);
+  sessionOptions = (profile?: string) => availableSessionOptions(this.settingsContext, profile);
   userMessages() {
     return { messages: loadUserMessages() };
   }

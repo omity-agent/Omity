@@ -1,3 +1,4 @@
+import { applyServerOverrides, describeMcpServers } from "./selection";
 import { readSettingsYamlValue, resolvePlaceholders } from "../../configuration/placeholders";
 import type { SettingsContext } from "../../configuration/settings/context";
 import { applicationAssetPath } from "../../applicationAssets";
@@ -7,6 +8,7 @@ import { readLayeredSettingsYaml } from "../../configuration/settings/files";
 import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
 import { toolboxSchema } from "./declaration";
+import { z } from "zod";
 
 export function readMcpConfiguration(path: string) {
   const parsed = resolvePlaceholders(
@@ -15,18 +17,36 @@ export function readMcpConfiguration(path: string) {
   );
   return parseMcpConfiguration(parsed, path);
 }
-export function readProfileMcpConfiguration(context: SettingsContext) {
+export function readProfileMcpConfiguration(
+  context: SettingsContext,
+  serverOverrides?: Record<string, boolean>,
+) {
   const file = readLayeredSettingsYaml(
     context,
     "profile",
     "toolbox.yaml",
     {},
     {
-      beforePlaceholders: omitDisabledToolboxConfiguration,
+      beforePlaceholders: (value) =>
+        omitDisabledToolboxConfiguration(applyServerOverrides(value, serverOverrides)),
       override: resolveProfilePaths,
     },
   );
   return file ? parseMcpConfiguration(file.value, file.path) : undefined;
+}
+export function readProfileMcpServerOptions(context: SettingsContext) {
+  const file = readLayeredSettingsYaml(
+    context,
+    "profile",
+    "toolbox.yaml",
+    {},
+    {
+      beforePlaceholders: describeMcpServers,
+    },
+  );
+  return file
+    ? z.array(z.object({ enable: z.boolean(), id: z.string().min(1) })).parse(file.value)
+    : [];
 }
 function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {

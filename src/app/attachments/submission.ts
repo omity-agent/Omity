@@ -13,7 +13,9 @@ export const sessionSubmissionSchema = z.strictObject({
   draftRevision: z.number().int().positive().optional(),
   history: z.array(initialPair),
   hookOverrides: z.record(z.string().min(1), z.boolean()).optional(),
+  mcpOverrides: z.record(z.string().min(1), z.boolean()).optional(),
   message: nonEmptyMessage,
+  model: z.string().trim().min(1).optional(),
   profile: settingsProfileNameSchema.optional(),
   workspace: z.string().trim().min(1).max(32_767),
 });

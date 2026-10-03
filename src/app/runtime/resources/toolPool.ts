@@ -23,14 +23,18 @@ export function createAppMcp(
   const options: LoadMcpOptions = {
       askUser: (request, sessionId, signal) => askUser.ask(request, sessionId, signal),
     },
-    sessionOptions = (cwd = root): LoadMcpOptions => ({ ...options, cwd });
+    sessionOptions = (cwd = root, serverOverrides?: Record<string, boolean>): LoadMcpOptions => ({
+      ...options,
+      cwd,
+      serverOverrides,
+    });
   return new AppMcp(
-    (profiles, cwd) =>
+    (profiles, cwd, serverOverrides) =>
       loadMcp(
         root,
         new Logger(level, true),
         selectSettingsProfiles(context, profiles),
-        sessionOptions(cwd),
+        sessionOptions(cwd, serverOverrides),
       ),
     (profiles, snapshot, cwd) =>
       loadSessionMcp(
@@ -44,7 +48,11 @@ export function createAppMcp(
 export class AppMcp {
   private readonly resources = new AsyncResourceCache<LoadedMcp>("App");
   constructor(
-    private readonly initialize: (profiles: string[], cwd?: string) => Promise<LoadedMcp>,
+    private readonly initialize: (
+      profiles: string[],
+      cwd?: string,
+      serverOverrides?: Record<string, boolean>,
+    ) => Promise<LoadedMcp>,
     private readonly initializeSnapshot: (
       profiles: string[],
       snapshot: McpToolSnapshot,
@@ -59,12 +67,17 @@ export class AppMcp {
       this.initializeSnapshot(profiles, snapshot, cwd),
     );
   }
-  createSession(sessionId: string, profiles: string[], cwd: string) {
+  createSession(
+    sessionId: string,
+    profiles: string[],
+    cwd: string,
+    serverOverrides?: Record<string, boolean>,
+  ) {
     const key = `session:${sessionId}`;
     if (this.resources.has(key)) {
       throw new Error(`Session 已绑定 MCP：${sessionId}`);
     }
-    return this.resources.load(key, () => this.initialize(profiles, cwd));
+    return this.resources.load(key, () => this.initialize(profiles, cwd, serverOverrides));
   }
   discardSession(sessionId: string) {
     return this.resources.discard(`session:${sessionId}`);

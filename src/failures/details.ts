@@ -49,19 +49,16 @@ export function stringifyError(error: ErrorDetails) {
   return JSON.stringify(error);
 }
 export function summarizeError(error: ErrorDetails): ErrorSummary {
-  const levels: ErrorSummaryItem[] = [],
-    seen = new Set<string>();
+  const levels: ErrorSummaryItem[] = [];
   let current: ErrorDetails | undefined = error;
   while (current) {
     const level = summarizeLevel(current),
-      identity = JSON.stringify(level);
-    const uninformative =
-      current !== error &&
-      !level.message &&
-      !level.details &&
-      uninformativeCauseNames.has(level.name);
-    if (!uninformative && !seen.has(identity)) {
-      seen.add(identity);
+      uninformative =
+        current !== error &&
+        !level.message &&
+        !level.details &&
+        uninformativeCauseNames.has(level.name);
+    if (!uninformative) {
       levels.push(level);
     }
     current = current.cause;
@@ -71,9 +68,6 @@ export function summarizeError(error: ErrorDetails): ErrorSummary {
     throw new Error("错误摘要缺少根错误");
   }
   return causes.length > 0 ? { ...root, causes } : root;
-}
-export function errorFingerprint(error: ErrorDetails) {
-  return JSON.stringify(summarizeError(error));
 }
 export function parseError(value: string): ErrorDetails {
   const parsed: unknown = JSON.parse(value),

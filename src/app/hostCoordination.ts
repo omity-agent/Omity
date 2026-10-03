@@ -22,6 +22,9 @@ function controllerHostEvents(
       events.notifySession(sessionInfo(sessionId));
     },
     changed,
+    failure: (sessionId, error) => {
+      events.notifyFailure({ error, sessionId });
+    },
     transcript: (sessionId, event) => {
       events.notifyTranscript(sessionId, event);
     },

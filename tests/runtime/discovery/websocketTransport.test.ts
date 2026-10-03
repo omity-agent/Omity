@@ -42,16 +42,16 @@ test("Responses WebSocket adapter bridges response events to SSE", async () => {
   globalThis.fetch = runtime.fetch;
   try {
     const response = await createResponsesWebsocketFetch({
-      apiKey: "test-key",
-    })(new URL("/responses", server.url), {
-      body: JSON.stringify({ input: [], model: "test-model", stream: true }),
-      headers: {
-        "content-type": "application/json",
-        "x-codex-turn-metadata": "turn",
-      },
-      method: "POST",
-    });
-    const body = await response.text();
+        apiKey: "test-key",
+      })(new URL("/responses", server.url), {
+        body: JSON.stringify({ input: [], model: "test-model", stream: true }),
+        headers: {
+          "content-type": "application/json",
+          "x-codex-turn-metadata": "turn",
+        },
+        method: "POST",
+      }),
+      body = await response.text();
     expect(response.headers.get("content-type")).toBe("text/event-stream");
     expect(body).toContain("event: response.output_text.delta");
     expect(body).toContain('data: {"delta":"hello"');

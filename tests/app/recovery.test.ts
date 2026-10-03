@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { required, runOf } from "../support/database";
 import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
@@ -109,9 +109,28 @@ test("resume reloads the current MCP configuration", async () => {
   const fixture = interruptedSession("resume-failure");
   fixture.db.close();
   writeFileSync(join(fixture.root, "settings", "toolbox.yaml"), "[]\n");
-  const controller = new AppController(fixture.root);
-  expect(controller.control("resume-failure", "running")).rejects.toThrow("MCP 配置");
-  await controller.close();
+  const controller = new AppController(fixture.root),
+    failures = spyOn(controller.events, "notifyFailure");
+  try {
+    let caught: unknown;
+    try {
+      await controller.control("resume-failure", "running");
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect(String(caught)).toContain("MCP 配置");
+    expect(failures).toHaveBeenCalledTimes(1);
+    expect(failures.mock.calls[0]?.[0]).toMatchObject({
+      error: { message: expect.stringContaining("MCP 配置") },
+      sessionId: "resume-failure",
+    });
+    await controller.close();
+    expect(failures).toHaveBeenCalledTimes(1);
+  } finally {
+    await controller.close();
+    failures.mockRestore();
+  }
 });
 function interruptedSession(sessionId: string) {
   const root = createTestDirectory("app-recovery");

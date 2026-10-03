@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Socket } from "node:net";
+import { captureError } from "../../../src/failures/details";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { createServer } from "node:http";
@@ -40,7 +41,19 @@ test("wss:// retains the HTTP proxy's default CONNECT route", async () => {
         signal: AbortSignal.timeout(2000),
       },
     );
-    expect(response.text()).rejects.toThrow("Responses WebSocket 连接失败");
+    const failure: unknown = await response.text().catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(Error);
+    if (!(failure instanceof Error)) {
+      throw new Error("CONNECT 拒绝测试没有收到 WebSocket 错误");
+    }
+    expect(failure.message).toBe("Responses WebSocket 连接失败");
+    const attempts = captureError(failure).details?.["attempts"];
+    expect(attempts).toEqual([
+      expect.objectContaining({
+        route: { origin: `http://127.0.0.1:${address.port.toString()}`, type: "proxy" },
+      }),
+    ]);
+    expect(attempts).not.toContainEqual(expect.objectContaining({ status: 403 }));
     expect(requests).toEqual([{ method: "CONNECT", target: "secure-socket.invalid:443" }]);
   } finally {
     globalThis.fetch = previousFetch;

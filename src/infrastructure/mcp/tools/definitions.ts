@@ -12,14 +12,17 @@ export interface ModelToolDefinition {
   name: string;
 }
 export interface McpToolSnapshot {
+  serverOverrides?: Record<string, boolean>;
   tools: ModelToolDefinition[];
 }
 export function snapshotMcpTools(
   mcp: LoadedMcp,
   session: { cwd: string; session: string },
+  serverOverrides?: Record<string, boolean>,
 ): McpToolSnapshot {
   const tools = mcp.modelTools(session);
   return {
+    serverOverrides,
     tools: modelToolDefinitions(tools, mcp.freeformToolParameters),
   };
 }

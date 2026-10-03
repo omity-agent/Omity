@@ -54,11 +54,13 @@ async function pickWorkspace(
 export function WorkspacePicker({
   recentWorkspaces,
   className,
+  disabled = false,
   workspace,
   onChange,
   onPick,
 }: {
   className?: string;
+  disabled?: boolean;
   recentWorkspaces: string[];
   workspace: string;
   onChange: (workspace: string) => void;
@@ -76,7 +78,7 @@ export function WorkspacePicker({
       [onChange],
     );
   return (
-    <Field.Root className={className}>
+    <Field.Root className={className} disabled={disabled}>
       <Field.Label>{t("workspace")}</Field.Label>
       <span className={row}>
         <Input
@@ -85,7 +87,7 @@ export function WorkspacePicker({
           value={workspace}
           onChange={handleInputChange}
         />
-        <Button disabled={picking} onClick={handlePick} type="button">
+        <Button disabled={disabled || picking} onClick={handlePick} type="button">
           <FolderOpen size={14} /> {t("chooseFolder")}
         </Button>
       </span>
@@ -95,6 +97,7 @@ export function WorkspacePicker({
           <div className={recentList}>
             {recentWorkspaces.map((item) => (
               <RecentWorkspaceButton
+                disabled={disabled}
                 item={item}
                 key={item}
                 selected={item === workspace}
@@ -108,10 +111,12 @@ export function WorkspacePicker({
   );
 }
 function RecentWorkspaceButton({
+  disabled,
   item,
   selected,
   onChange,
 }: {
+  disabled: boolean;
   item: string;
   selected: boolean;
   onChange: (workspace: string) => void;
@@ -123,6 +128,7 @@ function RecentWorkspaceButton({
     <Button
       aria-pressed={selected}
       className={cx(recentButton, recentItem)}
+      disabled={disabled}
       onClick={select}
       title={item}
       type="button"

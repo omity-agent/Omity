@@ -6,16 +6,9 @@ import {
   loadUserMessages,
   stateEvents,
 } from "./client";
-import {
-  readDeletedEvent,
-  readSessionEvent,
-  readSessionsEvent,
-  readWarningEvent,
-} from "./events/data";
-import { reportBrowserWarning, reportSessionErrors, subscribeEvents } from "./events/delivery";
 import { useEffect, useRef } from "react";
-import { reportError } from "./errors";
 import { sessionAttentionStore } from "./events/attention";
+import { subscribeStateEvents } from "./events/reception";
 import { transcriptKey } from "./transcript/query";
 
 type BootstrapData = Awaited<ReturnType<typeof bootstrap>>;
@@ -29,22 +22,15 @@ export function useUserMessages() {
   });
 }
 export function usePredictions(sessionId: string | undefined, idle: boolean) {
-  const query = useQuery({
+  return useQuery({
     enabled: sessionId !== undefined && idle,
     queryFn: ({ signal }) => loadPredictions(sessionId!, signal),
     queryKey: predictionKey(sessionId ?? ""),
   });
-  useEffect(() => {
-    if (query.error) {
-      reportError(query.error);
-    }
-  }, [query.error]);
-  return query;
 }
 export function useBootstrap() {
   const queryClient = useQueryClient(),
     attention = sessionAttentionStore(queryClient),
-    reportedErrors = useRef(new Set<string>()),
     streamedSessions = useRef<SessionInfo[] | undefined>(undefined),
     query = useQuery({
       queryFn: async ({ signal }) => {
@@ -55,9 +41,8 @@ export function useBootstrap() {
     });
   useEffect(
     () =>
-      subscribeEvents(stateEvents(), {
-        deleted(event) {
-          const sessionId = readDeletedEvent(event);
+      subscribeStateEvents(stateEvents(), {
+        deleted(sessionId) {
           attention.remove(sessionId);
           if (streamedSessions.current) {
             streamedSessions.current = withoutSession(streamedSessions.current, sessionId);
@@ -67,8 +52,7 @@ export function useBootstrap() {
           queryClient.removeQueries({ queryKey: predictionKey(sessionId) });
           refreshUserMessages(queryClient);
         },
-        session(event) {
-          const session = readSessionEvent(event);
+        session(session) {
           attention.upsert(session);
           if (streamedSessions.current) {
             streamedSessions.current = upsertSessionList(streamedSessions.current, session);
@@ -77,25 +61,15 @@ export function useBootstrap() {
           void queryClient.invalidateQueries({ queryKey: predictionKey(session.id) });
           refreshUserMessages(queryClient);
         },
-        sessions(event) {
-          const sessions = readSessionsEvent(event);
+        sessions(sessions) {
           attention.replace(sessions);
           streamedSessions.current = sessions;
           updateCachedSessions(queryClient, () => sessions);
           refreshUserMessages(queryClient);
         },
-        warning(event) {
-          reportBrowserWarning(readWarningEvent(event));
-        },
       }),
     [attention, queryClient],
   );
-  useEffect(() => {
-    if (!query.data) {
-      return;
-    }
-    reportSessionErrors(query.data.sessions, reportedErrors.current);
-  }, [query.data]);
   return query;
 }
 export function addSession(queryClient: QueryClient, session: SessionInfo) {

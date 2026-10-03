@@ -11,9 +11,11 @@ export function useSessionCreation({
   draftRevision,
   flushDraft,
   hookOverrides,
-  hooksReady,
+  mcpOverrides,
   message,
+  model,
   onCreate,
+  optionsReady,
   pairs,
   workspace,
 }: {
@@ -22,9 +24,11 @@ export function useSessionCreation({
   draftRevision: number;
   flushDraft: () => Promise<void>;
   hookOverrides: Record<string, boolean>;
-  hooksReady: boolean;
+  mcpOverrides: Record<string, boolean>;
   message: string;
+  model: string;
   onCreate: (state: InitialSessionState, attachments: PendingAttachment[]) => Promise<void>;
+  optionsReady: boolean;
   pairs: EditablePair[];
   workspace: string;
 }) {
@@ -40,7 +44,8 @@ export function useSessionCreation({
   }, [clearDraft, flushDraft]);
   const submit = async () => {
       const valid =
-        hooksReady &&
+        optionsReady &&
+        model.trim().length > 0 &&
         workspace.trim().length > 0 &&
         message.trim().length > 0 &&
         pairs.every(({ user, assistant }) => user.trim().length > 0 && assistant.trim().length > 0);
@@ -55,7 +60,9 @@ export function useSessionCreation({
             draftRevision,
             history: pairs.map(({ user, assistant }) => ({ assistant, user })),
             hookOverrides,
+            mcpOverrides,
             message,
+            model: model.trim(),
           },
           attachmentsRef.current.values(message),
         );

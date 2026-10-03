@@ -15,6 +15,7 @@ export const scrollContent = css({
 export const conversation = css({ marginBlockStart: "auto" });
 export const setup = css({
   alignContent: "start",
+  alignSelf: "center",
   display: "grid",
   gap: { base: "4", md: "6" },
   gridTemplateColumns: {
@@ -27,3 +28,6 @@ export const setup = css({
   width: "full",
 });
 export const setupFirst = css({ gridColumn: { md: "1 / -1" } });
+export const heading = css({ display: "grid", gap: "2", gridColumn: "1 / -1" });
+export const headingTitle = css({ textStyle: "accessHeading" });
+export const setupHint = css({ color: "muted", fontSize: "sm" });

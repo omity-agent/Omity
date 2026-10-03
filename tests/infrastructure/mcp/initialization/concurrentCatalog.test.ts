@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { coordinateStartup } from "./startupCoordinator";
 import { isProcessRunning } from "../../../../src/infrastructure/process/ownership";
+import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
 
 test("session MCP pipelines overlap while preserving tool order and reusing the session pool", async () => {
@@ -79,11 +80,27 @@ test.each([false, true])(
       if (!(failure instanceof Error)) {
         throw new Error("MCP 初始化未返回 Error", { cause: failure });
       }
-      expect(failure.message).toContain('MCP 服务器 "broken" 初始化失败');
-      expect(failure.message).toContain("broken catalog rejected");
+      const details = mcpLoadDetailsSchema.parse(Reflect.get(failure, "details"));
+      expect(details.failures).toHaveLength(multipleErrors ? 2 : 1);
+      expect(details.failures).toContainEqual(
+        expect.objectContaining({
+          error: expect.objectContaining({
+            message: expect.stringContaining("broken catalog rejected"),
+          }),
+          server: "broken",
+          stage: "list_tools",
+        }),
+      );
       if (multipleErrors) {
-        expect(failure.message).toContain('MCP 服务器 "other" 初始化失败');
-        expect(failure.message).toContain("other catalog rejected");
+        expect(details.failures).toContainEqual(
+          expect.objectContaining({
+            error: expect.objectContaining({
+              message: expect.stringContaining("other catalog rejected"),
+            }),
+            server: "other",
+            stage: "list_tools",
+          }),
+        );
       }
       expect(fixture.processes.size).toBe(3);
       expect([...fixture.processes.values()].map(isProcessRunning)).toEqual([false, false, false]);

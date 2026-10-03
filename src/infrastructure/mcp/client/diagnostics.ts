@@ -2,15 +2,15 @@ import { decode, encodingExists } from "iconv-lite";
 import { detect } from "chardet";
 import { isUtf8 } from "node:buffer";
 
-export class StderrCapture {
+export class ProcessOutputCapture {
   private bytes = Buffer.alloc(0);
-  private truncated = false;
+  private discardedBytes = 0;
   constructor(private readonly maximum: number) {}
   append(value: unknown) {
     const incoming = toBuffer(value),
       combined = Buffer.concat([this.bytes, incoming]);
     if (combined.length > this.maximum) {
-      this.truncated = true;
+      this.discardedBytes += combined.length - this.maximum;
       this.bytes = Buffer.from(combined.subarray(combined.length - this.maximum));
       return;
     }
@@ -20,12 +20,19 @@ export class StderrCapture {
     if (this.bytes.length === 0) {
       return "";
     }
-    const utf8 = this.truncated ? withoutLeadingContinuationBytes(this.bytes) : this.bytes,
+    const utf8 = this.discardedBytes > 0 ? withoutLeadingContinuationBytes(this.bytes) : this.bytes,
       value = isUtf8(utf8) ? utf8.toString("utf8").trim() : decodeDetected(this.bytes).trim();
     if (!value) {
       return "";
     }
-    return this.truncated ? `[前部输出已截断]\n${value}` : value;
+    return this.discardedBytes > 0 ? `[前部输出已截断]\n${value}` : value;
+  }
+  snapshot() {
+    return {
+      capturedBytes: this.bytes.length,
+      discardedBytes: this.discardedBytes,
+      text: this.text(),
+    };
   }
 }
 function decodeDetected(bytes: Buffer) {

@@ -1,27 +1,14 @@
-import type { BrowserWarning, HostActivity, HostMode, StreamEvent } from "../types";
-import { type ErrorDetails, captureError } from "../failures/details";
-import type { AppMcp } from "./runtime/resources/toolPool";
-import type { ProcessOwner } from "../infrastructure/process/ownership";
-import type { SettingsContext } from "../infrastructure/configuration/settings/context";
+import { type AppHostEvents, type RunningHost, createHostObserver } from "./observation";
+import { type ErrorDetails, captureError } from "../../failures/details";
+import type { HostActivity, HostMode } from "../../types";
+import type { AppMcp } from "../runtime/resources/toolPool";
+import type { ProcessOwner } from "../../infrastructure/process/ownership";
+import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
 import { once } from "es-toolkit";
 import pMap from "p-map";
-import { runHostSession } from "../host";
+import { runHostSession } from "../../host";
 
-interface RunningHost {
-  activity: HostActivity;
-  done: Promise<void>;
-  force: AbortController;
-  ready: Promise<void>;
-  stopping: AbortController;
-  cancelTool: (callId: string) => boolean;
-}
-export interface AppHostEvents {
-  activity: (sessionId: string, activity: HostActivity) => void;
-  changed: (sessionId: string) => void;
-  transcript: (sessionId: string, event: StreamEvent) => void;
-  warning: (sessionId: string, warning: BrowserWarning) => void;
-  wait: (sessionId: string, delayMs: number) => Promise<void>;
-}
+export type { AppHostEvents } from "./observation";
 const noToolCancellation: RunningHost["cancelTool"] = () => false;
 export class AppHosts {
   private readonly running = new Map<string, RunningHost>();
@@ -86,7 +73,7 @@ export class AppHosts {
         cwd: root,
         mcp: (id, profiles, definition) =>
           this.mcp.loadSession(id, profiles, definition.prefix.tools, root),
-        observer: this.observer(force),
+        observer: createHostObserver(this.events, this.running, force),
         onReady: (controls) => {
           cancelTool = (callId) => controls.cancelTool(callId);
           initialized = true;
@@ -145,28 +132,6 @@ export class AppHosts {
       { concurrency: 1, stopOnError: false },
     );
   });
-  private observer(force: AbortController) {
-    return {
-      activity: (changedSessionId: string, activity: HostActivity) => {
-        const host = this.running.get(changedSessionId);
-        if (host?.force !== force || host.activity === activity) {
-          return;
-        }
-        host.activity = activity;
-        this.events.activity(changedSessionId, activity);
-      },
-      changed: (changedSessionId: string) => {
-        this.events.changed(changedSessionId);
-      },
-      token: () => undefined,
-      transcript: (changedSessionId: string, event: StreamEvent) => {
-        this.events.transcript(changedSessionId, event);
-      },
-      warning: (changedSessionId: string, warning: BrowserWarning) => {
-        this.events.warning(changedSessionId, warning);
-      },
-    };
-  }
   private async finishHost(
     hostPromise: Promise<unknown>,
     sessionId: string,
@@ -189,7 +154,9 @@ export class AppHosts {
             : new AggregateError([failure, error], "Host 退出及 MCP 关闭均失败");
       }
       if (failure !== undefined) {
-        this.errors.set(sessionId, captureError(failure));
+        const error = captureError(failure);
+        this.errors.set(sessionId, error);
+        this.events.failure(sessionId, error);
         if (!isInitialized()) {
           ready.reject(failure);
         }

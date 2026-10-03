@@ -3,33 +3,35 @@ import {
   nonRetryableWebsocketCloseCodes,
   retryableHandshakeStatuses,
 } from "../../../settings/resilience";
-import type { SocketHandshake } from "../../infrastructure/network/handshakeObservation";
+import type { SocketHandshake } from "../../infrastructure/network/handshakeChannels";
+import type { StreamEvidence } from "./streamEvidence";
 import { handshakeDiagnosticHeaders } from "../../../settings/networking";
+import { version as undiciVersion } from "undici/package.json";
 
 export interface FailureEvent {
   close?: { code: number; reason: string; wasClean: boolean };
   error?: unknown;
   message?: string;
 }
-export interface WebsocketStreamProgress {
-  lastEventType?: string;
-  messagesReceived: number;
-}
 export class ResponsesWebsocketError extends Error {
   override readonly name = "ResponsesWebsocketError";
   readonly attempts: ReturnType<typeof describeAttempt>[];
   readonly close?: { code: number; reason?: string; wasClean: boolean };
   readonly endpoint: string;
+  readonly eventError?: ReturnType<typeof summarizeError>;
   readonly eventMessage?: string;
   readonly isRetryable: boolean;
   readonly phase: "handshake" | "stream";
-  readonly stream?: WebsocketStreamProgress;
+  readonly runtime = { bun: Bun.version, undici: undiciVersion };
+  readonly stream?: ReturnType<StreamEvidence["snapshot"]>["stream"];
+  readonly timing: ReturnType<StreamEvidence["snapshot"]>["timing"];
+  readonly transport?: ReturnType<NonNullable<SocketHandshake["current"]>["snapshot"]>;
   constructor(
     url: URL,
     handshake: SocketHandshake,
     opened: boolean,
     event: FailureEvent,
-    progress: WebsocketStreamProgress,
+    progress: StreamEvidence,
   ) {
     const { current } = handshake,
       cause = current?.error ?? event.error,
@@ -48,6 +50,12 @@ export class ResponsesWebsocketError extends Error {
         }
       : undefined;
     this.endpoint = `${url.origin}${url.pathname}`;
+    if (event.error !== undefined && event.error !== cause) {
+      const eventError = summarizeError(captureError(event.error));
+      if (eventError.message || eventError.details || eventError.causes?.length) {
+        this.eventError = eventError;
+      }
+    }
     this.eventMessage =
       eventMessage && eventMessage !== closeReason && eventMessage !== errorMessage(cause)
         ? eventMessage
@@ -58,11 +66,17 @@ export class ResponsesWebsocketError extends Error {
         (status >= 500 && status < 600) ||
         retryableHandshakeStatuses.has(status);
     this.phase = opened ? "stream" : "handshake";
-    this.stream = opened ? { ...progress } : undefined;
+    const snapshot = progress.snapshot();
+    this.stream = opened ? snapshot.stream : undefined;
+    this.timing = snapshot.timing;
+    this.transport = current?.snapshot();
   }
 }
 function describeAttempt(attempt: NonNullable<SocketHandshake["current"]>) {
   return {
+    durationMs: attempt.durationMs,
+    route: attempt.route,
+    startedAt: attempt.startedAt,
     ...(attempt.error ? { error: summarizeError(captureError(attempt.error)) } : {}),
     ...(attempt.headers
       ? {

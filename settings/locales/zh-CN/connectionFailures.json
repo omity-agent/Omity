@@ -1,0 +1,8 @@
+{
+  "configurationFailed": "MCP 配置加载失败",
+  "loadFailed": "MCP 工具加载失败",
+  "serverFailed": "MCP 服务器 \"{server}\" 启动失败",
+  "startupFailed": "MCP 启动失败：{servers}",
+  "stderrUnavailable": "无法捕获 MCP 子进程 stderr",
+  "processUnavailable": "当前 MCP SDK 不支持观测 stdio 子进程"
+}

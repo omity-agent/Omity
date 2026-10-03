@@ -1,4 +1,4 @@
-import { type ActiveRun, CanceledRunError, setRunStatus } from "./run";
+import { type ActiveRun, CanceledRunError, pauseFailedRun, setRunStatus } from "./run";
 import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
 import { type HostContext } from "./context";
 import { HostLeaseLostError } from "./execution/lease";
@@ -47,7 +47,7 @@ export async function processInput(ctx: HostContext, item: QueuedInput) {
       return;
     }
     const details = captureError(error);
-    setRunStatus(ctx, run, "paused", details);
+    pauseFailedRun(ctx, run, details);
     ctx.logger.error("队列异常，已暂停", { error: details, inputId: item.id });
   } finally {
     end();

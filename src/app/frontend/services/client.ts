@@ -27,14 +27,10 @@ export type { SessionInfo } from "../../sessionState";
 const sessions = api.sessions[":sessionId"];
 export type FrontendSettings = Settings["frontend"];
 export async function bootstrap(signal?: AbortSignal) {
-  return request(api.bootstrap.$get({}, { init: { signal } }), bootstrapResponseSchema, signal);
+  return request(api.bootstrap.$get({}, { init: { signal } }), bootstrapResponseSchema);
 }
 export async function loadUserMessages(signal?: AbortSignal) {
-  return request(
-    api["user-messages"].$get({}, { init: { signal } }),
-    userMessagesResponseSchema,
-    signal,
-  );
+  return request(api["user-messages"].$get({}, { init: { signal } }), userMessagesResponseSchema);
 }
 export async function createSession(
   workspace: string,
@@ -67,14 +63,12 @@ export async function loadTranscript(sessionId: string, signal?: AbortSignal) {
   return request(
     sessions.transcript.$get(sessionRequest(sessionId), { init: { signal } }),
     transcriptResponseSchema,
-    signal,
   );
 }
 export async function loadPredictions(sessionId: string, signal?: AbortSignal) {
   return request(
     sessions.predictions.$get(sessionRequest(sessionId), { init: { signal } }),
     predictionsResponseSchema,
-    signal,
   );
 }
 export async function activateFileLink(sessionId: string, path: string, action: FileLinkAction) {

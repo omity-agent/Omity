@@ -1,11 +1,18 @@
+import {
+  maximumMcpStderrBytes,
+  maximumMcpStdoutBytes,
+} from "../../../../settings/diagnosticPolicy";
 import type { Client } from "@modelcontextprotocol/client";
-import { StderrCapture } from "./diagnostics";
+import { HandshakeEvidence } from "./handshakeEvidence";
+import { ProcessOutputCapture } from "./diagnostics";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "../configuration/connections";
 import { Writable } from "node:stream";
 import { connectProtocolClient } from "./protocol";
+import messages from "../../../../settings/locales/zh-CN/connectionFailures.json";
+import { observeStdioProcess } from "./processObservation";
+import { reportMcpFailure } from "../failures/reportConstruction";
 
-const maximumStderrBytes = 64 * 1024;
 export interface ConnectedStdioClient {
   client: Client;
   close: () => Promise<void>;
@@ -19,18 +26,33 @@ export type StdioConnector = (
   signal?: AbortSignal,
 ) => Promise<ConnectedStdioClient>;
 export const connectStdioClient: StdioConnector = async (serverName, connection, signal) => {
-  const transport = new StdioClientTransport({
+  const evidence = new HandshakeEvidence(),
+    transport = new StdioClientTransport({
       args: connection.args,
       command: connection.command,
       cwd: connection.cwd,
       env: connection.env,
       stderr: "pipe",
     }),
-    { stderr } = transport;
+    { stderr } = transport,
+    diagnostics = new ProcessOutputCapture(maximumMcpStderrBytes),
+    stdout = new ProcessOutputCapture(maximumMcpStdoutBytes),
+    processSnapshot = observeStdioProcess(transport, (chunk) => {
+      if (evidence.isRecording()) {
+        stdout.append(chunk);
+      }
+    });
+  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- MCP transport 不是 EventTarget。
+  transport.onerror = (error) => {
+    evidence.record(error);
+  };
   if (stderr === null) {
-    throw new Error(`MCP 服务器 ${serverName} 无法捕获 stderr`);
+    throw reportMcpFailure(new Error(messages.stderrUnavailable), {
+      connection: { kind: "stdio", options: connection },
+      server: serverName,
+      stage: "spawn",
+    });
   }
-  const diagnostics = new StderrCapture(maximumStderrBytes);
   stderr.pipe(
     new Writable({
       write(chunk: unknown, _encoding, done) {
@@ -59,13 +81,17 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
       isClosed: () => isClosed,
     };
   } catch (error) {
-    const output = diagnostics.text(),
-      message = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      output
-        ? `MCP stdio 服务器 "${serverName}" 连接失败：${message}\n\n子进程 stderr：\n${output}`
-        : `MCP stdio 服务器 "${serverName}" 连接失败：${message}`,
-      { cause: error },
-    );
+    const process = processSnapshot();
+    throw reportMcpFailure(error, {
+      ...evidence.snapshot(),
+      connection: { kind: "stdio", options: connection },
+      process,
+      server: serverName,
+      stage: process.pid === null || evidence.spawnFailed() ? "spawn" : "initialize",
+      stderr: diagnostics.snapshot(),
+      stdout: stdout.snapshot(),
+    });
+  } finally {
+    evidence.stop();
   }
 };

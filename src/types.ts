@@ -28,12 +28,7 @@ export const controlSchema = z.enum(["running", "step", "pause", "cancel", "paus
   runStatusSchema = z.enum(["pending", "running", "paused", "done", "canceled"]),
   logLevelSchema = z.enum(["debug", "info", "warn", "error"]),
   reasoningEffortSchema = z.enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"]),
-  modelAdapterSchema = z.enum([
-    "responses-sse",
-    "responses-websocket",
-    "completions",
-    "messages",
-  ]);
+  modelAdapterSchema = z.enum(["responses-sse", "responses-websocket", "completions", "messages"]);
 export type Control = z.infer<typeof controlSchema>;
 export type SessionStatus = z.infer<typeof sessionStatusSchema>;
 export type HostActivity = Extract<SessionStatus, "tool" | "waiting" | "streaming" | "idle">;

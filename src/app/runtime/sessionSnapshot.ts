@@ -8,15 +8,9 @@ import type { SessionSubmission } from "../attachments/contract";
 import { cleanupFailedInitialization } from "../../infrastructure/mcp/lifecycle";
 import { createAppSession } from "./sessionActions";
 import { createSessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
-import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 
-export function sessionHookOptions(context: SettingsContext, profile?: string) {
-  return loadConfiguredHookRules(prioritizeSettingsProfile(context, profile)).map(
-    ({ id, enable, description }) => ({ description, enable: enable ?? true, id }),
-  );
-}
 export async function createSnapshotSession(options: {
   baseContext: SettingsContext;
   mcp: AppMcp;
@@ -39,6 +33,8 @@ export async function createSnapshotSession(options: {
         return captureSessionSnapshot({
           hookOverrides: options.submission.hookOverrides,
           mcp: options.mcp,
+          mcpOverrides: options.submission.mcpOverrides,
+          model: options.submission.model,
           profiles,
           root: options.root,
           sessionId,
@@ -55,19 +51,30 @@ export async function createSnapshotSession(options: {
 }
 async function captureSessionSnapshot(options: {
   hookOverrides?: Record<string, boolean>;
+  mcpOverrides?: Record<string, boolean>;
   mcp: AppMcp;
+  model?: string;
   profiles: string[];
   root: string;
   sessionId: string;
   settingsContext: SettingsContext;
   workspace: string;
 }) {
-  const settings = loadSettings(options.root, {
+  const configured = loadSettings(options.root, {
       cwd: options.workspace,
       sessionId: options.sessionId,
       settingsContext: options.settingsContext,
     }),
-    mcp = await options.mcp.createSession(options.sessionId, options.profiles, options.workspace),
+    settings = {
+      ...configured,
+      model: { ...configured.model, model: options.model ?? configured.model.model },
+    },
+    mcp = await options.mcp.createSession(
+      options.sessionId,
+      options.profiles,
+      options.workspace,
+      options.mcpOverrides,
+    ),
     definition = createSessionDefinition(
       settings,
       mcp,
@@ -75,7 +82,7 @@ async function captureSessionSnapshot(options: {
         cwd: options.workspace,
         session: resolveSessionPaths(options.sessionId).dir,
       },
-      options.hookOverrides,
+      { hooks: options.hookOverrides, servers: options.mcpOverrides },
     );
   return { definition, settings };
 }

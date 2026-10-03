@@ -1,16 +1,25 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
-import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
+import {
+  conversation,
+  heading,
+  headingTitle,
+  scroll,
+  scrollContent,
+  setup,
+  setupFirst,
+  setupHint,
+} from "./layout";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { ConfigurationPanel } from "./options/ConfigurationPanel";
 import type { InitialSessionState } from "../../../initialState";
 import { LatestMessage } from "./editor/LatestMessage";
 import { MessageStack } from "./MessageStack";
 import { PendingAttachments } from "../Chat/Composer/attachments";
-import { ProfilePicker } from "./ProfilePicker";
-import { Toggles } from "./options/Toggles";
 import { WorkspacePicker } from "./WorkspacePicker";
-import { useHookSelection } from "./options/selection";
 import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
+import { useSessionPreferences } from "./options/preferences";
+import { useTranslation } from "react-i18next";
 
 export function NewSessionPage({
   attachmentSettings,
@@ -39,7 +48,8 @@ export function NewSessionPage({
   onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
-  const hookSelection = useHookSelection(selectedProfile),
+  const { t } = useTranslation(),
+    selection = useSessionPreferences(selectedProfile),
     {
       addPair,
       changePair,
@@ -80,10 +90,12 @@ export function NewSessionPage({
       clearDraft,
       draftRevision,
       flushDraft,
-      hookOverrides: hookSelection.overrides,
-      hooksReady: hookSelection.ready,
+      hookOverrides: selection.hookOverrides,
+      mcpOverrides: selection.mcpOverrides,
       message,
+      model: selection.model,
       onCreate,
+      optionsReady: selection.ready,
       pairs,
       workspace,
     }),
@@ -100,19 +112,25 @@ export function NewSessionPage({
       <div className={scroll} ref={scrollRef}>
         <div className={scrollContent}>
           <div className={setup}>
+            <header className={heading}>
+              <h1 className={headingTitle}>{t("newSession")}</h1>
+              <p className={setupHint}>{t("sessionSetupDescription")}</p>
+            </header>
             <WorkspacePicker
               className={setupFirst}
+              disabled={submitting}
               recentWorkspaces={recentWorkspaces}
               workspace={workspace}
               onChange={onWorkspaceChange}
               onPick={onPickWorkspace}
             />
-            <ProfilePicker
-              available={availableProfiles}
-              selected={selectedProfile}
-              onChange={onProfileChange}
+            <ConfigurationPanel
+              availableProfiles={availableProfiles}
+              disabled={submitting}
+              onProfileChange={onProfileChange}
+              selectedProfile={selectedProfile}
+              selection={selection}
             />
-            <Toggles disabled={submitting} selection={hookSelection} />
           </div>
           <div className={conversation}>
             <MessageStack
@@ -125,7 +143,7 @@ export function NewSessionPage({
             <LatestMessage
               disabled={draftLoading || submitting}
               message={message}
-              submitDisabled={draftLoading || !hookSelection.ready || !complete || submitting}
+              submitDisabled={draftLoading || !selection.valid || !complete || submitting}
               submitting={submitting}
               userMessages={userMessages}
               onAddPair={addPair}

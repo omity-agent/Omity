@@ -1,4 +1,4 @@
-import { type ActiveRun, CanceledRunError, cancelRun, setRunStatus } from "../run";
+import { type ActiveRun, CanceledRunError, cancelRun, pauseFailedRun, setRunStatus } from "../run";
 import { type HostContext, waitForWake } from "../context";
 import { captureError } from "../../failures/details";
 import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
@@ -16,7 +16,7 @@ export function pauseForMcpUnavailable(ctx: HostContext, run: ActiveRun, error: 
     return false;
   }
   const details = captureError(unavailable);
-  setRunStatus(ctx, run, "paused", details);
+  pauseFailedRun(ctx, run, details);
   ctx.logger.warn("MCP stdio 不可用，队列已暂停", {
     inputId: run.items[0].id,
     server: unavailable.serverName,

@@ -1,13 +1,13 @@
 import { type RetryOriginMode, startRetryOrigin } from "./retryOrigin";
-import { captureError, summarizeError } from "../../../src/failures/details";
+import { captureError, summarizeError } from "../../../../src/failures/details";
 import {
   createSocketTransport,
   registerSocketTransport,
-} from "../../../src/infrastructure/network/socketTransport";
+} from "../../../../src/infrastructure/network/socketTransport";
 import { expect, test } from "bun:test";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
-import { isRetryableModelError } from "../../../src/runtime/transientErrors";
+import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
+import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
+import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
 
 async function runRetriedRequest(mode: RetryOriginMode) {
   const origin = await startRetryOrigin(mode),
@@ -128,6 +128,14 @@ test("an established WebSocket failure is identified as a stream failure", async
     isRetryable: true,
     phase: "stream",
     stream: { messagesReceived: 0 },
+    timing: {
+      durationMs: expect.any(Number),
+      handshakeDurationMs: expect.any(Number),
+      requestSentAfterMs: expect.any(Number),
+    },
+    transport: {
+      tls: { alpnProtocol: "http/1.1", protocol: expect.any(String) },
+    },
   });
   expect(error?.details?.["close"]).not.toHaveProperty("reason");
   expect(error?.details).not.toHaveProperty("reasonUnavailable");

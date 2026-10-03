@@ -1,4 +1,4 @@
-import type { BrowserWarning } from "../types";
+import type { BrowserWarning, SessionFailure } from "./events/contracts";
 import { ContentChannel } from "./events/contentChannel";
 import type { Context } from "hono";
 import type { DisplayEvent } from "./timeline";
@@ -19,6 +19,9 @@ export class AppEvents {
   }
   notifyWarning(warning: BrowserWarning) {
     this.state.notifyWarning(warning);
+  }
+  notifyFailure(failure: SessionFailure) {
+    this.state.notifyFailure(failure);
   }
   invalidateTranscript(sessionId: string, eventCursor: number) {
     this.content.invalidate(sessionId, eventCursor);

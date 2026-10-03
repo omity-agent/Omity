@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next";
 
 export function ProfilePicker({
   available,
+  disabled = false,
   selected,
   onChange,
 }: {
   available: string[];
+  disabled?: boolean;
   selected?: string;
   onChange: (profile?: string) => void;
 }) {
@@ -19,7 +21,7 @@ export function ProfilePicker({
       [onChange],
     );
   return (
-    <Field.Root>
+    <Field.Root disabled={disabled}>
       <Field.Label>{t("profile")}</Field.Label>
       <Select name="profile" onChange={change} value={selected ?? ""}>
         <option value="">{t("defaultProfile")}</option>

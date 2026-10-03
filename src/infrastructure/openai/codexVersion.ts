@@ -1,8 +1,8 @@
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
 import { z } from "zod";
 
-const versionSchema = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u);
-const packageMetadataSchema = z.object({ version: versionSchema });
+const versionSchema = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u),
+  packageMetadataSchema = z.object({ version: versionSchema });
 type CodexVersionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export type CodexVersionResolver = () => Promise<string>;
 

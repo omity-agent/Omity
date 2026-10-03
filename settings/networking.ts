@@ -1,5 +1,9 @@
 export const requestBodyLimit = 1024 * 1024;
 export const requestListenerOptions = { overrideGlobalObjects: false };
+export const queryClientDefaults = {
+  mutations: { retry: false },
+  queries: { retry: false },
+};
 export const outboundAgentOptions = {
   bodyTimeout: 0,
   headersTimeout: 0,
