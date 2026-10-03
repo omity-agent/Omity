@@ -28,7 +28,7 @@ function createSubmission(
 test("HTTP session preferences list disabled servers without resolving secrets and preserve per-session selections", async () => {
   await using app = await liveApplication();
   const optionalServer = {
-      args: [resolve(import.meta.dir, "identityServer.ts")],
+      args: [resolve(import.meta.dir, "argumentServer.ts"), "identity"],
       command: process.execPath,
       enabled: false,
     },

@@ -10,7 +10,14 @@ export const mcpServerSchema = z.looseObject({
     }),
     [],
   ).optional(),
+  freeformToolInputs: emptyAs(
+    z.array(z.string().min(1)).refine((names) => new Set(names).size === names.length, {
+      error: "MCP free-form 工具配置包含重复工具",
+    }),
+    [],
+  ).default([]),
   prefixToolNameWithServerName: z.boolean().optional(),
+  toolDescriptionOverrides: emptyAs(z.record(z.string().min(1), z.string().min(1)), {}).default({}),
 });
 const stdioSchema = z.looseObject({
     args: emptyAs(z.array(z.string()).default([]), []),
@@ -38,13 +45,23 @@ export function normalizeMcpServers(servers: Record<string, unknown>): Record<
   Record<string, unknown> & {
     defer_loading?: boolean;
     excludedTools?: string[];
+    freeformToolInputs: string[];
     prefixToolNameWithServerName?: boolean;
+    toolDescriptionOverrides: Record<string, string>;
   }
 > {
   return Object.fromEntries(
     Object.entries(servers).flatMap(([name, server]) => {
-      const { defer_loading, enabled, excludedTools, prefixToolNameWithServerName, ...connection } =
-        mcpServerSchema.parse(server);
+      const {
+          defer_loading,
+          enabled,
+          excludedTools,
+          freeformToolInputs,
+          prefixToolNameWithServerName,
+          toolDescriptionOverrides,
+          ...connection
+        } = mcpServerSchema.parse(server),
+        excluded = new Set(excludedTools);
       return enabled === false
         ? []
         : [
@@ -57,6 +74,10 @@ export function normalizeMcpServers(servers: Record<string, unknown>): Record<
                 ...(prefixToolNameWithServerName === undefined
                   ? {}
                   : { prefixToolNameWithServerName }),
+                freeformToolInputs: freeformToolInputs.filter((tool) => !excluded.has(tool)),
+                toolDescriptionOverrides: Object.fromEntries(
+                  Object.entries(toolDescriptionOverrides).filter(([tool]) => !excluded.has(tool)),
+                ),
               },
             ],
           ];

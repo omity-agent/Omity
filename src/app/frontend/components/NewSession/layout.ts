@@ -28,6 +28,3 @@ export const setup = css({
   width: "full",
 });
 export const setupFirst = css({ gridColumn: { md: "1 / -1" } });
-export const heading = css({ display: "grid", gap: "2", gridColumn: "1 / -1" });
-export const headingTitle = css({ textStyle: "accessHeading" });
-export const setupHint = css({ color: "muted", fontSize: "sm" });

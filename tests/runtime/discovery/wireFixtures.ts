@@ -22,7 +22,7 @@ export function discoverySettings(api: ModelApi): Settings {
     adapter: adapterForApi(api),
     apiKeyEnv: "TEST_KEY",
     baseURL: null,
-    model: api === "messages" ? "claude-sonnet-4-6" : "gpt-5.4",
+    model: api === "messages" ? "claude-sonnet-5.5" : "gpt-6.1-sol",
     reasoning_effort: api === "responses" ? "high" : undefined,
     temperature: undefined,
   };
@@ -107,7 +107,10 @@ export function responsesSearchEvents() {
       type: "function_call",
     };
   return [
-    { response: { created_at: 1, id: "response-1", model: "gpt-5.4" }, type: "response.created" },
+    {
+      response: { created_at: 1, id: "response-1", model: "gpt-6.1-sol" },
+      type: "response.created",
+    },
     ...[search, output, call].flatMap((item, output_index) => [
       { item, output_index, type: "response.output_item.added" },
       { item, output_index, type: "response.output_item.done" },
@@ -132,7 +135,7 @@ export function messagesSearchEvents(pause = false) {
     {
       message: {
         id: "response-1",
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5.5",
         role: "assistant",
         usage: { input_tokens: 10 },
       },

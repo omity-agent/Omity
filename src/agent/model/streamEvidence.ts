@@ -14,6 +14,9 @@ export class StreamEvidence {
   private lastItemId?: string;
   private lastOutputIndex?: number;
   private lastSequenceNumber?: number;
+  elapsed(timestamp: number) {
+    return Math.round(timestamp - this.started);
+  }
   opened() {
     this.openedAt = performance.now();
   }
@@ -44,7 +47,7 @@ export class StreamEvidence {
   snapshot() {
     const now = performance.now(),
       elapsed = (timestamp?: number) =>
-        timestamp === undefined ? undefined : Math.round(timestamp - this.started);
+        timestamp === undefined ? undefined : this.elapsed(timestamp);
     return {
       stream: {
         bytesReceived: this.bytesReceived,

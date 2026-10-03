@@ -94,9 +94,10 @@ test("an unframed remote EOF preserves stream timing and socket closure evidence
       closeHadError: false,
       endReceived: true,
       peer: { remoteAddress: "127.0.0.1", remotePort: expect.any(Number) },
-      route: { type: "direct" },
     },
   });
+  expect(error.details?.["transport"]).not.toHaveProperty("route");
+  expect(JSON.stringify(error.details).match(/"route":/gu)).toHaveLength(1);
   expect(JSON.stringify(summarizeError(error))).not.toContain("private-");
 });
 test("a reset after response data preserves the native transport error", async () => {
@@ -108,7 +109,9 @@ test("a reset after response data preserves the native transport error", async (
     stream: { messagesReceived: 2 },
     transport: { closeHadError: true, endReceived: false },
   });
-  expect(summarizeError(error)).toHaveProperty("causes");
+  const summary = summarizeError(error);
+  expect(summary).not.toHaveProperty("causes");
+  expect(JSON.stringify(summary).match(/"code":"ECONNRESET"/gu)).toHaveLength(1);
 });
 test("a server close frame retains its explicit reason and correlation identifiers", async () => {
   const { error } = await streamFailure("close");
@@ -122,7 +125,7 @@ test("a server close frame retains its explicit reason and correlation identifie
 test("a proxied stream failure records the route without leaking credentials or payloads", async () => {
   const { error, proxyOrigin } = await streamFailure("end", true);
   expect(error.details).toMatchObject({
-    transport: { route: { origin: proxyOrigin, type: "proxy" } },
+    attempts: [{ route: { origin: proxyOrigin, type: "proxy" } }],
   });
   const serialized = JSON.stringify(summarizeError(error));
   for (const secret of [

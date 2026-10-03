@@ -4,14 +4,10 @@ import { emptyAs } from "../../configuration/settings/values";
 import { z } from "zod";
 
 const nonEmpty = z.string().min(1),
-  names = z.array(nonEmpty).refine((values) => new Set(values).size === values.length, {
-    error: "MCP free-form 工具配置包含重复工具",
-  }),
   toolName = nonEmpty.refine((name) => name !== "agent", {
     error: "MCP 工具不能命名为 agent",
   });
 export const toolboxSchema = z.strictObject({
-  freeformToolInputs: emptyAs(names, []),
   mcpServers: emptyAs(z.record(z.string(), mcpServerSchema), {}).transform(normalizeMcpServers),
   stdio: z.strictObject({
     restart: z.strictObject({
@@ -19,7 +15,6 @@ export const toolboxSchema = z.strictObject({
       maxAttempts: z.number().int().positive().max(100),
     }),
   }),
-  toolDescriptionOverrides: emptyAs(z.record(z.string(), nonEmpty), {}),
   toolNameOverrides: emptyAs(z.record(z.string(), toolName), {}),
   toolboxes: emptyAs(builtInPreferencesSchema, {}),
 });

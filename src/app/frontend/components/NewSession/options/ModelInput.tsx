@@ -3,8 +3,7 @@ import { Field, Input } from "../../ParkUI";
 import { css } from "styled-system/css";
 import { useTranslation } from "react-i18next";
 
-const hint = css({ color: "muted", fontSize: "xs" }),
-  error = css({ color: "statusError", fontSize: "xs" });
+const error = css({ color: "statusError", fontSize: "xs" });
 export function ModelInput({
   disabled,
   model,
@@ -15,7 +14,7 @@ export function ModelInput({
   onChange: (model: string) => void;
 }) {
   const { t } = useTranslation(),
-    descriptionId = useId(),
+    errorId = useId(),
     invalid = !disabled && model.trim().length === 0,
     change = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => onChange(event.currentTarget.value),
@@ -25,7 +24,7 @@ export function ModelInput({
     <Field.Root disabled={disabled} invalid={invalid}>
       <Field.Label>{t("model")}</Field.Label>
       <Input
-        aria-describedby={descriptionId}
+        aria-describedby={invalid ? errorId : undefined}
         autoCapitalize="none"
         autoComplete="off"
         name="model"
@@ -34,9 +33,11 @@ export function ModelInput({
         spellCheck={false}
         value={model}
       />
-      <span className={invalid ? error : hint} id={descriptionId}>
-        {t(invalid ? "modelRequired" : "modelDescription")}
-      </span>
+      {invalid && (
+        <span className={error} id={errorId}>
+          {t("modelRequired")}
+        </span>
+      )}
     </Field.Root>
   );
 }

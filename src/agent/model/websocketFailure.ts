@@ -41,14 +41,17 @@ export class ResponsesWebsocketError extends Error {
     super(opened ? "Responses WebSocket 在响应完成前关闭" : "Responses WebSocket 连接失败", {
       cause,
     });
-    this.attempts = handshake.attempts.map(describeAttempt);
-    this.close = event.close
-      ? {
-          code: event.close.code,
-          ...(closeReason ? { reason: closeReason } : {}),
-          wasClean: event.close.wasClean,
-        }
-      : undefined;
+    this.attempts = handshake.attempts.map((attempt) =>
+      describeAttempt(attempt, handshake.attempts.length > 1 ? progress : undefined),
+    );
+    this.close =
+      event.close && (opened || event.close.code !== 1006 || closeReason)
+        ? {
+            code: event.close.code,
+            ...(closeReason ? { reason: closeReason } : {}),
+            wasClean: event.close.wasClean,
+          }
+        : undefined;
     this.endpoint = `${url.origin}${url.pathname}`;
     if (event.error !== undefined && event.error !== cause) {
       const eventError = summarizeError(captureError(event.error));
@@ -72,11 +75,15 @@ export class ResponsesWebsocketError extends Error {
     this.transport = current?.snapshot();
   }
 }
-function describeAttempt(attempt: NonNullable<SocketHandshake["current"]>) {
+function describeAttempt(
+  attempt: NonNullable<SocketHandshake["current"]>,
+  progress?: StreamEvidence,
+) {
   return {
-    durationMs: attempt.durationMs,
+    ...(progress
+      ? { durationMs: attempt.durationMs, startedAfterMs: progress.elapsed(attempt.startedMs) }
+      : {}),
     route: attempt.route,
-    startedAt: attempt.startedAt,
     ...(attempt.error ? { error: summarizeError(captureError(attempt.error)) } : {}),
     ...(attempt.headers
       ? {

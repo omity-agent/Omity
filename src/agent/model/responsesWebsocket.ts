@@ -115,7 +115,7 @@ export function createResponsesWebsocketFetch(
                 }
                 progress.event(message);
                 if (message["type"] === "error") {
-                  throw new Error(`Responses WebSocket 服务端错误：${JSON.stringify(message)}`);
+                  throw message;
                 }
                 controller.enqueue(
                   encoder.encode(`event: ${message["type"]}\ndata: ${JSON.stringify(message)}\n\n`),

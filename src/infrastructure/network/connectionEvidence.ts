@@ -6,7 +6,6 @@ import { TLSSocket } from "node:tls";
 
 export const connectionContext = new AsyncLocalStorage<ConnectionEvidence>();
 export class ConnectionEvidence {
-  readonly startedAt = new Date().toISOString();
   readonly startedMs = performance.now();
   durationMs?: number;
   error?: Error;
@@ -103,27 +102,29 @@ export class ConnectionEvidence {
     socket.once("close", closed);
   }
   snapshot() {
-    const { socket } = this;
-    if (!socket) {
-      return this.route ? { route: this.route } : undefined;
+    const { socket, peerSocket } = this,
+      observed = socket ?? peerSocket;
+    if (!observed) {
+      return undefined;
     }
     return {
-      ...this.state,
-      bytesRead: this.peerSocket?.bytesRead,
-      bytesWritten: this.peerSocket?.bytesWritten,
+      ...(socket ? this.state : {}),
+      bytesRead: peerSocket?.bytesRead,
+      bytesWritten: peerSocket?.bytesWritten,
       closeHadError: this.closeHadError,
       closeRequestedBy: this.closeRequestedBy,
-      destroyed: socket.destroyed,
+      destroyed: observed.destroyed,
       lastReadAgeMs:
         this.lastReadAt === undefined ? undefined : Math.round(performance.now() - this.lastReadAt),
       lastReadBytes: this.lastReadBytes,
       peer: this.peer,
-      readableEnded: socket.readableEnded,
-      route: this.route,
+      readableEnded: observed.readableEnded,
       rstCode:
-        "rstCode" in socket && typeof socket.rstCode === "number" ? socket.rstCode : undefined,
+        "rstCode" in observed && typeof observed.rstCode === "number"
+          ? observed.rstCode
+          : undefined,
       tls: this.tls,
-      writableFinished: socket.writableFinished,
+      writableFinished: observed.writableFinished,
     };
   }
 }

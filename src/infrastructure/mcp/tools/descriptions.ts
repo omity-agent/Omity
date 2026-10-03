@@ -7,13 +7,8 @@ type McpToolNameOverrides = Record<string, string>;
 type McpToolDescriptionOverrides = Record<string, string>;
 const sessionDescriptions = new WeakMap<StructuredToolInterface, string>();
 export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpToolNameOverrides) {
-  const toolsByName = indexMcpTools(tools),
-    names = new Map(Object.entries(overrides));
-  for (const from of names.keys()) {
-    if (!toolsByName.has(from)) {
-      throw new Error(`MCP 工具重命名配置引用了不存在的工具：${from}`);
-    }
-  }
+  indexMcpTools(tools);
+  const names = new Map(Object.entries(overrides));
   const finalNames = new Set<string>();
   for (const tool of tools) {
     const name = names.get(tool.name) ?? tool.name;

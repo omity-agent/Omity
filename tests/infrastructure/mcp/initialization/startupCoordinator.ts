@@ -1,21 +1,24 @@
 import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 import { mkdirSync, rmSync } from "node:fs";
 import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
-import type { McpConfiguration } from "../../../../src/infrastructure/mcp/configuration";
 import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
 import { createServer } from "node:http";
 import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { createTestDirectory } from "../../../support/artifacts";
 import { join } from "node:path";
+import type { mcpServerSchema } from "../../../../src/infrastructure/mcp/configuration/connections";
 import { once } from "node:events";
 import { promisify } from "node:util";
 import { raceSignal } from "race-signal";
+import type { z } from "zod";
 
 interface StartupCheckpoint {
   reached: PromiseWithResolvers<void>;
   response: PromiseWithResolvers<{ failure?: string }>;
 }
-export async function coordinateStartup(declarations: McpConfiguration["mcpServers"]) {
+export async function coordinateStartup(
+  declarations: Record<string, z.input<typeof mcpServerSchema>>,
+) {
   const root = createTestDirectory("parallel-mcp-startup"),
     processes = new Map<string, number>(),
     checkpoints = new Map<string, StartupCheckpoint>(

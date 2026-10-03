@@ -3,21 +3,20 @@ import {
   type McpConfiguration,
   emptyMcpConfiguration,
   readProfileMcpConfiguration,
+  readSessionMcpConfiguration,
 } from "../configuration";
 import { McpLoadError, createMcpLoadError, reportMcpFailure } from "../failures/reportConstruction";
 import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./definitions";
 import { type SettingsContext, createSettingsContext } from "../../configuration/settings/context";
-import { configureFreeformMcpTools, sessionModelTools } from "./freeform";
-import { loadServerTools, validateConfiguredServers } from "../loadServers";
-import { overrideMcpToolDescriptions, renameMcpTools } from "./descriptions";
 import { DomainError } from "../../../errors";
 import type { Logger } from "../../logging/logger";
 import { McpClientPool } from "../client/pool";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { loadServerTools } from "../loadServers";
 import { omit } from "es-toolkit";
-import { omitExcludedToolCustomizations } from "../configuration/exclusions";
-import { resolve } from "node:path";
+import { renameMcpTools } from "./descriptions";
+import { sessionModelTools } from "./freeform";
 
 export interface LoadedMcp {
   configuration: McpConfiguration;
@@ -53,10 +52,9 @@ async function initializeCatalog(
   snapshot?: McpToolSnapshot,
 ): Promise<LoadedMcp> {
   try {
-    const configuration = readProfileMcpConfiguration(
-      context,
-      snapshot ? snapshot.serverOverrides : options.serverOverrides,
-    );
+    const configuration = snapshot
+      ? readSessionMcpConfiguration(context, snapshot)
+      : readProfileMcpConfiguration(context, options.serverOverrides);
     if (!configuration) {
       logger.info("MCP 配置不存在，跳过工具加载");
       return emptyMcp(emptyMcpConfiguration(), snapshot);
@@ -78,11 +76,6 @@ async function loadMcpConfiguration(
 ) {
   const names = Object.keys(configuration.mcpServers),
     builtInTools = loadBuiltInTools(configuration.toolboxes, options);
-  validateConfiguredServers(
-    configuration,
-    names,
-    builtInTools.map((tool) => tool.name),
-  );
   if (names.length === 0 && builtInTools.length === 0) {
     logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
     return emptyMcp(configuration, snapshot);
@@ -112,23 +105,35 @@ async function connectMcp(
     const connections = Object.fromEntries(
         Object.entries(configuration.mcpServers).map(([name, connection]) => [
           name,
-          omit(connection, ["defer_loading", "excludedTools", "prefixToolNameWithServerName"]),
+          omit(connection, [
+            "defer_loading",
+            "excludedTools",
+            "freeformToolInputs",
+            "prefixToolNameWithServerName",
+            "toolDescriptionOverrides",
+          ]),
         ]),
       ),
       connectedPool = new McpClientPool(connections, configuration.stdio.restart, logger, cwd);
     pool = connectedPool;
-    const availableTools = [
-        ...builtInTools,
-        ...(await loadServerTools(connectedPool, configuration.mcpServers, cwd)),
-      ],
-      activeConfiguration = omitExcludedToolCustomizations(
-        configuration,
-        availableTools.map((tool) => tool.name),
-      ),
-      namedTools = renameMcpTools(availableTools, activeConfiguration.toolNameOverrides),
+    const catalog = await loadServerTools(connectedPool, configuration.mcpServers, {
+        context,
+        customize: snapshot === undefined,
+        cwd,
+      }),
+      availableTools = [...builtInTools, ...catalog.tools],
+      namedTools = renameMcpTools(availableTools, configuration.toolNameOverrides),
       configured = snapshot
         ? applyMcpToolSnapshot(namedTools, snapshot)
-        : configureCurrentTools(namedTools, activeConfiguration, context),
+        : {
+            freeformToolParameters: new Map(
+              [...catalog.freeformToolParameters].map(([tool, parameter]) => [
+                configuration.toolNameOverrides[tool] ?? tool,
+                parameter,
+              ]),
+            ),
+            tools: namedTools,
+          },
       { freeformToolParameters, tools } = configured;
     logger.info("已加载 MCP 工具", {
       servers: names,
@@ -154,21 +159,4 @@ async function connectMcp(
   } finally {
     end();
   }
-}
-function configureCurrentTools(
-  tools: StructuredToolInterface[],
-  configuration: McpConfiguration,
-  context: SettingsContext,
-) {
-  const described = overrideMcpToolDescriptions(
-      tools,
-      configuration.toolDescriptionOverrides,
-      context.root,
-      [
-        resolve(context.defaultsDirectory, "prompts"),
-        ...context.profiles.map(({ directory }) => resolve(directory, "prompts")),
-      ],
-    ),
-    configured = configureFreeformMcpTools(described, configuration.freeformToolInputs);
-  return { freeformToolParameters: configured.parameters, tools: described };
 }

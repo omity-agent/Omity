@@ -64,6 +64,12 @@ test("a rejected HTTP/1.1 retry reports its response instead of the earlier HTTP
   });
   expect(error?.details).not.toHaveProperty("status");
   expect(error?.details).not.toHaveProperty("requestId");
+  const attempts = error?.details?.["attempts"];
+  expect(attempts).toMatchObject([
+    { durationMs: expect.any(Number), startedAfterMs: expect.any(Number) },
+    { durationMs: expect.any(Number), startedAfterMs: expect.any(Number) },
+  ]);
+  expect(JSON.stringify(attempts)).not.toContain('"startedAt":');
 });
 test("a failed 101 handshake preserves retry history without treating HTTP/2 as the final cause", async () => {
   const { error, protocols, retryable } = await runRetriedRequest("invalid");
@@ -116,6 +122,13 @@ test("a transport failure during the retry retains the final native error", asyn
     ],
     phase: "handshake",
   });
+  if (!error) {
+    throw new Error("握手重试失败没有诊断信息");
+  }
+  const summary = summarizeError(error);
+  expect(summary).not.toHaveProperty("causes");
+  expect(JSON.stringify(summary).match(/"code":"UND_ERR_INFO"/gu)).toHaveLength(1);
+  expect(JSON.stringify(summary).match(/"code":"UND_ERR_SOCKET"/gu)).toHaveLength(1);
 });
 test("an established WebSocket failure is identified as a stream failure", async () => {
   const { error, protocols, retryable } = await runRetriedRequest("disconnect");

@@ -87,7 +87,7 @@ export function recoveringModel(response: () => Response | Promise<Response>) {
   const provider = createOpenAI({
     apiKey: "test",
     fetch: Object.assign(async () => response(), { preconnect: fetch.preconnect }),
-  }).responses("gpt-5.4");
+  }).responses("gpt-6.1-sol");
   let attempts = 0;
   return new MockLanguageModelV4({
     doStream: async (options) => {

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpClientPool } from "../../../../src/infrastructure/mcp/client/pool";
 import { ToolMessage } from "@langchain/core/messages";
+import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { loadServerTools } from "../../../../src/infrastructure/mcp/loadServers";
 import { structuredToolOutput } from "../../../../src/infrastructure/mcp/tools/structured";
 import { z } from "zod";
@@ -53,7 +54,16 @@ test.each(["modern", "legacy"] as const)(
         era === "legacy" ? 1 : 0,
       );
       expect(methods).not.toContain("tools/list");
-      const tools = await loadServerTools(pool, configuration);
+      const { tools } = await loadServerTools(
+        pool,
+        Object.fromEntries(
+          Object.entries(configuration).map(([name, serverConfiguration]) => [
+            name,
+            { ...serverConfiguration, freeformToolInputs: [], toolDescriptionOverrides: {} },
+          ]),
+        ),
+        { context: createSettingsContext(), customize: true },
+      );
       expect(methods.filter((method) => method === "tools/list")).toHaveLength(1);
       expect(tools.map(({ name }) => name)).toEqual([
         "remote__echo",

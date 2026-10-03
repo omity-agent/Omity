@@ -1,14 +1,5 @@
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
-import {
-  conversation,
-  heading,
-  headingTitle,
-  scroll,
-  scrollContent,
-  setup,
-  setupFirst,
-  setupHint,
-} from "./layout";
+import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { ConfigurationPanel } from "./options/ConfigurationPanel";
 import type { InitialSessionState } from "../../../initialState";
@@ -19,7 +10,6 @@ import { WorkspacePicker } from "./WorkspacePicker";
 import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
 import { useSessionPreferences } from "./options/preferences";
-import { useTranslation } from "react-i18next";
 
 export function NewSessionPage({
   attachmentSettings,
@@ -48,8 +38,7 @@ export function NewSessionPage({
   onProfileChange: (profile?: string) => void;
   onWorkspaceChange: (workspace: string) => void;
 }) {
-  const { t } = useTranslation(),
-    selection = useSessionPreferences(selectedProfile),
+  const selection = useSessionPreferences(selectedProfile),
     {
       addPair,
       changePair,
@@ -112,10 +101,6 @@ export function NewSessionPage({
       <div className={scroll} ref={scrollRef}>
         <div className={scrollContent}>
           <div className={setup}>
-            <header className={heading}>
-              <h1 className={headingTitle}>{t("newSession")}</h1>
-              <p className={setupHint}>{t("sessionSetupDescription")}</p>
-            </header>
             <WorkspacePicker
               className={setupFirst}
               disabled={submitting}

@@ -1,4 +1,4 @@
-import { isPlainObject as isRecord, omit } from "es-toolkit";
+import { isEqual, isPlainObject as isRecord, omit } from "es-toolkit";
 import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
@@ -49,7 +49,8 @@ export function stringifyError(error: ErrorDetails) {
   return JSON.stringify(error);
 }
 export function summarizeError(error: ErrorDetails): ErrorSummary {
-  const levels: ErrorSummaryItem[] = [];
+  const levels: ErrorSummaryItem[] = [],
+    embedded: unknown[] = [];
   let current: ErrorDetails | undefined = error;
   while (current) {
     const level = summarizeLevel(current),
@@ -58,9 +59,10 @@ export function summarizeError(error: ErrorDetails): ErrorSummary {
         !level.message &&
         !level.details &&
         uninformativeCauseNames.has(level.name);
-    if (!uninformative) {
+    if (!uninformative && !embedded.some((value) => isEqual(value, level))) {
       levels.push(level);
     }
+    embedded.push(...embeddedErrorLevels(current));
     current = current.cause;
   }
   const [root, ...causes] = levels;
@@ -101,6 +103,32 @@ function summarizeLevel(error: ErrorDetails): ErrorSummaryItem {
       : {}),
     name: error.name,
   };
+}
+function embeddedErrorLevels(error: ErrorDetails): unknown[] {
+  if (error.name !== "ResponsesWebsocketError") {
+    return [];
+  }
+  const attempts: unknown = error.details?.["attempts"],
+    candidates: unknown[] = [error.details?.["eventError"]];
+  if (Array.isArray(attempts)) {
+    for (const attempt of attempts) {
+      const value: unknown = attempt;
+      if (isRecord(value)) {
+        candidates.push(value["error"]);
+      }
+    }
+  }
+  const levels: unknown[] = [];
+  for (const candidate of candidates) {
+    if (isRecord(candidate)) {
+      levels.push(omit(candidate, ["causes"]));
+      const causes: unknown = candidate["causes"];
+      if (Array.isArray(causes)) {
+        levels.push(...causes);
+      }
+    }
+  }
+  return levels;
 }
 function nonErrorValue(value: unknown, serialized: unknown): unknown {
   if (value === null || ["string", "boolean"].includes(typeof value)) {

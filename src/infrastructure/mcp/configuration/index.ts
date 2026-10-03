@@ -1,9 +1,11 @@
 import { applyServerOverrides, describeMcpServers } from "./selection";
+import { enableConfiguredMcpServers, omitDisabledToolboxConfiguration } from "./activation";
 import { readSettingsYamlValue, resolvePlaceholders } from "../../configuration/placeholders";
+import type { BuiltInPreferences } from "../../toolbox/metadata";
+import type { McpToolSnapshot } from "../tools/definitions";
 import type { SettingsContext } from "../../configuration/settings/context";
 import { applicationAssetPath } from "../../applicationAssets";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { omitDisabledToolboxConfiguration } from "./activation";
 import { readLayeredSettingsYaml } from "../../configuration/settings/files";
 import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
@@ -21,14 +23,41 @@ export function readProfileMcpConfiguration(
   context: SettingsContext,
   serverOverrides?: Record<string, boolean>,
 ) {
+  return readToolboxConfiguration(context, (value) => applyServerOverrides(value, serverOverrides));
+}
+export function readSessionMcpConfiguration(
+  context: SettingsContext,
+  snapshot: McpToolSnapshot,
+): McpConfiguration | undefined {
+  const configuration = readToolboxConfiguration(context, (value) =>
+    applyServerOverrides(enableConfiguredMcpServers(value), snapshot.serverOverrides),
+  );
+  if (!configuration) {
+    return undefined;
+  }
+  const names = new Set(snapshot.tools.map(({ name }) => name));
+  for (const preferences of Object.values<BuiltInPreferences[keyof BuiltInPreferences]>(
+    configuration.toolboxes,
+  )) {
+    if (preferences) {
+      preferences.enabled = names.has(
+        configuration.toolNameOverrides[preferences.name] ?? preferences.name,
+      );
+    }
+  }
+  return configuration;
+}
+function readToolboxConfiguration(
+  context: SettingsContext,
+  selectServers: (value: unknown) => unknown,
+) {
   const file = readLayeredSettingsYaml(
     context,
     "profile",
     "toolbox.yaml",
     {},
     {
-      beforePlaceholders: (value) =>
-        omitDisabledToolboxConfiguration(applyServerOverrides(value, serverOverrides)),
+      beforePlaceholders: (value) => omitDisabledToolboxConfiguration(selectServers(value)),
       override: resolveProfilePaths,
     },
   );
@@ -69,9 +98,7 @@ export function emptyMcpConfiguration(): McpConfiguration {
   return parseMcpConfiguration(
     {
       ...defaults,
-      freeformToolInputs: [],
       mcpServers: {},
-      toolDescriptionOverrides: {},
       toolNameOverrides: {},
       toolboxes: {},
     },
@@ -81,18 +108,35 @@ export function emptyMcpConfiguration(): McpConfiguration {
 function resolveProfilePaths(value: unknown, override: unknown, directory: string): unknown {
   if (
     !isRecord(value) ||
-    !isRecord(value["toolDescriptionOverrides"]) ||
+    !isRecord(value["mcpServers"]) ||
     !isRecord(override) ||
-    !isRecord(override["toolDescriptionOverrides"])
+    !isRecord(override["mcpServers"])
   ) {
     return value;
   }
-  const paths = { ...value["toolDescriptionOverrides"] };
-  for (const name of Object.keys(override["toolDescriptionOverrides"])) {
-    const path = paths[name];
-    if (typeof path === "string" && path.length > 0) {
-      paths[name] = resolveConfiguredPath(directory, path);
-    }
-  }
-  return { ...value, toolDescriptionOverrides: paths };
+  const overrides = override["mcpServers"];
+  return {
+    ...value,
+    mcpServers: Object.fromEntries(
+      Object.entries(value["mcpServers"]).map(([serverName, server]) => {
+        const serverOverride = overrides[serverName];
+        if (
+          !isRecord(server) ||
+          !isRecord(server["toolDescriptionOverrides"]) ||
+          !isRecord(serverOverride) ||
+          !isRecord(serverOverride["toolDescriptionOverrides"])
+        ) {
+          return [serverName, server];
+        }
+        const paths = { ...server["toolDescriptionOverrides"] };
+        for (const tool of Object.keys(serverOverride["toolDescriptionOverrides"])) {
+          const path = paths[tool];
+          if (typeof path === "string" && path.length > 0) {
+            paths[tool] = resolveConfiguredPath(directory, path);
+          }
+        }
+        return [serverName, { ...server, toolDescriptionOverrides: paths }];
+      }),
+    ),
+  };
 }

@@ -41,7 +41,7 @@ export function modelToolDefinitions(
 export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot: McpToolSnapshot) {
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool])),
     frozenNames = new Set<string>();
-  for (const definition of snapshot.tools) {
+  const frozenTools = snapshot.tools.map((definition) => {
     if (frozenNames.has(definition.name)) {
       throw new Error(`会话冻结的 MCP 工具定义包含重复项：${definition.name}`);
     }
@@ -51,12 +51,13 @@ export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot:
       throw new Error(`会话冻结的 MCP 工具不存在：${definition.name}`);
     }
     tool.extras = { ...tool.extras, defer_loading: definition.deferLoading === true };
-  }
+    return tool;
+  });
   const freeformToolParameters = configureFreeformMcpTools(
-    tools,
+    frozenTools,
     snapshot.tools.filter(({ freeform }) => freeform).map(({ name }) => name),
   ).parameters;
-  return { freeformToolParameters, tools };
+  return { freeformToolParameters, tools: frozenTools };
 }
 export function emptyMcpToolSnapshot(): McpToolSnapshot {
   return {
