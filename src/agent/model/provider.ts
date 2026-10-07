@@ -1,8 +1,9 @@
+import type { LanguageModelV4CallOptions, SharedV4ProviderOptions } from "@ai-sdk/provider";
 import type { ModelApi, ModelSettings, Settings } from "../../types";
-import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
+import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createResponsesWebsocketFetch } from "./responsesWebsocket";
 import { localize } from "../../i18n/server";
@@ -12,13 +13,16 @@ export function buildAiModel(settings: Settings, codexVersion?: string) {
   return buildConfiguredAiModel(settings.model, codexVersion);
 }
 export function buildConfiguredAiModel(model: ModelSettings, codexVersion?: string) {
-  if (configuredModelApi(model) === "messages") {
+  const api = configuredModelApi(model);
+  if (api === "messages") {
     return createAnthropic(providerOptions(model, codexVersion))(model.model);
   }
+  if (api === "interactions" || api === "generate-content") {
+    const provider = createGoogle(providerOptions(model, codexVersion));
+    return api === "interactions" ? provider.interactions(model.model) : provider(model.model);
+  }
   const provider = createOpenAI(providerOptions(model, codexVersion));
-  return configuredModelApi(model) === "completions"
-    ? provider.chat(model.model)
-    : provider.responses(model.model);
+  return api === "completions" ? provider.chat(model.model) : provider.responses(model.model);
 }
 export function aiRequestOptions(
   settings: Settings,
@@ -27,23 +31,14 @@ export function aiRequestOptions(
 ): {
   headers?: Record<string, string>;
   instructions?: string;
+  reasoning?: LanguageModelV4CallOptions["reasoning"];
   providerOptions: SharedV4ProviderOptions;
 } {
-  if (modelApi(settings) === "messages") {
-    const effort = settings.model.reasoning_effort;
-    if (effort === "minimal") {
-      throw new Error(localize("agent:model.messagesReasoningEffortUnsupported"));
-    }
+  const api = modelApi(settings);
+  if (api === "messages" || api === "interactions" || api === "generate-content") {
     return {
       instructions: settings.agent.systemPrompt,
-      providerOptions: {
-        anthropic:
-          effort === undefined
-            ? {}
-            : effort === "none"
-              ? { thinking: { type: "disabled" } }
-              : { effort, thinking: { display: "summarized", type: "adaptive" } },
-      },
+      ...structuredRequestOptions(settings.model),
     };
   }
   const openai = {
@@ -54,7 +49,7 @@ export function aiRequestOptions(
     reasoningSummary: "detailed" as const,
     store: false,
   };
-  return modelApi(settings) === "completions"
+  return api === "completions"
     ? {
         instructions: settings.agent.systemPrompt,
         providerOptions: { openai },
@@ -72,10 +67,30 @@ export function aiRequestOptions(
       };
 }
 export function structuredRequestOptions(model: ModelSettings): {
+  reasoning?: LanguageModelV4CallOptions["reasoning"];
   providerOptions: SharedV4ProviderOptions;
 } {
-  if (configuredModelApi(model) === "messages") {
-    const effort = model.reasoning_effort;
+  const api = configuredModelApi(model),
+    effort = model.reasoning_effort;
+  if (api === "generate-content") {
+    return {
+      providerOptions: { google: { thinkingConfig: { includeThoughts: true } } },
+      reasoning: effort,
+    };
+  }
+  if (api === "interactions") {
+    if (effort === "none" || effort === "xhigh" || effort === "max") {
+      throw new Error(
+        localize("agent:model.interactionsReasoningEffortUnsupported", { value0: effort }),
+      );
+    }
+    return {
+      providerOptions: {
+        google: { store: false, thinkingLevel: effort, thinkingSummaries: "auto" },
+      },
+    };
+  }
+  if (api === "messages") {
     if (effort === "minimal") {
       throw new Error(localize("agent:model.structuredReasoningEffortUnsupported"));
     }
@@ -110,7 +125,9 @@ function configuredModelApi(model: ModelSettings): ModelApi {
       return "responses";
     }
     case "completions":
-    case "messages": {
+    case "messages":
+    case "interactions":
+    case "generate-content": {
       return model.adapter;
     }
     default: {

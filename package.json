@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "latest",
+    "@ai-sdk/google": "latest",
     "@ai-sdk/openai": "latest",
     "@ai-sdk/provider": "latest",
     "@ark-ui/react": "latest",
@@ -65,7 +66,6 @@
     "magika": "latest",
     "mitt": "latest",
     "nanoid": "latest",
-    "openai": "latest",
     "openai-codex-oauth": "latest",
     "p-map": "latest",
     "pathprobe": "latest",
@@ -86,7 +86,6 @@
     "undici": "latest",
     "untildify": "latest",
     "virtua": "latest",
-    "ws": "latest",
     "yaml": "next",
     "zod": "latest",
     "zod-form-data": "latest"

@@ -5,16 +5,28 @@ import { modelToolPolicy } from "../../../settings/modelToolPolicy";
 import { z } from "zod";
 
 const modelRequestSchema = z.looseObject({
-  tools: z.array(z.looseObject({ type: z.string().optional() })).default([]),
-});
+    tools: z.array(z.looseObject({ type: z.string().optional() })).default([]),
+  }),
+  generateContentToolSchema = z.strictObject({
+    functionDeclarations: z.array(z.looseObject({ name: z.string().min(1) })).min(1),
+  }),
+  objectSchema = z.record(z.string(), z.unknown());
 export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
   const restricted: OutboundFetch = async (input, init) => {
     const request = new Request(input, init),
       body = modelRequestSchema.parse(await request.json());
     for (const tool of body.tools) {
-      const type = tool.type ?? (api === "messages" ? "custom" : undefined);
-      if (!modelToolPolicy.allowedTypes[api].some((allowed) => allowed === type)) {
-        throw new Error(localize("agent:model.toolTypeDisabled", { value0: String(type) }));
+      const types =
+        api === "generate-content"
+          ? Object.keys(tool)
+          : [tool.type ?? (api === "messages" ? "custom" : undefined)];
+      for (const type of types) {
+        if (!modelToolPolicy.allowedTypes[api].some((allowed) => allowed === type)) {
+          throw new Error(localize("agent:model.toolTypeDisabled", { value0: String(type) }));
+        }
+      }
+      if (api === "generate-content") {
+        generateContentToolSchema.parse(tool);
       }
     }
     for (const name of modelToolPolicy.blockedOptions) {
@@ -23,7 +35,9 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
         throw new Error(localize("agent:model.optionDisabled", { value0: name }));
       }
     }
-    if (body.tools.length === 0) {
+    if (api === "interactions" || api === "generate-content") {
+      configureGeminiTools(body, api);
+    } else if (body.tools.length === 0) {
       body["tool_choice"] = api === "messages" ? { type: "none" } : "none";
     } else {
       body["tool_choice"] ??= api === "messages" ? { type: "auto" } : "auto";
@@ -41,4 +55,22 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
       throw new Error(localize("agent:model.preconnectUnsupported"));
     },
   });
+}
+function configureGeminiTools(body: z.infer<typeof modelRequestSchema>, api: ModelApi) {
+  if (body.tools.length === 0) {
+    // Gemini rejects function-calling configuration without function declarations.
+    Reflect.deleteProperty(body, "tools");
+    return;
+  }
+  if (api === "interactions") {
+    const configuration = objectSchema.parse(body["generation_config"] ?? {});
+    configuration["tool_choice"] ??= "auto";
+    body["generation_config"] = configuration;
+    return;
+  }
+  const configuration = objectSchema.parse(body["toolConfig"] ?? {}),
+    functionCalling = objectSchema.parse(configuration["functionCallingConfig"] ?? {});
+  functionCalling["mode"] ??= "AUTO";
+  configuration["functionCallingConfig"] = functionCalling;
+  body["toolConfig"] = configuration;
 }

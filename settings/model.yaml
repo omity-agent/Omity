@@ -1,6 +1,9 @@
+# 模型接口：codex、responses-sse、responses-websocket、completions、messages、interactions、generate-content
 adapter:
 model:
+# API 密钥所在的环境变量名称
 apiKeyEnv:
+# 留空使用供应商默认地址
 baseURL:
 reasoning_effort:
 temperature:

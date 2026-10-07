@@ -7,7 +7,7 @@ import { openai } from "@ai-sdk/openai";
 
 export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolSet {
   const deferred = tools.some((tool) => tool.deferLoading);
-  if (deferred && api === "completions") {
+  if (deferred && api !== "responses" && api !== "messages") {
     throw new Error(localize("agent:model.deferredToolsUnsupported"));
   }
   for (const tool of tools) {
