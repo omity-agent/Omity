@@ -1,0 +1,79 @@
+{
+  "lifecycle": {
+    "initializationWhileClosing": "{{value0}} 正在关闭，不能初始化资源",
+    "cleanupFailed": "关闭 {{value0}} 资源失败",
+    "initializationAndCleanupFailed": "资源初始化及清理均失败"
+  },
+  "catalog": {
+    "configurationMissing": "MCP 配置不存在，跳过工具加载",
+    "noEnabledServers": "没有已启用的 MCP 服务器，Agent 将不带工具运行",
+    "loadingTools": "MCP 工具加载",
+    "toolsLoaded": "已加载 MCP 工具"
+  },
+  "definitions": {
+    "duplicateFrozenTool": "会话冻结的 MCP 工具定义包含重复项：{{value0}}",
+    "frozenToolMissing": "会话冻结的 MCP 工具不存在：{{value0}}"
+  },
+  "descriptions": {
+    "agentNameForbidden": "MCP 工具不能命名为 agent",
+    "renameCollision": "MCP 工具重命名后名称冲突：{{value0}}",
+    "overrideTargetMissing": "MCP 工具描述覆盖配置引用了不存在的工具：{{value0}}",
+    "overrideReadFailed": "无法读取 MCP 工具 {{value0}} 的描述覆盖文件：{{value1}}",
+    "overrideEmpty": "MCP 工具 {{value0}} 的描述覆盖文件不能为空：{{value1}}",
+    "overrideReferenceMissing": "MCP 工具描述覆盖配置引用了不存在的工具：{{value0}}",
+    "sessionDescriptionMissing": "MCP 工具没有会话级描述：{{value0}}",
+    "duplicateToolName": "MCP 工具名称重复：{{value0}}"
+  },
+  "freeform": {
+    "configuredToolMissing": "MCP free-form 工具配置引用了不存在的工具：{{value0}}",
+    "inputParameterCountInvalid": "MCP free-form 工具 {{value0}} 必须恰好声明一个输入参数，实际为 {{value1}} 个",
+    "inputParameterMissing": "MCP free-form 工具 {{value0}} 缺少输入参数",
+    "inputParameterNameMissing": "MCP free-form 工具 {{value0}} 的输入参数名不能为空",
+    "inputParameterTypeInvalid": "MCP free-form 工具 {{value0}} 的唯一输入参数 {{value1}} 必须是字符串",
+    "descriptionLabel": "MCP 工具 {{value0}} 的描述",
+    "descriptionNotString": "MCP 工具 {{value0}} 的描述必须解析为字符串"
+  },
+  "issues": {
+    "stringArrayExpected": "{{value0}} 应为字符串数组；如无参数可省略",
+    "commandStringExpected": "{{value0}} 应为可执行命令字符串",
+    "serverUrlExpected": "{{value0}} 应为 HTTP/SSE MCP 服务地址"
+  },
+  "tools": {
+    "executionFailed": "MCP 工具返回了错误"
+  },
+  "structured": {
+    "multipleArtifacts": "MCP 工具返回了多个结构化输出 artifact",
+    "dataMissing": "MCP 结构化输出 artifact 缺少 data"
+  },
+  "configuration": {
+    "blacklistDuplicate": "MCP 工具黑名单包含重复工具",
+    "freeformDuplicate": "MCP free-form 工具配置包含重复工具",
+    "sseReconnectUnsupported": "MCP SSE transport 无法关闭底层自动重连，请改用 http",
+    "authProviderRetryUnsupported": "MCP authProvider 会在认证失败后自动重试，请改用静态 headers",
+    "agentNameForbidden": "MCP 工具不能命名为 agent",
+    "entryMustBeObject": "MCP 配置 {{value0}} 必须是对象",
+    "defaultsMustBeObject": "MCP 默认配置 {{value0}} 必须是对象",
+    "serverMissing": "MCP 服务器不存在：{{value0}}"
+  },
+  "client": {
+    "processExited": "MCP stdio 子进程意外退出",
+    "unavailableAfterRestarts": "MCP stdio 服务器 \"{{value0}}\" 在 {{value1}} 次重启后仍不可用",
+    "outputTruncated": "[前部输出已截断]\n{{value0}}",
+    "stderrEncodingUnknown": "[stderr 编码无法识别；原始字节（hex）]\n{{value0}}",
+    "stderrEncodingUnsupported": "[stderr 编码不受支持：{{value0}}；原始字节（hex）]\n{{value1}}",
+    "poolLabel": "MCP 连接池",
+    "closingServer": "正在关闭 MCP stdio 服务器 \"{{value0}}\"",
+    "recoveryBeforeCloseFailed": "MCP stdio 服务器 \"{{value0}}\" 关闭前恢复失败",
+    "recoveryFailed": "MCP stdio 恢复任务失败",
+    "processRestarted": "MCP stdio 子进程已重启",
+    "processRestartFailed": "MCP stdio 子进程重启失败"
+  },
+  "connection": {
+    "configurationFailed": "MCP 配置加载失败",
+    "loadFailed": "MCP 工具加载失败",
+    "serverFailed": "MCP 服务器 \"{{server}}\" 启动失败",
+    "startupFailed": "MCP 启动失败：{{servers}}",
+    "stderrUnavailable": "无法捕获 MCP 子进程 stderr",
+    "processUnavailable": "当前 MCP SDK 不支持观测 stdio 子进程"
+  }
+}

@@ -1,4 +1,5 @@
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 
 export function structuredToolOutput(value: unknown) {
   if (!Array.isArray(value)) {
@@ -6,14 +7,14 @@ export function structuredToolOutput(value: unknown) {
   }
   const matches = value.filter(isStructuredArtifact);
   if (matches.length > 1) {
-    throw new Error("MCP 工具返回了多个结构化输出 artifact");
+    throw new Error(localize("mcp:structured.multipleArtifacts"));
   }
   const [artifact] = matches;
   if (!artifact) {
     return undefined;
   }
   if (!("data" in artifact)) {
-    throw new Error("MCP 结构化输出 artifact 缺少 data");
+    throw new Error(localize("mcp:structured.dataMissing"));
   }
   return artifact["data"];
 }

@@ -1,6 +1,7 @@
 import { decode, encodingExists } from "iconv-lite";
 import { detect } from "chardet";
 import { isUtf8 } from "node:buffer";
+import { localize } from "../../../i18n/server";
 
 export class ProcessOutputCapture {
   private bytes = Buffer.alloc(0);
@@ -25,7 +26,9 @@ export class ProcessOutputCapture {
     if (!value) {
       return "";
     }
-    return this.discardedBytes > 0 ? `[前部输出已截断]\n${value}` : value;
+    return this.discardedBytes > 0
+      ? localize("mcp:client.outputTruncated", { value0: value })
+      : value;
   }
   snapshot() {
     return {
@@ -38,10 +41,15 @@ export class ProcessOutputCapture {
 function decodeDetected(bytes: Buffer) {
   const encoding = detect(bytes);
   if (encoding === null) {
-    return `[stderr 编码无法识别；原始字节（hex）]\n${bytes.toString("hex")}`;
+    return localize("mcp:client.stderrEncodingUnknown", {
+      value0: bytes.toString("hex"),
+    });
   }
   if (!encodingExists(encoding)) {
-    return `[stderr 编码不受支持：${String(encoding)}；原始字节（hex）]\n${bytes.toString("hex")}`;
+    return localize("mcp:client.stderrEncodingUnsupported", {
+      value0: String(encoding),
+      value1: bytes.toString("hex"),
+    });
   }
   return decode(bytes, encoding);
 }

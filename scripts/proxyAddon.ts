@@ -1,6 +1,7 @@
 import { GLIBC, MUSL, familySync } from "detect-libc";
 import type { BunPlugin } from "bun";
 import { fileURLToPath } from "node:url";
+import { localize } from "../src/i18n/server";
 
 export const proxyAddon: BunPlugin = {
   name: "system-proxy-native-addon",
@@ -20,11 +21,11 @@ function nativeBinding() {
   } else if (platform === "linux") {
     const family = familySync();
     if (family !== GLIBC && family !== MUSL) {
-      throw new Error("无法识别构建平台的 libc");
+      throw new Error(localize("build:unknownLibc"));
     }
     suffix = family === MUSL ? "-musl" : arch === "arm" ? "-gnueabihf" : "-gnu";
   } else if (platform !== "darwin") {
-    throw new Error(`系统代理模块不支持此构建平台：${platform}`);
+    throw new Error(localize("build:unsupportedPlatform", { platform }));
   }
   return fileURLToPath(
     import.meta.resolve(`@vscode/os-proxy-resolver-${platform}-${arch}${suffix}`),

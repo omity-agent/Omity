@@ -1,6 +1,7 @@
 import { composerDrafts, preparationDrafts } from "../../schema";
 import { eq, gt, gte, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 
 export function readComposerDraftRecord(db: Database, sessionId: string) {
@@ -39,7 +40,11 @@ export function writeComposerDraftRecord(
     .where(eq(composerDrafts.sessionId, sessionId))
     .get();
   if (!row) {
-    throw new Error(`Composer 草稿保存失败：${sessionId}`);
+    throw new Error(
+      localize("database:session.composerDraftSaveFailed", {
+        value0: sessionId,
+      }),
+    );
   }
   return row;
 }
@@ -79,7 +84,7 @@ export function writePreparationDraftRecord(db: Database, content: string, revis
     .where(eq(preparationDrafts.id, 1))
     .get();
   if (!row) {
-    throw new Error("新建会话草稿保存失败");
+    throw new Error(localize("database:session.newDraftSaveFailed"));
   }
   return row;
 }

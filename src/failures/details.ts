@@ -1,5 +1,6 @@
 import { isEqual, isPlainObject as isRecord, omit } from "es-toolkit";
 import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
+import { localize } from "../i18n/server";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
 
@@ -67,7 +68,7 @@ export function summarizeError(error: ErrorDetails): ErrorSummary {
   }
   const [root, ...causes] = levels;
   if (!root) {
-    throw new Error("错误摘要缺少根错误");
+    throw new Error(localize("errors:failure.rootErrorMissing"));
   }
   return causes.length > 0 ? { ...root, causes } : root;
 }
@@ -75,7 +76,7 @@ export function parseError(value: string): ErrorDetails {
   const parsed: unknown = JSON.parse(value),
     result = errorDetailsSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error("队列错误详情无效");
+    throw new Error(localize("errors:failure.invalidQueueDetails"));
   }
   return result.data;
 }

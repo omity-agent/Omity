@@ -3,6 +3,7 @@ import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState
 import { CopyButton } from "../../Chat/CopyButton";
 import type { VirtualizerHandle } from "virtua";
 import { css } from "styled-system/css";
+import { localize } from "../../../i18n";
 import type { segmentTranscript } from "../segments";
 
 interface MountedCopy {
@@ -113,7 +114,7 @@ function PinnedCopy({
     const element = reference.current,
       instance = handleRef.current;
     if (!element || !instance) {
-      throw new Error("消息复制按钮缺少定位容器");
+      throw new Error(localize("frontend:transcript.copyAnchorMissing"));
     }
     return register(instance, element, span);
   }, [handleRef, register, span]);

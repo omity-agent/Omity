@@ -1,4 +1,5 @@
 import { type ReactNode, createContext, useContext } from "react";
+import { localize } from "../../i18n";
 
 const SessionContext = createContext<string | undefined>(undefined);
 export function FileLinkProvider({
@@ -13,7 +14,7 @@ export function FileLinkProvider({
 export function useFileLinkSession() {
   const sessionId = useContext(SessionContext);
   if (sessionId === undefined) {
-    throw new Error("文件链接组件缺少 Session 上下文");
+    throw new Error(localize("frontend:fileLink.sessionContextMissing"));
   }
   return sessionId;
 }

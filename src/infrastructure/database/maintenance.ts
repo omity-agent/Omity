@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 import type { SessionDefinition } from "./session/sessionDefinition";
 import { createSessionRecord } from "./records/session/metadata";
 import { eq } from "drizzle-orm";
+import { localize } from "../../i18n/server";
 import { sessions } from "./schema";
 
 export function resetSessionStorage(
@@ -35,7 +36,9 @@ function replaceSessionStorage(
       .get(),
     previousRevision = previous?.revision ?? -1;
   if (!Number.isSafeInteger(previousRevision) || previousRevision >= Number.MAX_SAFE_INTEGER) {
-    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+    throw new Error(
+      localize("database:maintenance.transcriptRevisionExhausted", { value0: sessionId }),
+    );
   }
   orm.delete(sessions).where(eq(sessions.id, sessionId)).run();
   createSessionRecord(

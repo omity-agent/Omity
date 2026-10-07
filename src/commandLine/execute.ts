@@ -2,6 +2,7 @@ import { appendSessionMessage, setSessionControl } from "../client";
 import type { CliCommand } from "./parser";
 import type { HostMode } from "../types";
 import { deleteHostSession } from "../storedSessions";
+import { localize } from "../i18n/server";
 import { openBrowser } from "../app/launch";
 import { runHost } from "../host";
 import { startAppServer } from "../app/server";
@@ -12,7 +13,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
       await startAppServer({
         host: command.host,
         onReady: (url) => {
-          console.log(`WebUI 已启动：${url}`);
+          console.log(localize("cli:output.webStarted", { value0: url }));
           openBrowser(url);
         },
         port: command.port,
@@ -22,7 +23,7 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     }
     case "delete": {
       deleteHostSession(command.sessionId);
-      console.log(`已删除会话 ${command.sessionId}`);
+      console.log(localize("cli:output.sessionDeleted", { value0: command.sessionId }));
       return;
     }
     case "new":
@@ -40,7 +41,12 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
     }
     case "append": {
       const result = appendSessionMessage(command.sessionId, command.message.join(" "));
-      console.log(`已发送到会话 ${command.sessionId}（queue=${result.inputId.toString()}）`);
+      console.log(
+        localize("cli:output.messageSent", {
+          value0: command.sessionId,
+          value1: result.inputId.toString(),
+        }),
+      );
       return;
     }
     case "pause":
@@ -50,7 +56,12 @@ export async function executeCommand(command: CliCommand, root = process.cwd()) 
         command.action === "resume" ? (command.step ? "step" : "running") : command.action;
       setSessionControl(command.sessionId, control);
       const instruction = control === "step" ? "resume --step" : command.action;
-      console.log(`已发送控制指令 ${instruction} 到会话 ${command.sessionId}`);
+      console.log(
+        localize("cli:output.controlSent", {
+          value0: instruction,
+          value1: command.sessionId,
+        }),
+      );
       return;
     }
   }

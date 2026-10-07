@@ -2,6 +2,7 @@ import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { join, resolve } from "node:path";
 import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { build } from "vite";
+import { localize } from "../src/i18n/server";
 import { prepareMagikaAssets } from "./magikaModel";
 
 const database = {
@@ -18,7 +19,7 @@ try {
   void node;
   void script;
   if (command !== undefined && command !== "--test" && command !== "--benchmark-mcp") {
-    throw new Error(`未知构建参数：${command}`);
+    throw new Error(localize("build:unknownArgument", { command }));
   }
   const run =
     command === "--test"
@@ -54,7 +55,7 @@ async function buildApplication() {
       sourcemap: "linked",
     });
   if (!executable.success) {
-    throw new AggregateError(executable.logs, "可执行程序构建失败");
+    throw new AggregateError(executable.logs, localize("build:executableBuildFailed"));
   }
 }
 async function generateDatabaseSchema() {
@@ -81,7 +82,12 @@ async function generateMigration(specification: typeof database) {
     ),
     exitCode = await child.exited;
   if (exitCode !== 0) {
-    throw new Error(`${specification.name} 数据库生成失败，退出码：${exitCode.toString()}`);
+    throw new Error(
+      localize("build:databaseGenerationFailed", {
+        code: exitCode.toString(),
+        name: specification.name,
+      }),
+    );
   }
 }
 async function flattenMigration(specification: typeof database) {
@@ -89,7 +95,7 @@ async function flattenMigration(specification: typeof database) {
     entries = await readdir(databaseDirectory, { withFileTypes: true }),
     directories = entries.filter((entry) => entry.isDirectory());
   if (directories.length !== 1 || entries.length !== 1) {
-    throw new Error(`${specification.name} 数据库结构目录无效`);
+    throw new Error(localize("build:databaseDirectoryInvalid", { name: specification.name }));
   }
   const generatedDirectory = join(databaseDirectory, directories[0]!.name),
     generatedEntries = await readdir(generatedDirectory, { withFileTypes: true }),
@@ -102,7 +108,7 @@ async function flattenMigration(specification: typeof database) {
     generatedFiles.length !== expectedFiles.length ||
     generatedFiles.some((file, index) => file !== expectedFiles[index])
   ) {
-    throw new Error(`${specification.name} 数据库结构文件无效`);
+    throw new Error(localize("build:databaseFilesInvalid", { name: specification.name }));
   }
   await Promise.all(
     expectedFiles.map((file) =>
@@ -131,7 +137,7 @@ async function runTests() {
     }),
     exitCode = await child.exited;
   if (exitCode !== 0) {
-    throw new Error(`测试失败，退出码：${exitCode.toString()}`);
+    throw new Error(localize("build:testsFailed", { code: exitCode.toString() }));
   }
 }
 async function runMcpBenchmark() {
@@ -142,6 +148,6 @@ async function runMcpBenchmark() {
     }),
     exitCode = await child.exited;
   if (exitCode !== 0) {
-    throw new Error(`测试失败，退出码：${exitCode.toString()}`);
+    throw new Error(localize("build:testsFailed", { code: exitCode.toString() }));
   }
 }

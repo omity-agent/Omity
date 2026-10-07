@@ -2,6 +2,7 @@ import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import type { ActiveRun } from "./run";
 import type { HostContext } from "./context";
 import { inputMessageId } from "../infrastructure/database/records/transcript/messages/history";
+import { localize } from "../i18n/server";
 
 export function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: BoundaryState) {
   if (hasPendingTools(state) || blocksAppend(state.values?.hookPlan)) {
@@ -15,7 +16,7 @@ export function consumeBoundaryAppends(ctx: HostContext, run: ActiveRun, state: 
     const userMessageId = ctx.db.consumeInput(ctx.sessionId, item);
     run.items.push({ ...item, status: "running", userMessageId });
   }
-  ctx.logger.info("已在节点边界追加输入", {
+  ctx.logger.info(localize("runtime:append.inputAddedAtBoundary"), {
     inputIds: appends.map((item) => item.id),
   });
   return {
@@ -53,9 +54,11 @@ export function recoverConsumedAppends(ctx: HostContext, run: ActiveRun, state: 
     recoveredIds = new Set(messages.map((message) => message.id)),
     absentIds = [...consumedIds].filter((id) => !recoveredIds.has(id));
   if (absentIds.length > 0) {
-    throw new Error(`已消费的用户消息不存在：${absentIds.join(", ")}`);
+    throw new Error(
+      localize("runtime:append.userMessageMissing", { value0: absentIds.join(", ") }),
+    );
   }
-  ctx.logger.warn("恢复 checkpoint 后尚未提交的追加输入", {
+  ctx.logger.warn(localize("runtime:append.uncommittedAfterCheckpointResume"), {
     inputIds: run.items
       .filter((item) => consumedIds.has(inputMessageId(ctx.sessionId, item.id)))
       .map((item) => item.id),

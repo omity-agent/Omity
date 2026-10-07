@@ -1,6 +1,7 @@
 import { type HostContext, waitForWake } from "./context";
 import type { BrowserWarning } from "../types";
 import { captureError } from "../failures/details";
+import { localize } from "../i18n/server";
 
 interface RetriedRun {
   items: [{ id: number }, ...{ id: number }[]];
@@ -39,7 +40,7 @@ export async function waitBeforeModelRetry(
         inputId: run.items[0].id,
         sessionId: ctx.sessionId,
       },
-      message: "模型 API 暂不可用，正在重试",
+      message: localize("runtime:retry.modelUnavailable"),
     };
   ctx.observer?.warning?.(ctx.sessionId, warning);
   const deadline = Date.now() + delayMs;

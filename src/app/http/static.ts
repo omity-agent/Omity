@@ -1,6 +1,7 @@
 import { join, normalize, relative, resolve } from "node:path";
 import { Hono } from "hono";
 import type { HttpBindings } from "@hono/node-server";
+import { localize } from "../../i18n/server";
 
 export function createStaticApp(root: string) {
   const app = new Hono<{ Bindings: HttpBindings }>(),
@@ -31,7 +32,7 @@ function resolveStaticAsset(root: string, requestPath: string) {
   const path = normalize(decodeURIComponent(requestPath).replace(/^\/+/u, "")),
     resolved = resolve(root, path);
   if (relative(root, resolved).startsWith("..")) {
-    throw new Error(`静态资源路径越界：${requestPath}`);
+    throw new Error(localize("http:static.pathTraversal", { value0: requestPath }));
   }
   return resolved;
 }

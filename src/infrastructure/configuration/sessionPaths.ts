@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/server";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { userDataDirectory } from "./settings/files";
@@ -25,7 +26,7 @@ export function safeId(value: string) {
     value === ".." ||
     !/^[a-zA-Z0-9._-]+$/.test(value)
   ) {
-    throw new Error(`路径 ID 无效：${value}`);
+    throw new Error(localize("configuration:paths.idInvalid", { value0: value }));
   }
   return value;
 }

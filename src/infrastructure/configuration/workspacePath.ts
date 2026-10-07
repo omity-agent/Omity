@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/server";
 import { resolve } from "node:path";
 import untildify from "untildify";
 
@@ -9,7 +10,7 @@ export function normalizeWorkspacePath(
 ) {
   const stripped = stripOuterQuotes(input.trim());
   if (stripped.length === 0) {
-    throw new Error("工作目录不能为空");
+    throw new Error(localize("configuration:workspace.empty"));
   }
   const expanded = expandEnvironmentVariables(stripped, env);
   return resolve(base, normalizeDriveRoot(untildify(expanded)), ".");
@@ -45,7 +46,7 @@ function expandDollarVariables(value: string, env: Env) {
 function envValue(name: string, env: Env) {
   const value = env[name] ?? env[caseInsensitiveEnvName(name, env)];
   if (value === undefined) {
-    throw new Error(`环境变量未定义：${name}`);
+    throw new Error(localize("configuration:workspace.environmentMissing", { value0: name }));
   }
   return value;
 }

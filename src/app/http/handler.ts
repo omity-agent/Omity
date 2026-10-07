@@ -18,6 +18,7 @@ import { readMessageForm, readSessionForm } from "./multipart";
 import type { AccessService } from "../access/service";
 import type { AppController } from "../controller";
 import { compress } from "hono/compress";
+import { localize } from "../../i18n/server";
 import { requestBodyLimit } from "../../../settings/networking";
 import { validator } from "hono/validator";
 import { writeReasoningTranslation } from "../reasoningTranslation";
@@ -51,12 +52,15 @@ type ApiController = Pick<
 export function createApi(controller: ApiController, access?: AccessService) {
   const app = new Hono<AccessEnvironment>(),
     attachmentBodyLimit = requestBodyLimit + controller.bootstrap().attachments.maxSizeBytes,
-    attachmentRequestLimit = limitRequestBody(attachmentBodyLimit, "附件请求体"),
+    attachmentRequestLimit = limitRequestBody(
+      attachmentBodyLimit,
+      localize("http:request.attachmentBody"),
+    ),
     routes = mountAccess(app, access);
   app.use("/api/sessions/:sessionId/messages", attachmentRequestLimit);
   app.use("/api/sessions/:sessionId/transcript", compress());
   app.notFound((c) => {
-    throw new HttpError(404, `未知 API：${c.req.path}`);
+    throw new HttpError(404, localize("http:request.apiUnknown", { value0: c.req.path }));
   });
   app.onError(handleApiError);
   return routes
@@ -166,7 +170,7 @@ function handleApiError(error: Error, c: Context) {
 function sessionId(c: Context) {
   const value = c.req.param("sessionId");
   if (value === undefined) {
-    throw new HttpError(400, "请求缺少 Session ID");
+    throw new HttpError(400, localize("http:request.sessionIdMissing"));
   }
   return decodeSessionId(value);
 }

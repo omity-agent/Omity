@@ -11,6 +11,7 @@ import { allContent, lastContentGroup } from "../contentSelection";
 import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
 import type { FileLinkUnit } from "../../../fileLinks/types";
 import { countTokens } from "../../../runtime/tokenizer";
+import { localize } from "../../../i18n/server";
 import { streamCallKey } from "../tool/correlation";
 
 type StreamPart = TextPart | ToolPart;
@@ -47,7 +48,9 @@ export function mergeStreamPart(
   message: StreamMessage,
 ) {
   if (part.kind !== event.kind) {
-    throw new Error(`流片段 ${event.partId} 的类型发生变化`);
+    throw new Error(
+      localize("application:timeline.streamPartTypeChanged", { value0: event.partId }),
+    );
   }
   if (part.kind === "tool_call_delta" && event.kind === "tool_call_delta") {
     extendToolPart(part, event.value);
@@ -66,7 +69,7 @@ export function projectStreamMessage(
   const parts = message.order.flatMap((partId): TimelinePart[] => {
       const part = message.parts.get(partId);
       if (!part) {
-        throw new Error(`流消息缺少片段：${partId}`);
+        throw new Error(localize("application:timeline.streamPartMissing", { value0: partId }));
       }
       if (part.kind === "assistant_reasoning_delta") {
         return textTimelinePart(

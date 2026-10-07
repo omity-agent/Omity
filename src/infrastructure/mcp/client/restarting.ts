@@ -8,6 +8,7 @@ import { captureError, summarizeError } from "../../../failures/details";
 import type { Logger } from "../../logging/logger";
 import type { McpOperations } from "./protocol";
 import type { StdioConnection } from "../configuration/connections";
+import { localize } from "../../../i18n/server";
 import { raceSignal } from "race-signal";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -44,12 +45,22 @@ export class RestartingStdioClient implements McpOperations {
   readResource: McpOperations["readResource"] = (params, options) =>
     this.invoke("readResource", (client) => client.readResource(params, options), options?.signal);
   async close() {
-    this.controller.abort(new Error(`正在关闭 MCP stdio 服务器 "${this.serverName}"`));
+    this.controller.abort(
+      new Error(
+        localize("mcp:client.closingServer", {
+          value0: this.serverName,
+        }),
+      ),
+    );
     try {
       await this.recovering;
     } catch {
       if (!this.controller.signal.aborted) {
-        throw new Error(`MCP stdio 服务器 "${this.serverName}" 关闭前恢复失败`);
+        throw new Error(
+          localize("mcp:client.recoveryBeforeCloseFailed", {
+            value0: this.serverName,
+          }),
+        );
       }
     }
     const { current } = this;
@@ -146,7 +157,7 @@ export class RestartingStdioClient implements McpOperations {
       return await task;
     } catch (error) {
       if (!(error instanceof McpStdioUnavailableError) && !this.controller.signal.aborted) {
-        this.logger.error("MCP stdio 恢复任务失败", {
+        this.logger.error(localize("mcp:client.recoveryFailed"), {
           error: error instanceof Error ? error.message : String(error),
           server: this.serverName,
         });
@@ -170,14 +181,17 @@ export class RestartingStdioClient implements McpOperations {
           this.controller.signal,
         );
         this.install(connection);
-        this.logger.info("MCP stdio 子进程已重启", { attempt, server: this.serverName });
+        this.logger.info(localize("mcp:client.processRestarted"), {
+          attempt,
+          server: this.serverName,
+        });
         return connection;
       } catch (error) {
         if (this.controller.signal.aborted) {
           throw this.controller.signal.reason;
         }
         this.lastFailure = error;
-        this.logger.warn("MCP stdio 子进程重启失败", {
+        this.logger.warn(localize("mcp:client.processRestartFailed"), {
           attempt,
           maximum: this.policy.maxAttempts,
           server: this.serverName,

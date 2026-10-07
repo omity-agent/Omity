@@ -15,6 +15,7 @@ import { createCodexTransport } from "./wireTransport";
 import { createCodexVersionResolver } from "./codexVersion";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { localize } from "../../i18n/server";
 
 interface CodexClientOptions {
   authFilePath?: string;
@@ -30,7 +31,7 @@ export function createCodexClientFields(options: CodexClientOptions = {}) {
     resolveVersion = createCodexVersionResolver(options.codexVersion),
     transport = Object.assign(createCodexTransport(options.fetch, cookieStore, resolveVersion), {
       preconnect() {
-        throw new Error("Codex 不支持绕过统一代理的 preconnect");
+        throw new Error(localize("network:codex.preconnectUnsupported"));
       },
     }),
     websocketTokens = new CodexWebsocketTokens(tokenStore, transport);
@@ -46,7 +47,7 @@ export function createCodexClientFields(options: CodexClientOptions = {}) {
         url = `${DEFAULT_CODEX_BASE_URL}/responses`,
         cookies = cookieStore.cookies(url);
       if (!accountId) {
-        throw new Error("Codex OAuth 缺少 ChatGPT Account ID");
+        throw new Error(localize("network:codex.accountIdMissing"));
       }
       return {
         apiKey: tokens.accessToken,
@@ -87,7 +88,7 @@ class CodexWebsocketTokens {
   private async load() {
     let tokens = await this.store.load();
     if (!tokens?.accessToken) {
-      throw new Error("Codex OAuth 缺少 access token");
+      throw new Error(localize("network:codex.accessTokenMissing"));
     }
     const now = Date.now(),
       expiresAt = tokens.expiresAt ?? deriveExpiresAt(tokens.accessToken);
@@ -97,7 +98,7 @@ class CodexWebsocketTokens {
         tokens = refreshed;
         await this.store.save(tokens);
       } else if (expiresAt <= now) {
-        throw new Error("Codex OAuth access token 已过期且刷新失败");
+        throw new Error(localize("network:codex.accessTokenRefreshFailed"));
       }
     }
     return tokens;

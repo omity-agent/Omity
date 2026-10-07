@@ -5,6 +5,7 @@ import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
 import type { PendingAttachment } from "../../../../../attachments/contract";
 import type { RefObject } from "react";
 import { createOptimisticUser } from "../../../../services/transcript/optimistic";
+import { localize } from "../../../../i18n";
 import { submitMessage } from "./submit";
 
 export function useComposerSubmit({
@@ -81,7 +82,7 @@ export function useComposerSubmit({
     setSubmitting(true);
     historyRef.current?.reset();
     if (draftTarget.kind === "new") {
-      throw new Error("新会话不能使用聊天消息提交协议");
+      throw new Error(localize("frontend:composer.chatProtocolUnsupported"));
     }
     const submissionTarget =
         draftTarget.kind === "session" ? draftTarget.sessionId : composerDraftKey(draftTarget),

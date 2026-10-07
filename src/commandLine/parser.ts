@@ -5,14 +5,15 @@ import { multiple, optional } from "@optique/core/modifiers";
 import { object, or, seq } from "@optique/core/constructs";
 import type { HostMode } from "../types";
 import type { InferValue } from "@optique/core";
+import { localize } from "../i18n/server";
 
 type HostAction = HostMode["kind"] | "delete";
 const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
-    description: message`会话 ID，例如 ${"123"}。`,
+    description: localized("cli:help.sessionIdExample", { value0: "123" }),
   }),
   profile = optional(
     option("--profile", string({ metavar: "PROFILE", pattern: /\S/u }), {
-      description: message`选择一个优先级高于 profile.yaml 默认配置的 Profile。`,
+      description: localized("cli:help.profilePriority"),
     }),
   ),
   appCommand = command(
@@ -21,26 +22,26 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
       action: constant("app"),
       host: optional(
         option("--host", string({ metavar: "HOST" }), {
-          description: message`覆盖配置文件中的监听地址。`,
+          description: localized("cli:help.hostAddressOverride"),
         }),
       ),
       port: optional(
         option("--port", integer({ metavar: "PORT", min: 0 }), {
-          description: message`覆盖配置文件中的监听端口，${"0"} 表示自动选择。`,
+          description: localized("cli:help.portOverride", { value0: "0" }),
         }),
       ),
     }),
-    { brief: message`启动 WebUI。` },
+    { brief: localized("cli:help.startApp") },
   ),
   hostCommand = command(
     "host",
     or(
-      hostCreateAction("new", "新建并启动 Host 会话。"),
-      hostAction("load", "加载并启动 Host 会话。"),
-      hostAction("delete", "删除 Host 会话。"),
-      hostCreateAction("overwrite", "删除后重新新建并启动 Host 会话。"),
+      hostCreateAction("new", localize("cli:help.createHost")),
+      hostAction("load", localize("cli:help.loadHost")),
+      hostAction("delete", localize("cli:help.deleteHost")),
+      hostCreateAction("overwrite", localize("cli:help.overwriteHost")),
     ),
-    { brief: message`管理 Host 会话。` },
+    { brief: localized("cli:help.manageHost") },
   ),
   clientCommand = command(
     "client",
@@ -51,7 +52,7 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           sessionId,
           multiple(
             argument(string({ metavar: "TEXT", pattern: /\S/u }), {
-              description: message`要发送的消息内容。`,
+              description: localized("cli:help.messageContent"),
             }),
             { min: 1 },
           ),
@@ -60,9 +61,9 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           message: parsedMessage,
           sessionId: parsedSessionId,
         })),
-        { brief: message`向会话发送一条消息。` },
+        { brief: localized("cli:help.appendMessage") },
       ),
-      clientControl("pause", "请求暂停会话。"),
+      clientControl("pause", localize("cli:help.pauseSession")),
       command(
         "resume",
         object({
@@ -70,15 +71,15 @@ const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {
           sessionId,
           step: optional(
             flag("--step", {
-              description: message`只运行下一次模型请求或同一批工具调用，然后再次暂停。`,
+              description: localized("cli:help.singleStep"),
             }),
           ),
         }),
-        { brief: message`请求继续会话。` },
+        { brief: localized("cli:help.resumeSession") },
       ),
-      clientControl("cancel", "请求关闭 Host。"),
+      clientControl("cancel", localize("cli:help.cancelHost")),
     ),
-    { brief: message`向 Host 会话发送消息或控制指令。` },
+    { brief: localized("cli:help.manageClient") },
   );
 export const cliParser = or(appCommand, hostCommand, clientCommand);
 export type CliCommand = InferValue<typeof cliParser>;
@@ -115,4 +116,7 @@ function clientControl<const T extends "pause" | "cancel">(action: T, brief: str
     }),
     { brief: message`${text(brief)}` },
   );
+}
+function localized(key: string, options?: Parameters<typeof localize>[1]) {
+  return message`${text(localize(key, options))}`;
 }

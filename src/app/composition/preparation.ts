@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/server";
 import { z } from "zod";
 
 const sessionPreparationSchema = z.strictObject({
@@ -12,7 +13,7 @@ const sessionPreparationSchema = z.strictObject({
     )
     .refine(
       (pairs) => new Set(pairs.map(({ id }) => id)).size === pairs.length,
-      "消息对 ID 不能重复",
+      localize("application:composition.duplicateMessagePairId"),
     ),
 });
 export type SessionPreparation = z.infer<typeof sessionPreparationSchema>;
@@ -29,7 +30,9 @@ export const preparationContentSchema = z.string().superRefine((content, context
   } catch (error) {
     context.addIssue({
       code: "custom",
-      message: `新建会话草稿无效：${error instanceof Error ? error.message : String(error)}`,
+      message: localize("application:composition.draftInvalid", {
+        value0: error instanceof Error ? error.message : String(error),
+      }),
     });
   }
 });

@@ -1,3 +1,5 @@
+import { localize } from "../../../i18n/server";
+
 const unavailableCode = "MCP_STDIO_UNAVAILABLE",
   processExitedCode = "MCP_STDIO_PROCESS_EXITED";
 export interface StdioRestartPolicy {
@@ -12,7 +14,7 @@ export class McpStdioProcessExitedError extends Error {
     readonly operation?: string,
     cause?: unknown,
   ) {
-    super("MCP stdio 子进程意外退出", cause === undefined ? undefined : { cause });
+    super(localize("mcp:client.processExited"), cause === undefined ? undefined : { cause });
   }
 }
 export class McpStdioUnavailableError extends Error {
@@ -24,7 +26,10 @@ export class McpStdioUnavailableError extends Error {
     cause?: unknown,
   ) {
     super(
-      `MCP stdio 服务器 "${serverName}" 在 ${maxAttempts.toString()} 次重启后仍不可用`,
+      localize("mcp:client.unavailableAfterRestarts", {
+        value0: serverName,
+        value1: maxAttempts.toString(),
+      }),
       cause === undefined ? undefined : { cause },
     );
   }

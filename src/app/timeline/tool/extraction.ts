@@ -9,6 +9,7 @@ import {
 import type { StoredAiSdkPart } from "../../../agent/fromAiMessages";
 import { assistantContent } from "../../../agent/aiMessages";
 import { isPlainObject } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 import { rawFreeformInput } from "../../../runtime/freeform";
 import { toolInputTokens } from "../tokenCounts";
 
@@ -51,7 +52,7 @@ function displayOutput(output: StoredToolResult["output"]) {
     return toolOutputText(output.value);
   }
   if (output.type === "execution-denied") {
-    return output.reason ?? "工具执行已拒绝";
+    return output.reason ?? localize("application:timeline.toolRejected");
   }
   return output.value.flatMap((part) => ("text" in part ? [part.text] : [])).join("");
 }

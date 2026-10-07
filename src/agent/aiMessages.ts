@@ -11,6 +11,7 @@ import { isJSONValue, isPlainObject } from "es-toolkit";
 import type { ModelApi } from "../types";
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
 import { isProviderOptions } from "./toolProviderOptions";
+import { localize } from "../i18n/server";
 import { modelToolOutput } from "../runtime/multimodal";
 
 type AssistantPart = Exclude<
@@ -48,7 +49,7 @@ export function toModelMessages(
         role: "tool",
       };
     }
-    throw new Error(`不支持转换消息类型：${message.type}`);
+    throw new Error(localize("agent:messages.typeUnsupported", { value0: message.type }));
   });
 }
 function modelToolCall(
@@ -56,7 +57,7 @@ function modelToolCall(
   call: NonNullable<AIMessage["tool_calls"]>[number],
 ): AiToolCallPart {
   if (!call.id) {
-    throw new Error(`工具调用缺少 ID：${call.name}`);
+    throw new Error(localize("agent:messages.toolCallIdMissing", { value0: call.name }));
   }
   const part: AiToolCallPart = {
       input: customToolInput(call),
@@ -83,7 +84,7 @@ function customToolInput(call: NonNullable<AIMessage["tool_calls"]>[number]) {
   }
   const input = isPlainObject(call.args) ? call.args["input"] : undefined;
   if (typeof input !== "string") {
-    throw new Error(`MCP free-form 工具 ${call.name} 输入必须是字符串`);
+    throw new Error(localize("agent:messages.freeformInputNotString", { value0: call.name }));
   }
   return input;
 }
@@ -97,7 +98,7 @@ export function assistantContent(message: AIMessage): StoredAiSdkPart[] {
       !parsed.data.content.every(isStoredAssistantPart) ||
       parsed.data.content.some((part) => part.type === "tool-call" && !isJSONValue(part.input))
     ) {
-      throw new Error("会话保存的 AI SDK 内容格式无效");
+      throw new Error(localize("agent:messages.persistedContentInvalid"));
     }
     return parsed.data.content;
   }

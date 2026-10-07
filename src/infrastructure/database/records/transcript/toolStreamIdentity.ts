@@ -2,6 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
 import { events } from "../../schema";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 
 interface ToolStreamIdentity {
@@ -33,7 +34,9 @@ export function findToolStreamIdentity(
       ]),
     );
   if (identities.size > 1) {
-    throw new Error(`正式工具调用 ID ${callId} 绑定了多个流身份`);
+    throw new Error(
+      localize("database:transcript.formalCallStreamIdentityDuplicate", { value0: callId }),
+    );
   }
   return identities.values().next().value ?? null;
 }

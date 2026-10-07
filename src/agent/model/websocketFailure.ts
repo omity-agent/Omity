@@ -6,6 +6,7 @@ import {
 import type { SocketHandshake } from "../../infrastructure/network/handshakeChannels";
 import type { StreamEvidence } from "./streamEvidence";
 import { handshakeDiagnosticHeaders } from "../../../settings/networking";
+import { localize } from "../../i18n/server";
 import { version as undiciVersion } from "undici/package.json";
 
 export interface FailureEvent {
@@ -38,9 +39,14 @@ export class ResponsesWebsocketError extends Error {
       status = current?.status,
       eventMessage = event.message?.trim(),
       closeReason = event.close?.reason.trim();
-    super(opened ? "Responses WebSocket 在响应完成前关闭" : "Responses WebSocket 连接失败", {
-      cause,
-    });
+    super(
+      opened
+        ? localize("agent:model.websocketClosedEarly")
+        : localize("agent:model.websocketConnectionFailed"),
+      {
+        cause,
+      },
+    );
     this.attempts = handshake.attempts.map((attempt) =>
       describeAttempt(attempt, handshake.attempts.length > 1 ? progress : undefined),
     );

@@ -4,6 +4,7 @@ import { contentToText } from "./content";
 import { countTokens } from "./tokenizer";
 import { extractToolImages } from "./multimodal";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 import { stringify } from "yaml";
 
 export type { ToolOutputSnapshot } from "../types";
@@ -23,7 +24,9 @@ export function toolOutputText(value: unknown): string {
 }
 export function cancelledToolMessage(callId: string, durationMs: number, name?: string) {
   return new ToolMessage({
-    content: `工具运行 ${formatDuration(durationMs)} 后被用户手动终止。`,
+    content: localize("runtime:tool.cancelled", {
+      value0: formatDuration(durationMs),
+    }),
     name,
     status: "error",
     tool_call_id: callId,
@@ -31,12 +34,19 @@ export function cancelledToolMessage(callId: string, durationMs: number, name?: 
 }
 function formatDuration(durationMs: number) {
   if (durationMs < 1000) {
-    return `${Math.round(durationMs).toString()} 毫秒`;
+    return localize("runtime:duration.milliseconds", {
+      value0: Math.round(durationMs).toString(),
+    });
   }
   const seconds = durationMs / 1000;
   return seconds < 60
-    ? `${Number(seconds.toFixed(1)).toString()} 秒`
-    : `${Math.floor(seconds / 60).toString()} 分 ${Math.round(seconds % 60).toString()} 秒`;
+    ? localize("runtime:duration.seconds", {
+        value0: Number(seconds.toFixed(1)).toString(),
+      })
+    : localize("runtime:duration.minutesSeconds", {
+        value0: Math.floor(seconds / 60).toString(),
+        value1: Math.round(seconds % 60).toString(),
+      });
 }
 export function toolOutputSnapshot(message: ToolMessage): ToolOutputSnapshot {
   const content = contentToText(message.content);
@@ -52,11 +62,11 @@ export function toolOutputTokens(message: ToolMessage, text: string) {
     return countTokens(text);
   }
   if (!isRecord(largeOutput)) {
-    throw new Error("工具大输出 metadata 无效");
+    throw new Error(localize("runtime:output.metadataInvalid"));
   }
   const { tokens } = largeOutput;
   if (typeof tokens !== "number" || !Number.isSafeInteger(tokens) || tokens < 0) {
-    throw new Error("工具大输出 token 数无效");
+    throw new Error(localize("runtime:output.tokenCountInvalid"));
   }
   return tokens;
 }

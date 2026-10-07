@@ -1,0 +1,72 @@
+{
+  "runtime": {
+    "rootMissing": "缺少 root 容器"
+  },
+  "access": {
+    "setupOriginRequired": "请通过 {{value0}} 打开 WebUI 后注册通行密钥",
+    "webAuthnUnsupported": "当前浏览器或页面安全上下文不支持 WebAuthn",
+    "publicOriginMissing": "公网 Origin 尚未配置"
+  },
+  "drafts": {
+    "temporaryStorageOnly": "仅 Fork 草稿使用临时存储"
+  },
+  "api": {
+    "successResponseInvalid": "API 成功响应结构无效：HTTP {{value0}}",
+    "errorResponseInvalid": "API 错误响应结构无效：HTTP {{value0}}"
+  },
+  "translation": {
+    "markerGenerationFailed": "无法生成思维链翻译换行标记",
+    "duplicateMarker": "思维链翻译重复换行标记：{{value0}}",
+    "markerMissing": "思维链翻译丢失换行标记",
+    "markerOrderInvalid": "思维链翻译换行标记顺序错误：{{value0}}"
+  },
+  "fork": {
+    "pendingSessionMissing": "没有等待创建的 Fork 会话",
+    "revisionOverflow": "Composer 草稿版本号溢出：{{value0}}"
+  },
+  "transcript": {
+    "sessionIdMissing": "Transcript 查询缺少 sessionId",
+    "disclosureContextMissing": "详情组件缺少会话展开状态上下文",
+    "virtualRowMissing": "详情卡片缺少虚拟行",
+    "scrollContainerMissing": "对话列表缺少滚动容器",
+    "copyAnchorMissing": "消息复制按钮缺少定位容器",
+    "virtualOffsetMissing": "对话虚拟行缺少垂直偏移量"
+  },
+  "events": {
+    "deltaIdMismatch": "SSE delta 事件 ID 与 data.id 不一致",
+    "syncCursorMismatch": "SSE sync 事件 ID 与 eventCursor 不一致",
+    "dataMissing": "SSE {{value0}} 事件缺少字符串 data",
+    "jsonInvalid": "SSE {{value0}} 事件 JSON 无效",
+    "payloadInvalid": "SSE {{value0}} 事件结构无效",
+    "idInvalid": "SSE {{value0}} 事件 ID 无效",
+    "stateIdInvalid": "SSE {{value0}} 事件 ID 无效",
+    "idMissing": "SSE {{value0}} 事件缺少 ID"
+  },
+  "markdown": {
+    "contextMissing": "Markdown 渲染组件缺少上下文",
+    "measureElementMissing": "Markdown 源码测量元素未挂载",
+    "sourceMeasureElementMissing": "Markdown 源码测量元素未挂载"
+  },
+  "sidebar": {
+    "titleElementMissing": "会话标题元素未挂载"
+  },
+  "newSession": {
+    "draftSaveFailed": "新建会话草稿未能提交保存",
+    "draftRevisionUnsafe": "新建会话草稿版本号溢出"
+  },
+  "highlight": {
+    "workerFailed": "代码高亮 Worker 运行失败",
+    "messageInvalid": "代码高亮 Worker 消息无法反序列化",
+    "schedulerClosed": "代码高亮调度器已关闭"
+  },
+  "fileLink": {
+    "sessionContextMissing": "文件链接组件缺少 Session 上下文"
+  },
+  "composer": {
+    "chatProtocolUnsupported": "新会话不能使用聊天消息提交协议"
+  },
+  "session": {
+    "restoredFailure": "历史会话运行失败",
+    "failure": "会话运行失败"
+  }
+}

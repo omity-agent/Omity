@@ -2,6 +2,7 @@ import type { LoadedMcp } from "./catalog";
 import type { McpConfiguration } from "../configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { configureFreeformMcpTools } from "./freeform";
+import { localize } from "../../../i18n/server";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
 export interface ModelToolDefinition {
@@ -43,12 +44,20 @@ export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot:
     frozenNames = new Set<string>();
   const frozenTools = snapshot.tools.map((definition) => {
     if (frozenNames.has(definition.name)) {
-      throw new Error(`会话冻结的 MCP 工具定义包含重复项：${definition.name}`);
+      throw new Error(
+        localize("mcp:definitions.duplicateFrozenTool", {
+          value0: definition.name,
+        }),
+      );
     }
     frozenNames.add(definition.name);
     const tool = toolsByName.get(definition.name);
     if (!tool) {
-      throw new Error(`会话冻结的 MCP 工具不存在：${definition.name}`);
+      throw new Error(
+        localize("mcp:definitions.frozenToolMissing", {
+          value0: definition.name,
+        }),
+      );
     }
     tool.extras = { ...tool.extras, defer_loading: definition.deferLoading === true };
     return tool;

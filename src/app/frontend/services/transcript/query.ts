@@ -10,6 +10,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { DisplayEvent } from "../../../timeline";
 import { FrameBatcher } from "../scheduling/frameBatcher";
+import { localize } from "../../i18n";
 import { reportError } from "../errors";
 import { subscribeEvents } from "../events/subscription";
 import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
@@ -96,7 +97,7 @@ async function refreshTranscript(
 }
 function requiredId(sessionId: string | undefined) {
   if (!sessionId) {
-    throw new Error("Transcript 查询缺少 sessionId");
+    throw new Error(localize("frontend:transcript.sessionIdMissing"));
   }
   return sessionId;
 }

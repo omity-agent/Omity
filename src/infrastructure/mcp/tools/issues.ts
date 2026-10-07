@@ -1,5 +1,6 @@
 import { ZodError, type z } from "zod";
 import { minBy, uniq } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 
 export function collectReadableZodIssues(error: unknown): string[] {
   if (!(error instanceof ZodError)) {
@@ -23,13 +24,13 @@ function formatZodIssue(issue: z.core.$ZodIssue): string {
   const path = formatIssuePath(issue.path);
   if (issue.code === "invalid_type") {
     if (issue.path.at(-1) === "args" && issue.expected === "array") {
-      return `${path} 应为字符串数组；如无参数可省略`;
+      return localize("mcp:issues.stringArrayExpected", { value0: path });
     }
     if (issue.path.at(-1) === "command" && issue.expected === "string") {
-      return `${path} 应为可执行命令字符串`;
+      return localize("mcp:issues.commandStringExpected", { value0: path });
     }
     if (issue.path.at(-1) === "url" && issue.expected === "string") {
-      return `${path} 应为 HTTP/SSE MCP 服务地址`;
+      return localize("mcp:issues.serverUrlExpected", { value0: path });
     }
   }
   return `${path} ${issue.message}`;

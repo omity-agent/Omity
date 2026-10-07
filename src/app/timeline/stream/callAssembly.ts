@@ -1,4 +1,5 @@
 import type { DisplayEvent } from "../contracts/projection";
+import { localize } from "../../../i18n/server";
 import { parseToolInput } from "../../../fileLinks/toolInput";
 
 type ToolDelta = Extract<DisplayEvent, { kind: "tool_call_delta" }>["value"];
@@ -28,7 +29,7 @@ export function beginToolPart(delta: ToolDelta): ToolPart {
 }
 export function extendToolPart(part: ToolPart, delta: ToolDelta) {
   if (part.index !== delta.index) {
-    throw new Error("工具流片段的索引发生变化");
+    throw new Error(localize("application:timeline.streamPartIndexChanged"));
   }
   if (delta.argumentsText !== undefined) {
     part.args = delta.argumentsText;

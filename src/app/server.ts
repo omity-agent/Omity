@@ -15,6 +15,7 @@ import { createSettingsContext } from "../infrastructure/configuration/settings/
 import { createStaticApp } from "./http/static";
 import { getRequestListener } from "@hono/node-server";
 import { loadSettings } from "../infrastructure/configuration/settings/load";
+import { localize } from "../i18n/server";
 import { once } from "node:events";
 import { requestListenerOptions } from "../../settings/networking";
 import { userDataDirectory } from "../infrastructure/configuration/settings/files";
@@ -94,7 +95,10 @@ export async function startAppServer(options: AppServerOptions) {
     closeFailure = error;
   }
   if (failure && closeFailure) {
-    throw new AggregateError([failure, closeFailure], "服务端启动和关闭均失败");
+    throw new AggregateError(
+      [failure, closeFailure],
+      localize("application:server.startupAndShutdownFailed"),
+    );
   }
   if (failure) {
     throw failure;
@@ -105,7 +109,7 @@ export async function startAppServer(options: AppServerOptions) {
 }
 function listeningPort(address: string | AddressInfo | null) {
   if (!address || typeof address === "string") {
-    throw new Error("无法获取 WebUI 监听端口");
+    throw new Error(localize("application:server.portUnavailable"));
   }
   return address.port;
 }

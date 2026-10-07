@@ -2,6 +2,7 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { checkpointWrites, checkpoints } from "../schema";
 import { runTransaction, sessionDatabase } from "../sqlite/connection";
 import type { Database } from "bun:sqlite";
+import { localize } from "../../../i18n/server";
 
 type Head = typeof checkpoints.$inferSelect;
 type Identity = Pick<Head, "runId" | "checkpointNs">;
@@ -66,7 +67,11 @@ export class RecoveryStore {
     runTransaction(this.db, () => {
       const current = this.currentId.get(row);
       if (current && current.checkpointId !== expectedId) {
-        throw new Error(`checkpoint head 冲突：${current.checkpointId}`);
+        throw new Error(
+          localize("database:restoration.checkpointHeadConflict", {
+            value0: current.checkpointId,
+          }),
+        );
       }
       this.orm
         .delete(checkpointWrites)
@@ -101,7 +106,11 @@ export class RecoveryStore {
   ) {
     runTransaction(this.db, () => {
       if (this.currentId.get(identity)?.checkpointId !== identity.checkpointId) {
-        throw new Error(`checkpoint pending write 已过期：${identity.checkpointId}`);
+        throw new Error(
+          localize("database:restoration.pendingWriteExpired", {
+            value0: identity.checkpointId,
+          }),
+        );
       }
       for (const { replace, ...row } of writes) {
         const insert = this.orm.insert(checkpointWrites).values({ ...row, ...identity });

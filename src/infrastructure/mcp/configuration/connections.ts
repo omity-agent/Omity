@@ -1,4 +1,5 @@
 import { emptyAs } from "../../configuration/settings/values";
+import { localize } from "../../../i18n/server";
 import { z } from "zod";
 
 export const mcpServerSchema = z.looseObject({
@@ -6,13 +7,13 @@ export const mcpServerSchema = z.looseObject({
   enabled: z.boolean().optional(),
   excludedTools: emptyAs(
     z.array(z.string().min(1)).refine((names) => new Set(names).size === names.length, {
-      error: "MCP 工具黑名单包含重复工具",
+      error: localize("mcp:configuration.blacklistDuplicate"),
     }),
     [],
   ).optional(),
   freeformToolInputs: emptyAs(
     z.array(z.string().min(1)).refine((names) => new Set(names).size === names.length, {
-      error: "MCP free-form 工具配置包含重复工具",
+      error: localize("mcp:configuration.freeformDuplicate"),
     }),
     [],
   ).default([]),
@@ -89,10 +90,10 @@ function normalizeConnection(connection: Record<string, unknown>) {
     return { ...stdioSchema.parse(connection), stderr: "pipe" };
   }
   if (connection["transport"] === "sse" || connection["type"] === "sse") {
-    throw new Error("MCP SSE transport 无法关闭底层自动重连，请改用 http");
+    throw new Error(localize("mcp:configuration.sseReconnectUnsupported"));
   }
   if ("authProvider" in connection) {
-    throw new Error("MCP authProvider 会在认证失败后自动重试，请改用静态 headers");
+    throw new Error(localize("mcp:configuration.authProviderRetryUnsupported"));
   }
   return "url" in connection
     ? { ...connection, automaticSSEFallback: false, reconnect: { enabled: false, maxAttempts: 0 } }

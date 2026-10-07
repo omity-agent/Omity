@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from "node:http";
 import ipaddr from "ipaddr.js";
+import { localize } from "../../i18n/server";
 
 type Address = ReturnType<typeof ipaddr.process>;
 type Cidr = ReturnType<typeof ipaddr.parseCIDR>;
@@ -28,19 +29,19 @@ export class ClientNetwork {
     }
     if (!this.matchesTrustedProxy(remote)) {
       if (forwarded !== undefined) {
-        throw new Error("未受信任的对端不能发送 X-Forwarded-For");
+        throw new Error(localize("access:network.untrustedForwardedFor"));
       }
       return remote;
     }
     if (forwarded === undefined) {
-      throw new Error("来自可信代理的请求缺少 X-Forwarded-For");
+      throw new Error(localize("access:network.forwardedForMissing"));
     }
     if (Array.isArray(forwarded)) {
-      throw new Error("X-Forwarded-For 请求头不能重复");
+      throw new Error(localize("access:network.forwardedForDuplicate"));
     }
     const chain = forwarded.split(",").map((value) => parseAddress(value.trim()));
     if (chain.length === 0) {
-      throw new Error("X-Forwarded-For 请求头为空");
+      throw new Error(localize("access:network.forwardedForEmpty"));
     }
     let current = remote;
     for (
@@ -50,12 +51,12 @@ export class ClientNetwork {
     ) {
       const next = chain[index];
       if (!next) {
-        throw new Error("X-Forwarded-For 地址链无效");
+        throw new Error(localize("access:network.forwardedForInvalid"));
       }
       current = next;
     }
     if (this.matchesTrustedProxy(current)) {
-      throw new Error("X-Forwarded-For 未包含可信代理链之外的客户端地址");
+      throw new Error(localize("access:network.clientAddressMissingFromChain"));
     }
     return current;
   }
@@ -68,7 +69,11 @@ export class ClientNetwork {
 }
 function parseAddress(value?: string) {
   if (!value || !ipaddr.isValid(value)) {
-    throw new Error(`客户端 IP 地址无效：${value ?? "缺失"}`);
+    throw new Error(
+      localize("access:network.clientAddressInvalid", {
+        value0: value ?? localize("errors:generic.missing"),
+      }),
+    );
   }
   return ipaddr.process(value);
 }

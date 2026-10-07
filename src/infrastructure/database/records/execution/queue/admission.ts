@@ -5,6 +5,7 @@ import { DomainError } from "../../../../../errors";
 import type { QueuedInput } from "../../../../../types";
 import { createRunRecord } from "../runs/mutations";
 import { insertUserMessage } from "../../transcript/messages/history";
+import { localize } from "../../../../../i18n/server";
 import { messages } from "../../../schema/conversation";
 import { sessionDatabase } from "../../../sqlite/connection";
 
@@ -24,7 +25,12 @@ export function consumeInputRecord(db: Database, sessionId: string, item: Queued
   const queries = statements.getOrInsertComputed(db, prepareAdmission),
     claimed = queries.claim.run({ ...item, sessionId });
   if (claimed.changes !== 1) {
-    throw new DomainError("INPUT_CLAIM_CONFLICT", `输入认领冲突：${item.id.toString()}`);
+    throw new DomainError(
+      "INPUT_CLAIM_CONFLICT",
+      localize("database:execution.inputClaimConflict", {
+        value0: item.id.toString(),
+      }),
+    );
   }
   const messageId = item.userMessageId ?? insertUserMessage(db, sessionId, item.content, item.id);
   queries.start.run({ runId: item.runId });

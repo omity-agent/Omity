@@ -1,0 +1,84 @@
+{
+  "stream": {
+    "stableMessageIdMissing": "AI SDK 流缺少稳定消息 ID",
+    "toolResultCallMissing": "服务端工具结果缺少调用记录：{{value0}}",
+    "toolErrorEventInvalid": "服务端工具错误事件格式无效：{{value0}}",
+    "messageIdMissing": "工具流缺少稳定消息 ID"
+  },
+  "append": {
+    "inputAddedAtBoundary": "已在节点边界追加输入",
+    "userMessageMissing": "已消费的用户消息不存在：{{value0}}",
+    "uncommittedAfterCheckpointResume": "恢复 checkpoint 后尚未提交的追加输入"
+  },
+  "queue": {
+    "label": "队列 #{{value0}}",
+    "pausedAfterFailure": "队列异常，已暂停"
+  },
+  "graph": {
+    "streamMethodMissing": "LangGraph 缺少 stream 方法",
+    "streamNotIterable": "LangGraph stream 没有返回可迭代结果",
+    "invalidState": "LangGraph 状态无效"
+  },
+  "tool": {
+    "freeformInputMissing": "Freeform 工具调用缺少原始字符串输入",
+    "imagesUnsupportedByCompletions": "工具返回了 {{value0}} 张图片，但 Completions API 不支持工具返回图片给模型。",
+    "contentTypeUnsupported": "工具消息包含不支持的内容类型：{{value0}}",
+    "cancelled": "工具运行 {{value0}} 后被用户手动终止。"
+  },
+  "output": {
+    "tooLarge": "工具输出过长（{{value0}} tokens），无法直接查看。\n输出原文已完整保存于：\n{{value1}}\n如有需要请检索其中片段。",
+    "metadataInvalid": "工具大输出 metadata 无效",
+    "tokenCountInvalid": "工具大输出 token 数无效"
+  },
+  "loop": {
+    "storageReclaimDelayed": "数据库页面回收因并发写入延后",
+    "pausedAfterCancel": "暂停状态收到 cancel，Host 已关闭",
+    "closedAfterCancel": "收到 cancel，Host 已关闭",
+    "waitingForClientInput": "等待 Client 输入"
+  },
+  "retry": {
+    "modelUnavailable": "模型 API 暂不可用，正在重试"
+  },
+  "run": {
+    "finalTextMissing": "模型没有生成可记录的最终文本",
+    "queueItemMissing": "运行没有可记录的队列项",
+    "completed": "队列完成",
+    "finalBoundaryMissing": "运行缺少最终消息边界",
+    "cancelled": "运行已取消",
+    "queueCancelled": "队列已取消，Host 已关闭"
+  },
+  "duration": {
+    "milliseconds": "{{value0}} 毫秒",
+    "seconds": "{{value0}} 秒",
+    "minutesSeconds": "{{value0}} 分 {{value1}} 秒"
+  },
+  "model": {
+    "outputMissing": "模型 API 没有返回文本或工具调用"
+  },
+  "lease": {
+    "conflict": "会话已有 Host 正在运行：{{value0}}",
+    "assertionLost": "Host Lease 已丢失：{{value0}}",
+    "renewalLost": "Host Lease 已丢失：{{value0}}",
+    "renewalFailed": "Host Lease 续租失败"
+  },
+  "boundary": {
+    "cancelled": "运行已取消",
+    "modelAndToolsConcurrent": "Agent 图同时调度了模型与工具节点",
+    "customEventInvalid": "LangGraph custom 事件不是 AI SDK 流事件"
+  },
+  "pause": {
+    "mcpUnavailable": "MCP stdio 不可用，队列已暂停",
+    "cancelled": "暂停状态收到 cancel",
+    "cancelledAndHostClosed": "暂停状态收到 cancel，Host 已关闭",
+    "runCancelled": "运行已取消",
+    "waitingForResume": "暂停中，等待 resume 或 cancel"
+  },
+  "signal": {
+    "received": "收到 {{value0}}",
+    "stopAtRecoveryBoundary": "收到 {{value0}}，Host 将在可恢复边界停止",
+    "recoveryBoundaryTimeout": "Host 未在关闭期限内到达恢复边界"
+  },
+  "step": {
+    "completed": "单步完成，已暂停"
+  }
+}

@@ -1,6 +1,7 @@
 import type { HighlightInput, HighlightResult } from "./tokenization";
 import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import { highlightChannel } from "./channel";
+import { localize } from "../../../i18n";
 
 export interface HighlightedCodeResult extends HighlightResult {
   code: string;
@@ -14,10 +15,10 @@ function connectHighlighter() {
       worker.terminate();
     };
   worker.addEventListener("error", (event) => {
-    close(new Error(event.message || "代码高亮 Worker 运行失败"));
+    close(new Error(event.message || localize("frontend:highlight.workerFailed")));
   });
   worker.addEventListener("messageerror", () => {
-    close(new Error("代码高亮 Worker 消息无法反序列化"));
+    close(new Error(localize("frontend:highlight.messageInvalid")));
   });
   return { close, rpc };
 }
@@ -83,7 +84,7 @@ export class HighlightScheduler {
     }
     this.queue.stop();
     this.queue.clear();
-    this.connection?.close(new Error("代码高亮调度器已关闭"));
+    this.connection?.close(new Error(localize("frontend:highlight.schedulerClosed")));
   }
   private cancelPending(streamId: string) {
     for (const job of this.queue.peekPendingItems()) {

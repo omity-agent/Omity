@@ -4,6 +4,7 @@ import { Logger } from "../../infrastructure/logging/logger";
 import type { Server } from "node:http";
 import type { Socket } from "node:net";
 import { captureError } from "../../failures/details";
+import { localize } from "../../i18n/server";
 import pMap from "p-map";
 import { promisify } from "node:util";
 
@@ -62,10 +63,10 @@ export async function closeAppResources(
 ) {
   const startedAt = Date.now(),
     failures: unknown[] = [];
-  logger.info("服务端进入关闭流程", { reason });
+  logger.info(localize("application:shutdown.started"), { reason });
   await closeStep(
     logger,
-    "HTTP 服务",
+    localize("application:shutdown.httpServer"),
     async () => {
       if (!resources.server?.instance.listening) {
         return;
@@ -79,18 +80,35 @@ export async function closeAppResources(
     },
     failures,
   );
-  await closeStep(logger, "会话 Host 与 MCP 资源", () => resources.controller?.close(), failures);
-  await closeStep(logger, "访问控制存储", () => resources.access?.close(), failures);
-  await closeStep(logger, "应用实例锁", resources.releaseLock, failures);
+  await closeStep(
+    logger,
+    localize("application:shutdown.hostResources"),
+    () => resources.controller?.close(),
+    failures,
+  );
+  await closeStep(
+    logger,
+    localize("application:shutdown.accessStore"),
+    () => resources.access?.close(),
+    failures,
+  );
+  await closeStep(
+    logger,
+    localize("application:shutdown.instanceLock"),
+    resources.releaseLock,
+    failures,
+  );
   if (failures.length > 0) {
-    logger.error("服务端关闭流程完成，但存在失败步骤", {
+    logger.error(localize("application:shutdown.completedWithFailures"), {
       durationMs: Date.now() - startedAt,
       errorCount: failures.length,
       errors: failures.map(captureError),
     });
-    throw new AggregateError(failures, "服务端关闭流程失败");
+    throw new AggregateError(failures, localize("application:shutdown.failed"));
   }
-  logger.info("服务端关闭完成", { durationMs: Date.now() - startedAt });
+  logger.info(localize("application:shutdown.completed"), {
+    durationMs: Date.now() - startedAt,
+  });
 }
 async function closeStep(
   logger: ShutdownLogger,
@@ -98,14 +116,16 @@ async function closeStep(
   close: () => unknown,
   failures: unknown[],
 ) {
-  logger.info(`关闭步骤开始：${name}`);
+  logger.info(localize("application:shutdown.stepStarted", { value0: name }));
   const startedAt = Date.now();
   try {
     await close();
-    logger.info(`关闭步骤完成：${name}`, { durationMs: Date.now() - startedAt });
+    logger.info(localize("application:shutdown.stepCompleted", { value0: name }), {
+      durationMs: Date.now() - startedAt,
+    });
   } catch (error) {
     failures.push(error);
-    logger.error(`关闭步骤失败：${name}`, {
+    logger.error(localize("application:shutdown.stepFailed", { value0: name }), {
       durationMs: Date.now() - startedAt,
       error: captureError(error),
     });

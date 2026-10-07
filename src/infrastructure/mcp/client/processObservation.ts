@@ -1,7 +1,7 @@
 import { ChildProcess } from "node:child_process";
 import type { McpFailure } from "../failures/wireFormat";
 import type { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import messages from "../../../../settings/locales/zh-CN/connectionFailures.json";
+import { localize } from "../../../i18n/server";
 
 export function observeStdioProcess(
   transport: StdioClientTransport,
@@ -17,13 +17,13 @@ export function observeStdioProcess(
       signal: null,
     };
   let child: ChildProcess | undefined;
-  // 保持 SDK transport 的原型，让协议版本探测继续使用独立的临时子进程。
+  // Preserve the SDK transport prototype so protocol detection can use its temporary child process.
   transport.start = async () => {
     const starting = start(),
       spawned: unknown = Reflect.get(transport, "_process");
     if (!(spawned instanceof ChildProcess)) {
       await starting;
-      throw new Error(messages.processUnavailable);
+      throw new Error(localize("mcp:connection.processUnavailable"));
     }
     child = spawned;
     state.pid = spawned.pid ?? null;

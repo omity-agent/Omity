@@ -9,7 +9,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import type { StdioConnection } from "../configuration/connections";
 import { Writable } from "node:stream";
 import { connectProtocolClient } from "./protocol";
-import messages from "../../../../settings/locales/zh-CN/connectionFailures.json";
+import { localize } from "../../../i18n/server";
 import { observeStdioProcess } from "./processObservation";
 import { reportMcpFailure } from "../failures/reportConstruction";
 
@@ -42,12 +42,12 @@ export const connectStdioClient: StdioConnector = async (serverName, connection,
         stdout.append(chunk);
       }
     });
-  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- MCP transport 不是 EventTarget。
+  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP transport is not an EventTarget.
   transport.onerror = (error) => {
     evidence.record(error);
   };
   if (stderr === null) {
-    throw reportMcpFailure(new Error(messages.stderrUnavailable), {
+    throw reportMcpFailure(new Error(localize("mcp:connection.stderrUnavailable")), {
       connection: { kind: "stdio", options: connection },
       server: serverName,
       stage: "spawn",

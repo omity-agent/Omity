@@ -1,8 +1,7 @@
+import { type TOptions, t, use } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
-import diagnostics from "./locales/zh-CN/diagnostics.json";
 import { initReactI18next } from "react-i18next";
-import { use } from "i18next";
-import zhCN from "./locales/zh-CN/app.json";
+import { resources } from "../../../i18n/resources";
 
 export const i18nReady = use(LanguageDetector)
   .use(initReactI18next)
@@ -12,10 +11,9 @@ export const i18nReady = use(LanguageDetector)
     interpolation: {
       escapeValue: false,
     },
-    resources: {
-      "zh-CN": {
-        app: zhCN,
-        diagnostics,
-      },
-    },
+    resources,
   });
+
+export function localize(key: string, options?: TOptions) {
+  return t(key, options);
+}

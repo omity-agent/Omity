@@ -3,6 +3,7 @@ import type { PlaceholderOptions } from "./placeholders";
 import type { SettingsContext } from "./settings/context";
 import { emptyAs } from "./settings/values";
 import { isHookOutputVariable } from "../../hooks/variables";
+import { localize } from "../../i18n/server";
 import { readLayeredSettingsYaml } from "./settings/files";
 import { z } from "zod";
 
@@ -26,7 +27,9 @@ const argsSchema = z.record(z.string(), z.unknown()),
         if (ids.has(hook.id)) {
           context.addIssue({
             code: "custom",
-            message: `Hook id 重复：${hook.id}`,
+            message: localize("configuration:hooks.duplicateId", {
+              value0: hook.id,
+            }),
             path: ["hooks", index, "id"],
           });
         }
@@ -45,7 +48,7 @@ export function loadConfiguredHookRules(
     deferred: isHookOutputVariable,
   });
   if (!file) {
-    throw new Error("配置文件不存在：hooks.yaml");
+    throw new Error(localize("configuration:hooks.configurationMissing"));
   }
   return parseHookRules(file.value);
 }

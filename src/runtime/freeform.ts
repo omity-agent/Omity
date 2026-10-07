@@ -1,4 +1,5 @@
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 
 export function trimFreeformInput(input: string) {
   const contentEnd = input.trimEnd().length;
@@ -15,5 +16,5 @@ export function rawFreeformInput(input: unknown) {
   if (typeof input === "string") {
     return input;
   }
-  throw new Error("Freeform 工具调用缺少原始字符串输入");
+  throw new Error(localize("runtime:tool.freeformInputMissing"));
 }

@@ -7,6 +7,7 @@ import { type ResolveOutboundProxy, createProxyDispatcher } from "./dispatchProx
 import { type RequestInit as UndiciRequestInit, fetch as undiciFetch } from "undici/index.js";
 import { createSocketTransport, registerSocketTransport } from "./socketTransport";
 import { OutboundRouting } from "./resolveOutbound";
+import { localize } from "../../i18n/server";
 
 export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
   const routing = resolveProxy ? undefined : new OutboundRouting(),
@@ -24,11 +25,15 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
         return originalFetch(input, init);
       }
       if (protocol !== "http:" && protocol !== "https:") {
-        throw new TypeError(`统一代理请求层不支持此协议：${protocol}`);
+        throw new TypeError(
+          localize("network:outbound.protocolUnsupported", {
+            value0: protocol,
+          }),
+        );
       }
       const options: UndiciRequestInit = {
         ...(input instanceof Request ? requestOptions(input) : {}),
-        // Bun 与 Undici 的类型包含不同的运行时扩展；此处只传递标准 Fetch 参数。
+        // Bun and Undici expose different runtime extensions; only standard Fetch options are passed.
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         ...(init as UndiciRequestInit),
         dispatcher:
@@ -42,12 +47,12 @@ export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
             : transport.dispatcher,
         duplex: "half",
       };
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 两者实现相同的 WHATWG Response 接口。
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Both implement the same WHATWG Response interface.
       return (await undiciFetch(url, options)) as unknown as Response;
     },
     fetch = Object.assign(routedFetch, {
       preconnect() {
-        throw new Error("统一代理请求层不支持绕过代理的 fetch.preconnect");
+        throw new Error(localize("network:outbound.preconnectUnsupported"));
       },
     });
   registerExplicitFetch(fetch);
@@ -75,7 +80,7 @@ export function installNetworking() {
 }
 function requestOptions(request: Request): UndiciRequestInit {
   if (request.bodyUsed) {
-    throw new TypeError("请求正文已经被读取");
+    throw new TypeError(localize("network:request.bodyAlreadyConsumed"));
   }
   return {
     body: request.body,

@@ -1,0 +1,33 @@
+{
+  "plan": {
+    "callIdMissing": "工具调用消息缺少 ID",
+    "invalid": "Hook 工具计划无效",
+    "originalExecutionCannotBeSkipped": "不能跳过原始工具执行阶段",
+    "callIdMissingForTool": "工具调用缺少 ID：{{value0}}",
+    "originalMessageNotSerializable": "无法序列化 Hook 原始工具调用消息"
+  },
+  "runtime": {
+    "duplicateToolName": "MCP 工具名称重复，无法编译 Hook",
+    "runLimitInvalid": "Hook {{value0}} 的 runLimit 必须是大于等于 -1 的整数",
+    "targetLabel": "Hook {{value0}} 目标",
+    "nodeStarted": "执行 Hook 节点",
+    "toolMissing": "{{value0}} 引用了不存在的 MCP 工具：{{value1}}"
+  },
+  "variables": {
+    "argumentLabel": "Hook 参数",
+    "resultMustBeObject": "Hook 参数解析结果必须是对象",
+    "structuredOutputMissing": "Hook 变量 {{value0}} 引用的工具没有结构化输出",
+    "formatInvalid": "Hook 工具输出变量格式无效：{{value0}}；应使用 ${toolOutputs.fromStart.N.output} 或 ${toolOutputs.fromEnd.N.structuredOutput}",
+    "indexInvalid": "Hook 工具输出变量索引无效：{{value0}}",
+    "indexOutOfRange": "Hook 变量 {{value0}} 超出工具输出范围：请求第 {{value1}} 个，当前共有 {{value2}} 个",
+    "fieldMissing": "Hook 变量 {{value0}} 的字段不存在：{{value1}}",
+    "pathFieldMissing": "Hook 变量 {{value0}} 的字段不存在：{{value1}}"
+  },
+  "graph": {
+    "callIdMissing": "工具调用缺少 ID：{{value0}}",
+    "emptyBatch": "原始工具批次不能为空",
+    "duplicateCallId": "原始工具批次包含重复的调用 ID",
+    "finalMessageIdMissing": "Agent after Hook 缺少最终消息 ID",
+    "threadIdMissing": "Hook 执行缺少 thread_id"
+  }
+}

@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
@@ -20,7 +21,7 @@ export function parseHostOwner(value: string): HostOwner {
   const parsed: unknown = JSON.parse(value),
     result = ownerSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error("Host Lease owner_id 无效");
+    throw new Error(localize("errors:process.ownerIdInvalid"));
   }
   return result.data;
 }

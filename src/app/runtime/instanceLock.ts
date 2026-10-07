@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { isProcessRunning } from "../../infrastructure/process/ownership";
+import { localize } from "../../i18n/server";
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { z } from "zod";
@@ -48,7 +49,10 @@ export class AppInstanceLock {
         const existingOwner = readOwner(path);
         if (isProcessRunning(existingOwner.pid)) {
           throw new Error(
-            `数据目录已有 App 在运行（PID ${existingOwner.pid.toString()}）：${directory}`,
+            localize("application:runtime.instanceAlreadyRunning", {
+              value0: existingOwner.pid.toString(),
+              value1: directory,
+            }),
             {
               cause: error,
             },
@@ -58,7 +62,7 @@ export class AppInstanceLock {
         unlinkSync(path);
       }
     }
-    throw new Error(`无法获取 App 实例锁：${path}`);
+    throw new Error(localize("application:runtime.lockAcquireFailed", { value0: path }));
   }
   release() {
     if (this.released) {
@@ -66,7 +70,7 @@ export class AppInstanceLock {
     }
     const owner = readOwner(this.path);
     if (owner.token !== this.owner.token) {
-      throw new Error(`App 实例锁所有者已变化：${this.path}`);
+      throw new Error(localize("application:runtime.lockOwnerChanged", { value0: this.path }));
     }
     unlinkSync(this.path);
     this.released = true;
@@ -74,12 +78,12 @@ export class AppInstanceLock {
 }
 function readOwner(path: string) {
   if (!existsSync(path)) {
-    throw new Error(`App 实例锁不存在：${path}`);
+    throw new Error(localize("application:runtime.lockMissing", { value0: path }));
   }
   const value: unknown = JSON.parse(readFileSync(path, "utf8")),
     parsed = ownerSchema.safeParse(value);
   if (!parsed.success) {
-    throw new Error(`App 实例锁内容无效：${path}`);
+    throw new Error(localize("application:runtime.lockInvalid", { value0: path }));
   }
   return parsed.data;
 }

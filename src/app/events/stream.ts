@@ -1,5 +1,6 @@
 import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import type { Context } from "hono";
+import { localize } from "../../i18n/server";
 import { streamSSE } from "hono/streaming";
 
 export interface OutboundEvent {
@@ -26,7 +27,9 @@ export function eventStream(c: Context, subscribe: (write: EventWriter) => () =>
       ),
       write: EventWriter = (event) => {
         if (!writes.addItem(event)) {
-          closed.reject(new Error(`SSE 写入队列拒绝事件：${event.event}`));
+          closed.reject(
+            new Error(localize("application:events.queueRejected", { value0: event.event })),
+          );
         }
       },
       unsubscribe = subscribe(write);

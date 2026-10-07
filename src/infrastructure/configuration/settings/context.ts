@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { settingsProfileNameSchema, settingsProfileNamesSchema } from "./profileNames";
 import { applicationAssetPath } from "../../applicationAssets";
+import { localize } from "../../../i18n/server";
 import { readSettingsYamlValue } from "../placeholders";
 import { resolve } from "node:path";
 import { userSettingsDirectory } from "./files";
@@ -76,7 +77,11 @@ function resolveProfiles(
   return settingsProfileNamesSchema.parse(profileNames).map((name) => {
     const directory = resolve(userDirectory, "profiles", name);
     if (!existsSync(directory) || !statSync(directory).isDirectory()) {
-      throw new Error(`Profile 配置目录不存在：${directory}`);
+      throw new Error(
+        localize("configuration:settings.profileDirectoryMissing", {
+          value0: directory,
+        }),
+      );
     }
     return { directory, name };
   });

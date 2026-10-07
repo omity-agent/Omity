@@ -5,6 +5,7 @@ import { sessionConflict, sessionNotFound } from "../../../../errors";
 import type { Control } from "../../../../types";
 import type { Database } from "bun:sqlite";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareSessionStatements>>();
@@ -56,7 +57,11 @@ export function readDefinitionRecord(db: Database, sessionId: string) {
 export function touchSessionRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
   if (queries(db).touch.run({ sessionId }).changes !== 1) {
-    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+    throw new Error(
+      localize("database:session.touchRevisionExhausted", {
+        value0: sessionId,
+      }),
+    );
   }
 }
 export function touchInputSessionRecord(db: Database, inputId: number) {
@@ -65,13 +70,21 @@ export function touchInputSessionRecord(db: Database, inputId: number) {
     .from(inputs)
     .where(eq(inputs.id, inputId));
   if (reviseSessionRecord(db, sql`(${sessionId})`) !== 1) {
-    throw new Error(`队列不存在或 Transcript 版本已耗尽：${inputId.toString()}`);
+    throw new Error(
+      localize("database:session.inputTouchFailed", {
+        value0: inputId.toString(),
+      }),
+    );
   }
 }
 export function readTranscriptRevisionRecord(db: Database, sessionId: string) {
   const revision = readSessionField(sessionId, queries(db).revision);
   if (!Number.isSafeInteger(revision)) {
-    throw new Error(`Transcript 版本无效：${sessionId}`);
+    throw new Error(
+      localize("database:session.revisionInvalid", {
+        value0: sessionId,
+      }),
+    );
   }
   return revision;
 }
@@ -96,7 +109,11 @@ export function writeControlRecord(db: Database, sessionId: string, control: Con
   if (readControlRecord(db, sessionId) === control) {
     return false;
   }
-  throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+  throw new Error(
+    localize("database:session.controlRevisionExhausted", {
+      value0: sessionId,
+    }),
+  );
 }
 export function consumeStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);
@@ -104,7 +121,11 @@ export function consumeStepControlRecord(db: Database, sessionId: string) {
     return true;
   }
   if (readControlRecord(db, sessionId) === "step") {
-    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+    throw new Error(
+      localize("database:session.stepControlRevisionExhausted", {
+        value0: sessionId,
+      }),
+    );
   }
   return false;
 }

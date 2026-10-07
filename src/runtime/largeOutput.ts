@@ -4,6 +4,7 @@ import { countTokens } from "./tokenizer";
 import { inspectToolTextContent } from "./outputText";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { join } from "node:path";
+import { localize } from "../i18n/server";
 import { mkdirSync } from "node:fs";
 import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { writeFile } from "node:fs/promises";
@@ -33,7 +34,10 @@ export async function redirectLargeToolOutput(
     return normalizedMessage;
   }
   const outputPath = await writeLargeToolOutput(original, options.sessionId),
-    content = `工具输出过长（${tokens.toString()} tokens），无法直接查看。\n输出原文已完整保存于：\n${outputPath}\n如有需要请检索其中片段。`;
+    content = localize("runtime:output.tooLarge", {
+      value0: tokens.toString(),
+      value1: outputPath,
+    });
   return copyToolMessage(message, normalized.replaceText(content), {
     path: outputPath,
     tokens,
@@ -62,7 +66,7 @@ function mergeMetadata(
   largeOutput: { path: string; tokens: number } | undefined,
 ) {
   if (metadata !== undefined && !isRecord(metadata)) {
-    throw new Error("工具消息 metadata 必须是对象");
+    throw new Error(localize("runtime:output.metadataInvalid"));
   }
   return { ...metadata, ...(largeOutput ? { largeOutput } : {}) };
 }

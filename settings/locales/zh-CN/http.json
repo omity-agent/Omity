@@ -1,0 +1,24 @@
+{
+  "access": {
+    "serviceUninitialized": "访问控制服务未初始化",
+    "challengeCookieMissing": "WebAuthn 挑战 Cookie 缺失"
+  },
+  "request": {
+    "attachmentBody": "附件请求体",
+    "apiUnknown": "未知 API：{{value0}}",
+    "sessionIdMissing": "请求缺少 Session ID",
+    "bodyLabel": "请求体",
+    "bodyTooLarge": "{{value0}}不能超过 {{value1}} 字节",
+    "invalidJson": "请求体不是有效的 JSON",
+    "invalidParameters": "请求参数无效：{{value0}}",
+    "sessionIdInvalid": "Session ID 编码无效"
+  },
+  "multipart": {
+    "fileNameMissing": "附件缺少有效文件名",
+    "invalidBody": "请求体不是有效的 multipart/form-data",
+    "invalidParameters": "提交参数无效：{{value0}}"
+  },
+  "static": {
+    "pathTraversal": "静态资源路径越界：{{value0}}"
+  }
+}

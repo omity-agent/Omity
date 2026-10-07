@@ -1,4 +1,5 @@
 import type { Plugin } from "vite";
+import { localize } from "../src/i18n/server";
 
 export const vocabularyModulePrefix = "\0omity-vocabulary:";
 export function vocabularyChunks(maxBytes: number): Plugin {
@@ -13,7 +14,7 @@ export function vocabularyChunks(maxBytes: number): Plugin {
         if (id.startsWith(vocabularyModulePrefix)) {
           const source = modules.get(id);
           if (source === undefined) {
-            throw new Error(`缺少 Token 词表分片：${id}`);
+            throw new Error(localize("build:missingVocabularyShard", { id }));
           }
           return source;
         }
@@ -25,7 +26,7 @@ export function vocabularyChunks(maxBytes: number): Plugin {
           const serialized = JSON.stringify(token),
             size = Buffer.byteLength(serialized) + 1;
           if (size > maxBytes) {
-            throw new Error("单个 Token 词条超过分片大小限制");
+            throw new Error(localize("build:vocabularyTokenTooLarge"));
           }
           if (bytes + size > maxBytes) {
             shards.push(entries);

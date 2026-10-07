@@ -1,4 +1,4 @@
-/* oxlint-disable unicorn/prefer-structured-clone -- 检查点需要保留 LangChain 消息的原型。 */
+/* oxlint-disable unicorn/prefer-structured-clone -- Checkpoints preserve LangChain message prototypes. */
 import type {
   Checkpoint,
   CheckpointMetadata,

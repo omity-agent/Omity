@@ -1,0 +1,19 @@
+{
+  "askUser": {
+    "callIdMissing": "ask_user 工具缺少工具调用 ID",
+    "channelUnavailable": "ask_user 工具没有可用的用户交互通道",
+    "sessionIdMissing": "ask_user 工具缺少会话 ID",
+    "questionAlreadyPending": "ask_user 问题已在等待回答：{{value0}}"
+  },
+  "tool": {
+    "terminated": "工具已终止"
+  },
+  "answer": {
+    "openEndedStringMissing": "open_ended 答案必须包含 answer 字符串",
+    "choiceFieldsMissing": "choice 答案必须包含 options 字符串列表和 note 字符串",
+    "choiceOptionsNotStrings": "choice 答案中的 options 必须是字符串列表",
+    "choiceOptionUnknown": "choice 答案包含题目没有提供的选项",
+    "singleChoiceMultiple": "单选题只能选择一个选项",
+    "noteRequiresChoice": "没有备注时至少选择一个选项"
+  }
+}

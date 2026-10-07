@@ -1,5 +1,6 @@
 import { Client, type Transport } from "@modelcontextprotocol/client";
 import { cleanupFailedInitialization } from "../lifecycle";
+import { localize } from "../../../i18n/server";
 
 export type McpOperations = Pick<
   Client,
@@ -13,7 +14,7 @@ export async function connectProtocolClient(
     { name: "omity-agent", version: "1.0.0" },
     { versionNegotiation: { mode: "auto" } },
   );
-  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- MCP Client 不是 EventTarget。
+  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP Client is not an EventTarget.
   client.onclose = options.onclose;
   try {
     await client.connect(transport, { signal: options.signal });
@@ -33,7 +34,7 @@ function disableClientRequestTimeout(client: Client) {
     return;
   }
   if (typeof setupTimeout !== "function") {
-    throw new Error("当前 MCP client SDK 不支持关闭请求超时");
+    throw new Error(localize("network:mcp.requestTimeoutCloseUnsupported"));
   }
   Object.defineProperty(client, setupTimeoutMethod, {
     configurable: true,

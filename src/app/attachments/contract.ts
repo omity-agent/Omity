@@ -1,5 +1,6 @@
 import { DomainError } from "../../errors";
 import type { Settings } from "../../types";
+import { localize } from "../../i18n/server";
 
 export type { MessageSubmission, SessionSubmission } from "./submission";
 export interface PendingAttachment {
@@ -37,7 +38,10 @@ function validateAttachment(
     typeof file.name !== "string" ||
     file.name.length === 0
   ) {
-    throw new DomainError("ATTACHMENT_INVALID", "附件缺少有效文件名");
+    throw new DomainError(
+      "ATTACHMENT_INVALID",
+      localize("application:attachments.fileNameMissing"),
+    );
   }
   if (
     !("size" in file) ||
@@ -45,19 +49,27 @@ function validateAttachment(
     !Number.isSafeInteger(file.size) ||
     file.size < 0
   ) {
-    throw new DomainError("ATTACHMENT_INVALID", `附件 ${file.name} 的大小无效`);
+    throw new DomainError(
+      "ATTACHMENT_INVALID",
+      localize("application:attachments.sizeInvalid", { value0: file.name }),
+    );
   }
   const suffix = fileSuffix(file.name);
   if (!settings.allowedSuffixes.includes(suffix)) {
     throw new DomainError(
       "ATTACHMENT_INVALID",
-      `不允许粘贴后缀为 ${suffix || "（无后缀）"} 的文件`,
+      localize("application:attachments.suffixUnsupported", {
+        value0: suffix || localize("errors:generic.noSuffix"),
+      }),
     );
   }
   if (file.size > settings.maxSizeBytes) {
     throw new DomainError(
       "ATTACHMENT_TOO_LARGE",
-      `文件 ${file.name} 超过大小上限 ${settings.maxSizeBytes.toString()} 字节`,
+      localize("application:attachments.fileTooLarge", {
+        value0: file.name,
+        value1: settings.maxSizeBytes.toString(),
+      }),
     );
   }
 }
@@ -68,12 +80,17 @@ export function validateAttachmentBatch(files: readonly unknown[], settings: Att
     total += file.size;
   }
   if (!Number.isSafeInteger(total)) {
-    throw new DomainError("ATTACHMENT_TOO_LARGE", "附件总大小超出安全整数范围");
+    throw new DomainError(
+      "ATTACHMENT_TOO_LARGE",
+      localize("application:attachments.totalSizeUnsafe"),
+    );
   }
   if (total > settings.maxSizeBytes) {
     throw new DomainError(
       "ATTACHMENT_TOO_LARGE",
-      `附件总大小超过上限 ${settings.maxSizeBytes.toString()} 字节`,
+      localize("application:attachments.totalSizeTooLarge", {
+        value0: settings.maxSizeBytes.toString(),
+      }),
     );
   }
 }

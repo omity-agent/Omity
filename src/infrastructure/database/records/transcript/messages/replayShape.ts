@@ -1,5 +1,6 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
 import { isProviderOptions } from "../../../../../agent/toolProviderOptions";
+import { localize } from "../../../../../i18n/server";
 import { z } from "zod";
 
 export const toolProviderOptionsSchema = z.record(
@@ -20,7 +21,7 @@ const content = z.union([
     })
     .refine(
       ({ input, output }) => Number.isSafeInteger(input + output),
-      "消息总 token 数超出安全整数范围",
+      localize("database:messages.tokenTotalUnsafe"),
     ),
   toolCall = z.strictObject({
     args: z.record(z.string(), z.unknown()),

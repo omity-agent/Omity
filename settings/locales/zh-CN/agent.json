@@ -1,0 +1,46 @@
+{
+  "messages": {
+    "typeUnsupported": "不支持转换消息类型：{{value0}}",
+    "toolCallIdMissing": "工具调用缺少 ID：{{value0}}",
+    "freeformInputNotString": "MCP free-form 工具 {{value0}} 输入必须是字符串",
+    "persistedContentInvalid": "会话保存的 AI SDK 内容格式无效"
+  },
+  "stream": {
+    "roleUnsupported": "AI SDK 返回了不支持的消息角色：{{value0}}",
+    "structuredInputNotObject": "结构化工具 {{value0}} 输入必须是对象",
+    "toolRejected": "工具执行已拒绝"
+  },
+  "tool": {
+    "notFound": "工具不存在：{{value0}}",
+    "alreadyRunning": "工具调用已在运行：{{value0}}",
+    "manuallyCancelled": "用户手动终止工具"
+  },
+  "model": {
+    "cachePreviousTokensInvalid": "缓存命中率预估的先前输入 token 数无效",
+    "cacheInputTokensUnsafe": "缓存命中率预估的输入 token 数超出安全整数范围",
+    "messagesReasoningEffortUnsupported": "Messages API 不支持 reasoning_effort: minimal",
+    "structuredReasoningEffortUnsupported": "Messages API 不支持 reasoning_effort: minimal",
+    "adapterBranchMissing": "模型适配器分支未覆盖",
+    "apiKeyEnvironmentMissing": "缺少环境变量 {{value0}}",
+    "otherRequestWon": "其他模型请求已返回首个 Chunk",
+    "websocketRequestBodyInvalid": "Responses WebSocket 请求正文必须是对象",
+    "websocketUrlInvalid": "Responses WebSocket 请求地址应使用 HTTP 或 HTTPS",
+    "websocketTextFrameRequired": "Responses WebSocket 响应应为文本帧",
+    "websocketEventTypeMissing": "Responses WebSocket 响应缺少事件类型",
+    "toolTypeDisabled": "供应商内置工具已禁用：{{value0}}",
+    "optionDisabled": "供应商内置工具已禁用：{{value0}}",
+    "preconnectUnsupported": "模型请求不支持绕过统一出站网络层的 preconnect",
+    "deferredToolsUnsupported": "Defer loading 仅支持 Responses API 和 Messages API",
+    "freeformToolPolicyInvalid": "工具 {{value0}} 的 free-form 输入仅支持非延迟加载的 Responses API 工具",
+    "searchToolNameConflict": "延迟加载的服务端搜索工具名称冲突：{{value0}}",
+    "websocketClosedEarly": "Responses WebSocket 在响应完成前关闭",
+    "websocketConnectionFailed": "Responses WebSocket 连接失败"
+  },
+  "graph": {
+    "duplicateCallId": "工具请求包含重复的调用 ID",
+    "noPendingToolCalls": "工具节点没有待执行的工具调用",
+    "finalReplyBoundary": "最终回复保留独立边界，以接纳运行期间追加的用户输入。",
+    "invalidHookUpdate": "Hook 状态转换必须返回字段更新",
+    "invalidHookMessages": "Hook 状态转换返回了无效消息"
+  }
+}

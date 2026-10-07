@@ -9,6 +9,7 @@ import { buildGraph } from "./agent";
 import { createSessionDefinition } from "./infrastructure/database/session/sessionDefinition";
 import { fetchLatestCodexVersion } from "./infrastructure/openai/codexVersion";
 import { hostLoop } from "./runtime/loop";
+import { localize } from "./i18n/server";
 import { prepareHostSession } from "./runtime/execution/sessionPreparation";
 import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";
 import { wireHostSignals } from "./runtime/execution/signals";
@@ -155,12 +156,20 @@ export async function runHostSession(
   }
   function requireLease() {
     if (!lease) {
-      throw new Error(`Host Lease 尚未建立：${mode.sessionId}`);
+      throw new Error(localize("errors:host.leaseNotEstablished", { value0: mode.sessionId }));
     }
     return lease;
   }
   function logSessionOpened() {
-    const action = mode.kind === "new" ? "创建" : mode.kind === "load" ? "加载" : "覆盖";
-    logger.info(`已${action}会话`, { db: paths.dbPath, sessionId: mode.sessionId });
+    const action =
+      mode.kind === "new"
+        ? localize("errors:host.action.createLabel")
+        : mode.kind === "load"
+          ? localize("errors:host.action.loadLabel")
+          : localize("errors:host.action.overwriteLabel");
+    logger.info(localize("errors:host.sessionActionCompleted", { value0: action }), {
+      db: paths.dbPath,
+      sessionId: mode.sessionId,
+    });
   }
 }

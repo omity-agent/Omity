@@ -2,6 +2,7 @@ import { type ActiveRun, CanceledRunError, cancelRun, pauseFailedRun, setRunStat
 import { type HostContext, waitForWake } from "../context";
 import { captureError } from "../../failures/details";
 import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
+import { localize } from "../../i18n/server";
 
 export function pauseForStop(ctx: HostContext, run: ActiveRun) {
   if (!ctx.stopping?.aborted && !ctx.controller.signal.aborted) {
@@ -17,7 +18,7 @@ export function pauseForMcpUnavailable(ctx: HostContext, run: ActiveRun, error: 
   }
   const details = captureError(unavailable);
   pauseFailedRun(ctx, run, details);
-  ctx.logger.warn("MCP stdio 不可用，队列已暂停", {
+  ctx.logger.warn(localize("runtime:pause.mcpUnavailable"), {
     inputId: run.items[0].id,
     server: unavailable.serverName,
   });
@@ -32,15 +33,15 @@ export async function waitIfPaused(ctx: HostContext, run: ActiveRun) {
     const control = ctx.db.control(ctx.sessionId);
     if (control === "pause_cancel") {
       setRunStatus(ctx, run, "paused");
-      ctx.controller.abort(new CanceledRunError("暂停状态收到 cancel"));
-      ctx.logger.warn("暂停状态收到 cancel，Host 已关闭", {
+      ctx.controller.abort(new CanceledRunError(localize("runtime:pause.cancelled")));
+      ctx.logger.warn(localize("runtime:pause.cancelledAndHostClosed"), {
         inputId: run.items[0].id,
       });
       return false;
     }
     if (control === "cancel") {
       cancelRun(ctx, run);
-      throw new CanceledRunError("运行已取消");
+      throw new CanceledRunError(localize("runtime:pause.runCancelled"));
     }
     if (control === "running" || control === "step") {
       setRunStatus(ctx, run, "running");
@@ -48,7 +49,7 @@ export async function waitIfPaused(ctx: HostContext, run: ActiveRun) {
     }
     if (!pauseLogged) {
       setRunStatus(ctx, run, "paused");
-      ctx.logger.info("暂停中，等待 resume 或 cancel", {
+      ctx.logger.info(localize("runtime:pause.waitingForResume"), {
         inputId: run.items[0].id,
       });
       pauseLogged = true;

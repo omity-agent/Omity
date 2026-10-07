@@ -1,4 +1,5 @@
 import type { Logger } from "../../infrastructure/logging/logger";
+import { localize } from "../../i18n/server";
 
 interface HostSignalOptions {
   enabled: boolean;
@@ -13,15 +14,15 @@ export function wireHostSignals(options: HostSignalOptions) {
   }
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const stop = (signal: NodeJS.Signals) => {
-      const reason = new Error(`收到 ${signal}`);
+      const reason = new Error(localize("runtime:signal.received", { value0: signal }));
       if (options.stopping.signal.aborted) {
         options.force.abort(reason);
         return;
       }
       options.stopping.abort(reason);
-      options.logger.warn(`收到 ${signal}，Host 将在可恢复边界停止`);
+      options.logger.warn(localize("runtime:signal.stopAtRecoveryBoundary", { value0: signal }));
       timeout = setTimeout(() => {
-        options.force.abort(new Error("Host 未在关闭期限内到达恢复边界"));
+        options.force.abort(new Error(localize("runtime:signal.recoveryBoundaryTimeout")));
       }, options.timeoutMs);
       timeout.unref();
     },

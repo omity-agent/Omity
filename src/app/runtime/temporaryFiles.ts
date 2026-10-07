@@ -1,5 +1,6 @@
 import filesystem from "node:fs/promises";
 import { join } from "node:path";
+import { localize } from "../../i18n/server";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 
 export async function clearAgentTemporaryFiles(sessionId: string) {
@@ -7,7 +8,7 @@ export async function clearAgentTemporaryFiles(sessionId: string) {
     skipped: string[] = [],
     warn = (path: string, error: unknown) => {
       skipped.push(path);
-      console.warn("清空 Agent 临时目录时跳过无法删除的项目：", path, error);
+      console.warn(localize("application:runtime.cleanupSkipped"), path, error);
     },
     removeEntry = async (path: string): Promise<boolean> => {
       try {
@@ -40,7 +41,7 @@ export async function clearAgentTemporaryFiles(sessionId: string) {
     await filesystem.mkdir(tempDir, { recursive: true });
     const root = await filesystem.lstat(tempDir);
     if (root.isSymbolicLink() || !root.isDirectory()) {
-      throw new Error("Agent 临时目录必须是实际目录，不能是符号链接");
+      throw new Error(localize("application:runtime.directoryMustBeReal"));
     }
     await clearDirectory(tempDir);
   } catch (error) {

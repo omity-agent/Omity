@@ -3,6 +3,7 @@ import { HighlightedLine, codeLines } from "../HighlightedCode/lines";
 import { fitSourceHeight, observeSourceSpace } from "./fittedSource";
 import { css } from "styled-system/css";
 import { highlightMarkdownSource } from "./syntax";
+import { localize } from "../../i18n";
 import { source } from "./styles";
 
 const container = css({ inset: "zero", overflow: "clip", position: "absolute" });
@@ -15,7 +16,7 @@ export function MarkdownSource({ content }: { content: string }) {
     const element = sourceReference.current,
       parent = containerReference.current;
     if (!element || !parent) {
-      throw new Error("Markdown 源码测量元素未挂载");
+      throw new Error(localize("frontend:markdown.measureElementMissing"));
     }
     fitSourceHeight(element, parent.getBoundingClientRect().height);
   });
@@ -23,7 +24,7 @@ export function MarkdownSource({ content }: { content: string }) {
     const element = sourceReference.current,
       parent = containerReference.current;
     if (!element || !parent) {
-      throw new Error("Markdown 源码测量元素未挂载");
+      throw new Error(localize("frontend:markdown.sourceMeasureElementMissing"));
     }
     return observeSourceSpace(parent, element);
   }, []);

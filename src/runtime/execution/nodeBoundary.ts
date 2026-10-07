@@ -6,6 +6,7 @@ import { pauseForStop, waitIfPaused } from "./pause";
 import { recordAiStreamPart, recordToolStarted } from "../aiStream";
 import { historyInput } from "../../agent/graph/historyInput";
 import { isRetryableModelError } from "../transientErrors";
+import { localize } from "../../i18n/server";
 import { waitAfterCompletedStep } from "./step";
 import { waitBeforeModelRetry } from "../retry";
 
@@ -75,7 +76,7 @@ export async function runGraphUntilBoundary(
       const retry = await waitBeforeModelRetry(ctx, run, error, retries, {
         cancel: () => {
           cancelRun(ctx, run);
-          return Promise.reject(new CanceledRunError("运行已取消"));
+          return Promise.reject(new CanceledRunError(localize("runtime:boundary.cancelled")));
         },
         pause: async () => (await waitIfPaused(ctx, run)) !== false,
         stop: () => setRunStatus(ctx, run, "paused"),
@@ -134,7 +135,7 @@ function nextOperation(next: string[]): AgentOperation | undefined {
     ...(next.includes("tools") ? (["tools"] as const) : []),
   ];
   if (operations.length > 1) {
-    throw new Error("Agent 图同时调度了模型与工具节点");
+    throw new Error(localize("runtime:boundary.modelAndToolsConcurrent"));
   }
   return operations[0];
 }
@@ -166,7 +167,7 @@ async function handleGraphEvent(
     return;
   }
   if (!isAiStreamEvent(part)) {
-    throw new Error("LangGraph custom 事件不是 AI SDK 流事件");
+    throw new Error(localize("runtime:boundary.customEventInvalid"));
   }
   await recordAiStreamPart(ctx, inputId, part, state);
 }

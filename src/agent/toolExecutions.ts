@@ -1,3 +1,5 @@
+import { localize } from "../i18n/server";
+
 interface ToolExecutionHandle {
   signal: AbortSignal;
   cancellationDurationMs: () => number | undefined;
@@ -29,7 +31,7 @@ export class ToolExecutions {
   begin(callId: string, parentSignal?: AbortSignal): ToolExecutionHandle {
     const execution = this.executions.get(callId) ?? this.createExecution();
     if (execution.active) {
-      throw new Error(`工具调用已在运行：${callId}`);
+      throw new Error(localize("agent:tool.alreadyRunning", { value0: callId }));
     }
     this.executions.set(callId, execution);
     execution.active = true;
@@ -64,7 +66,7 @@ export class ToolExecutions {
       return false;
     }
     execution.cancelledAt = requestedAt;
-    execution.controller.abort(new Error("用户手动终止工具"));
+    execution.controller.abort(new Error(localize("agent:tool.manuallyCancelled")));
     return true;
   }
   close() {

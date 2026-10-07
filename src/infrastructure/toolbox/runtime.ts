@@ -1,6 +1,7 @@
 import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
 import type { AskUserRequest } from "./askUser";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../i18n/server";
 import { raceSignal } from "race-signal";
 
 type AskUserAnswer = { options: string[]; note: string } | { answer: string };
@@ -15,7 +16,9 @@ export class AskUserRuntime {
   async ask(request: AskUserRequest, sessionId: string, signal?: AbortSignal) {
     const key = this.key(sessionId, request.callId);
     if (this.pending.has(key)) {
-      throw new Error(`ask_user 问题已在等待回答：${request.callId}`);
+      throw new Error(
+        localize("toolbox:askUser.questionAlreadyPending", { value0: request.callId }),
+      );
     }
     const deferred = Promise.withResolvers<AskUserAnswer>(),
       pending: PendingQuestion = { request, resolve: deferred.resolve },
@@ -31,7 +34,9 @@ export class AskUserRuntime {
       return await raceSignal(deferred.promise, signal, {
         translateError: (aborted) => {
           cleanup();
-          return aborted.reason instanceof Error ? aborted.reason : new Error("工具已终止");
+          return aborted.reason instanceof Error
+            ? aborted.reason
+            : new Error(localize("toolbox:tool.terminated"));
         },
       });
     } finally {
@@ -60,7 +65,7 @@ export class AskUserRuntime {
 function parseAnswer(request: AskUserRequest, answer: unknown): AskUserAnswer {
   if (request.kind === "open_ended") {
     if (!isRecord(answer) || typeof answer["answer"] !== "string") {
-      throw askUserAnswerInvalid("open_ended 答案必须包含 answer 字符串");
+      throw askUserAnswerInvalid(localize("toolbox:answer.openEndedStringMissing"));
     }
     return { answer: answer["answer"] };
   }
@@ -69,23 +74,23 @@ function parseAnswer(request: AskUserRequest, answer: unknown): AskUserAnswer {
     !Array.isArray(answer["options"]) ||
     typeof answer["note"] !== "string"
   ) {
-    throw askUserAnswerInvalid("choice 答案必须包含 options 字符串列表和 note 字符串");
+    throw askUserAnswerInvalid(localize("toolbox:answer.choiceFieldsMissing"));
   }
   const { options } = answer;
   if (!options.every((option): option is string => typeof option === "string")) {
-    throw askUserAnswerInvalid("choice 答案中的 options 必须是字符串列表");
+    throw askUserAnswerInvalid(localize("toolbox:answer.choiceOptionsNotStrings"));
   }
   if (
     new Set(options).size !== options.length ||
     options.some((option) => !request.options.includes(option))
   ) {
-    throw askUserAnswerInvalid("choice 答案包含题目没有提供的选项");
+    throw askUserAnswerInvalid(localize("toolbox:answer.choiceOptionUnknown"));
   }
   if (!request.multiple && options.length > 1) {
-    throw askUserAnswerInvalid("单选题只能选择一个选项");
+    throw askUserAnswerInvalid(localize("toolbox:answer.singleChoiceMultiple"));
   }
   if (options.length === 0 && answer["note"].trim().length === 0) {
-    throw askUserAnswerInvalid("没有备注时至少选择一个选项");
+    throw askUserAnswerInvalid(localize("toolbox:answer.noteRequiresChoice"));
   }
   return { note: answer["note"], options };
 }

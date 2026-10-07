@@ -1,6 +1,7 @@
 import { type RefObject, useCallback, useEffectEvent, useLayoutEffect, useRef } from "react";
 import { ReadingAnchor } from "./ReadingAnchor";
 import type { VirtualizerHandle } from "virtua";
+import { localize } from "../../../i18n";
 
 export function useTranscriptScroll({
   contentRef,
@@ -21,7 +22,7 @@ export function useTranscriptScroll({
       content = contentRef.current,
       handle = handleRef.current;
     if (!element || !content || !handle) {
-      throw new Error("对话列表缺少滚动容器");
+      throw new Error(localize("frontend:transcript.scrollContainerMissing"));
     }
     let disposed = false;
     const layout = new ReadingAnchor(element, content, handle, details.current, () =>

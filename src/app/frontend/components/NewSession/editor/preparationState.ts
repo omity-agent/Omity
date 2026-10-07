@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
 import type { InitialMessagePair } from "../../../../initialState";
 import { claimShortId } from "../../../../../infrastructure/randomId";
+import { localize } from "../../../i18n";
 
 const target = { kind: "new" } as const;
 export function useNewSessionDraft(saveDelayMs?: number) {
@@ -52,7 +53,7 @@ export function useNewSessionDraft(saveDelayMs?: number) {
   useEffect(() => {
     const flush = () => {
       if (!flushComposerDraft(target, JSON.stringify(draftRef.current), revisionRef.current)) {
-        reportError(new Error("新建会话草稿未能提交保存"));
+        reportError(new Error(localize("frontend:newSession.draftSaveFailed")));
       }
     };
     window.addEventListener("pagehide", flush);
@@ -62,7 +63,7 @@ export function useNewSessionDraft(saveDelayMs?: number) {
   }, []);
   const update = (next: SessionPreparation) => {
       if (revisionRef.current >= Number.MAX_SAFE_INTEGER) {
-        throw new Error("新建会话草稿版本号溢出");
+        throw new Error(localize("frontend:newSession.draftRevisionUnsafe"));
       }
       draftRef.current = next;
       revisionRef.current += 1;

@@ -5,6 +5,7 @@ import {
 import { Database } from "bun:sqlite";
 import { databasePath } from "../../../infrastructure/configuration/sessionPaths";
 import { existsSync } from "node:fs";
+import { localize } from "../../../i18n/server";
 
 export class DatabaseReader implements Disposable {
   private database?: Database;
@@ -12,7 +13,7 @@ export class DatabaseReader implements Disposable {
   constructor(private readonly path = databasePath()) {}
   open() {
     if (this.closed) {
-      throw new Error("App 数据库读取器已关闭");
+      throw new Error(localize("application:resources.databaseReaderClosed"));
     }
     if (!this.database && existsSync(this.path)) {
       const db = new Database(this.path, { readonly: true, strict: true });

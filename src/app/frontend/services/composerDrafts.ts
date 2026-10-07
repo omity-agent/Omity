@@ -6,6 +6,7 @@ import {
   saveComposerDraft,
   savePreparationDraft,
 } from "./client";
+import { localize } from "../i18n";
 
 export type ComposerDraftTarget =
   | { beforeMessageId: number; kind: "fork"; sourceSessionId: string }
@@ -51,7 +52,7 @@ export function flushComposerDraft(target: ComposerDraftTarget, content: string,
 }
 export function clearTemporaryComposerDraft(target: ComposerDraftTarget) {
   if (target.kind !== "fork") {
-    throw new Error("仅 Fork 草稿使用临时存储");
+    throw new Error(localize("frontend:drafts.temporaryStorageOnly"));
   }
   globalThis.sessionStorage.removeItem(storageKey(target));
 }

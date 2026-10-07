@@ -1,0 +1,15 @@
+{
+  "missingVocabularyShard": "缺少 Token 词表分片：{{id}}",
+  "vocabularyTokenTooLarge": "单个 Token 词条超过分片大小限制",
+  "unknownLibc": "无法识别构建平台的 libc",
+  "unsupportedPlatform": "系统代理模块不支持此构建平台：{{platform}}",
+  "magikaCacheInvalid": "Magika 模型缓存无效，将重新下载",
+  "magikaDownloadFailed": "Magika 模型下载失败：{{status}} {{url}}",
+  "magikaPathTraversal": "Magika 模型清单包含越界路径：{{path}}",
+  "unknownArgument": "未知构建参数：{{command}}",
+  "executableBuildFailed": "可执行程序构建失败",
+  "databaseGenerationFailed": "{{name}} 数据库生成失败，退出码：{{code}}",
+  "databaseDirectoryInvalid": "{{name}} 数据库结构目录无效",
+  "databaseFilesInvalid": "{{name}} 数据库结构文件无效",
+  "testsFailed": "测试失败，退出码：{{code}}"
+}

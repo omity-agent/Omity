@@ -1,5 +1,6 @@
 import type { ModelApi } from "../types";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 
 interface ToolImage {
   src: string;
@@ -12,7 +13,9 @@ export function modelToolOutput(content: unknown, api: ModelApi) {
     return { type: "text" as const, value: text };
   }
   if (api === "completions") {
-    const notice = `工具返回了 ${images.length.toString()} 张图片，但 Completions API 不支持工具返回图片给模型。`;
+    const notice = localize("runtime:tool.imagesUnsupportedByCompletions", {
+      value0: images.length.toString(),
+    });
     return { type: "text" as const, value: [text, notice].filter(Boolean).join("\n\n") };
   }
   return {
@@ -66,7 +69,7 @@ function toolContentText(content: unknown): string {
     ) {
       return content.toString();
     }
-    throw new Error(`工具消息包含不支持的内容类型：${typeof content}`);
+    throw new Error(localize("runtime:tool.contentTypeUnsupported", { value0: typeof content }));
   }
   if (Array.isArray(content["content"])) {
     return toolContentText(content["content"]);

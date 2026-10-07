@@ -2,6 +2,7 @@ import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messag
 import { contentToText, messageReasoning } from "../runtime/content";
 import type { FileLinkSurface } from "./types";
 import { formatToolInput } from "./toolInput";
+import { localize } from "../i18n/server";
 import { randomUUID } from "node:crypto";
 import { rawFreeformInput } from "../runtime/freeform";
 
@@ -36,7 +37,7 @@ function messageSources(message: BaseMessage): FileLinkSource[] {
 }
 function aiSources(message: AIMessage): FileLinkSource[] {
   if (!message.id) {
-    throw new Error("模型消息缺少文件链接所有者 ID");
+    throw new Error(localize("errors:fileLinks.ownerIdMissing"));
   }
   const ownerId = message.id,
     reasoning = messageReasoning(message);

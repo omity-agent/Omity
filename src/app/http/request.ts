@@ -5,16 +5,26 @@ import { bodyLimit } from "hono/body-limit";
 import { controlCommandSchema } from "../../types";
 import { createMiddleware } from "hono/factory";
 import { fileLinkActionSchema } from "../../fileLinks/types";
+import { localize } from "../../i18n/server";
 import { preparationContentSchema } from "../composition/preparation";
 import { requestBodyLimit } from "../../../settings/networking";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
 import { z } from "zod";
 
-export function limitRequestBody(maxSize = requestBodyLimit, label = "请求体") {
+export function limitRequestBody(
+  maxSize = requestBodyLimit,
+  label = localize("http:request.bodyLabel"),
+) {
   return bodyLimit({
     maxSize,
     onError() {
-      throw new HttpError(413, `${label}不能超过 ${maxSize.toString()} 字节`);
+      throw new HttpError(
+        413,
+        localize("http:request.bodyTooLarge", {
+          value0: label,
+          value1: maxSize.toString(),
+        }),
+      );
     },
   });
 }
@@ -47,11 +57,14 @@ async function readJson<T>(request: HonoRequest, schema: z.ZodType<T>): Promise<
   try {
     parsed = await request.json<unknown>();
   } catch {
-    throw new HttpError(400, "请求体不是有效的 JSON");
+    throw new HttpError(400, localize("http:request.invalidJson"));
   }
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    throw new HttpError(400, `请求参数无效：${z.prettifyError(result.error)}`);
+    throw new HttpError(
+      400,
+      localize("http:request.invalidParameters", { value0: z.prettifyError(result.error) }),
+    );
   }
   return result.data;
 }
@@ -69,7 +82,7 @@ export function decodeSessionId(value: string) {
   try {
     decoded = decodeURIComponent(value);
   } catch {
-    throw new HttpError(400, "Session ID 编码无效");
+    throw new HttpError(400, localize("http:request.sessionIdInvalid"));
   }
   try {
     return safeId(decoded);

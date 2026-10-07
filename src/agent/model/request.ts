@@ -5,6 +5,7 @@ import { ModelEmptyResponseError } from "../../runtime/transientErrors";
 import type { Settings } from "../../types";
 import { estimateCacheHitRate } from "./cacheExpectation";
 import { fromModelMessages } from "../fromAiMessages";
+import { localize } from "../../i18n/server";
 import { toModelMessages } from "../aiMessages";
 
 interface ModelRequestOptions {
@@ -46,7 +47,7 @@ export async function streamAiModel(options: ModelRequestOptions) {
   function abortAttempts(except?: number) {
     for (const [id, controller] of attempts) {
       if (id !== except) {
-        controller.abort(new DOMException("其他模型请求已返回首个 Chunk", "AbortError"));
+        controller.abort(new DOMException(localize("agent:model.otherRequestWon"), "AbortError"));
       }
     }
   }

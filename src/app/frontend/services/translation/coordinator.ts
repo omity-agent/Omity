@@ -1,7 +1,7 @@
 import { UnsupportedLanguagePairError, createBrowserTranslator } from "./browser";
 import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import type { ReasoningTranslation } from "../../../timeline";
-import { t } from "i18next";
+import { localize } from "../../i18n";
 
 interface TranslationCandidate {
   content: string;
@@ -31,7 +31,7 @@ export class ReasoningTranslationCoordinator {
       (candidate) => {
         const signal = this.queue.getAbortSignal();
         if (!signal) {
-          throw new Error(t("translationAbortSignalMissing"));
+          throw new Error(localize("translationAbortSignalMissing"));
         }
         return this.translate(candidate, signal);
       },
@@ -95,7 +95,7 @@ export class ReasoningTranslationCoordinator {
     if (error instanceof UnsupportedLanguagePairError) {
       const highConfidence = error.confidence >= this.options.highConfidenceThreshold;
       console.warn(
-        t(highConfidence ? "translationSkipReasoning" : "translationRetryDetection", {
+        localize(highConfidence ? "translationSkipReasoning" : "translationRetryDetection", {
           confidence: error.confidence,
           messageId: candidate.messageId,
           sourceLanguage: error.sourceLanguage,

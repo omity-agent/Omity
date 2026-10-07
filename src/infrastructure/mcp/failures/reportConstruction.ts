@@ -6,7 +6,7 @@ import {
 } from "./wireFormat";
 import { collectReadableZodIssues } from "../tools/issues";
 import { createSecretFilter } from "./secretFilter";
-import messages from "../../../../settings/locales/zh-CN/connectionFailures.json";
+import { localize } from "../../../i18n/server";
 import { suppressTerminalError } from "../../../failures/output";
 import { uniq } from "es-toolkit";
 
@@ -20,8 +20,8 @@ class McpFailureError extends Error {
   constructor(readonly failure: McpFailure) {
     super(
       failure.server
-        ? messages.serverFailed.replace("{server}", failure.server)
-        : messages.loadFailed,
+        ? localize("mcp:connection.serverFailed", { server: failure.server })
+        : localize("mcp:connection.loadFailed"),
     );
   }
 }
@@ -34,13 +34,12 @@ export class McpLoadError extends Error {
       servers = uniq(details.failures.flatMap(({ server }) => (server ? [server] : [])));
     super(
       servers.length > 0
-        ? messages.startupFailed.replace(
-            "{servers}",
-            servers.map((server) => JSON.stringify(server)).join(", "),
-          )
+        ? localize("mcp:connection.startupFailed", {
+            servers: servers.map((server) => JSON.stringify(server)).join(", "),
+          })
         : failures.every(({ stage }) => stage === "configuration")
-          ? messages.configurationFailed
-          : messages.loadFailed,
+          ? localize("mcp:connection.configurationFailed")
+          : localize("mcp:connection.loadFailed"),
     );
     this.details = details;
   }

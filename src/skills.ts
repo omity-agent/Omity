@@ -1,6 +1,7 @@
 import type { Settings, SkillInfo } from "./types";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
+import { localize } from "./i18n/server";
 import matter from "gray-matter";
 import untildify from "untildify";
 import { z } from "zod";
@@ -16,7 +17,7 @@ function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
   }
   const skillsDir = resolveUserPath(settings.skills.directory);
   if (!existsSync(skillsDir)) {
-    throw new Error(`Skills 目录不存在：${skillsDir}`);
+    throw new Error(localize("errors:skills.directoryMissing", { value0: skillsDir }));
   }
   const skills = readdirSync(skillsDir)
       .map((entry) => join(skillsDir, entry))
@@ -25,13 +26,13 @@ function loadSkills(settings: Pick<Settings, "skills">): SkillInfo[] {
     names = new Set<string>();
   for (const skill of skills) {
     if (names.has(skill.name)) {
-      throw new Error(`Skill 名称重复：${skill.name}`);
+      throw new Error(localize("errors:skills.duplicateName", { value0: skill.name }));
     }
     names.add(skill.name);
   }
   for (const skillName of Object.keys(settings.skills.skillEnabled)) {
     if (!names.has(skillName)) {
-      throw new Error(`未知 Skill 开关：${skillName}`);
+      throw new Error(localize("errors:skills.unknownToggle", { value0: skillName }));
     }
   }
   return skills.filter((skill) => settings.skills.skillEnabled[skill.name] ?? true);
@@ -50,21 +51,21 @@ export function buildSkillsList(settings: Pick<Settings, "skills">) {
       ),
     ];
   if (skills.length === 0) {
-    lines.push("└── 当前没有启用的 Skill。");
+    lines.push(localize("errors:skills.noneEnabled"));
   }
   return lines.join("\n");
 }
 function readSkill(skillDir: string): SkillInfo {
   const source = join(skillDir, "SKILL.md");
   if (!existsSync(source)) {
-    throw new Error(`缺少 Skill 文件：${source}`);
+    throw new Error(localize("errors:skills.fileMissing", { value0: source }));
   }
   const meta = parseSkillMeta(readFileSync(source, "utf8"), source);
   return { ...meta, source };
 }
 function parseSkillMeta(content: string, source: string): SkillMeta {
   if (!matter.test(content)) {
-    throw new Error(`Skill 缺少 YAML front matter：${source}`);
+    throw new Error(localize("errors:skills.frontMatterMissing", { value0: source }));
   }
   return skillMetaSchema.parse(matter(content).data);
 }

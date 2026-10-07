@@ -1,6 +1,7 @@
 import { messageSubmissionSchema, sessionSubmissionSchema } from "../attachments/submission";
 import type { HonoRequest } from "hono/request";
 import { HttpError } from "./errors";
+import { localize } from "../../i18n/server";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -11,7 +12,7 @@ const attachmentsSchema = z.array(
       .file()
       .refine(
         (file) => typeof file.name === "string" && file.name.length > 0,
-        "附件缺少有效文件名",
+        localize("http:multipart.fileNameMissing"),
       ),
   ]),
 );
@@ -26,7 +27,7 @@ async function readSubmission<T extends object>(request: HonoRequest, schema: z.
   try {
     fields = await request.parseBody({ all: true });
   } catch {
-    throw new HttpError(400, "请求体不是有效的 multipart/form-data");
+    throw new HttpError(400, localize("http:multipart.invalidBody"));
   }
   const { submission, ...files } = fields,
     result = z
@@ -36,7 +37,10 @@ async function readSubmission<T extends object>(request: HonoRequest, schema: z.
       })
       .safeParse({ files: Object.entries(files), submission });
   if (!result.success) {
-    throw new HttpError(400, `提交参数无效：${z.prettifyError(result.error)}`);
+    throw new HttpError(
+      400,
+      localize("http:multipart.invalidParameters", { value0: z.prettifyError(result.error) }),
+    );
   }
   return {
     ...result.data.submission,

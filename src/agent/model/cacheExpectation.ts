@@ -1,6 +1,7 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { ModelMessage } from "ai";
 import { countTokens } from "../../runtime/tokenizer";
+import { localize } from "../../i18n/server";
 import { z } from "zod";
 
 const expectation = z.object({
@@ -16,7 +17,7 @@ export function estimateCacheHitRate(messages: BaseMessage[], modelMessages: Mod
   }
   const previousTokens = previous.usage_metadata.input_tokens;
   if (!Number.isSafeInteger(previousTokens) || previousTokens < 0) {
-    throw new Error("缓存命中率预估的先前输入 token 数无效");
+    throw new Error(localize("agent:model.cachePreviousTokensInvalid"));
   }
   if (previousTokens === 0) {
     return 0;
@@ -24,7 +25,7 @@ export function estimateCacheHitRate(messages: BaseMessage[], modelMessages: Mod
   const suffixTokens = countTokens(JSON.stringify(modelMessages.slice(previousIndex))),
     estimatedInputTokens = previousTokens + suffixTokens;
   if (!Number.isSafeInteger(estimatedInputTokens)) {
-    throw new Error("缓存命中率预估的输入 token 数超出安全整数范围");
+    throw new Error(localize("agent:model.cacheInputTokensUnsafe"));
   }
   return previousTokens / estimatedInputTokens;
 }

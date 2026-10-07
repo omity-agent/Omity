@@ -1,5 +1,6 @@
 import { Agent, type Dispatcher, ProxyAgent } from "undici/index.js";
 import { connectionContext } from "./connectionEvidence";
+import { localize } from "../../i18n/server";
 import { outboundAgentOptions } from "../../../settings/networking";
 
 export type ResolveOutboundProxy = (url: string) => Promise<string | undefined>;
@@ -11,7 +12,7 @@ export function createProxyDispatcher(resolveProxy: ResolveOutboundProxy) {
   const dispatcher = direct.compose(() => (options, handler) => {
     const request = new PendingDispatch(handler);
     if (closed) {
-      request.fail(new Error("出站网络已关闭"));
+      request.fail(new Error(localize("network:outbound.closed")));
       return false;
     }
     pending.add(request);
@@ -46,7 +47,7 @@ export function createProxyDispatcher(resolveProxy: ResolveOutboundProxy) {
     async close() {
       closed = true;
       for (const request of pending) {
-        request.abort(new Error("出站网络已关闭"));
+        request.abort(new Error(localize("network:outbound.closedDuringRequest")));
       }
       pending.clear();
       await Promise.all([

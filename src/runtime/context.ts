@@ -6,6 +6,7 @@ import type { ErrorDetails } from "../failures/details";
 import type { Logger } from "../infrastructure/logging/logger";
 import type { ToolExecutions } from "../agent/toolExecutions";
 import type { buildGraph } from "../agent";
+import { localize } from "../i18n/server";
 import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 
@@ -51,11 +52,11 @@ export async function streamGraph(
 ) {
   const stream: unknown = Reflect.get(graph, "stream");
   if (typeof stream !== "function") {
-    throw new Error("LangGraph 缺少 stream 方法");
+    throw new Error(localize("runtime:graph.streamMethodMissing"));
   }
   const result: unknown = await Reflect.apply(stream, graph, [input, options]);
   if (!isIterable(result)) {
-    throw new Error("LangGraph stream 没有返回可迭代结果");
+    throw new Error(localize("runtime:graph.streamNotIterable"));
   }
   return result;
 }
@@ -84,7 +85,7 @@ const messageSchema = z.custom<BaseMessage>((value) => BaseMessage.isInstance(va
 export function readGraphState(value: unknown) {
   const parsed = graphStateSchema.safeParse(value);
   if (!parsed.success) {
-    throw new Error("LangGraph 状态无效", { cause: parsed.error });
+    throw new Error(localize("runtime:graph.invalidState"), { cause: parsed.error });
   }
   return parsed.data;
 }

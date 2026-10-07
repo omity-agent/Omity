@@ -1,3 +1,5 @@
+import { localize } from "../../i18n";
+
 const markerPattern =
   /(?:[{[<(@%]+[\t\p{Zs}]*)?lnbrk[\t\p{Zs}]*[-_:./\\]*[\t\p{Zs}]*(?<index>\d+)(?:[\t\p{Zs}]*[}\]>)@%]+)?/giu;
 interface LineBreakMarker {
@@ -38,7 +40,7 @@ function availableMarkerIndex(source: string, markerCount: number) {
       return firstIndex;
     }
   }
-  throw new Error("无法生成思维链翻译换行标记");
+  throw new Error(localize("frontend:translation.markerGenerationFailed"));
 }
 function markerMatches(value: string): MarkerMatch[] {
   return [...value.matchAll(markerPattern)].flatMap((match) => {
@@ -59,18 +61,26 @@ function restoreLineBreaks(translated: string, markers: LineBreakMarker[]) {
         return [];
       }
       if (found.length > 1) {
-        throw new Error(`思维链翻译重复换行标记：${marker.token}`);
+        throw new Error(
+          localize("frontend:translation.duplicateMarker", {
+            value0: marker.token,
+          }),
+        );
       }
       return { marker, match: found[0]! };
     });
   if (missing.length > 0) {
-    console.warn("思维链翻译丢失换行标记", {
+    console.warn(localize("frontend:translation.markerMissing"), {
       markers: missing.map((marker) => marker.token),
     });
   }
   for (let index = 1; index < matches.length; index += 1) {
     if (matches[index]!.match.start < matches[index - 1]!.match.end) {
-      throw new Error(`思维链翻译换行标记顺序错误：${matches[index]!.marker.token}`);
+      throw new Error(
+        localize("frontend:translation.markerOrderInvalid", {
+          value0: matches[index]!.marker.token,
+        }),
+      );
     }
   }
   let cursor = 0,

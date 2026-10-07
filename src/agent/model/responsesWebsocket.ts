@@ -3,6 +3,7 @@ import { type FailureEvent, ResponsesWebsocketError } from "./websocketFailure";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
 import { StreamEvidence } from "./streamEvidence";
 import { isPlainObject } from "es-toolkit";
+import { localize } from "../../i18n/server";
 import { openOutboundSocket } from "../../infrastructure/network/socketTransport";
 
 interface ResponsesWebsocketSettings {
@@ -23,7 +24,7 @@ export function createResponsesWebsocketFetch(
       { signal } = request;
     signal.throwIfAborted();
     if (!isPlainObject(body)) {
-      throw new TypeError("Responses WebSocket 请求正文必须是对象");
+      throw new TypeError(localize("agent:model.websocketRequestBodyInvalid"));
     }
     const resolved = typeof settings === "function" ? await settings(request) : settings,
       headers = new Headers({ ...requestHeaders(request), ...resolved.headers }),
@@ -31,7 +32,7 @@ export function createResponsesWebsocketFetch(
     signal.throwIfAborted();
     headers.set("authorization", `Bearer ${resolved.apiKey}`);
     if (url.protocol !== "https:" && url.protocol !== "http:") {
-      throw new TypeError("Responses WebSocket 请求地址应使用 HTTP 或 HTTPS");
+      throw new TypeError(localize("agent:model.websocketUrlInvalid"));
     }
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     const progress = new StreamEvidence(),
@@ -107,11 +108,11 @@ export function createResponsesWebsocketFetch(
               progress.received(event.data);
               try {
                 if (typeof event.data !== "string") {
-                  throw new TypeError("Responses WebSocket 响应应为文本帧");
+                  throw new TypeError(localize("agent:model.websocketTextFrameRequired"));
                 }
                 const message: unknown = JSON.parse(event.data);
                 if (!isPlainObject(message) || typeof message["type"] !== "string") {
-                  throw new TypeError("Responses WebSocket 响应缺少事件类型");
+                  throw new TypeError(localize("agent:model.websocketEventTypeMissing"));
                 }
                 progress.event(message);
                 if (message["type"] === "error") {

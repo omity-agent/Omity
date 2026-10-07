@@ -1,0 +1,36 @@
+{
+  "ceremony": {
+    "userDisplayName": "Omity 管理员",
+    "registrationVerificationFailed": "WebAuthn 凭据注册验证失败",
+    "credentialsNotConfigured": "尚未从局域网注册 WebAuthn 凭据",
+    "credentialUnknown": "WebAuthn 凭据未知",
+    "authenticationFailed": "WebAuthn 身份验证失败",
+    "publicOriginMissing": "请先在 settings/main.yaml 配置 access.publicOrigin",
+    "responseVerificationFailed": "WebAuthn 响应验证失败"
+  },
+  "network": {
+    "untrustedForwardedFor": "未受信任的对端不能发送 X-Forwarded-For",
+    "forwardedForMissing": "来自可信代理的请求缺少 X-Forwarded-For",
+    "forwardedForDuplicate": "X-Forwarded-For 请求头不能重复",
+    "forwardedForEmpty": "X-Forwarded-For 请求头为空",
+    "forwardedForInvalid": "X-Forwarded-For 地址链无效",
+    "clientAddressMissingFromChain": "X-Forwarded-For 未包含可信代理链之外的客户端地址",
+    "clientAddressInvalid": "客户端 IP 地址无效：{{value0}}"
+  },
+  "service": {
+    "clientAddressUnknown": "无法识别客户端地址",
+    "authenticationRequired": "公网请求需要通过 WebAuthn 验证身份",
+    "originMissing": "公网写请求缺少 Origin",
+    "originRejected": "拒绝跨站请求来源：{{value0}}",
+    "registrationTicketMissing": "WebAuthn 注册链接缺失",
+    "registrationTicketInvalid": "WebAuthn 注册链接不存在或已过期",
+    "localRegistrationRequired": "WebAuthn 凭据只能从局域网注册",
+    "localLoginNotRequired": "局域网请求无需登录",
+    "rateLimited": "WebAuthn 登录尝试过于频繁，请稍后再试"
+  },
+  "store": {
+    "credentialMissing": "WebAuthn 凭据不存在：{{value0}}",
+    "challengeInvalid": "WebAuthn 挑战不存在或已过期",
+    "registrationTicketInvalid": "WebAuthn 注册链接不存在或已过期"
+  }
+}

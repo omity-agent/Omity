@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
 import { decodeMessage } from "./messages/hydration";
+import { localize } from "../../../../i18n/server";
 import { messageReasoning } from "../../../../runtime/content";
 import { reasoningTranslations } from "../../schema";
 import { sessionDatabase } from "../../sqlite/connection";
@@ -30,7 +31,9 @@ export function storeReasoningTranslation(
 ) {
   const source = persistedReasoningSource(db, sessionId, translation.messageId);
   if (source !== translation.source) {
-    throw new Error(`思维链原文已发生变化：${translation.messageId}`);
+    throw new Error(
+      localize("database:transcript.reasoningSourceChanged", { value0: translation.messageId }),
+    );
   }
   sessionDatabase(db)
     .insert(reasoningTranslations)
@@ -61,7 +64,7 @@ function persistedReasoningSource(db: Database, sessionId: string, messageId: st
     )
     .get(sessionId, messageId);
   if (!message) {
-    throw new Error(`思维链消息不存在：${messageId}`);
+    throw new Error(localize("database:transcript.reasoningMessageMissing", { value0: messageId }));
   }
   return messageReasoning(decodeMessage(message.message_json, messageId));
 }

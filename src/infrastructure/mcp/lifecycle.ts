@@ -1,3 +1,4 @@
+import { localize } from "../../i18n/server";
 import { once } from "es-toolkit";
 import pMap from "p-map";
 
@@ -15,7 +16,9 @@ export class AsyncResourceCache<Resource extends Closeable> {
   }
   load(key: string, initialize: () => Promise<Resource>) {
     if (this.closed) {
-      return Promise.reject(new Error(`${this.name} 正在关闭，不能初始化资源`));
+      return Promise.reject(
+        new Error(localize("mcp:lifecycle.initializationWhileClosing", { value0: this.name })),
+      );
     }
     const existing = this.loading.get(key);
     if (existing) {
@@ -51,7 +54,9 @@ export class AsyncResourceCache<Resource extends Closeable> {
       await pMap(pending, () => undefined, { stopOnError: false });
     } catch (error) {
       if (error instanceof AggregateError) {
-        error.message = `关闭 ${this.name} 资源失败`;
+        error.message = localize("mcp:lifecycle.cleanupFailed", {
+          value0: this.name,
+        });
       }
       throw error;
     }
@@ -83,7 +88,11 @@ export async function cleanupFailedInitialization(
   try {
     await cleanup();
   } catch (error) {
-    throw new AggregateError([failure, error], "资源初始化及清理均失败", { cause: error });
+    throw new AggregateError(
+      [failure, error],
+      localize("mcp:lifecycle.initializationAndCleanupFailed"),
+      { cause: error },
+    );
   }
   throw failure;
 }

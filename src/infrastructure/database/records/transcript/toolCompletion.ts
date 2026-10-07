@@ -4,6 +4,7 @@ import type { Database } from "bun:sqlite";
 import { events } from "../../schema";
 import { insertStreamEvent } from "./streamEvents";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 import { toolOutputSnapshot } from "../../../../runtime/toolOutput";
 
@@ -70,7 +71,9 @@ function loadStartedToolCalls(db: Database, sessionId: string): StartedToolCall[
           existing.partId !== row.partId ||
           existing.inputId !== row.inputId)
       ) {
-        throw new Error(`工具调用 ${callId} 绑定了多个流身份`);
+        throw new Error(
+          localize("database:transcript.toolStreamIdentityDuplicate", { value0: callId }),
+        );
       }
       started.set(callId, {
         callId,
@@ -90,7 +93,13 @@ function readCallId(kind: "tool_finished" | "tool_started", payload: unknown) {
         : undefined
       : payload;
   if (typeof callId !== "string" || callId.length === 0) {
-    throw new Error(`工具${kind === "tool_started" ? "开始" : "完成"}事件缺少调用 ID`);
+    throw new Error(
+      localize("database:transcript.toolEventCallIdMissing", {
+        value0: localize(
+          kind === "tool_started" ? "errors:generic.started" : "errors:generic.completed",
+        ),
+      }),
+    );
   }
   return callId;
 }
@@ -107,7 +116,11 @@ function deleteTextStreams(db: Database, sessionId: string) {
 function requiredTool(tools: Map<string, ToolMessage>, callId: string) {
   const tool = tools.get(callId);
   if (!tool) {
-    throw new Error(`工具完成事件缺少输出：${callId}`);
+    throw new Error(
+      localize("database:transcript.toolOutputMissing", {
+        value0: callId,
+      }),
+    );
   }
   return tool;
 }

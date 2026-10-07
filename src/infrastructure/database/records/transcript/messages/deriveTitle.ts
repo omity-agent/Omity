@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { cachedQuery } from "../../../sqlite/connection";
+import { localize } from "../../../../../i18n/server";
 import { storedConversationSchema } from "./replayShape";
 import { z } from "zod";
 
@@ -34,7 +35,7 @@ export function deriveSessionTitle(db: Database, sessionId: string) {
   const message = storedConversationSchema.parse(JSON.parse(row.message_json) as unknown),
     call = message.type === "ai" ? message.toolCalls?.[row.call_index] : undefined;
   if (!call) {
-    throw new Error(`标题调用记录无效：${sessionId}`);
+    throw new Error(localize("database:messages.titleCallInvalid", { value0: sessionId }));
   }
   return z
     .string()

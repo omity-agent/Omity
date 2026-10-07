@@ -5,6 +5,7 @@ import type { Logger } from "../../logging/logger";
 import { RestartingStdioClient } from "./restarting";
 import type { StdioRestartPolicy } from "./availability";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { localize } from "../../../i18n/server";
 import { mcpHttpReconnection } from "../../../../settings/networking";
 import { parseMcpConnection } from "../configuration/connections";
 import { reportMcpFailure } from "../failures/reportConstruction";
@@ -13,7 +14,7 @@ export class McpClientPool {
   private readonly resources = new AsyncResourceCache<{
     client: McpOperations;
     close: () => Promise<void>;
-  }>("MCP 连接池");
+  }>(localize("mcp:client.poolLabel"));
   constructor(
     private readonly connections: Record<string, unknown>,
     private readonly restartPolicy: StdioRestartPolicy,
@@ -49,7 +50,7 @@ export class McpClientPool {
         reconnectionOptions: mcpHttpReconnection,
         requestInit: { headers: connection.options.headers },
       });
-    // oxlint-disable-next-line unicorn/prefer-add-event-listener -- MCP transport 不是 EventTarget。
+    // oxlint-disable-next-line unicorn/prefer-add-event-listener -- The MCP transport is not an EventTarget.
     transport.onerror = (error) => {
       evidence.record(error);
     };

@@ -1,6 +1,7 @@
 import { type SessionPlaceholders, resolvePlaceholders } from "../../configuration/placeholders";
 import { hasSessionDescription, sessionDescription } from "./descriptions";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { localize } from "../../../i18n/server";
 import { z } from "zod";
 
 interface FreeformMcpTools {
@@ -19,7 +20,7 @@ export function configureFreeformMcpTools(
   for (const name of names) {
     const tool = toolsByName.get(name);
     if (!tool) {
-      throw new Error(`MCP free-form 工具配置引用了不存在的工具：${name}`);
+      throw new Error(localize("mcp:freeform.configuredToolMissing", { value0: name }));
     }
     parameters.set(name, singleStringParameter(tool));
   }
@@ -47,19 +48,27 @@ function singleStringParameter(tool: StructuredToolInterface) {
     entries = parsed.success ? Object.entries(parsed.data.properties) : [];
   if (entries.length !== 1) {
     throw new Error(
-      `MCP free-form 工具 ${tool.name} 必须恰好声明一个输入参数，实际为 ${entries.length.toString()} 个`,
+      localize("mcp:freeform.inputParameterCountInvalid", {
+        value0: tool.name,
+        value1: entries.length.toString(),
+      }),
     );
   }
   const [entry] = entries;
   if (!entry) {
-    throw new Error(`MCP free-form 工具 ${tool.name} 缺少输入参数`);
+    throw new Error(localize("mcp:freeform.inputParameterMissing", { value0: tool.name }));
   }
   const [parameter, definition] = entry;
   if (!parameter) {
-    throw new Error(`MCP free-form 工具 ${tool.name} 的输入参数名不能为空`);
+    throw new Error(localize("mcp:freeform.inputParameterNameMissing", { value0: tool.name }));
   }
   if (!stringParameterSchema.safeParse(definition).success) {
-    throw new Error(`MCP free-form 工具 ${tool.name} 的唯一输入参数 ${parameter} 必须是字符串`);
+    throw new Error(
+      localize("mcp:freeform.inputParameterTypeInvalid", {
+        value0: tool.name,
+        value1: parameter,
+      }),
+    );
   }
   return parameter;
 }
@@ -70,10 +79,10 @@ function resolveDescription(
 ) {
   const resolved = resolvePlaceholders(description, {
     session,
-    source: `MCP 工具 ${name} 的描述`,
+    source: localize("mcp:freeform.descriptionLabel", { value0: name }),
   });
   if (typeof resolved !== "string") {
-    throw new Error(`MCP 工具 ${name} 的描述必须解析为字符串`);
+    throw new Error(localize("mcp:freeform.descriptionNotString", { value0: name }));
   }
   return resolved;
 }

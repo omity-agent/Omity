@@ -9,6 +9,7 @@ import { HttpError } from "../http/errors";
 import { type IncomingMessage } from "node:http";
 import { type Settings } from "../../types";
 import { WebAuthnCeremony } from "./ceremony";
+import { localize } from "../../i18n/server";
 
 export const accessSessionCookie = "__Host-omity_access";
 export const accessChallengeCookie = "__Host-omity_challenge";
@@ -49,7 +50,7 @@ export class AccessService {
     } catch (error) {
       throw new HttpError(
         400,
-        error instanceof Error ? error.message : "无法识别客户端地址",
+        error instanceof Error ? error.message : localize("access:service.clientAddressUnknown"),
         "BAD_REQUEST",
       );
     }
@@ -65,7 +66,7 @@ export class AccessService {
   }
   requireAccess(identity: ClientIdentity, token?: string) {
     if (!identity.local && !this.store.hasSession(token)) {
-      throw new HttpError(401, "公网请求需要通过 WebAuthn 验证身份", "AUTH_REQUIRED");
+      throw new HttpError(401, localize("access:service.authenticationRequired"), "AUTH_REQUIRED");
     }
   }
   requireTrustedOrigin(
@@ -77,7 +78,7 @@ export class AccessService {
       if (identity.local) {
         return;
       }
-      throw new HttpError(403, "公网写请求缺少 Origin", "LOCAL_ONLY");
+      throw new HttpError(403, localize("access:service.originMissing"), "LOCAL_ONLY");
     }
     if (
       origin === this.settings.access.publicOrigin ||
@@ -85,7 +86,11 @@ export class AccessService {
     ) {
       return;
     }
-    throw new HttpError(403, `拒绝跨站请求来源：${origin}`, "LOCAL_ONLY");
+    throw new HttpError(
+      403,
+      localize("access:service.originRejected", { value0: origin }),
+      "LOCAL_ONLY",
+    );
   }
   registrationTicket(identity: ClientIdentity) {
     this.requireLocal(identity);
@@ -96,12 +101,20 @@ export class AccessService {
   async registrationOptions(identity: ClientIdentity, ticket?: string) {
     if (!identity.local) {
       if (!ticket) {
-        throw new HttpError(403, "WebAuthn 注册链接缺失", "LOCAL_ONLY");
+        throw new HttpError(
+          403,
+          localize("access:service.registrationTicketMissing"),
+          "LOCAL_ONLY",
+        );
       }
       try {
         this.store.consumeRegistrationTicket(ticket);
       } catch {
-        throw new HttpError(403, "WebAuthn 注册链接不存在或已过期", "LOCAL_ONLY");
+        throw new HttpError(
+          403,
+          localize("access:service.registrationTicketInvalid"),
+          "LOCAL_ONLY",
+        );
       }
     }
     return this.ceremony.registrationOptions();
@@ -128,12 +141,12 @@ export class AccessService {
   }
   private requireLocal(identity: ClientIdentity) {
     if (!identity.local) {
-      throw new HttpError(403, "WebAuthn 凭据只能从局域网注册", "LOCAL_ONLY");
+      throw new HttpError(403, localize("access:service.localRegistrationRequired"), "LOCAL_ONLY");
     }
   }
   private requirePublic(identity: ClientIdentity) {
     if (identity.local) {
-      throw new HttpError(400, "局域网请求无需登录", "BAD_REQUEST");
+      throw new HttpError(400, localize("access:service.localLoginNotRequired"), "BAD_REQUEST");
     }
   }
   private async consumeRateLimit(identity: ClientIdentity, phase: string) {
@@ -143,7 +156,7 @@ export class AccessService {
       if (!(error instanceof RateLimiterRes)) {
         throw error;
       }
-      throw new HttpError(429, "WebAuthn 登录尝试过于频繁，请稍后再试", "RATE_LIMITED");
+      throw new HttpError(429, localize("access:service.rateLimited"), "RATE_LIMITED");
     }
   }
 }

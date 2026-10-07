@@ -1,0 +1,28 @@
+{
+  "output": {
+    "webStarted": "WebUI 已启动：{{value0}}",
+    "sessionDeleted": "已删除会话 {{value0}}",
+    "messageSent": "已发送到会话 {{value0}}（queue={{value1}}）",
+    "controlSent": "已发送控制指令 {{value0}} 到会话 {{value1}}"
+  },
+  "help": {
+    "sessionIdExample": "会话 ID，例如 {{value0}}。",
+    "profilePriority": "选择一个优先级高于 profile.yaml 默认配置的 Profile。",
+    "hostAddressOverride": "覆盖配置文件中的监听地址。",
+    "portOverride": "覆盖配置文件中的监听端口，{{value0}} 表示自动选择。",
+    "startApp": "启动 WebUI。",
+    "createHost": "新建并启动 Host 会话。",
+    "loadHost": "加载并启动 Host 会话。",
+    "deleteHost": "删除 Host 会话。",
+    "overwriteHost": "删除后重新新建并启动 Host 会话。",
+    "manageHost": "管理 Host 会话。",
+    "messageContent": "要发送的消息内容。",
+    "appendMessage": "向会话发送一条消息。",
+    "pauseSession": "请求暂停会话。",
+    "singleStep": "只运行下一次模型请求或同一批工具调用，然后再次暂停。",
+    "resumeSession": "请求继续会话。",
+    "cancelHost": "请求关闭 Host。",
+    "manageClient": "向 Host 会话发送消息或控制指令。"
+  },
+  "brief": "AI Agent 执行环境。"
+}

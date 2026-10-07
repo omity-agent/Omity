@@ -9,6 +9,7 @@ import {
 import type { AccessStore } from "./store";
 import { HttpError } from "../http/errors";
 import type { Settings } from "../../types";
+import { localize } from "../../i18n/server";
 
 export class WebAuthnCeremony {
   constructor(
@@ -26,7 +27,7 @@ export class WebAuthnCeremony {
         excludeCredentials: this.store.credentials().map(credentialDescriptor),
         rpID,
         rpName: "Omity",
-        userDisplayName: "Omity 管理员",
+        userDisplayName: localize("access:ceremony.userDisplayName"),
         userName: "administrator",
       }),
       challengeId = this.store.createChallenge(
@@ -49,7 +50,11 @@ export class WebAuthnCeremony {
         }),
       );
     if (!verification.verified) {
-      throw new HttpError(401, "WebAuthn 凭据注册验证失败", "AUTH_INVALID");
+      throw new HttpError(
+        401,
+        localize("access:ceremony.registrationVerificationFailed"),
+        "AUTH_INVALID",
+      );
     }
     this.store.addCredential(verification.registrationInfo.credential);
     return {
@@ -61,7 +66,11 @@ export class WebAuthnCeremony {
   async authenticationOptions() {
     const credentials = this.store.credentials();
     if (credentials.length === 0) {
-      throw new HttpError(503, "尚未从局域网注册 WebAuthn 凭据", "AUTH_NOT_CONFIGURED");
+      throw new HttpError(
+        503,
+        localize("access:ceremony.credentialsNotConfigured"),
+        "AUTH_NOT_CONFIGURED",
+      );
     }
     const options = await generateAuthenticationOptions({
         allowCredentials: credentials.map(credentialDescriptor),
@@ -79,7 +88,7 @@ export class WebAuthnCeremony {
     const challenge = this.store.consumeChallenge(challengeId, "authentication"),
       credential = this.store.credential(response.id);
     if (!credential) {
-      throw new HttpError(401, "WebAuthn 凭据未知", "AUTH_INVALID");
+      throw new HttpError(401, localize("access:ceremony.credentialUnknown"), "AUTH_INVALID");
     }
     const { origin, rpID } = this.relyingParty(),
       verification = await invalidAsUnauthorized(() =>
@@ -93,7 +102,7 @@ export class WebAuthnCeremony {
         }),
       );
     if (!verification.verified) {
-      throw new HttpError(401, "WebAuthn 身份验证失败", "AUTH_INVALID");
+      throw new HttpError(401, localize("access:ceremony.authenticationFailed"), "AUTH_INVALID");
     }
     this.store.updateCounter(credential.id, verification.authenticationInfo.newCounter);
     return this.store.createSession(this.settings.access.sessionTtlMs);
@@ -103,7 +112,7 @@ export class WebAuthnCeremony {
     if (!origin) {
       throw new HttpError(
         503,
-        "请先在 settings/main.yaml 配置 access.publicOrigin",
+        localize("access:ceremony.publicOriginMissing"),
         "AUTH_NOT_CONFIGURED",
       );
     }
@@ -119,6 +128,10 @@ async function invalidAsUnauthorized<T>(verify: () => Promise<T>) {
   try {
     return await verify();
   } catch {
-    throw new HttpError(401, "WebAuthn 响应验证失败", "AUTH_INVALID");
+    throw new HttpError(
+      401,
+      localize("access:ceremony.responseVerificationFailed"),
+      "AUTH_INVALID",
+    );
   }
 }

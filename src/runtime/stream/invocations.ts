@@ -5,6 +5,7 @@ import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { captureError } from "../../failures/details";
 import { findToolStreamIdentity } from "../../infrastructure/database/records/transcript/toolStreamIdentity";
+import { localize } from "../../i18n/server";
 import { toUIMessageChunk } from "ai";
 
 type InvocationContext = Pick<HostContext, "db" | "sessionId" | "toolExecutions">;
@@ -73,12 +74,16 @@ export async function recordInvocation(
       ? invocationIdentity(state, chunk.toolCallId)
       : findToolStreamIdentity(ctx.db.db, ctx.sessionId, chunk.toolCallId);
     if (!identity) {
-      throw new Error(`服务端工具结果缺少调用记录：${chunk.toolCallId}`);
+      throw new Error(
+        localize("runtime:stream.toolResultCallMissing", { value0: chunk.toolCallId }),
+      );
     }
     let content: string;
     if (chunk.type === "tool-output-error") {
       if (event.part.type !== "tool-error") {
-        throw new Error(`服务端工具错误事件格式无效：${chunk.toolCallId}`);
+        throw new Error(
+          localize("runtime:stream.toolErrorEventInvalid", { value0: chunk.toolCallId }),
+        );
       }
       content = toolOutputText(captureError(event.part.error));
     } else {
@@ -96,7 +101,7 @@ export async function recordInvocation(
 function invocationIdentity(state: StreamLogState, callId: string) {
   const messageId = acceptMessageId(state.parts, state.parts.messageId ?? callId);
   if (!messageId) {
-    throw new Error("工具流缺少稳定消息 ID");
+    throw new Error(localize("runtime:stream.messageIdMissing"));
   }
   let index = state.aiToolIndexes.get(callId);
   if (index === undefined) {

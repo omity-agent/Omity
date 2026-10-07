@@ -1,6 +1,7 @@
 import { type StructuredToolInterface, type ToolRunnableConfig, tool } from "@langchain/core/tools";
 import type { AskUserRequest } from "./questionnaire";
 import type { BuiltInPreferences } from "./metadata";
+import { localize } from "../../i18n/server";
 import { z } from "zod";
 
 export type { AskUserRequest } from "./questionnaire";
@@ -58,7 +59,7 @@ export function createAskUserTools(settings: BuiltInPreferences, handler: AskUse
 function requireToolCallId(config: ToolRunnableConfig) {
   const id = config.toolCall?.id;
   if (!id) {
-    throw new Error("ask_user 工具缺少工具调用 ID");
+    throw new Error(localize("toolbox:askUser.callIdMissing"));
   }
   return id;
 }

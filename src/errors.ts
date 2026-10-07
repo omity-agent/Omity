@@ -1,3 +1,5 @@
+import { localize } from "./i18n/server";
+
 export type DomainErrorCode =
   | "HOOK_SELECTION_INVALID"
   | "MCP_SELECTION_INVALID"
@@ -21,17 +23,29 @@ export class DomainError extends Error {
   }
 }
 export function sessionNotFound(sessionId: string) {
-  return new DomainError("SESSION_NOT_FOUND", `会话不存在：${sessionId}`);
+  return new DomainError(
+    "SESSION_NOT_FOUND",
+    localize("errors:session.notFound", { value0: sessionId }),
+  );
 }
 export function sessionConflict(sessionId: string) {
-  return new DomainError("SESSION_CONFLICT", `会话已存在：${sessionId}`);
+  return new DomainError(
+    "SESSION_CONFLICT",
+    localize("errors:session.alreadyExists", { value0: sessionId }),
+  );
 }
 export function toolNotRunning(callId: string) {
-  return new DomainError("TOOL_NOT_RUNNING", `工具调用未在运行：${callId}`);
+  return new DomainError(
+    "TOOL_NOT_RUNNING",
+    localize("errors:tool.notRunning", { value0: callId }),
+  );
 }
 export function askUserAnswerInvalid(message: string) {
   return new DomainError("ASK_USER_ANSWER_INVALID", message);
 }
 export function controlNotReady(control: string) {
-  return new DomainError("CONTROL_NOT_READY", `会话尚未准备好执行控制命令：${control}`);
+  return new DomainError(
+    "CONTROL_NOT_READY",
+    localize("errors:control.notReady", { value0: control }),
+  );
 }

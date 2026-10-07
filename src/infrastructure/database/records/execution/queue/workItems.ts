@@ -37,7 +37,7 @@ function prepareWorkQueries(db: Database) {
       userMessageId: messages.id,
     },
     active = and(activeRuns(), ne(inputs.delivery, "canceled")),
-    // SQLite/Bun 组合的参数化 LIMIT 会增加热查询开销。
+    // Parameterized LIMIT adds overhead to this hot query with the SQLite/Bun combination.
     nextId = orm
       .select({ id: min(inputs.id) })
       .from(inputs)

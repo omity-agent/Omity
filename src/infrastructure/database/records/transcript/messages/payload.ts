@@ -13,6 +13,7 @@ import {
   toolProviderOptionsSchema,
 } from "./replayShape";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../../../i18n/server";
 import { omitToolItemIds } from "../../../../../agent/toolProviderOptions";
 import { readCacheExpectation } from "../../../../../agent/model/cacheExpectation";
 import { structuredToolOutput } from "../../../../mcp/tools/structured";
@@ -28,7 +29,11 @@ export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {
   if (ToolMessage.isInstance(message)) {
     return encodeToolMessage(message, mode);
   }
-  throw new Error(`不支持持久化消息类型：${message.type}`);
+  throw new Error(
+    localize("database:messages.typeUnsupported", {
+      value0: message.type,
+    }),
+  );
 }
 function encodeAiMessage(message: AIMessage): StoredAi {
   const reasoning = storedReasoning(message),

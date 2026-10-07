@@ -2,6 +2,7 @@
 import type { CustomContainerComponentProps, CustomItemComponentProps } from "virtua";
 import type { CSSProperties } from "react";
 import { css } from "styled-system/css";
+import { localize } from "../../../i18n";
 
 const row = css({
   // Only the first mounted row consumes the virtual offset; siblings flow together.
@@ -28,7 +29,7 @@ export function FlowWindow({ children, ref, style }: CustomContainerComponentPro
 export function FlowItem({ children, index, ref, style }: CustomItemComponentProps) {
   const { top, ...geometry } = style;
   if (typeof top !== "number") {
-    throw new Error("对话虚拟行缺少垂直偏移量");
+    throw new Error(localize("frontend:transcript.virtualOffsetMissing"));
   }
   const placement = rowStyle(geometry, top);
   return (

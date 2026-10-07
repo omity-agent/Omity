@@ -4,6 +4,7 @@ import type { Database } from "bun:sqlite";
 import type { FileLinkSource } from "../../../fileLinks/messageSources";
 import type { FileLinkSurface } from "../../../fileLinks/types";
 import { groupBy } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 import { probeFileLinks } from "../../../fileLinks/probe";
 import { queryAll } from "../sqlite/connection";
 
@@ -31,7 +32,11 @@ export class FileLinkIndexer {
     const key = streamKey(options.sessionId, options.ownerId, options.surface),
       current = this.streams.get(key) ?? this.loadStream(options);
     if (current.inputId !== options.inputId) {
-      throw new Error(`文件链接流跨越多个队列：${options.ownerId}`);
+      throw new Error(
+        localize("database:indexing.crossQueueStream", {
+          value0: options.ownerId,
+        }),
+      );
     }
     const text = current.text + options.delta,
       candidates = splitTextUnits(text, current.nextOffset, current.nextUnitIndex, false),
@@ -104,7 +109,7 @@ export class FileLinkIndexer {
         .map((row) => JSON.parse(row.payload_json) as unknown)
         .map((value) => {
           if (typeof value !== "string") {
-            throw new Error("文本流事件内容不是字符串");
+            throw new Error(localize("database:indexing.nonStringEventPayload"));
           }
           return value;
         })
@@ -117,7 +122,11 @@ export class FileLinkIndexer {
       ),
       last = existing.at(-1);
     if ((last?.nextOffset ?? 0) > text.length) {
-      throw new Error(`文件链接索引超出文本范围：${options.ownerId}`);
+      throw new Error(
+        localize("database:indexing.offsetOutOfRange", {
+          value0: options.ownerId,
+        }),
+      );
     }
     return {
       inputId: options.inputId,
@@ -153,7 +162,11 @@ function assertExistingUnits(
   source: FileLinkSource,
 ) {
   if (existing.length > candidates.length) {
-    throw new Error(`文件链接索引单元多于消息文本：${source.ownerId}`);
+    throw new Error(
+      localize("database:indexing.tooManyUnits", {
+        value0: source.ownerId,
+      }),
+    );
   }
   for (const [index, unit] of existing.entries()) {
     const candidate = candidates[index];
@@ -164,7 +177,11 @@ function assertExistingUnits(
       candidate.nextOffset !== unit.nextOffset ||
       candidate.text !== unit.text
     ) {
-      throw new Error(`文件链接索引与消息文本不一致：${source.ownerId}`);
+      throw new Error(
+        localize("database:indexing.textMismatch", {
+          value0: source.ownerId,
+        }),
+      );
     }
   }
 }

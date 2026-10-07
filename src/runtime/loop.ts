@@ -1,4 +1,5 @@
 import { type HostContext, waitForWake } from "./context";
+import { localize } from "../i18n/server";
 import { processInput } from "./consumeInputs";
 
 export async function hostLoop(ctx: HostContext) {
@@ -15,25 +16,27 @@ export async function hostLoop(ctx: HostContext) {
     if (!item) {
       ctx.observer?.activity?.(ctx.sessionId, "idle");
       if (!ctx.db.reclaimStorageIfPending()) {
-        ctx.logger.debug("数据库页面回收因并发写入延后");
+        ctx.logger.debug(localize("runtime:loop.storageReclaimDelayed"));
       }
       if (ctx.db.control(ctx.sessionId) === "pause_cancel") {
         ctx.db.setControl(ctx.sessionId, "pause");
-        ctx.logger.warn("暂停状态收到 cancel，Host 已关闭", {
+        ctx.logger.warn(localize("runtime:loop.pausedAfterCancel"), {
           sessionId: ctx.sessionId,
         });
         return;
       }
       if (ctx.db.control(ctx.sessionId) === "cancel") {
         ctx.db.setControl(ctx.sessionId, "running");
-        ctx.logger.warn("收到 cancel，Host 已关闭", {
+        ctx.logger.warn(localize("runtime:loop.closedAfterCancel"), {
           sessionId: ctx.sessionId,
         });
         return;
       }
       const now = Date.now();
       if (now - lastIdle >= ctx.settings.host.idleLogMs) {
-        ctx.logger.debug("等待 Client 输入", { sessionId: ctx.sessionId });
+        ctx.logger.debug(localize("runtime:loop.waitingForClientInput"), {
+          sessionId: ctx.sessionId,
+        });
         lastIdle = now;
       }
       await waitForWake(ctx, ctx.settings.host.pollMs);

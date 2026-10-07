@@ -3,6 +3,7 @@ import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import { parse, resolve } from "node:path";
 import { DrizzleQueryError } from "drizzle-orm";
 import { initializeDatabase } from "./initialization";
+import { localize } from "../../../i18n/server";
 import { rmSync } from "node:fs";
 
 const sqliteBusyTimeoutMs = 5000,
@@ -79,7 +80,7 @@ export function reclaimDatabasePages(db: Database) {
 export function removeDatabaseDirectory(path: string) {
   const target = resolve(path);
   if (target === parse(target).root) {
-    throw new Error(`拒绝删除磁盘根目录：${target}`);
+    throw new Error(localize("database:sqlite.rootDeletionRejected", { value0: target }));
   }
   rmSync(target, {
     force: true,

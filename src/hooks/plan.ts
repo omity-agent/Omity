@@ -9,6 +9,7 @@ import {
 } from "@langchain/core/messages";
 import { type HookToolOutput, readToolOutput } from "./storage/outputs";
 import type { HookWhen } from "../types";
+import { localize } from "../i18n/server";
 
 export interface AgentHookPlan {
   hookIndex: number;
@@ -39,7 +40,7 @@ export function agentPlan(when: HookWhen, sources: string[]): AgentHookPlan {
 }
 export function toolPlan(message: AIMessage): ToolHookPlan {
   if (!message.id) {
-    throw new Error("工具调用消息缺少 ID");
+    throw new Error(localize("hooks:plan.callIdMissing"));
   }
   return {
     hookIndex: 0,
@@ -54,7 +55,7 @@ export function toolPlan(message: AIMessage): ToolHookPlan {
 export function restoreOriginal(stored: StoredMessage) {
   const [message] = mapStoredMessagesToChatMessages([stored]);
   if (!AIMessage.isInstance(message)) {
-    throw new Error("Hook 工具计划无效");
+    throw new Error(localize("hooks:plan.invalid"));
   }
   return message;
 }
@@ -90,7 +91,7 @@ export function nextToolStage(
       : { ...plan, hookIndex: 0, stage: "original", toolIndex: parallel ? 0 : plan.toolIndex };
   }
   if (plan.stage !== "after") {
-    throw new Error("不能跳过原始工具执行阶段");
+    throw new Error(localize("hooks:plan.originalExecutionCannotBeSkipped"));
   }
   return parallel
     ? { ...plan, hookIndex: 0, toolIndex: plan.toolIndex + 1 }
@@ -98,14 +99,14 @@ export function nextToolStage(
 }
 export function requireCallId(call: ToolCall) {
   if (!call.id) {
-    throw new Error(`工具调用缺少 ID：${call.name}`);
+    throw new Error(localize("hooks:plan.callIdMissingForTool", { value0: call.name }));
   }
   return call.id;
 }
 function storeMessage(message: BaseMessage) {
   const [stored] = mapChatMessagesToStoredMessages([message]);
   if (!stored) {
-    throw new Error("无法序列化 Hook 原始工具调用消息");
+    throw new Error(localize("hooks:plan.originalMessageNotSerializable"));
   }
   return stored;
 }

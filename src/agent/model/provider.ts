@@ -5,6 +5,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createResponsesWebsocketFetch } from "./responsesWebsocket";
+import { localize } from "../../i18n/server";
 import { restrictedModelFetch } from "./restrictedFetch";
 
 export function buildAiModel(settings: Settings, codexVersion?: string) {
@@ -31,7 +32,7 @@ export function aiRequestOptions(
   if (modelApi(settings) === "messages") {
     const effort = settings.model.reasoning_effort;
     if (effort === "minimal") {
-      throw new Error("Messages API 不支持 reasoning_effort: minimal");
+      throw new Error(localize("agent:model.messagesReasoningEffortUnsupported"));
     }
     return {
       instructions: settings.agent.systemPrompt,
@@ -76,7 +77,7 @@ export function structuredRequestOptions(model: ModelSettings): {
   if (configuredModelApi(model) === "messages") {
     const effort = model.reasoning_effort;
     if (effort === "minimal") {
-      throw new Error("Messages API 不支持 reasoning_effort: minimal");
+      throw new Error(localize("agent:model.structuredReasoningEffortUnsupported"));
     }
     return {
       providerOptions: {
@@ -113,7 +114,7 @@ function configuredModelApi(model: ModelSettings): ModelApi {
       return model.adapter;
     }
     default: {
-      throw new Error("模型适配器分支未覆盖");
+      throw new Error(localize("agent:model.adapterBranchMissing"));
     }
   }
 }
@@ -128,7 +129,7 @@ function providerOptions(model: ModelSettings, codexVersion?: string) {
   }
   const apiKey = process.env[model.apiKeyEnv];
   if (!apiKey) {
-    throw new Error(`缺少环境变量 ${model.apiKeyEnv}`);
+    throw new Error(localize("agent:model.apiKeyEnvironmentMissing", { value0: model.apiKeyEnv }));
   }
   const api = configuredModelApi(model),
     fetch =

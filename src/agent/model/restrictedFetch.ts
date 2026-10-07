@@ -1,5 +1,6 @@
 import type { ModelApi } from "../../types";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
+import { localize } from "../../i18n/server";
 import { modelToolPolicy } from "../../../settings/modelToolPolicy";
 import { z } from "zod";
 
@@ -13,13 +14,13 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
     for (const tool of body.tools) {
       const type = tool.type ?? (api === "messages" ? "custom" : undefined);
       if (!modelToolPolicy.allowedTypes[api].some((allowed) => allowed === type)) {
-        throw new Error(`供应商内置工具已禁用：${String(type)}`);
+        throw new Error(localize("agent:model.toolTypeDisabled", { value0: String(type) }));
       }
     }
     for (const name of modelToolPolicy.blockedOptions) {
       const value = body[name];
       if (value != null && !(Array.isArray(value) && value.length === 0)) {
-        throw new Error(`供应商内置工具已禁用：${name}`);
+        throw new Error(localize("agent:model.optionDisabled", { value0: name }));
       }
     }
     if (body.tools.length === 0) {
@@ -37,7 +38,7 @@ export function restrictedModelFetch(api: ModelApi, fetch?: OutboundFetch) {
   };
   return Object.assign(restricted, {
     preconnect() {
-      throw new Error("模型请求不支持绕过统一出站网络层的 preconnect");
+      throw new Error(localize("agent:model.preconnectUnsupported"));
     },
   });
 }

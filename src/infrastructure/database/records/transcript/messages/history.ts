@@ -2,6 +2,7 @@ import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, messageInsert } from "./serialization";
 import type { Database } from "bun:sqlite";
 import { decodeMessage } from "./hydration";
+import { localize } from "../../../../../i18n/server";
 import { messageMutations } from "./writing";
 import { randomUUID } from "node:crypto";
 import { transcriptMessageRows } from "../../../projections/transcriptRows";
@@ -32,11 +33,19 @@ export function messageInputId(sessionId: string, message: BaseMessage) {
     return undefined;
   }
   if (!message.id.startsWith(prefix)) {
-    throw new Error(`用户消息属于其他会话：${message.id}`);
+    throw new Error(
+      localize("database:messages.foreignUserMessage", {
+        value0: message.id,
+      }),
+    );
   }
   const inputId = Number(message.id.slice(prefix.length));
   if (!Number.isSafeInteger(inputId) || inputId <= 0) {
-    throw new Error(`用户消息 Queue ID 无效：${message.id}`);
+    throw new Error(
+      localize("database:messages.queueIdInvalid", {
+        value0: message.id,
+      }),
+    );
   }
   return inputId;
 }
@@ -87,7 +96,7 @@ export function storePreparedMessage(
 function nextPosition(db: Database, sessionId: string) {
   const row = messageMutations(db).nextPosition.get({ sessionId });
   if (!row) {
-    throw new Error("无法分配消息位置");
+    throw new Error(localize("database:messages.positionUnavailable"));
   }
   return row.position;
 }

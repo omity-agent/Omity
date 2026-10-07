@@ -1,13 +1,14 @@
 import type { CheckpointListOptions } from "@langchain/langgraph-checkpoint";
 import type { RunnableConfig } from "@langchain/core/runnables";
+import { localize } from "../i18n/server";
 
 export function checkpointRunId(value: unknown) {
   if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) {
-    throw new Error("thread_id 必须是执行轮次 ID");
+    throw new Error(localize("checkpoint:identity.threadIdMustBeRunId"));
   }
   const id = Number(value);
   if (!Number.isSafeInteger(id)) {
-    throw new Error("执行轮次 ID 超出安全整数范围");
+    throw new Error(localize("checkpoint:identity.runIdUnsafe"));
   }
   return id;
 }
@@ -16,7 +17,7 @@ function optionalString(value: unknown, name: string) {
     return undefined;
   }
   if (typeof value !== "string") {
-    throw new Error(`${name} 必须是字符串`);
+    throw new Error(localize("checkpoint:identity.fieldMustBeString", { value0: name }));
   }
   return value;
 }
@@ -31,7 +32,7 @@ export function listIdentity(config: RunnableConfig, options?: CheckpointListOpt
   const threadId = optionalString(config.configurable?.["thread_id"], "thread_id"),
     checkpointNs = optionalString(config.configurable?.["checkpoint_ns"], "checkpoint_ns");
   if (options?.before || options?.filter) {
-    throw new Error("当前恢复存储不支持历史 checkpoint 查询");
+    throw new Error(localize("checkpoint:identity.historyQueryUnsupported"));
   }
   return {
     checkpointNs,

@@ -11,6 +11,7 @@ import { KeyRound, LogOut } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { AccessPage } from "./AccessPage";
 import { css } from "styled-system/css";
+import { localize } from "../../i18n";
 import { reportError } from "../../services/errors";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -75,7 +76,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
         run(setBusy, setError, async () => {
           const result = await registrationTicket();
           if (!publicOrigin) {
-            throw new Error("公网 Origin 尚未配置");
+            throw new Error(localize("frontend:access.publicOriginMissing"));
           }
           const url = new URL(globalThis.location.pathname, publicOrigin);
           url.searchParams.set("setup", result.ticket);

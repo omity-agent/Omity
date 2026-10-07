@@ -1,4 +1,5 @@
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
+import { localize } from "../../i18n/server";
 import { z } from "zod";
 
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u),
@@ -13,7 +14,11 @@ export async function fetchLatestCodexVersion(fetcher: CodexVersionFetch = globa
     redirect: "error",
   });
   if (!response.ok) {
-    throw new Error(`从 npm 获取 Codex 最新版本失败：HTTP ${response.status.toString()}`);
+    throw new Error(
+      localize("network:codex.latestVersionFetchFailed", {
+        value0: response.status.toString(),
+      }),
+    );
   }
   const metadata: unknown = await response.json();
   return packageMetadataSchema.parse(metadata).version;

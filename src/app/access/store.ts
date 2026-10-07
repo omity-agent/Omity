@@ -14,6 +14,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Database } from "bun:sqlite";
 import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { databasePath } from "../../infrastructure/configuration/sessionPaths";
+import { localize } from "../../i18n/server";
 
 export class AccessStore {
   private readonly db: Database;
@@ -65,7 +66,7 @@ export class AccessStore {
       .returning({ id: credentials.id })
       .all();
     if (updated.length === 0) {
-      throw new Error(`WebAuthn 凭据不存在：${id}`);
+      throw new Error(localize("access:store.credentialMissing", { value0: id }));
     }
   }
   createChallenge(purpose: "registration" | "authentication", challenge: string, ttlMs: number) {
@@ -85,7 +86,7 @@ export class AccessStore {
         .returning({ challenge: challenges.challenge, expiresAt: challenges.expiresAt })
         .get();
       if (!row || row.expiresAt <= Date.now()) {
-        throw new Error("WebAuthn 挑战不存在或已过期");
+        throw new Error(localize("access:store.challengeInvalid"));
       }
       return row.challenge;
     });
@@ -117,7 +118,7 @@ export class AccessStore {
           .returning({ expiresAt: registrationTickets.expiresAt })
           .get();
       if (!row || row.expiresAt <= Date.now()) {
-        throw new Error("WebAuthn 注册链接不存在或已过期");
+        throw new Error(localize("access:store.registrationTicketInvalid"));
       }
     });
   }

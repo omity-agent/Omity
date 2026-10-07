@@ -4,10 +4,11 @@ import { type HostContext } from "./context";
 import { HostLeaseLostError } from "./execution/lease";
 import type { QueuedInput } from "../types";
 import { captureError } from "../failures/details";
+import { localize } from "../i18n/server";
 import { runGraphUntilBoundary } from "./execution/nodeBoundary";
 
 export async function processInput(ctx: HostContext, item: QueuedInput) {
-  const end = ctx.logger.child(`队列 #${item.id.toString()}`),
+  const end = ctx.logger.child(localize("runtime:queue.label", { value0: item.id.toString() })),
     resumed = ctx.db.consumedInputs(ctx.sessionId, item.runId),
     items: [QueuedInput, ...QueuedInput[]] = [item, ...resumed.filter(({ id }) => id !== item.id)];
   items.sort((left, right) => left.id - right.id);
@@ -48,7 +49,10 @@ export async function processInput(ctx: HostContext, item: QueuedInput) {
     }
     const details = captureError(error);
     pauseFailedRun(ctx, run, details);
-    ctx.logger.error("队列异常，已暂停", { error: details, inputId: item.id });
+    ctx.logger.error(localize("runtime:queue.pausedAfterFailure"), {
+      error: details,
+      inputId: item.id,
+    });
   } finally {
     end();
   }

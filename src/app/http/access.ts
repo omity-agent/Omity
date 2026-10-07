@@ -6,6 +6,7 @@ import { jsonBody, limitRequestBody } from "./request";
 import type { ClientIdentity } from "../access/network";
 import type { HttpBindings } from "@hono/node-server";
 import { HttpError } from "./errors";
+import { localize } from "../../i18n/server";
 
 export interface AccessEnvironment {
   Bindings: HttpBindings;
@@ -91,14 +92,14 @@ function isStateChanging(method: string) {
 }
 function required(access?: AccessService) {
   if (!access) {
-    throw new HttpError(500, "访问控制服务未初始化");
+    throw new HttpError(500, localize("http:access.serviceUninitialized"));
   }
   return access;
 }
 function challengeCookie(c: Context) {
   const challenge = getCookie(c, accessChallengeCookie);
   if (!challenge) {
-    throw new HttpError(400, "WebAuthn 挑战 Cookie 缺失");
+    throw new HttpError(400, localize("http:access.challengeCookieMissing"));
   }
   return challenge;
 }

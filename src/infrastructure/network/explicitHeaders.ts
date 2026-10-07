@@ -1,5 +1,6 @@
 import type { Dispatcher } from "undici/index.js";
 import { isPlainObject } from "es-toolkit";
+import { localize } from "../../i18n/server";
 
 export type HeaderPolicy = "explicit";
 export type OutboundFetch = (
@@ -14,7 +15,7 @@ export function registerExplicitFetch(fetch: OutboundFetch) {
 export const fetchWithExplicitHeaders: OutboundFetch = (input, init) => {
   const fetch = registeredFetches.get(globalThis.fetch);
   if (!fetch) {
-    throw new Error("Codex 请求需要先安装统一出站网络层");
+    throw new Error(localize("network:outbound.layerMissing"));
   }
   return fetch(input, init, "explicit");
 };
@@ -25,11 +26,11 @@ export function explicitHeaderDispatcher(
 ) {
   const names = new Set([...headers.keys(), ...transportHeaders]);
   return dispatcher.compose((dispatch) => (options, handler) => {
-    // Undici Fetch 在 dispatch 前补齐浏览器默认头；仅保留调用者提供的头和正文长度。
-    // 读取 Fetch 传入的 header record，保留重定向时已经移除的认证头。
+    // Undici Fetch adds browser defaults before dispatch; keep caller headers and content length only.
+    // Read the header record supplied to Fetch and preserve headers already removed during redirects.
     const input = options.headers;
     if (!isPlainObject(input) || Object.values(input).some((value) => typeof value !== "string")) {
-      throw new TypeError("Undici Fetch 请求头格式发生变化");
+      throw new TypeError(localize("network:outbound.headersFormatChanged"));
     }
     const filtered = Object.fromEntries(
       Object.entries(input).filter(

@@ -2,12 +2,13 @@ import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { TokenUsage } from "./contracts/projection";
 import { countTokens } from "../../runtime/tokenizer";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../i18n/server";
 import { readCacheExpectation } from "../../agent/model/cacheExpectation";
 
 export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   if (call["isCustomTool"] === true) {
     if (!isRecord(input) || typeof input["input"] !== "string") {
-      throw new Error("自定义工具输入不是字符串");
+      throw new Error(localize("application:timeline.toolInputNotString"));
     }
     return countTokens(input["input"]);
   }
@@ -16,7 +17,7 @@ export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   }
   const serialized: unknown = JSON.stringify(input);
   if (typeof serialized !== "string") {
-    throw new Error("工具输入无法序列化");
+    throw new Error(localize("application:timeline.toolInputNotSerializable"));
   }
   return countTokens(serialized);
 }
@@ -36,11 +37,11 @@ export function modelTokenUsage(message: BaseMessage): TokenUsage | undefined {
     outputTokens,
   })) {
     if (!Number.isSafeInteger(value) || value < 0) {
-      throw new Error(`模型 usage_metadata.${name} 无效`);
+      throw new Error(localize("application:timeline.usageFieldInvalid", { value0: name }));
     }
   }
   if (cacheReadTokens > inputTokens) {
-    throw new Error("模型 cache_read tokens 超过 input tokens");
+    throw new Error(localize("application:timeline.cacheReadExceedsInput"));
   }
   return { ...readCacheExpectation(message), cacheReadTokens, inputTokens, outputTokens };
 }

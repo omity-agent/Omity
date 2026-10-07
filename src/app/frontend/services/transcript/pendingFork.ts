@@ -18,6 +18,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { Control } from "../../../../types";
 import type { OptimisticUser } from "./optimistic";
 import type { PendingAttachment } from "../../../attachments/contract";
+import { localize } from "../../i18n";
 
 type Navigate = (page: Page, replace?: boolean) => void;
 type SubmitMessage = (
@@ -61,7 +62,7 @@ export function usePendingFork({
         }
         const pending = pageRef.current;
         if (!pending) {
-          throw new Error("没有等待创建的 Fork 会话");
+          throw new Error(localize("frontend:fork.pendingSessionMissing"));
         }
         activating.current = true;
         setBusy(true);
@@ -184,7 +185,7 @@ function sameForkPage(left: ForkPage | undefined, right: ForkPage) {
 async function saveMaterializedDraft(sessionId: string, content: string, minimumRevision: number) {
   const current = await loadComposerDraft(sessionId);
   if (current.revision >= Number.MAX_SAFE_INTEGER) {
-    throw new Error(`Composer 草稿版本号溢出：${sessionId}`);
+    throw new Error(localize("frontend:fork.revisionOverflow", { value0: sessionId }));
   }
   const revision = Math.max(current.revision + 1, minimumRevision);
   await saveComposerDraft(sessionId, content, revision);

@@ -1,5 +1,6 @@
 import { Cookie, CookieJar } from "tough-cookie";
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
+import { localize } from "../../i18n/server";
 
 function isChatGptCookieUrl(value: string) {
   const url = new URL(value);
@@ -35,12 +36,12 @@ export class CloudflareCookieStore {
       if (allowedName(name)) {
         const cookie = Cookie.parse(value);
         if (!cookie) {
-          console.warn("Codex 收到无法解析的 Cloudflare Cookie，已忽略");
+          console.warn(localize("network:cloudflareCookieInvalid"));
         } else {
           try {
             this.jar.setCookieSync(cookie, url);
           } catch {
-            console.warn("Codex 收到无效作用域的 Cloudflare Cookie，已忽略");
+            console.warn(localize("network:cloudflareCookieScopeInvalid"));
           }
         }
       }

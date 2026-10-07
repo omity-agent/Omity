@@ -1,4 +1,4 @@
-// openai/codex main 标识与请求头
+// OpenAI Codex main identifier and request headers.
 export const codexProtocol = {
   cookieHostSuffixes: [".chatgpt.com", ".chatgpt-staging.com"],
   cookieHosts: ["chatgpt.com", "chat.openai.com", "chatgpt-staging.com"],

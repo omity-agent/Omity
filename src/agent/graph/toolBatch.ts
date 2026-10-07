@@ -1,4 +1,5 @@
 import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
+import { localize } from "../../i18n/server";
 import { requireCallId } from "../../hooks/plan";
 
 type IdentifiedToolCall = ToolCall & { id: string };
@@ -13,10 +14,10 @@ export function pendingToolBatch(messages: BaseMessage[], parallel: boolean): Id
     callIds = calls.map((call) => call.id),
     pending = calls.filter((call) => !completed.has(call.id));
   if (new Set(callIds).size !== callIds.length) {
-    throw new Error("工具请求包含重复的调用 ID");
+    throw new Error(localize("agent:graph.duplicateCallId"));
   }
   if (pending.length === 0) {
-    throw new Error("工具节点没有待执行的工具调用");
+    throw new Error(localize("agent:graph.noPendingToolCalls"));
   }
   return parallel ? pending : pending.slice(0, 1);
 }

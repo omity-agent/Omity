@@ -1,5 +1,5 @@
 import { encodeTranslationLineBreaks } from "./lineBreaks";
-import { t } from "i18next";
+import { localize } from "../../i18n";
 
 interface BrowserTranslator {
   translate: (text: string, signal?: AbortSignal) => Promise<string | null>;
@@ -10,7 +10,7 @@ export class UnsupportedLanguagePairError extends Error {
     readonly targetLanguage: string,
     readonly confidence: number,
   ) {
-    super(t("translationPairUnavailable", { confidence, sourceLanguage, targetLanguage }));
+    super(localize("translationPairUnavailable", { confidence, sourceLanguage, targetLanguage }));
     this.name = "UnsupportedLanguagePairError";
   }
 }
@@ -20,7 +20,7 @@ export function browserTranslationSupported() {
 export function preferredTranslationLanguage() {
   const language = navigator.languages.find(Boolean) ?? navigator.language;
   if (!language) {
-    throw new Error(t("translationPreferredLanguageMissing"));
+    throw new Error(localize("translationPreferredLanguageMissing"));
   }
   return Intl.getCanonicalLocales(language)[0] ?? language;
 }
@@ -56,10 +56,10 @@ async function detectReasoningLanguage(text: string, signal?: AbortSignal) {
   try {
     const [result] = await detector.detect(text, { signal });
     if (!result?.detectedLanguage) {
-      throw new Error(t("translationDetectionFailed"));
+      throw new Error(localize("translationDetectionFailed"));
     }
     if (!Number.isFinite(result.confidence) || result.confidence < 0 || result.confidence > 1) {
-      throw new Error(t("translationConfidenceInvalid"));
+      throw new Error(localize("translationConfidenceInvalid"));
     }
     return result;
   } finally {

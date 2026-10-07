@@ -1,6 +1,7 @@
 import { predictionSettingsSchema, prepareMainSettings } from "./models";
 import { emptyAs } from "./values";
 import ipaddr from "ipaddr.js";
+import { localize } from "../../../i18n/server";
 import { logLevelSchema } from "../../../types";
 import { z } from "zod";
 
@@ -17,11 +18,14 @@ const promptFileSchema = z
         !value.includes("/") &&
         !value.includes("\\") &&
         !/[:*?"<>|\p{Cc}]/u.test(value),
-      "提示词必须是 prompts 目录中的文件名",
+      localize("configuration:settings.schema.promptFileNameInvalid"),
     ),
   promptsSchema = z
     .array(promptFileSchema)
-    .refine((files) => new Set(files).size === files.length, "提示词文件列表不能包含重复项"),
+    .refine(
+      (files) => new Set(files).size === files.length,
+      localize("configuration:settings.schema.duplicatePrompts"),
+    ),
   agentSettingsSchema = z.strictObject({
     prompts: emptyAs(promptsSchema, []),
     recursionLimit: z.number().int().positive(),
@@ -49,11 +53,14 @@ const promptFileSchema = z
     .refine((value) => {
       const url = new URL(value);
       return url.protocol === "https:" && url.origin === value;
-    }, "公网 Origin 必须是无路径、查询参数和片段的 HTTPS Origin")
+    }, localize("configuration:settings.schema.publicOriginInvalid"))
     .nullable(),
   cidrSchema = z
     .string()
-    .refine((value) => ipaddr.isValidCIDR(value), "可信代理必须使用有效的 CIDR"),
+    .refine(
+      (value) => ipaddr.isValidCIDR(value),
+      localize("configuration:settings.schema.cidrInvalid"),
+    ),
   accessSchema = z
     .strictObject({
       challengeTtlMs: z.number().int().min(1000).max(86_400_000),
@@ -67,7 +74,7 @@ const promptFileSchema = z
     })
     .refine(
       ({ publicOrigin, trustedProxies }) => publicOrigin === null || trustedProxies.length > 0,
-      "配置公网 Origin 时必须配置 trustedProxies",
+      localize("configuration:settings.schema.trustedProxiesRequired"),
     ),
   mainSettingsSchema = z.strictObject({
     access: accessSchema,
@@ -77,7 +84,7 @@ const promptFileSchema = z
         .min(1)
         .refine(
           (suffixes) => new Set(suffixes).size === suffixes.length,
-          "附件后缀白名单不能包含重复项",
+          localize("configuration:settings.schema.duplicateSuffixes"),
         ),
       maxSizeBytes: z
         .number()

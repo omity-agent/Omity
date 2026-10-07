@@ -12,6 +12,7 @@ import type { ToolCall, ToolMessage } from "@langchain/core/messages";
 import { command, finishAgent, hookCommand, modelNode, originalToolsCommand } from "./commands";
 import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
+import { localize } from "../../i18n/server";
 
 type ConsumeHook = (hookId: string, limit: number) => Promise<boolean>;
 type InvokeTool = (call: ToolCall) => Promise<ToolMessage>;
@@ -122,7 +123,7 @@ function executeRule(
 function requireThreadId(configurable: Record<string, unknown> | undefined) {
   const threadId = configurable?.["thread_id"];
   if (typeof threadId !== "string" || !threadId) {
-    throw new Error("Hook 执行缺少 thread_id");
+    throw new Error(localize("hooks:graph.threadIdMissing"));
   }
   return threadId;
 }

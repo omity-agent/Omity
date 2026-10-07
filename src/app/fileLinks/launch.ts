@@ -1,6 +1,7 @@
 import { realpath, stat } from "node:fs/promises";
 import type { FileLinkAction } from "../../fileLinks/types";
 import { dirname } from "node:path";
+import { localize } from "../../i18n/server";
 import { once } from "node:events";
 import { spawn } from "node:child_process";
 
@@ -39,7 +40,7 @@ async function existingTarget(path: string) {
   const resolved = await realpath(path),
     metadata = await stat(resolved);
   if (!metadata.isDirectory() && !metadata.isFile()) {
-    throw new Error(`路径不是文件或目录：${resolved}`);
+    throw new Error(localize("application:fileLinks.pathNotFileOrDirectory", { value0: resolved }));
   }
   return {
     path: resolved,

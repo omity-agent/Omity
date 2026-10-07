@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 import { contentToText } from "../../runtime/content";
 import { countTokens } from "../../runtime/tokenizer";
 import { decodeMessage } from "../../infrastructure/database/records/transcript/messages/hydration";
+import { localize } from "../../i18n/server";
 import { messageContentToText } from "../../runtime/modelContent";
 import { queryAll } from "../../infrastructure/database/sqlite/connection";
 
@@ -93,7 +94,7 @@ function groupMessages(rows: MessageRow[]) {
 function addTokens(left: number, right: number) {
   const result = left + right;
   if (!Number.isSafeInteger(result)) {
-    throw new Error("预测样本上下文 Token 数超出安全整数范围");
+    throw new Error(localize("application:prediction.contextTokenCountUnsafe"));
   }
   return result;
 }

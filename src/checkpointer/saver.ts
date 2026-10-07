@@ -13,6 +13,7 @@ import { CheckpointDecoder } from "./decoding";
 import type { Database } from "bun:sqlite";
 import { RecoveryStore } from "../infrastructure/database/records/restoration";
 import type { RunnableConfig } from "@langchain/core/runnables";
+import { localize } from "../i18n/server";
 
 export class BunSqliteSaver extends BaseCheckpointSaver {
   private readonly decoder = new CheckpointDecoder();
@@ -28,7 +29,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
       return undefined;
     }
     if (checkpointId !== undefined && checkpointId !== row.checkpointId) {
-      throw new Error(`历史 checkpoint 不可用：${checkpointId}`);
+      throw new Error(localize("checkpoint:saver.checkpointUnavailable", { value0: checkpointId }));
     }
     return this.decoder.decode(row, this.serde);
   }
@@ -51,7 +52,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
         this.serde.dumpsTyped(metadata),
       ]);
     if (type !== metadataType) {
-      throw new Error("checkpoint 与 metadata 的序列化类型不一致");
+      throw new Error(localize("checkpoint:saver.metadataTypeMismatch"));
     }
     this.storage.put(
       {
@@ -74,7 +75,7 @@ export class BunSqliteSaver extends BaseCheckpointSaver {
   async putWrites(config: RunnableConfig, writes: PendingWrite[], taskId: string) {
     const identity = configIdentity(config);
     if (!identity.checkpointId) {
-      throw new Error("缺少 checkpoint_id");
+      throw new Error(localize("checkpoint:saver.idMissing"));
     }
     const { checkpointId } = identity,
       rows = await Promise.all(

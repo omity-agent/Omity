@@ -11,6 +11,7 @@ import {
 } from "../../infrastructure/database/records/session/inputForecast";
 import type { Settings } from "../../types";
 import { databasePath } from "../../infrastructure/configuration/sessionPaths";
+import { localize } from "../../i18n/server";
 import { requestCandidates } from "./requestCandidates";
 
 interface PredictionTask {
@@ -28,7 +29,7 @@ export class PredictionService {
     try {
       await this.get(sessionId);
     } catch (error) {
-      console.warn("用户输入预测失败", { error, sessionId });
+      console.warn(localize("application:prediction.failed"), { error, sessionId });
     }
   }
   async get(sessionId: string) {

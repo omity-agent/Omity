@@ -4,6 +4,7 @@ import type { HostActivity, HostMode } from "../../types";
 import type { AppMcp } from "../runtime/resources/toolPool";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
 import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
+import { localize } from "../../i18n/server";
 import { once } from "es-toolkit";
 import pMap from "p-map";
 import { runHostSession } from "../../host";
@@ -56,7 +57,7 @@ export class AppHosts {
   start(sessionId: string, root: string, kind: HostMode["kind"]) {
     this.cancelScheduledStart(sessionId);
     if (this.closing) {
-      return Promise.reject(new Error("App 正在关闭，不能启动 Host"));
+      return Promise.reject(new Error(localize("application:hosts.appClosing")));
     }
     const existing = this.running.get(sessionId);
     if (existing) {
@@ -106,7 +107,7 @@ export class AppHosts {
     if (!host) {
       return;
     }
-    host.force.abort(new Error("App 请求停止 Host"));
+    host.force.abort(new Error(localize("application:hosts.stopRequested")));
     this.events.changed(sessionId);
     await host.done;
   }
@@ -118,7 +119,7 @@ export class AppHosts {
     this.scheduled.clear();
     const hosts = [...this.running.entries()];
     for (const [sessionId, host] of hosts) {
-      host.stopping.abort(new Error("App 正在关闭"));
+      host.stopping.abort(new Error(localize("application:hosts.appClosed")));
       this.events.changed(sessionId);
     }
     await pMap(
@@ -151,7 +152,7 @@ export class AppHosts {
         failure =
           failure === undefined
             ? error
-            : new AggregateError([failure, error], "Host 退出及 MCP 关闭均失败");
+            : new AggregateError([failure, error], localize("application:hosts.shutdownFailed"));
       }
       if (failure !== undefined) {
         const error = captureError(failure);
@@ -175,7 +176,7 @@ export class AppHosts {
     try {
       const stopped = await Promise.race([host.done.then(() => true), deadline.promise]);
       if (!stopped) {
-        host.force.abort(new Error("Host 未在关闭期限内到达恢复边界"));
+        host.force.abort(new Error(localize("application:hosts.recoveryBoundaryTimeout")));
       }
       await host.done;
     } finally {

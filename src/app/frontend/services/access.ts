@@ -6,6 +6,7 @@ import {
   startRegistration,
 } from "@simplewebauthn/browser";
 import { api, request } from "./httpTransport";
+import { localize } from "../i18n";
 import { z } from "./validation";
 
 const accessStatusSchema = z.object({
@@ -45,7 +46,7 @@ export async function register(ticket?: string) {
     registrationOptionsSchema,
   );
   if (origin !== globalThis.location.origin) {
-    throw new Error(`请通过 ${origin} 打开 WebUI 后注册通行密钥`);
+    throw new Error(localize("frontend:access.setupOriginRequired", { value0: origin }));
   }
   const response = await startRegistration({ optionsJSON: options });
   return request(api.access.register.$post({ json: response }), registeredSchema);
@@ -58,6 +59,6 @@ export async function logout() {
 }
 function requireWebAuthn() {
   if (!browserSupportsWebAuthn()) {
-    throw new Error("当前浏览器或页面安全上下文不支持 WebAuthn");
+    throw new Error(localize("frontend:access.webAuthnUnsupported"));
   }
 }

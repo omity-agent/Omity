@@ -1,6 +1,7 @@
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { Magika } from "magika";
+import { localize } from "../src/i18n/server";
 import { z } from "zod";
 
 const modelManifestSchema = z.object({
@@ -75,7 +76,7 @@ async function hasCompleteCache(publicDirectory: string, sourcePath: string) {
       availability = await Promise.all(assets.map((file) => file.exists()));
     return availability.every(Boolean);
   } catch (error) {
-    console.warn("Magika 模型缓存无效，将重新下载", error);
+    console.warn(localize("build:magikaCacheInvalid"), error);
     return false;
   }
 }
@@ -89,7 +90,9 @@ async function downloadAsset(directory: string, path: string, url: string, fetch
 async function download(url: string, fetcher: Fetch) {
   const response = await fetcher(url);
   if (!response.ok) {
-    throw new Error(`Magika 模型下载失败：${response.status.toString()} ${url}`);
+    throw new Error(
+      localize("build:magikaDownloadFailed", { status: response.status.toString(), url }),
+    );
   }
   return new Uint8Array(await response.arrayBuffer());
 }
@@ -102,7 +105,7 @@ function assetPath(directory: string, path: string) {
   const destination = resolve(directory, path),
     relativePath = relative(directory, destination);
   if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
-    throw new Error(`Magika 模型清单包含越界路径：${path}`);
+    throw new Error(localize("build:magikaPathTraversal", { path }));
   }
   return destination;
 }

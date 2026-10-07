@@ -13,6 +13,7 @@ import { AsyncResourceCache } from "../../../infrastructure/mcp/lifecycle";
 import type { LogLevel } from "../../../types";
 import { Logger } from "../../../infrastructure/logging/logger";
 import type { McpToolSnapshot } from "../../../infrastructure/mcp/tools/definitions";
+import { localize } from "../../../i18n/server";
 
 export function createAppMcp(
   root: string,
@@ -57,7 +58,8 @@ export class AppMcp {
       profiles: string[],
       snapshot: McpToolSnapshot,
       cwd?: string,
-    ) => Promise<LoadedMcp> = () => Promise.reject(new Error("App MCP 未配置会话快照加载器")),
+    ) => Promise<LoadedMcp> = () =>
+      Promise.reject(new Error(localize("application:resources.snapshotLoaderMissing"))),
   ) {}
   load(profiles: string[]) {
     return this.resources.load(JSON.stringify(profiles), () => this.initialize(profiles));
@@ -75,7 +77,7 @@ export class AppMcp {
   ) {
     const key = `session:${sessionId}`;
     if (this.resources.has(key)) {
-      throw new Error(`Session 已绑定 MCP：${sessionId}`);
+      throw new Error(localize("application:resources.sessionAlreadyBound", { value0: sessionId }));
     }
     return this.resources.load(key, () => this.initialize(profiles, cwd, serverOverrides));
   }

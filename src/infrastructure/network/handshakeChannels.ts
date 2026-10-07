@@ -16,7 +16,7 @@ const requests = new WeakMap<object, ConnectionEvidence>(),
     ),
     subscriber("undici:request:create", ({ request }) => {
       const evidence = connectionContext.getStore();
-      // 同一上下文还会创建代理 CONNECT 请求；仅关联目标 WebSocket 握手。
+      // The same context also creates a proxy CONNECT request; only associate the target WebSocket handshake.
       if (evidence && "upgrade" in request && request.upgrade === "websocket") {
         requests.set(request, evidence);
       }
@@ -67,7 +67,7 @@ function subscriber<Name extends keyof ChannelMessages>(
   return [
     name,
     (message: unknown) => {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 通道名确定 Undici 发布的消息类型。
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The channel name determines Undici's published message type.
       listener(message as ChannelMessages[Name]);
     },
   ] as const;

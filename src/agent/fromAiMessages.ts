@@ -7,6 +7,7 @@ import {
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 import { omitToolItemIds } from "./toolProviderOptions";
 import { trimFreeformInput } from "../runtime/freeform";
 
@@ -45,7 +46,7 @@ export function fromModelMessages(
         }
       }
     } else {
-      throw new Error(`AI SDK 返回了不支持的消息角色：${message.role}`);
+      throw new Error(localize("agent:stream.roleUnsupported", { value0: message.role }));
     }
   }
   return result;
@@ -89,7 +90,9 @@ function toolCalls(content: Extract<ModelMessage, { role: "assistant" }>["conten
         };
       }
       if (!isRecord(part.input)) {
-        throw new Error(`结构化工具 ${part.toolName} 输入必须是对象`);
+        throw new Error(
+          localize("agent:stream.structuredInputNotObject", { value0: part.toolName }),
+        );
       }
       return {
         args: part.input,
@@ -132,7 +135,7 @@ function outputText(output: ToolResult["output"]) {
     return JSON.stringify(output.value);
   }
   if (output.type === "execution-denied") {
-    return output.reason ?? "工具执行已拒绝";
+    return output.reason ?? localize("agent:stream.toolRejected");
   }
   return output.value.flatMap((part) => ("text" in part ? [part.text] : [])).join("");
 }

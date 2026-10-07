@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { css } from "styled-system/css";
+import { localize } from "../../i18n";
 
 const viewport = css({
     flexBasis: "zero",
@@ -25,7 +26,7 @@ export function OverflowCaption({ text, className }: { text: string; className: 
     }
     const element = ref.current;
     if (!element) {
-      throw new Error("会话标题元素未挂载");
+      throw new Error(localize("frontend:sidebar.titleElementMissing"));
     }
     const motion = globalThis.matchMedia(
       "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",

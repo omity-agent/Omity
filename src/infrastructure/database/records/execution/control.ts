@@ -3,6 +3,7 @@ import { readControlRecord, requireSessionRecord, reviseSessionRecord } from "..
 import { runs, sessions } from "../../schema";
 import type { Database } from "bun:sqlite";
 import { controlNotReady } from "../../../../errors";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 
 export function requestStepControlRecord(db: Database, sessionId: string) {
@@ -35,7 +36,11 @@ export function requestStepControlRecord(db: Database, sessionId: string) {
     return;
   }
   if ((control === "running" || control === "pause") && ready) {
-    throw new Error(`Transcript 版本已耗尽：${sessionId}`);
+    throw new Error(
+      localize("database:execution.controlRevisionExhausted", {
+        value0: sessionId,
+      }),
+    );
   }
   throw controlNotReady("step");
 }

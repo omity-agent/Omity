@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { localize } from "../i18n/server";
 import { spawn } from "node:child_process";
 
 export function appUrl(host: string, port: number) {
@@ -12,7 +13,7 @@ export function openBrowser(url: string) {
       windowsHide: true,
     });
   child.once("error", (error) => {
-    console.warn(`无法自动打开浏览器：${error.message}`);
+    console.warn(localize("application:launch.browserOpenFailed", { value0: error.message }));
   });
   child.unref();
 }

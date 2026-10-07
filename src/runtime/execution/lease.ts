@@ -6,6 +6,7 @@ import {
 import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import { DomainError } from "../../errors";
 import type { Logger } from "../../infrastructure/logging/logger";
+import { localize } from "../../i18n/server";
 
 export class HostLeaseLostError extends Error {
   override readonly name = "HostLeaseLostError";
@@ -31,7 +32,10 @@ export class HostLease {
         ttlMs,
       })
     ) {
-      throw new DomainError("HOST_LEASE_CONFLICT", `会话已有 Host 正在运行：${sessionId}`);
+      throw new DomainError(
+        "HOST_LEASE_CONFLICT",
+        localize("runtime:lease.conflict", { value0: sessionId }),
+      );
     }
     this.timer = setInterval(
       () => {
@@ -46,7 +50,9 @@ export class HostLease {
       throw this.error;
     }
     if (this.db.hostLease(this.sessionId)?.ownerId !== this.ownerId) {
-      const error = new HostLeaseLostError(`Host Lease 已丢失：${this.sessionId}`);
+      const error = new HostLeaseLostError(
+        localize("runtime:lease.assertionLost", { value0: this.sessionId }),
+      );
       this.fail(error);
       throw error;
     }
@@ -64,7 +70,9 @@ export class HostLease {
         ttlMs: this.ttlMs,
       });
       if (!renewed) {
-        throw new HostLeaseLostError(`Host Lease 已丢失：${this.sessionId}`);
+        throw new HostLeaseLostError(
+          localize("runtime:lease.renewalLost", { value0: this.sessionId }),
+        );
       }
     } catch (error) {
       this.fail(error instanceof Error ? error : new Error(String(error)));
@@ -73,7 +81,7 @@ export class HostLease {
   private fail(error: Error) {
     this.error = error;
     this.controller.abort(error);
-    this.logger.error("Host Lease 续租失败", {
+    this.logger.error(localize("runtime:lease.renewalFailed"), {
       error: error.message,
       sessionId: this.sessionId,
     });

@@ -2,6 +2,7 @@ import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 import { type MessageStorageMode, encodeMessage } from "./payload";
 import { contentToText } from "../../../../../runtime/content";
 import { countTokens } from "../../../../../runtime/tokenizer";
+import { localize } from "../../../../../i18n/server";
 
 export interface MessageInsert {
   messageJson: string;
@@ -14,7 +15,7 @@ export function messageInsert(
   mode: MessageStorageMode = "history",
 ): MessageInsert {
   if (!message.id) {
-    throw new Error("LangChain 消息缺少持久化 ID");
+    throw new Error(localize("database:messages.persistentIdMissing"));
   }
   return {
     messageJson: JSON.stringify(encodeMessage(message, mode)),

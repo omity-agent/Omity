@@ -1,17 +1,18 @@
 #!/usr/bin/env bun
-// oxlint-disable-next-line import/no-unassigned-import -- 在 WebAuthn 依赖加载前初始化 Reflect metadata。
+// oxlint-disable-next-line import/no-unassigned-import -- Initialize Reflect metadata before loading WebAuthn dependencies.
 import "reflect-metadata";
+import { message, text } from "@optique/core/message";
 import { cliParser } from "./commandLine/parser";
 import { installNetworking } from "./infrastructure/network/installNetworking";
 import { loadUserEnvironment } from "./infrastructure/configuration/settings/files";
-import { message } from "@optique/core/message";
+import { localize } from "./i18n/server";
 import { run } from "@optique/run";
 import { workspaceDialogArgument } from "./app/workspaceDialog/bridge";
 
 async function main() {
   loadUserEnvironment();
   const command = run(cliParser, {
-      brief: message`AI Agent 执行环境。`,
+      brief: message`${text(localize("cli:brief"))}`,
       completion: "both",
       help: "both",
       programName: "omity",

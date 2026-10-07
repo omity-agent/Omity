@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { Database } from "bun:sqlite";
 import { events } from "../../schema";
+import { localize } from "../../../../i18n/server";
 import { sessionDatabase } from "../../sqlite/connection";
 
 const sqliteSequence = sqliteTable("sqlite_sequence", {
@@ -17,7 +18,11 @@ export function streamEventCursor(db: Database) {
       .where(eq(sqliteSequence.name, "events"))
       .get()?.value ?? 0;
   if (!Number.isSafeInteger(cursor)) {
-    throw new Error(`流式事件游标超出安全整数范围：${String(cursor)}`);
+    throw new Error(
+      localize("database:transcript.streamCursorUnsafe", {
+        value0: String(cursor),
+      }),
+    );
   }
   return cursor;
 }

@@ -4,6 +4,7 @@ import { type OutboundFetch, fetchWithExplicitHeaders } from "../network/explici
 import { DEFAULT_CODEX_BASE_URL } from "openai-codex-oauth";
 import { codexDefaultHeaders } from "./clientIdentity";
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
+import { localize } from "../../i18n/server";
 
 export function createCodexTransport(
   fetch: OutboundFetch = fetchWithExplicitHeaders,
@@ -75,12 +76,12 @@ async function followCodexRequest(
     }
     await response.body?.cancel();
     if (redirects >= codexProtocol.maxRedirects) {
-      throw new Error("Codex 请求重定向次数超过上游限制");
+      throw new Error(localize("network:codex.redirectLimitExceeded"));
     }
     const target = new URL(location, url),
       previous = new URL(url);
     if (target.protocol !== "https:" && target.protocol !== "http:") {
-      throw new Error("Codex 请求重定向到了不支持的协议");
+      throw new Error(localize("network:codex.redirectProtocolUnsupported"));
     }
     if (target.hostname !== previous.hostname || target.port !== previous.port) {
       for (const name of ["authorization", "cookie", "cookie2", "proxy-authorization"]) {

@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { localize } from "../../i18n";
 
 type RegisterDetail = (element: HTMLDivElement) => () => void;
 const DisclosureContext = createContext<
@@ -27,7 +28,7 @@ export function DisclosureProvider({
 export function useDisclosure(stateKey: string, expandedInitially: boolean) {
   const context = useContext(DisclosureContext);
   if (!context) {
-    throw new Error("详情组件缺少会话展开状态上下文");
+    throw new Error(localize("frontend:transcript.disclosureContextMissing"));
   }
   const { registerDetail, states } = context,
     [open, setOpen] = useState(() => states.current.get(stateKey) ?? expandedInitially),

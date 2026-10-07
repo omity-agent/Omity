@@ -2,6 +2,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../failures/details";
 import type { HostContext } from "./context";
 import type { QueuedInput } from "../types";
+import { localize } from "../i18n/server";
 import { messageContentToText } from "./modelContent";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
 
@@ -23,15 +24,18 @@ export function finishRun(
     last = messages.find((message) => message.type === "ai" && message.id === finalMessageId),
     content = last ? messageContentToText(last) : "";
   if (!content) {
-    throw new Error("模型没有生成可记录的最终文本");
+    throw new Error(localize("runtime:run.finalTextMissing"));
   }
   const lastItem = run.items.at(-1);
   if (!lastItem) {
-    throw new Error("运行没有可记录的队列项");
+    throw new Error(localize("runtime:run.queueItemMissing"));
   }
   finalizeRun(ctx, run, "done");
   ctx.observer?.changed?.(ctx.sessionId);
-  ctx.logger.info("队列完成", { chars: content.length, inputId: lastItem.id });
+  ctx.logger.info(localize("runtime:run.completed"), {
+    chars: content.length,
+    inputId: lastItem.id,
+  });
   if (ctx.settings.logging.streamTokens) {
     process.stdout.write("\n");
   }
@@ -45,15 +49,15 @@ function requireFinalMessageId(plan: unknown) {
     !("finalMessageId" in plan) ||
     typeof plan.finalMessageId !== "string"
   ) {
-    throw new Error("运行缺少最终消息边界");
+    throw new Error(localize("runtime:run.finalBoundaryMissing"));
   }
   return plan.finalMessageId;
 }
 export function cancelRun(ctx: HostContext, run: ActiveRun) {
   finalizeRun(ctx, run, "canceled");
-  ctx.controller.abort(new CanceledRunError("运行已取消"));
+  ctx.controller.abort(new CanceledRunError(localize("runtime:run.cancelled")));
   ctx.observer?.changed?.(ctx.sessionId);
-  ctx.logger.warn("队列已取消，Host 已关闭", { inputId: run.items[0].id });
+  ctx.logger.warn(localize("runtime:run.queueCancelled"), { inputId: run.items[0].id });
 }
 function finalizeRun(ctx: HostContext, run: ActiveRun, status: "done" | "canceled") {
   runTransaction(ctx.db.db, () => {

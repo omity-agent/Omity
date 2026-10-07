@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "duplicateId": "Hook id 重复：{{value0}}",
+    "configurationMissing": "配置文件不存在：hooks.yaml"
+  },
+  "placeholders": {
+    "textMustBeString": "文本配置 {{value0}} 的占位符必须解析为字符串",
+    "yamlParseFailed": "YAML 配置解析失败：{{value0}}",
+    "multipleDocuments": "YAML 配置必须只包含一个文档：{{value0}}",
+    "appDataEnvironmentMissing": "缺少环境变量 APPDATA，无法定位用户 AppData 目录",
+    "nonScalarEmbedded": "{{value0}} 的占位符 {{value1}} 不能将数组或对象嵌入字符串",
+    "sessionValueMissing": "{{value0}} 的会话占位符 {{value1}} 没有可用值",
+    "environmentMissing": "{{value0}} 引用了未设置的环境变量 {{value1}}",
+    "unknown": "{{value0}} 引用了未知占位符：{{value1}}",
+    "invalid": "无效占位符：{{value0}}"
+  },
+  "paths": {
+    "idInvalid": "路径 ID 无效：{{value0}}"
+  },
+  "workspace": {
+    "empty": "工作目录不能为空",
+    "environmentMissing": "环境变量未定义：{{value0}}"
+  },
+  "settings": {
+    "profileDirectoryMissing": "Profile 配置目录不存在：{{value0}}",
+    "userEnvironmentLoadFailed": "无法加载用户环境变量文件：{{value0}}",
+    "layerParseFailed": "配置层解析失败：{{value0}}",
+    "textFileMissing": "文本配置文件不存在：{{value0}}",
+    "fileMissing": "配置文件不存在：{{value0}}",
+    "duplicateProfile": "Profile 列表不能包含重复项",
+    "schema": {
+      "promptFileNameInvalid": "提示词必须是 prompts 目录中的文件名",
+      "duplicatePrompts": "提示词文件列表不能包含重复项",
+      "publicOriginInvalid": "公网 Origin 必须是无路径、查询参数和片段的 HTTPS Origin",
+      "cidrInvalid": "可信代理必须使用有效的 CIDR",
+      "trustedProxiesRequired": "配置公网 Origin 时必须配置 trustedProxies",
+      "duplicateSuffixes": "附件后缀白名单不能包含重复项"
+    }
+  }
+}

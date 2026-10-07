@@ -5,6 +5,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
 import { findToolStreamIdentity } from "../infrastructure/database/records/transcript/toolStreamIdentity";
+import { localize } from "../i18n/server";
 import { pendingToolBatch } from "../agent/graph/toolBatch";
 import { recordInvocation } from "./stream/invocations";
 import { toUIMessageChunk } from "ai";
@@ -90,7 +91,7 @@ export async function recordToolStarted(
 function streamMessageId(state: StreamLogState, partId: string) {
   const messageId = acceptMessageId(state.parts, state.parts.messageId ?? partId);
   if (!messageId) {
-    throw new Error("AI SDK 流缺少稳定消息 ID");
+    throw new Error(localize("runtime:stream.stableMessageIdMissing"));
   }
   return messageId;
 }

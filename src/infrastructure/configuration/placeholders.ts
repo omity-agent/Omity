@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { join } from "node:path";
+import { localize } from "../../i18n/server";
 import { parseAllDocuments } from "yaml";
 import { readFileSync } from "node:fs";
 
@@ -25,7 +26,7 @@ export interface PlaceholderOptions {
 export function readSettingsText(path: string, options: Omit<PlaceholderOptions, "source">) {
   const value = resolveString(readFileSync(path, "utf8"), { ...options, source: path });
   if (typeof value !== "string") {
-    throw new Error(`文本配置 ${path} 的占位符必须解析为字符串`);
+    throw new Error(localize("configuration:placeholders.textMustBeString", { value0: path }));
   }
   return value;
 }
@@ -40,11 +41,14 @@ export function readSettingsYamlFile(path: string) {
       console.warn(`${path}: ${warning.message}`);
     }
     if (errors.length > 0) {
-      throw new AggregateError(errors, `YAML 配置解析失败：${path}`);
+      throw new AggregateError(
+        errors,
+        localize("configuration:placeholders.yamlParseFailed", { value0: path }),
+      );
     }
   }
   if (documents.length > 1) {
-    throw new Error(`YAML 配置必须只包含一个文档：${path}`);
+    throw new Error(localize("configuration:placeholders.multipleDocuments", { value0: path }));
   }
   return {
     empty: "empty" in documents,
@@ -80,7 +84,7 @@ function appDataRoot() {
   if (process.platform === "win32") {
     const path = process.env["APPDATA"];
     if (!path) {
-      throw new Error("缺少环境变量 APPDATA，无法定位用户 AppData 目录");
+      throw new Error(localize("configuration:placeholders.appDataEnvironmentMissing"));
     }
     return forwardSlashPath(path);
   }
@@ -102,7 +106,12 @@ function resolveString(value: string, options: PlaceholderOptions) {
       return placeholder;
     }
     if (!isScalar(resolved.value)) {
-      throw new Error(`${options.source} 的占位符 ${placeholder} 不能将数组或对象嵌入字符串`);
+      throw new Error(
+        localize("configuration:placeholders.nonScalarEmbedded", {
+          value0: options.source,
+          value1: placeholder,
+        }),
+      );
     }
     return String(resolved.value);
   });
@@ -119,7 +128,12 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
     if (options.deferSession) {
       return { matched: false };
     }
-    throw new Error(`${options.source} 的会话占位符 \${${name}} 没有可用值`);
+    throw new Error(
+      localize("configuration:placeholders.sessionValueMissing", {
+        value0: options.source,
+        value1: formatPlaceholder(name),
+      }),
+    );
   }
   const dynamic = options.dynamic?.(name);
   if (dynamic?.matched) {
@@ -131,16 +145,30 @@ function resolveVariable(name: string, options: PlaceholderOptions): Placeholder
   if (environmentName.test(name)) {
     const value = process.env[name];
     if (value === undefined) {
-      throw new Error(`${options.source} 引用了未设置的环境变量 ${name}`);
+      throw new Error(
+        localize("configuration:placeholders.environmentMissing", {
+          value0: options.source,
+          value1: name,
+        }),
+      );
     }
     return { matched: true, value };
   }
-  throw new Error(`${options.source} 引用了未知占位符：\${${name}}`);
+  throw new Error(
+    localize("configuration:placeholders.unknown", {
+      value0: options.source,
+      value1: formatPlaceholder(name),
+    }),
+  );
 }
 function requireName(match: RegExpExecArray) {
   const name = match.groups?.["name"];
   if (!name) {
-    throw new Error(`无效占位符：${match[0]}`);
+    throw new Error(
+      localize("configuration:placeholders.invalid", {
+        value0: match[0],
+      }),
+    );
   }
   return name;
 }
@@ -154,4 +182,7 @@ function isScalar(value: unknown): value is string | number | boolean | null {
 }
 function forwardSlashPath(path: string) {
   return path.replaceAll("\\", "/");
+}
+function formatPlaceholder(name: string) {
+  return `\${${name}}`;
 }

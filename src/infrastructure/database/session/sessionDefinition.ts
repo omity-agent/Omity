@@ -6,6 +6,7 @@ import {
 import type { ModelPrefixSettings, ModelSettings, Settings } from "../../../types";
 import { DomainError } from "../../../errors";
 import type { LoadedMcp } from "../../mcp/tools/catalog";
+import { localize } from "../../../i18n/server";
 
 export interface SessionDefinition {
   hookOverrides?: Record<string, boolean>;
@@ -27,7 +28,12 @@ export function createSessionDefinition(
   const ids = new Set(settings.hooks.map(({ id }) => id));
   for (const id of Object.keys(overrides.hooks ?? {})) {
     if (!ids.has(id)) {
-      throw new DomainError("HOOK_SELECTION_INVALID", `Hook 不存在：${id}`);
+      throw new DomainError(
+        "HOOK_SELECTION_INVALID",
+        localize("database:session.hookMissing", {
+          value0: id,
+        }),
+      );
     }
   }
   return {
@@ -81,7 +87,7 @@ function snapshotModel(settings: ModelSettings): ModelPrefixSettings {
 }
 function restoreModel(current: ModelSettings, snapshot: ModelPrefixSettings | null): ModelSettings {
   if (!snapshot) {
-    throw new Error("会话缺少模型前缀快照");
+    throw new Error(localize("database:session.modelPrefixSnapshotMissing"));
   }
   const runtime = {
     maxConcurrentRequests: current.maxConcurrentRequests,
@@ -93,7 +99,7 @@ function restoreModel(current: ModelSettings, snapshot: ModelPrefixSettings | nu
     return { ...runtime, ...snapshot };
   }
   if (current.adapter === "codex") {
-    throw new Error("当前模型配置没有为会话锁定的远程模型提供 API Key 环境变量");
+    throw new Error(localize("database:session.apiKeyEnvironmentMissing"));
   }
   return {
     ...runtime,

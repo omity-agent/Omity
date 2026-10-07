@@ -10,6 +10,7 @@ import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory 
 import type { Settings } from "../../../types";
 import { buildSkillsList } from "../../../skills";
 import { loadConfiguredHookRules } from "../hookRules";
+import { localize } from "../../../i18n/server";
 import { mkdirSync } from "node:fs";
 import { normalizeWorkspacePath } from "../workspacePath";
 import { prepareMainSettings } from "./models";
@@ -103,7 +104,11 @@ function requireLayeredYaml(
 ) {
   const file = readLayeredSettingsYaml(context, scope, relativePath, placeholders, transforms);
   if (!file) {
-    throw new Error(`配置文件不存在：${resolve(context.defaultsDirectory, relativePath)}`);
+    throw new Error(
+      localize("configuration:settings.fileMissing", {
+        value0: resolve(context.defaultsDirectory, relativePath),
+      }),
+    );
   }
   return file;
 }

@@ -1,0 +1,39 @@
+{
+  "cloudflareCookieInvalid": "Codex 收到无法解析的 Cloudflare Cookie，已忽略",
+  "cloudflareCookieScopeInvalid": "Codex 收到无效作用域的 Cloudflare Cookie，已忽略",
+  "codex": {
+    "preconnectUnsupported": "Codex 不支持绕过统一代理的 preconnect",
+    "accountIdMissing": "Codex OAuth 缺少 ChatGPT Account ID",
+    "accessTokenMissing": "Codex OAuth 缺少 access token",
+    "accessTokenRefreshFailed": "Codex OAuth access token 已过期且刷新失败",
+    "latestVersionFetchFailed": "从 npm 获取 Codex 最新版本失败：HTTP {{value0}}",
+    "redirectLimitExceeded": "Codex 请求重定向次数超过上游限制",
+    "redirectProtocolUnsupported": "Codex 请求重定向到了不支持的协议"
+  },
+  "outbound": {
+    "closed": "出站网络已关闭",
+    "closedDuringRequest": "出站网络已关闭",
+    "layerMissing": "Codex 请求需要先安装统一出站网络层",
+    "protocolUnsupported": "统一代理请求层不支持此协议：{{value0}}",
+    "preconnectUnsupported": "统一代理请求层不支持绕过代理的 fetch.preconnect",
+    "headersFormatChanged": "Undici Fetch 请求头格式发生变化"
+  },
+  "proxy": {
+    "connectionMethodMissing": "系统代理解析未返回连接方式",
+    "addressMissing": "系统代理解析未返回代理地址",
+    "addressInvalid": "代理地址无效，请检查系统设置或代理环境变量",
+    "protocolUnsupported": "不支持的代理协议：{{value0}}",
+    "addressHasUnexpectedParts": "代理地址应只包含协议、认证信息、主机与端口",
+    "configurationInvalid": "系统代理配置解析失败：{{value0}}",
+    "environmentInvalid": "代理环境变量无效：{{value0}}"
+  },
+  "websocket": {
+    "layerMissing": "WebSocket 请求需要先安装统一出站网络层"
+  },
+  "request": {
+    "bodyAlreadyConsumed": "请求正文已经被读取"
+  },
+  "mcp": {
+    "requestTimeoutCloseUnsupported": "当前 MCP client SDK 不支持关闭请求超时"
+  }
+}

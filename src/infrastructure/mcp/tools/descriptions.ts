@@ -1,5 +1,6 @@
 import { isAbsolute, relative, resolve } from "node:path";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { localize } from "../../../i18n/server";
 import { readSettingsText } from "../../configuration/placeholders";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
 
@@ -13,10 +14,10 @@ export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpT
   for (const tool of tools) {
     const name = names.get(tool.name) ?? tool.name;
     if (name === "agent") {
-      throw new Error("MCP 工具不能命名为 agent");
+      throw new Error(localize("mcp:descriptions.agentNameForbidden"));
     }
     if (finalNames.has(name)) {
-      throw new Error(`MCP 工具重命名后名称冲突：${name}`);
+      throw new Error(localize("mcp:descriptions.renameCollision", { value0: name }));
     }
     finalNames.add(name);
   }
@@ -35,7 +36,7 @@ export function overrideMcpToolDescriptions(
     descriptions = new Map<string, { allowSession: boolean; value: string }>();
   for (const [name, configuredPath] of Object.entries(overrides)) {
     if (!toolsByName.has(name)) {
-      throw new Error(`MCP 工具描述覆盖配置引用了不存在的工具：${name}`);
+      throw new Error(localize("mcp:descriptions.overrideTargetMissing", { value0: name }));
     }
     const path = resolveConfiguredPath(root, configuredPath),
       allowSession = sessionPromptRoots.some((directory) => isWithin(directory, path));
@@ -43,17 +44,28 @@ export function overrideMcpToolDescriptions(
     try {
       description = readSettingsText(path, { deferSession: allowSession }).trimEnd();
     } catch (error) {
-      throw new Error(`无法读取 MCP 工具 ${name} 的描述覆盖文件：${path}`, { cause: error });
+      throw new Error(
+        localize("mcp:descriptions.overrideReadFailed", {
+          value0: name,
+          value1: path,
+        }),
+        { cause: error },
+      );
     }
     if (description.length === 0) {
-      throw new Error(`MCP 工具 ${name} 的描述覆盖文件不能为空：${path}`);
+      throw new Error(
+        localize("mcp:descriptions.overrideEmpty", {
+          value0: name,
+          value1: path,
+        }),
+      );
     }
     descriptions.set(name, { allowSession, value: description });
   }
   for (const [name, description] of descriptions) {
     const tool = toolsByName.get(name);
     if (!tool) {
-      throw new Error(`MCP 工具描述覆盖配置引用了不存在的工具：${name}`);
+      throw new Error(localize("mcp:descriptions.overrideReferenceMissing", { value0: name }));
     }
     tool.description = description.value;
     if (description.allowSession) {
@@ -68,7 +80,7 @@ export function hasSessionDescription(tool: StructuredToolInterface) {
 export function sessionDescription(tool: StructuredToolInterface) {
   const description = sessionDescriptions.get(tool);
   if (description === undefined) {
-    throw new Error(`MCP 工具没有会话级描述：${tool.name}`);
+    throw new Error(localize("mcp:descriptions.sessionDescriptionMissing", { value0: tool.name }));
   }
   return description;
 }
@@ -80,7 +92,11 @@ function indexMcpTools(tools: StructuredToolInterface[]) {
   const toolsByName = new Map<string, StructuredToolInterface>();
   for (const tool of tools) {
     if (toolsByName.has(tool.name)) {
-      throw new Error(`MCP 工具名称重复：${tool.name}`);
+      throw new Error(
+        localize("mcp:descriptions.duplicateToolName", {
+          value0: tool.name,
+        }),
+      );
     }
     toolsByName.set(tool.name, tool);
   }

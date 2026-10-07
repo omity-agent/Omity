@@ -1,0 +1,45 @@
+{
+  "session": {
+    "notFound": "会话不存在：{{value0}}",
+    "alreadyExists": "会话已存在：{{value0}}"
+  },
+  "tool": {
+    "notRunning": "工具调用未在运行：{{value0}}"
+  },
+  "control": {
+    "notReady": "会话尚未准备好执行控制命令：{{value0}}"
+  },
+  "host": {
+    "leaseNotEstablished": "Host Lease 尚未建立：{{value0}}",
+    "action": {
+      "createLabel": "创建",
+      "loadLabel": "加载",
+      "overwriteLabel": "覆盖"
+    },
+    "sessionActionCompleted": "已{{value0}}会话"
+  },
+  "skills": {
+    "directoryMissing": "Skills 目录不存在：{{value0}}",
+    "duplicateName": "Skill 名称重复：{{value0}}",
+    "unknownToggle": "未知 Skill 开关：{{value0}}",
+    "noneEnabled": "└── 当前没有启用的 Skill。",
+    "fileMissing": "缺少 Skill 文件：{{value0}}",
+    "frontMatterMissing": "Skill 缺少 YAML front matter：{{value0}}"
+  },
+  "failure": {
+    "rootErrorMissing": "错误摘要缺少根错误",
+    "invalidQueueDetails": "队列错误详情无效"
+  },
+  "fileLinks": {
+    "ownerIdMissing": "模型消息缺少文件链接所有者 ID"
+  },
+  "process": {
+    "ownerIdInvalid": "Host Lease owner_id 无效"
+  },
+  "generic": {
+    "missing": "缺失",
+    "noSuffix": "（无后缀）",
+    "started": "开始",
+    "completed": "完成"
+  }
+}

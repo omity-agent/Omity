@@ -7,6 +7,7 @@ import {
   parseModelSettings,
 } from "../../infrastructure/configuration/settings/models";
 import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
+import { localize } from "../../i18n/server";
 import { readLayeredSettingsYaml } from "../../infrastructure/configuration/settings/files";
 import { readProfileMcpServerOptions } from "../../infrastructure/mcp/configuration";
 
@@ -22,7 +23,7 @@ export function availableSessionOptions(context: SettingsContext, profile?: stri
       },
     );
   if (!modelFile) {
-    throw new Error("模型配置文件不存在：model.yaml");
+    throw new Error(localize("application:runtime.modelConfigMissing"));
   }
   return {
     hooks: loadConfiguredHookRules(selected).map(({ id, enable, description }) => ({

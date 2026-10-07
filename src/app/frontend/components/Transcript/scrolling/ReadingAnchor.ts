@@ -1,5 +1,6 @@
 import { FollowBottomController } from "../followBottom";
 import type { VirtualizerHandle } from "virtua";
+import { localize } from "../../../i18n";
 
 interface FooterSnapshot {
   bottom: number;
@@ -47,7 +48,7 @@ export class ReadingAnchor {
       const { element, bottom } = this.pending,
         row = element.closest<HTMLElement>("[data-transcript-index]");
       if (!row) {
-        throw new Error("详情卡片缺少虚拟行");
+        throw new Error(localize("frontend:transcript.virtualRowMissing"));
       }
       const measureDelta = () =>
         element.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top - bottom;

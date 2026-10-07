@@ -4,6 +4,7 @@ import {
 } from "../../../infrastructure/mcp/failures/wireFormat";
 import type { createApi } from "../../http/handler";
 import { hc } from "hono/client";
+import { localize } from "../i18n";
 import { z } from "./validation";
 
 export const { api } = hc<ReturnType<typeof createApi>>(".", { fetch: fetchApi });
@@ -34,9 +35,14 @@ export async function request<T>(
     json: unknown = await response.json(),
     parsed = schema.safeParse(json);
   if (!parsed.success) {
-    throw new Error(`API 成功响应结构无效：HTTP ${response.status.toString()}`, {
-      cause: parsed.error,
-    });
+    throw new Error(
+      localize("frontend:api.successResponseInvalid", {
+        value0: response.status.toString(),
+      }),
+      {
+        cause: parsed.error,
+      },
+    );
   }
   return parsed.data;
 }
@@ -45,7 +51,11 @@ async function fetchApi(input: RequestInfo | URL, init?: RequestInit): Promise<R
   if (!response.ok) {
     const parsed = errorResponse.safeParse(await response.json());
     if (!parsed.success) {
-      throw new Error(`API 错误响应结构无效：HTTP ${response.status.toString()}`);
+      throw new Error(
+        localize("frontend:api.errorResponseInvalid", {
+          value0: response.status.toString(),
+        }),
+      );
     }
     const error = new ApiError(
       response.status,

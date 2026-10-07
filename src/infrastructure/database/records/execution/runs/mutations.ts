@@ -5,6 +5,7 @@ import type { Database } from "bun:sqlite";
 import type { ErrorDetails } from "../../../../../failures/details";
 import type { RunStatus } from "../../../../../types";
 import { carryPendingInputs } from "./continuation";
+import { localize } from "../../../../../i18n/server";
 import { requireSessionRecord } from "../../session/metadata";
 import { sessionDatabase } from "../../../sqlite/connection";
 
@@ -22,7 +23,11 @@ export function runStatusRecord(db: Database, runId: number) {
     .where(eq(runs.id, runId))
     .get();
   if (!run) {
-    throw new Error(`执行轮次不存在：${runId.toString()}`);
+    throw new Error(
+      localize("database:execution.runMissingForRead", {
+        value0: runId.toString(),
+      }),
+    );
   }
   return run.status;
 }
@@ -43,7 +48,11 @@ export function setRunStatusRecord(
       .returning({ sessionId: runs.sessionId })
       .all();
   if (!run) {
-    throw new Error(`执行轮次不存在：${runId.toString()}`);
+    throw new Error(
+      localize("database:execution.runMissingForUpdate", {
+        value0: runId.toString(),
+      }),
+    );
   }
   let discardedInputIds: number[] = [];
   if (status === "done" || status === "canceled") {

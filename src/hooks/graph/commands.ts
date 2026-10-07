@@ -4,6 +4,7 @@ import { Command, END } from "@langchain/langgraph";
 import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
 import type { HookToolOutput } from "../storage/outputs";
+import { localize } from "../../i18n/server";
 import { partitionToolResponse } from "./responsePartition";
 
 export const hookNode = "hooks";
@@ -42,15 +43,15 @@ export function originalToolsCommand(
 ) {
   const callIds = calls.map((call) => {
     if (!call.id) {
-      throw new Error(`工具调用缺少 ID：${call.name}`);
+      throw new Error(localize("hooks:graph.callIdMissing", { value0: call.name }));
     }
     return call.id;
   });
   if (callIds.length === 0) {
-    throw new Error("原始工具批次不能为空");
+    throw new Error(localize("hooks:graph.emptyBatch"));
   }
   if (new Set(callIds).size !== callIds.length) {
-    throw new Error("原始工具批次包含重复的调用 ID");
+    throw new Error(localize("hooks:graph.duplicateCallId"));
   }
   return new Command({
     goto: toolsNode,
@@ -78,7 +79,7 @@ export function finishAgent(plan: AgentHookPlan, clearPending: boolean, outputs:
   }
   const finalMessageId = plan.sources.at(-1);
   if (!finalMessageId) {
-    throw new Error("Agent after Hook 缺少最终消息 ID");
+    throw new Error(localize("hooks:graph.finalMessageIdMissing"));
   }
   return command({ finalMessageId, kind: "done" }, END, clearPending, outputs);
 }

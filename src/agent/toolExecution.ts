@@ -7,6 +7,7 @@ import { cancelledToolMessage } from "../runtime/toolOutput";
 import { findMcpStdioUnavailable } from "../infrastructure/mcp/client/availability";
 import { isContentBlockArray } from "../runtime/outputText";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 import { redirectLargeToolOutput } from "../runtime/largeOutput";
 import { requireCallId } from "../hooks/plan";
 import { trimFreeformInput } from "../runtime/freeform";
@@ -27,7 +28,7 @@ export function createToolInvoker(
     const callId = requireCallId(call),
       tool = byName.get(call.name);
     if (!tool) {
-      throw new Error(`工具不存在：${call.name}`);
+      throw new Error(localize("agent:tool.notFound", { value0: call.name }));
     }
     const execution = options.toolExecutions?.begin(callId, config.signal);
     try {

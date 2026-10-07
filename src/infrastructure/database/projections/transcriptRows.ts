@@ -1,6 +1,7 @@
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { events, messages } from "../schema";
 import type { Database } from "bun:sqlite";
+import { localize } from "../../../i18n/server";
 import { sessionDatabase } from "../sqlite/connection";
 import { streamEventSchema } from "../schema/streamEvent";
 
@@ -17,7 +18,9 @@ export function transcriptEvents(db: Database, sessionId: string) {
         ...(Array.isArray(fileLinks) && fileLinks.length === 0 ? {} : { fileLinks }),
       });
       if (!parsed.success) {
-        throw new Error("持久化流式事件无效", { cause: parsed.error });
+        throw new Error(localize("database:transcript.streamEventInvalid"), {
+          cause: parsed.error,
+        });
       }
       return parsed.data;
     });

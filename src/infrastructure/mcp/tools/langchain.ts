@@ -1,5 +1,6 @@
 import { ToolException, type loadMcpTools } from "@langchain/mcp-adapters";
 import type { McpOperations } from "../client/protocol";
+import { localize } from "../../../i18n/server";
 
 type LangChainClient = Parameters<typeof loadMcpTools>[1];
 export function langChainClient(client: McpOperations): LangChainClient {
@@ -15,7 +16,7 @@ export function langChainClient(client: McpOperations): LangChainClient {
         throw new ToolException(
           result.content
             .map((block) => (block.type === "text" ? block.text : JSON.stringify(block)))
-            .join("\n") || "MCP 工具返回了错误",
+            .join("\n") || localize("mcp:tools.executionFailed"),
         );
       }
       return result;
@@ -24,7 +25,7 @@ export function langChainClient(client: McpOperations): LangChainClient {
     listTools: (params, options) => client.listTools(params, options),
     readResource: (params, options) => client.readResource(params, options),
   };
-  // loadMcpTools 仅调用 MCP 操作，但依赖的类型要求完整的 SDK Client 实例。
+  // loadMcpTools only invokes MCP operations but requires a complete SDK Client instance by type.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return adapter as LangChainClient;
 }

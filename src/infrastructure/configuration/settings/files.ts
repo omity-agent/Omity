@@ -10,6 +10,7 @@ import { deepmergeCustom } from "deepmerge-ts";
 import { homedir } from "node:os";
 import { isPlainObject as isRecord } from "es-toolkit";
 import { config as loadDotenv } from "dotenv";
+import { localize } from "../../../i18n/server";
 import untildify from "untildify";
 
 const mergeSettings = deepmergeCustom({
@@ -45,7 +46,10 @@ export function loadUserEnvironment(path = userEnvironmentPath()) {
   }
   const result = loadDotenv({ override: false, path, quiet: true });
   if (result.error) {
-    throw new Error(`无法加载用户环境变量文件：${path}`, { cause: result.error });
+    throw new Error(
+      localize("configuration:settings.userEnvironmentLoadFailed", { value0: path }),
+      { cause: result.error },
+    );
   }
 }
 export function userSettingsDirectory() {
@@ -88,7 +92,11 @@ export function readLayeredSettingsYaml(
   }
   const source = layers.at(-1)?.path;
   if (!source) {
-    throw new Error(`配置层解析失败：${relativePath}`);
+    throw new Error(
+      localize("configuration:settings.layerParseFailed", {
+        value0: relativePath,
+      }),
+    );
   }
   if (value === undefined) {
     value = {};
@@ -123,7 +131,11 @@ export function resolveLayeredSettingsText(
       .map((directory) => resolve(directory, relativePath))
       .findLast((candidate) => existsSync(candidate) && statSync(candidate).isFile());
   if (!path) {
-    throw new Error(`文本配置文件不存在：${relativePath}`);
+    throw new Error(
+      localize("configuration:settings.textFileMissing", {
+        value0: relativePath,
+      }),
+    );
   }
   return path;
 }

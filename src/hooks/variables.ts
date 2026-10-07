@@ -1,5 +1,6 @@
 import type { HookToolOutput } from "./storage/outputs";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
 
 interface HookVariables {
@@ -22,10 +23,10 @@ export function resolveHookArgs(args: Record<string, unknown>, variables: HookVa
   const resolved = resolvePlaceholders(args, {
     dynamic: (name) => hookVariableValue(name, variables),
     session: { cwd: variables.cwd, session: variables.session },
-    source: "Hook 参数",
+    source: localize("hooks:variables.argumentLabel"),
   });
   if (!isRecord(resolved)) {
-    throw new Error("Hook 参数解析结果必须是对象");
+    throw new Error(localize("hooks:variables.resultMustBeObject"));
   }
   return resolved;
 }
@@ -39,7 +40,9 @@ function hookVariableValue(name: string, variables: HookVariables) {
   }
   const output = selectOutput(name, reference, variables.toolOutputs);
   if (reference.field === "structuredOutput" && !(reference.field in output)) {
-    throw new Error(`Hook 变量 \${${name}} 引用的工具没有结构化输出`);
+    throw new Error(
+      localize("hooks:variables.structuredOutputMissing", { value0: formatVariable(name) }),
+    );
   }
   const value = output[reference.field];
   return {
@@ -53,9 +56,7 @@ function parseOutputReference(name: string): ToolOutputReference | undefined {
   }
   const match = outputVariablePattern.exec(name);
   if (!match) {
-    throw new Error(
-      `Hook 工具输出变量格式无效：\${${name}}；应使用 \${toolOutputs.fromStart.N.output} 或 \${toolOutputs.fromEnd.N.structuredOutput}`,
-    );
+    throw new Error(localize("hooks:variables.formatInvalid", { value0: formatVariable(name) }));
   }
   const { field, order, ordinalText, path } = match.groups ?? {},
     ordinal = Number(ordinalText);
@@ -64,7 +65,7 @@ function parseOutputReference(name: string): ToolOutputReference | undefined {
     (field !== "output" && field !== "structuredOutput") ||
     !Number.isSafeInteger(ordinal)
   ) {
-    throw new Error(`Hook 工具输出变量索引无效：\${${name}}`);
+    throw new Error(localize("hooks:variables.indexInvalid", { value0: formatVariable(name) }));
   }
   return { field, order, ordinal, path: path?.split(".") ?? [] };
 }
@@ -78,7 +79,11 @@ function selectOutput(
     output = outputs[index];
   if (!output) {
     throw new Error(
-      `Hook 变量 \${${name}} 超出工具输出范围：请求第 ${reference.ordinal.toString()} 个，当前共有 ${outputs.length.toString()} 个`,
+      localize("hooks:variables.indexOutOfRange", {
+        value0: formatVariable(name),
+        value1: reference.ordinal.toString(),
+        value2: outputs.length.toString(),
+      }),
     );
   }
   return output;
@@ -93,14 +98,27 @@ function readPath(value: unknown, path: string[], variable: string): unknown {
         !Number.isSafeInteger(index) ||
         !Object.hasOwn(current, index)
       ) {
-        throw new Error(`Hook 变量 \${${variable}} 的字段不存在：${segment}`);
+        throw new Error(
+          localize("hooks:variables.fieldMissing", {
+            value0: formatVariable(variable),
+            value1: segment,
+          }),
+        );
       }
       current = current[index];
     } else if (isRecord(current) && Object.hasOwn(current, segment)) {
       current = current[segment];
     } else {
-      throw new Error(`Hook 变量 \${${variable}} 的字段不存在：${segment}`);
+      throw new Error(
+        localize("hooks:variables.pathFieldMissing", {
+          value0: formatVariable(variable),
+          value1: segment,
+        }),
+      );
     }
   }
   return current;
+}
+function formatVariable(name: string) {
+  return `\${${name}}`;
 }

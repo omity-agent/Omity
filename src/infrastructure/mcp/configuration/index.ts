@@ -6,6 +6,7 @@ import type { McpToolSnapshot } from "../tools/definitions";
 import type { SettingsContext } from "../../configuration/settings/context";
 import { applicationAssetPath } from "../../applicationAssets";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 import { readLayeredSettingsYaml } from "../../configuration/settings/files";
 import { resolve } from "node:path";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
@@ -81,7 +82,7 @@ function parseMcpConfiguration(parsed: unknown, path: string) {
   return toolboxSchema.parse(omitDisabledToolboxConfiguration(parsed), {
     error: (issue) =>
       issue.code === "invalid_type" && issue.input === parsed
-        ? `MCP 配置 ${path} 必须是对象`
+        ? localize("mcp:configuration.entryMustBeObject", { value0: path })
         : undefined,
   });
 }
@@ -93,7 +94,7 @@ export function emptyMcpConfiguration(): McpConfiguration {
     ),
     defaults = readSettingsYamlValue(path);
   if (!isRecord(defaults)) {
-    throw new Error(`MCP 默认配置 ${path} 必须是对象`);
+    throw new Error(localize("mcp:configuration.defaultsMustBeObject", { value0: path }));
   }
   return parseMcpConfiguration(
     {

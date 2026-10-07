@@ -1,4 +1,5 @@
 import type { DisplayEvent, DisplayToolCall } from "../contracts/projection";
+import { localize } from "../../../i18n/server";
 
 interface StreamIdentityPart {
   formal?: true;
@@ -19,10 +20,19 @@ export function reconcileToolStreams(
     if (event.kind === "tool_started") {
       const part = byMessage.get(event.messageId)?.parts.get(event.partId);
       if (part?.kind !== "tool_call_delta") {
-        throw new Error(`工具开始事件缺少流身份：${streamCallKey(event.messageId, event.partId)}`);
+        throw new Error(
+          localize("application:timeline.toolStartStreamIdentityMissing", {
+            value0: streamCallKey(event.messageId, event.partId),
+          }),
+        );
       }
       if (part.id && !event.value.startsWith(part.id)) {
-        throw new Error(`工具流身份绑定了不同的正式调用 ID：${part.id}、${event.value}`);
+        throw new Error(
+          localize("application:timeline.toolStreamCallIdMismatch", {
+            value0: part.id,
+            value1: event.value,
+          }),
+        );
       }
       part.id = event.value;
       part.formal = true;
@@ -36,7 +46,12 @@ export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
     bothFormal = !a.temporary && !b.temporary;
   if (bothFormal) {
     if (samePosition && a.id !== b.id) {
-      throw new Error(`工具流身份绑定了不同的正式调用 ID：${a.id}、${b.id}`);
+      throw new Error(
+        localize("application:timeline.toolStreamCallIdConflict", {
+          value0: a.id,
+          value1: b.id,
+        }),
+      );
     }
     if (
       a.id === b.id &&
@@ -45,7 +60,7 @@ export function sameToolCall(a: DisplayToolCall, b: DisplayToolCall) {
       b.messageId &&
       (a.inputText === undefined) === (b.inputText === undefined)
     ) {
-      throw new Error(`正式工具调用 ID ${a.id} 绑定了多个流身份`);
+      throw new Error(localize("application:timeline.formalCallMultipleStreams", { value0: a.id }));
     }
   }
   if (a.id === b.id && (!a.temporary || !b.temporary)) {
@@ -61,7 +76,9 @@ function validateFormalCallIds(messages: Iterable<StreamIdentityMessage>) {
         const owner = streamCallKey(message.messageId, partId),
           existing = owners.get(part.id);
         if (existing && existing !== owner) {
-          throw new Error(`正式工具调用 ID ${part.id} 绑定了多个流身份`);
+          throw new Error(
+            localize("application:timeline.formalCallMultipleStreamParts", { value0: part.id }),
+          );
         }
         owners.set(part.id, owner);
       }

@@ -1,0 +1,57 @@
+{
+  "maintenance": {
+    "transcriptRevisionExhausted": "Transcript 版本已耗尽：{{value0}}"
+  },
+  "sqlite": {
+    "rootDeletionRejected": "拒绝删除磁盘根目录：{{value0}}",
+    "initializationScriptUnsupported": "SQLite 数据库不支持初始化脚本执行"
+  },
+  "session": {
+    "hookMissing": "Hook 不存在：{{value0}}",
+    "modelPrefixSnapshotMissing": "会话缺少模型前缀快照",
+    "apiKeyEnvironmentMissing": "当前模型配置没有为会话锁定的远程模型提供 API Key 环境变量",
+    "composerDraftSaveFailed": "Composer 草稿保存失败：{{value0}}",
+    "newDraftSaveFailed": "新建会话草稿保存失败",
+    "touchRevisionExhausted": "Transcript 版本已耗尽：{{value0}}",
+    "inputTouchFailed": "队列不存在或 Transcript 版本已耗尽：{{value0}}",
+    "revisionInvalid": "Transcript 版本无效：{{value0}}",
+    "controlRevisionExhausted": "Transcript 版本已耗尽：{{value0}}",
+    "stepControlRevisionExhausted": "Transcript 版本已耗尽：{{value0}}"
+  },
+  "restoration": {
+    "checkpointHeadConflict": "checkpoint head 冲突：{{value0}}",
+    "pendingWriteExpired": "checkpoint pending write 已过期：{{value0}}"
+  },
+  "transcript": {
+    "reasoningSourceChanged": "思维链原文已发生变化：{{value0}}",
+    "reasoningMessageMissing": "思维链消息不存在：{{value0}}",
+    "streamCursorUnsafe": "流式事件游标超出安全整数范围：{{value0}}",
+    "toolStreamIdentityDuplicate": "工具调用 {{value0}} 绑定了多个流身份",
+    "toolEventCallIdMissing": "工具{{value0}}事件缺少调用 ID",
+    "toolOutputMissing": "工具完成事件缺少输出：{{value0}}",
+    "formalCallStreamIdentityDuplicate": "正式工具调用 ID {{value0}} 绑定了多个流身份",
+    "streamEventInvalid": "持久化流式事件无效"
+  },
+  "messages": {
+    "titleCallInvalid": "标题调用记录无效：{{value0}}",
+    "foreignUserMessage": "用户消息属于其他会话：{{value0}}",
+    "queueIdInvalid": "用户消息 Queue ID 无效：{{value0}}",
+    "positionUnavailable": "无法分配消息位置",
+    "typeUnsupported": "不支持持久化消息类型：{{value0}}",
+    "tokenTotalUnsafe": "消息总 token 数超出安全整数范围",
+    "persistentIdMissing": "LangChain 消息缺少持久化 ID"
+  },
+  "execution": {
+    "controlRevisionExhausted": "Transcript 版本已耗尽：{{value0}}",
+    "runMissingForRead": "执行轮次不存在：{{value0}}",
+    "runMissingForUpdate": "执行轮次不存在：{{value0}}",
+    "inputClaimConflict": "输入认领冲突：{{value0}}"
+  },
+  "indexing": {
+    "crossQueueStream": "文件链接流跨越多个队列：{{value0}}",
+    "nonStringEventPayload": "文本流事件内容不是字符串",
+    "offsetOutOfRange": "文件链接索引超出文本范围：{{value0}}",
+    "tooManyUnits": "文件链接索引单元多于消息文本：{{value0}}",
+    "textMismatch": "文件链接索引与消息文本不一致：{{value0}}"
+  }
+}

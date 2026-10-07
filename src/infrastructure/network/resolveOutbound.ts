@@ -1,4 +1,5 @@
 import { type ProxyConfig, ProxyResolver } from "@vscode/os-proxy-resolver";
+import { localize } from "../../i18n/server";
 
 type NativeResolver = Pick<
   ProxyResolver,
@@ -30,7 +31,7 @@ export class OutboundRouting {
     }
     const [selected] = await state.resolver.resolve(url.href);
     if (!selected) {
-      throw new Error("系统代理解析未返回连接方式");
+      throw new Error(localize("network:proxy.connectionMethodMissing"));
     }
     if (selected.kind === "direct") {
       return undefined;
@@ -39,7 +40,7 @@ export class OutboundRouting {
       return configuredProxy;
     }
     if (!selected.host) {
-      throw new Error("系统代理解析未返回代理地址");
+      throw new Error(localize("network:proxy.addressMissing"));
     }
     return normalizeProxy(selected.kind === "socks" ? `socks5://${selected.host}` : selected.host);
   }
@@ -64,13 +65,17 @@ function normalizeProxy(value: string) {
   try {
     url = new URL(value.includes("://") ? value : `http://${value}`);
   } catch {
-    throw new Error("代理地址无效，请检查系统设置或代理环境变量");
+    throw new Error(localize("network:proxy.addressInvalid"));
   }
   if (!["http:", "https:", "socks:", "socks5:"].includes(url.protocol)) {
-    throw new Error(`不支持的代理协议：${url.protocol}`);
+    throw new Error(
+      localize("network:proxy.protocolUnsupported", {
+        value0: url.protocol,
+      }),
+    );
   }
   if (!url.hostname || (url.pathname !== "" && url.pathname !== "/") || url.search || url.hash) {
-    throw new Error("代理地址应只包含协议、认证信息、主机与端口");
+    throw new Error(localize("network:proxy.addressHasUnexpectedParts"));
   }
   return url.href;
 }
@@ -79,14 +84,18 @@ async function inspectConfiguration(resolver: NativeResolver) {
   for (const source of ["wpadDhcp", "wpadDns", "configuredPac"] as const) {
     const status = config[source];
     if (status.state === "error-discovery" || status.state === "error-download") {
-      throw new Error(`系统代理配置解析失败：${source}`, {
+      throw new Error(localize("network:proxy.configurationInvalid", { value0: source }), {
         cause: new Error(status.error ?? status.state),
       });
     }
   }
   for (const value of Object.values(config.environment)) {
     if (value?.error) {
-      throw new Error(`代理环境变量无效：${value.variable}`);
+      throw new Error(
+        localize("network:proxy.environmentInvalid", {
+          value0: value.variable,
+        }),
+      );
     }
   }
 }

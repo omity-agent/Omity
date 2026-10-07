@@ -9,11 +9,12 @@ import {
 } from "../../settings/resilience";
 import { APICallError } from "@ai-sdk/provider";
 import isNetworkError from "is-network-error";
+import { localize } from "../i18n/server";
 
 export class ModelEmptyResponseError extends Error {
   override readonly name = "ModelEmptyResponseError";
   constructor() {
-    super("模型 API 没有返回文本或工具调用");
+    super(localize("runtime:model.outputMissing"));
   }
 }
 export function isRetryableModelError(error: unknown): boolean {

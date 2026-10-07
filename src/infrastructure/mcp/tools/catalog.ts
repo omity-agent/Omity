@@ -14,6 +14,7 @@ import { McpClientPool } from "../client/pool";
 import type { SessionPlaceholders } from "../../configuration/placeholders";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { loadServerTools } from "../loadServers";
+import { localize } from "../../../i18n/server";
 import { omit } from "es-toolkit";
 import { renameMcpTools } from "./descriptions";
 import { sessionModelTools } from "./freeform";
@@ -56,7 +57,7 @@ async function initializeCatalog(
       ? readSessionMcpConfiguration(context, snapshot)
       : readProfileMcpConfiguration(context, options.serverOverrides);
     if (!configuration) {
-      logger.info("MCP 配置不存在，跳过工具加载");
+      logger.info(localize("mcp:catalog.configurationMissing"));
       return emptyMcp(emptyMcpConfiguration(), snapshot);
     }
     return await loadMcpConfiguration(configuration, logger, context, options, snapshot);
@@ -77,7 +78,7 @@ async function loadMcpConfiguration(
   const names = Object.keys(configuration.mcpServers),
     builtInTools = loadBuiltInTools(configuration.toolboxes, options);
   if (names.length === 0 && builtInTools.length === 0) {
-    logger.info("没有已启用的 MCP 服务器，Agent 将不带工具运行");
+    logger.info(localize("mcp:catalog.noEnabledServers"));
     return emptyMcp(configuration, snapshot);
   }
   return connectMcp(
@@ -99,7 +100,7 @@ async function connectMcp(
   cwd: string,
   snapshot?: McpToolSnapshot,
 ): Promise<LoadedMcp> {
-  const end = logger.child("MCP 工具加载");
+  const end = logger.child(localize("mcp:catalog.loadingTools"));
   let pool: McpClientPool | undefined;
   try {
     const connections = Object.fromEntries(
@@ -135,7 +136,7 @@ async function connectMcp(
             tools: namedTools,
           },
       { freeformToolParameters, tools } = configured;
-    logger.info("已加载 MCP 工具", {
+    logger.info(localize("mcp:catalog.toolsLoaded"), {
       servers: names,
       tools: tools.map((tool) => tool.name),
     });

@@ -16,6 +16,7 @@ import { copyHookUsage } from "../hooks/storage/usage";
 import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
 import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../i18n/server";
 import { randomUUID } from "node:crypto";
 import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
 import { writeComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
@@ -73,7 +74,9 @@ export function forkDatabaseBeforeMessage(options: ForkOptions) {
 }
 function assertForkPoint(db: Database, sessionId: string, messageId: number) {
   if (!Number.isSafeInteger(messageId) || messageId <= 0) {
-    throw new Error(`Fork 消息 ID 无效：${messageId.toString()}`);
+    throw new Error(
+      localize("application:fork.messageIdInvalid", { value0: messageId.toString() }),
+    );
   }
   const row = cachedQuery<MessageRow>(
     db,
@@ -82,10 +85,13 @@ function assertForkPoint(db: Database, sessionId: string, messageId: number) {
 	     WHERE m.session_id = ? AND m.id = ? AND m.position IS NOT NULL`,
   ).get(sessionId, messageId);
   if (!row) {
-    throw new DomainError("FORK_MESSAGE_NOT_FOUND", `Fork 消息不存在：${messageId.toString()}`);
+    throw new DomainError(
+      "FORK_MESSAGE_NOT_FOUND",
+      localize("application:fork.messageMissing", { value0: messageId.toString() }),
+    );
   }
   if (storedMessageType(row.message_json) !== "human") {
-    throw new Error("只能从用户消息创建 Fork");
+    throw new Error(localize("application:fork.userMessageRequired"));
   }
   return row;
 }
@@ -107,7 +113,7 @@ function insertMessages(
   const lastUserIndex = messages.findLastIndex(({ message }) => HumanMessage.isInstance(message)),
     lastUser = messages[lastUserIndex]?.message;
   if (!lastUser) {
-    throw new Error("Fork 历史缺少用户输入");
+    throw new Error(localize("application:fork.userInputMissing"));
   }
   const runId = createRunRecord(db, sessionId, "paused"),
     inputId = Number(
@@ -139,7 +145,7 @@ function insertMessages(
 function storedMessageType(value: string) {
   const parsed = JSON.parse(value) as unknown;
   if (!isRecord(parsed) || typeof parsed["type"] !== "string") {
-    throw new Error("消息记录无效");
+    throw new Error(localize("application:fork.messageInvalid"));
   }
   return parsed["type"];
 }

@@ -20,6 +20,7 @@ import { FileLinkMenu } from "./FileLink/Menu";
 import type { FilePathMatch } from "../../../fileLinks/types";
 import { HighlightedCode } from "./HighlightedCode";
 import { MarkdownSource } from "./Markdown/Source";
+import { localize } from "../i18n";
 import { markdownPlugins } from "../../../../settings/rendering";
 import remarkBreaks from "remark-breaks";
 import { useMarkdownSource } from "./Markdown/DisplayMode";
@@ -165,7 +166,7 @@ const components = {
 function useMarkdownRenderContext() {
   const context = useContext(MarkdownContext);
   if (!context) {
-    throw new Error("Markdown 渲染组件缺少上下文");
+    throw new Error(localize("frontend:markdown.contextMissing"));
   }
   return context;
 }

@@ -1,6 +1,7 @@
 import { type Dispatcher, WebSocket } from "undici/index.js";
 import { type OutboundFetch, explicitHeaderDispatcher } from "./explicitHeaders";
 import { SocketHandshake, registerHandshakeChannels } from "./handshakeChannels";
+import { localize } from "../../i18n/server";
 import { websocketHandshakeHeaders } from "../../../settings/networking";
 
 interface OutboundSocket {
@@ -15,7 +16,7 @@ export function registerSocketTransport(fetch: OutboundFetch, connect: SocketCon
 export function openOutboundSocket(url: URL, headers: Headers) {
   const connect = connectors.get(globalThis.fetch);
   if (!connect) {
-    throw new Error("WebSocket 请求需要先安装统一出站网络层");
+    throw new Error(localize("network:websocket.layerMissing"));
   }
   return connect(url, headers);
 }
@@ -40,7 +41,7 @@ export function createSocketTransport(dispatcher: Dispatcher) {
     },
     connect: (url: URL, headers: Headers): OutboundSocket => {
       if (closed) {
-        throw new Error("出站网络已关闭");
+        throw new Error(localize("network:outbound.closed"));
       }
       const handshake = new SocketHandshake(),
         socket = new WebSocket(url, {

@@ -17,6 +17,7 @@ import { extractToolActivity } from "./timeline/tool/extraction";
 import { extractToolImages } from "../runtime/multimodal";
 import { loadFileLinkUnits } from "../infrastructure/database/records/transcript/fileLinks";
 import { loadReasoningTranslations } from "../infrastructure/database/records/transcript/reasoningTranslations";
+import { localize } from "../i18n/server";
 import { modelTokenUsage } from "./timeline/tokenCounts";
 import { prependInstructions } from "./timeline/build/instructions";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
@@ -56,7 +57,7 @@ function toDisplayMessage(row: ReturnType<typeof transcriptMessageRows>[number])
     content = contentParts?.join("") ?? contentToText(message.content),
     copyContent = message.type === "ai" ? messageContentToText(message) : content;
   if (role === "tool" && !ToolMessage.isInstance(message)) {
-    throw new Error("工具消息类型无效");
+    throw new Error(localize("application:transcript.toolMessageInvalid"));
   }
   return {
     id: row.id,
@@ -88,5 +89,7 @@ function messageRole(message: BaseMessage): DisplayMessage["role"] {
   if (message.type === "tool") {
     return "tool";
   }
-  throw new Error(`不支持显示消息类型：${message.type}`);
+  throw new Error(
+    localize("application:transcript.messageTypeUnsupported", { value0: message.type }),
+  );
 }

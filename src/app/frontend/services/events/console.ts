@@ -1,11 +1,11 @@
 import type { BrowserWarning, SessionFailure, SessionInfo } from "../../../events/contracts";
+import { localize } from "../../i18n";
 import { summarizeError } from "../../../../failures/details";
-import { t } from "i18next";
 
 export function restoreSessionConsole(sessions: SessionInfo[]) {
   for (const session of sessions) {
     if (session.error) {
-      console.info(t("diagnostics:restoredSessionFailure"), {
+      console.info(localize("frontend:session.restoredFailure"), {
         error: summarizeError(session.error),
         sessionId: session.id,
       });
@@ -13,7 +13,7 @@ export function restoreSessionConsole(sessions: SessionInfo[]) {
   }
 }
 export function reportSessionFailure(failure: SessionFailure) {
-  console.error(t("diagnostics:sessionFailure"), {
+  console.error(localize("frontend:session.failure"), {
     error: summarizeError(failure.error),
     sessionId: failure.sessionId,
   });

@@ -1,6 +1,7 @@
 import { DomainError } from "../../../errors";
 import { emptyAs } from "../../configuration/settings/values";
 import { isPlainObject as isRecord } from "es-toolkit";
+import { localize } from "../../../i18n/server";
 import { mcpServerSchema } from "./connections";
 import { z } from "zod";
 
@@ -24,7 +25,12 @@ export function applyServerOverrides(
   const servers = isRecord(value) && isRecord(value["mcpServers"]) ? value["mcpServers"] : {};
   for (const name of Object.keys(overrides)) {
     if (!Object.hasOwn(servers, name)) {
-      throw new DomainError("MCP_SELECTION_INVALID", `MCP 服务器不存在：${name}`);
+      throw new DomainError(
+        "MCP_SELECTION_INVALID",
+        localize("mcp:configuration.serverMissing", {
+          value0: name,
+        }),
+      );
     }
   }
   return {

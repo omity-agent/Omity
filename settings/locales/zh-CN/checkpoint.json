@@ -1,0 +1,13 @@
+{
+  "identity": {
+    "threadIdMustBeRunId": "thread_id 必须是执行轮次 ID",
+    "runIdUnsafe": "执行轮次 ID 超出安全整数范围",
+    "fieldMustBeString": "{{value0}} 必须是字符串",
+    "historyQueryUnsupported": "当前恢复存储不支持历史 checkpoint 查询"
+  },
+  "saver": {
+    "checkpointUnavailable": "历史 checkpoint 不可用：{{value0}}",
+    "metadataTypeMismatch": "checkpoint 与 metadata 的序列化类型不一致",
+    "idMissing": "缺少 checkpoint_id"
+  }
+}
