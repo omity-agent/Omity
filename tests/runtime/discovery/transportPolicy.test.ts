@@ -1,36 +1,40 @@
 import { expect, test } from "bun:test";
-import { createCodexOAuthFetch } from "openai-codex-oauth";
+import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
+import { createOAuthFile } from "../../infrastructure/openai/authSessionFixture";
+import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { restrictedModelFetch } from "../../../src/agent/model/restrictedFetch";
 import { z } from "zod";
 
 test("Codex OAuth preserves explicit tool restrictions and hosted discovery", async () => {
+  using auth = await createOAuthFile({ accessToken: "local-test", accountId: "local-account" });
   const requests: Record<string, unknown>[] = [],
     server = Bun.serve({
-      async fetch(request) {
+      fetch(request, listener) {
         expect(request.headers.get("authorization")).toBe("Bearer local-test");
-        requests.push(z.record(z.string(), z.unknown()).parse(await request.json()));
-        return Response.json({ accepted: true });
+        return listener.upgrade(request) ? undefined : new Response(null, { status: 404 });
       },
       hostname: "127.0.0.1",
       port: 0,
-    }),
-    fetch = restrictedModelFetch(
-      "responses",
-      createCodexOAuthFetch({
-        baseURL: server.url.href,
-        originator: false,
-        tokens: {
-          accessToken: "local-test",
-          accountId: "local-account",
-          expiresAt: Date.now() + 3_600_000,
-          refreshToken: "unused-test-token",
+      websocket: {
+        message(socket, data) {
+          requests.push(z.record(z.string(), z.unknown()).parse(JSON.parse(String(data))));
+          socket.send(
+            JSON.stringify({ response: { id: "tool-policy" }, type: "response.completed" }),
+          );
+          socket.close(1000);
         },
-      }),
-    ),
+      },
+    }),
+    runtime = createNetworkRuntime(async () => undefined),
+    previousFetch = globalThis.fetch,
+    connection = createCodexConnection({ authFilePath: auth.path, codexVersion: "0.154.4" }),
+    fetch = restrictedModelFetch("responses", createResponsesWebsocketFetch(connection.websocket)),
     tools = [
       { execution: "server", type: "tool_search" },
       { defer_loading: true, name: "find_file", parameters: { type: "object" }, type: "function" },
     ];
+  globalThis.fetch = runtime.fetch;
   try {
     for (const declaredTools of [[], tools]) {
       const response = await fetch(new URL("responses", server.url), {
@@ -38,12 +42,13 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
           input: [],
           instructions: "test",
           model: "test",
+          store: false,
           tools: declaredTools,
         }),
         headers: { "content-type": "application/json" },
         method: "POST",
       });
-      expect(await response.json()).toEqual({ accepted: true });
+      expect(await response.text()).toContain("event: response.completed");
     }
     expect(requests).toEqual([
       {
@@ -51,12 +56,25 @@ test("Codex OAuth preserves explicit tool restrictions and hosted discovery", as
         instructions: "test",
         model: "test",
         store: false,
+        stream: true,
         tool_choice: "none",
         tools: [],
+        type: "response.create",
       },
-      { input: [], instructions: "test", model: "test", store: false, tool_choice: "auto", tools },
+      {
+        input: [],
+        instructions: "test",
+        model: "test",
+        store: false,
+        stream: true,
+        tool_choice: "auto",
+        tools,
+        type: "response.create",
+      },
     ]);
   } finally {
+    globalThis.fetch = previousFetch;
+    await runtime.close();
     await server.stop(true);
   }
 });

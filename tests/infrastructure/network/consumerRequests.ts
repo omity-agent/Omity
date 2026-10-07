@@ -1,10 +1,17 @@
+import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 import { installNetworking } from "../../../src/infrastructure/network/installNetworking";
+import { openaiCredentials } from "@openai-oauth/local";
 import { testSettings } from "../../support/settings";
 
 const closeNetworking = installNetworking();
 try {
+  using auth = await createOAuthFile({
+    accessToken: createTestJwt({ exp: 1 }),
+    refreshToken: "test-refresh-token",
+  });
   const { buildAiModel } = await import("../../../src/agent/model/provider"),
-    { createCodexOAuthFetch } = await import("openai-codex-oauth"),
+    { createCodexConnection } = await import("../../../src/infrastructure/openai/oauthConnection"),
+    { createResponsesWebsocketFetch } = await import("../../../src/agent/model/responsesWebsocket"),
     { McpClientPool } = await import("../../../src/infrastructure/mcp/client/pool"),
     { Logger } = await import("../../../src/infrastructure/logging/logger"),
     settings = testSettings();
@@ -12,20 +19,21 @@ try {
   const result = await buildAiModel(settings).doGenerate({
       prompt: [{ content: [{ text: "test proxy", type: "text" }], role: "user" }],
     }),
-    codex = createCodexOAuthFetch({
-      baseURL: "http://codex.invalid",
-      tokenUrl: "http://auth.invalid/token",
-      tokens: {
-        accessToken: "expired-test-token",
-        accountId: "test-account",
-        expiresAt: 1,
-        refreshToken: "test-refresh-token",
+    connection = createCodexConnection({
+      codexVersion: "0.154.4",
+      credentials: openaiCredentials({
+        authFilePath: auth.path,
+        fetch: globalThis.fetch,
+        tokenUrl: "http://auth.invalid/token",
+      }),
+    }),
+    response = await createResponsesWebsocketFetch(connection.websocket)(
+      "http://codex.invalid/responses",
+      {
+        body: JSON.stringify({ input: [], model: "test" }),
+        method: "POST",
       },
-    }),
-    response = await codex("http://codex.invalid/responses", {
-      body: JSON.stringify({ input: [], model: "test" }),
-      method: "POST",
-    }),
+    ),
     pool = new McpClientPool(
       {
         fixture: {

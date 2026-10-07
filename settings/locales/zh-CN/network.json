@@ -2,13 +2,8 @@
   "cloudflareCookieInvalid": "Codex 收到无法解析的 Cloudflare Cookie，已忽略",
   "cloudflareCookieScopeInvalid": "Codex 收到无效作用域的 Cloudflare Cookie，已忽略",
   "codex": {
-    "preconnectUnsupported": "Codex 不支持绕过统一代理的 preconnect",
-    "accountIdMissing": "Codex OAuth 缺少 ChatGPT Account ID",
-    "accessTokenMissing": "Codex OAuth 缺少 access token",
-    "accessTokenRefreshFailed": "Codex OAuth access token 已过期且刷新失败",
-    "latestVersionFetchFailed": "从 npm 获取 Codex 最新版本失败：HTTP {{value0}}",
-    "redirectLimitExceeded": "Codex 请求重定向次数超过上游限制",
-    "redirectProtocolUnsupported": "Codex 请求重定向到了不支持的协议"
+    "sessionMissing": "未找到 Codex OAuth 会话",
+    "latestVersionFetchFailed": "从 npm 获取 Codex 最新版本失败：HTTP {{value0}}"
   },
   "outbound": {
     "closed": "出站网络已关闭",

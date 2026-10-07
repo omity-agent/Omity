@@ -12,13 +12,20 @@ const registeredFetches = new WeakMap<object, OutboundFetch>();
 export function registerExplicitFetch(fetch: OutboundFetch) {
   registeredFetches.set(fetch, fetch);
 }
-export const fetchWithExplicitHeaders: OutboundFetch = (input, init) => {
-  const fetch = registeredFetches.get(globalThis.fetch);
-  if (!fetch) {
-    throw new Error(localize("network:outbound.layerMissing"));
-  }
-  return fetch(input, init, "explicit");
-};
+export const fetchWithExplicitHeaders: typeof globalThis.fetch = Object.assign(
+  (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetch = registeredFetches.get(globalThis.fetch);
+    if (!fetch) {
+      throw new Error(localize("network:outbound.layerMissing"));
+    }
+    return fetch(input, init, "explicit");
+  },
+  {
+    preconnect() {
+      throw new Error(localize("network:outbound.preconnectUnsupported"));
+    },
+  },
+);
 export function explicitHeaderDispatcher(
   dispatcher: Dispatcher,
   headers: Headers,

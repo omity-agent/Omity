@@ -33,6 +33,8 @@
     "@lezer/highlight": "latest",
     "@modelcontextprotocol/client": "latest",
     "@modelcontextprotocol/sdk": "latest",
+    "@openai-oauth/core": "latest",
+    "@openai-oauth/local": "latest",
     "@optique/core": "latest",
     "@optique/run": "latest",
     "@park-ui/panda-preset": "latest",
@@ -66,7 +68,6 @@
     "magika": "latest",
     "mitt": "latest",
     "nanoid": "latest",
-    "openai-codex-oauth": "latest",
     "p-map": "latest",
     "pathprobe": "latest",
     "race-signal": "latest",
@@ -116,9 +117,6 @@
     "postcss": "latest",
     "unified": "latest",
     "vite": "latest"
-  },
-  "patchedDependencies": {
-    "openai-codex-oauth@1.0.1": "patches/openai-codex-oauth@1.0.1.patch"
   },
   "trustedDependencies": [
     "@parcel/watcher",

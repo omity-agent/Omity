@@ -2,7 +2,7 @@ import type { LanguageModelV4CallOptions, SharedV4ProviderOptions } from "@ai-sd
 import type { ModelApi, ModelSettings, Settings } from "../../types";
 import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createCodexClientFields } from "../../infrastructure/openai/codexAuthentication";
+import { createCodexConnection } from "../../infrastructure/openai/oauthConnection";
 import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createResponsesWebsocketFetch } from "./responsesWebsocket";
@@ -137,11 +137,11 @@ function configuredModelApi(model: ModelSettings): ModelApi {
 }
 function providerOptions(model: ModelSettings, codexVersion?: string) {
   if (model.adapter === "codex") {
-    const fields = createCodexClientFields({ codexVersion });
+    const connection = createCodexConnection({ codexVersion });
     return {
-      apiKey: fields.apiKey,
-      baseURL: fields.configuration.baseURL,
-      fetch: restrictedModelFetch("responses", createResponsesWebsocketFetch(fields.websocket)),
+      apiKey: connection.apiKey,
+      baseURL: connection.baseURL,
+      fetch: restrictedModelFetch("responses", createResponsesWebsocketFetch(connection.websocket)),
     };
   }
   const apiKey = process.env[model.apiKeyEnv];

@@ -5,7 +5,7 @@ import { startRecordingProxy } from "./localProxyFixture";
 test("model, Codex refresh and HTTP MCP requests all use the installed network policy", async () => {
   const paths: string[] = [],
     target = Bun.serve({
-      async fetch(request) {
+      async fetch(request, server) {
         const { pathname } = new URL(request.url);
         paths.push(pathname);
         if (pathname === "/chat/completions") {
@@ -32,7 +32,7 @@ test("model, Codex refresh and HTTP MCP requests all use the installed network p
         }
         if (pathname === "/responses") {
           expect(request.headers.get("authorization")).toBe("Bearer fresh-test-token");
-          return new Response("codex-ok");
+          return server.upgrade(request) ? undefined : new Response(null, { status: 404 });
         }
         if (pathname !== "/mcp") {
           return new Response(null, { status: 404 });
@@ -70,6 +70,20 @@ test("model, Codex refresh and HTTP MCP requests all use the installed network p
         });
       },
       port: 0,
+      websocket: {
+        message(socket) {
+          socket.send(
+            JSON.stringify({
+              response: {
+                id: "proxy-codex",
+                output: [{ content: [{ text: "codex-ok", type: "output_text" }], type: "message" }],
+              },
+              type: "response.completed",
+            }),
+          );
+          socket.close(1000);
+        },
+      },
     }),
     proxy = await startRecordingProxy(target.port!);
   try {

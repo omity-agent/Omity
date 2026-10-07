@@ -5,7 +5,7 @@ import { z } from "zod";
 const versionSchema = z.string().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u),
   packageMetadataSchema = z.object({ version: versionSchema });
 type CodexVersionFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-export type CodexVersionResolver = () => Promise<string>;
+type CodexVersionResolver = () => Promise<string>;
 
 export async function fetchLatestCodexVersion(fetcher: CodexVersionFetch = globalThis.fetch) {
   const response = await fetcher(codexProtocol.npmLatestUrl, {

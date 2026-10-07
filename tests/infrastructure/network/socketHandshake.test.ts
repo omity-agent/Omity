@@ -1,19 +1,30 @@
+import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 import { expect, test } from "bun:test";
+import { CloudflareCookieStore } from "../../../src/infrastructure/openai/cloudflareStore";
 import { captureError } from "../../../src/failures/details";
-import { createCodexClientFields } from "../../../src/infrastructure/openai/codexAuthentication";
+import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { isPlainObject } from "es-toolkit";
 import { startRecordingProxy } from "./localProxyFixture";
 
 test("Codex WebSocket uses the selected proxy and the official wire protocol", async () => {
+  using auth = await createOAuthFile({
+    idToken: createTestJwt({
+      "https://api.openai.com/auth": { chatgpt_account_is_fedramp: true },
+    }),
+  });
   let handshakeHeaders: Headers | undefined;
   const frames: Record<string, unknown>[] = [],
     destinations: string[] = [],
     target = Bun.serve({
       fetch(request, server) {
         handshakeHeaders = request.headers;
-        return server.upgrade(request) ? undefined : new Response(null, { status: 404 });
+        return server.upgrade(request, {
+          headers: { "set-cookie": "__cf_bm=updated; Secure; HttpOnly; Path=/" },
+        })
+          ? undefined
+          : new Response(null, { status: 404 });
       },
       port: 0,
       websocket: {
@@ -36,28 +47,26 @@ test("Codex WebSocket uses the selected proxy and the official wire protocol", a
       return proxy.url.replace("://", "://user:pass@");
     }),
     previousFetch = globalThis.fetch,
-    fields = createCodexClientFields({
+    cookieStore = new CloudflareCookieStore(),
+    connection = createCodexConnection({
+      authFilePath: auth.path,
       codexVersion: "0.154.4",
-      tokenStore: {
-        load: () =>
-          Promise.resolve({
-            accessToken: "codex-test-token",
-            accountId: "test-account",
-            expiresAt: Date.now() + 3_600_000,
-          }),
-        save: () => Promise.resolve(),
-      },
+      cookieStore,
     });
+  cookieStore.store(`${connection.baseURL}/responses`, [
+    "__cf_bm=initial; Secure; HttpOnly; Path=/",
+  ]);
   globalThis.fetch = runtime.fetch;
   try {
-    const response = await createResponsesWebsocketFetch(async () => ({
-      ...(await fields.websocket()),
-    }))("http://socket.invalid/responses", {
-      body: JSON.stringify({ input: [], model: "test-model", store: false, stream: true }),
-      headers: { "content-type": "application/json", "session-id": "test-session" },
-      method: "POST",
-      signal: AbortSignal.timeout(2000),
-    });
+    const response = await createResponsesWebsocketFetch(connection.websocket)(
+      "http://socket.invalid/responses",
+      {
+        body: JSON.stringify({ input: [], model: "test-model", store: false, stream: true }),
+        headers: { "content-type": "application/json", "session-id": "test-session" },
+        method: "POST",
+        signal: AbortSignal.timeout(2000),
+      },
+    );
     expect(await response.text()).toContain("event: response.completed");
     expect(destinations).toEqual(["http://socket.invalid/responses"]);
     expect(proxy.methods).toEqual(["GET"]);
@@ -73,6 +82,9 @@ test("Codex WebSocket uses the selected proxy and the official wire protocol", a
     expect(handshakeHeaders?.get("version")).toBe("0.154.4");
     expect(handshakeHeaders?.get("user-agent")).toContain("codex_cli_rs/0.154.4");
     expect(handshakeHeaders?.get("session-id")).toBe("test-session");
+    expect(handshakeHeaders?.get("x-openai-fedramp")).toBe("true");
+    expect(handshakeHeaders?.get("cookie")).toBe("__cf_bm=initial");
+    expect(cookieStore.cookies(`${connection.baseURL}/responses`)).toBe("__cf_bm=updated");
     expect(frames).toEqual([
       {
         input: [],
