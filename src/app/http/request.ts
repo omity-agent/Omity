@@ -9,6 +9,7 @@ import { localize } from "../../i18n/server";
 import { preparationContentSchema } from "../composition/preparation";
 import { requestBodyLimit } from "../../../settings/networking";
 import { safeId } from "../../infrastructure/configuration/sessionPaths";
+import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 import { z } from "zod";
 
 export function limitRequestBody(
@@ -37,6 +38,7 @@ export const preparationDraftBody = composerDraftBody.extend({
   content: preparationContentSchema,
 });
 export const controlBody = z.strictObject({ control: controlCommandSchema });
+export const profileBody = z.strictObject({ profile: settingsProfileNameSchema.optional() });
 export const cancelToolBody = z.strictObject({ toolCallId: z.string().min(1).max(1024) });
 export const answerToolBody = cancelToolBody.extend({ answer: z.unknown() });
 export const fileLinkActionBody = z.strictObject({

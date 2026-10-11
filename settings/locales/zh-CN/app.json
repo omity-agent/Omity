@@ -13,6 +13,7 @@
   "revealFileLink": "在文件夹中显示",
   "profile": "Profile",
   "defaultProfile": "默认",
+  "confirmProfile": "确认 Profile",
   "model": "模型",
   "modelRequired": "请输入模型名称",
   "hooks": "Hooks",

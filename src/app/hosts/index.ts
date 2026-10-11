@@ -27,6 +27,9 @@ export class AppHosts {
   has(sessionId: string) {
     return this.running.has(sessionId);
   }
+  isBound(sessionId: string) {
+    return this.running.has(sessionId) || this.scheduled.has(sessionId);
+  }
   error(sessionId: string) {
     return this.errors.get(sessionId) ?? null;
   }

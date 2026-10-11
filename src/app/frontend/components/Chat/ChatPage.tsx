@@ -1,7 +1,7 @@
 import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import { type ComposerDraftTarget, composerDraftKey } from "../../services/composerDrafts";
-import type { Control, SessionStatus } from "../../../../types";
+import { type Control, type SessionStatus, isRunningStatus } from "../../../../types";
 import type { DisplayQueue, TimelineMessage } from "../../../timeline";
 import { Composer } from "./Composer";
 import { FileLinkProvider } from "../FileLink/context";
@@ -45,6 +45,8 @@ export function ChatPage({
   draftTarget,
   newSession,
   pausing,
+  profileChangePending = false,
+  profileEditable = false,
   queue,
   recentWorkspaces,
   availableProfiles,
@@ -77,6 +79,8 @@ export function ChatPage({
   draftTarget: ComposerDraftTarget;
   newSession: boolean;
   pausing: boolean;
+  profileChangePending?: boolean;
+  profileEditable?: boolean;
   queue: DisplayQueue[];
   recentWorkspaces: string[];
   availableProfiles: string[];
@@ -165,6 +169,10 @@ export function ChatPage({
         draft={draft}
         draftSaveDelayMs={draftSaveDelayMs}
         draftTarget={draftTarget}
+        availableProfiles={profileEditable ? availableProfiles : undefined}
+        currentProfile={profileEditable ? selectedProfile : undefined}
+        profileChangeDisabled={profileChangePending || isRunningStatus(sessionStatus)}
+        profileChangePending={profileChangePending}
         key={composerDraftKey(draftTarget)}
         predictions={
           sessionStatus === "idle" && !predictionsQuery.isFetching && !predictionsQuery.isError
@@ -177,6 +185,7 @@ export function ChatPage({
         onControl={onControl}
         onDelete={onDelete}
         onAnswer={onAnswer}
+        onProfileChange={profileEditable ? onProfileChange : undefined}
         onSend={onSend}
       />
     </div>

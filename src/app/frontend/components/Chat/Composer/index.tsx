@@ -25,7 +25,9 @@ const emptyPredictions: readonly string[] = [];
 export function Composer({
   disabled,
   attachmentSettings,
+  availableProfiles,
   cacheHitWarningRatio,
+  currentProfile,
   draft,
   draftSaveDelayMs,
   draftTarget,
@@ -34,11 +36,14 @@ export function Composer({
   controlDisabled = false,
   controlState,
   deleteDisabled = false,
+  profileChangeDisabled = false,
+  profileChangePending = false,
   stepAvailable = false,
   usage,
   onControl,
   onDelete,
   onAnswer,
+  onProfileChange,
   onSend,
   askUser,
 }: ComposerProps) {
@@ -181,10 +186,14 @@ export function Composer({
         />
       )}
       <Actions
+        availableProfiles={availableProfiles}
         cacheHitWarningRatio={cacheHitWarningRatio}
         controlDisabled={controlDisabled || loading || submitting}
         controlState={controlState}
+        currentProfile={currentProfile}
         deleteDisabled={deleteDisabled}
+        profileChangeDisabled={profileChangeDisabled || loading || submitting}
+        profileChangePending={profileChangePending}
         sessionId={stableDraftTarget.kind === "session" ? stableDraftTarget.sessionId : undefined}
         stepAvailable={stepAvailable}
         submitLabel={askUser ? t("answer") : t("send")}
@@ -192,6 +201,7 @@ export function Composer({
         usage={usage}
         onControl={onControl ? handleControl : undefined}
         onDelete={onDelete ? handleDelete : undefined}
+        onProfileChange={onProfileChange}
       />
     </form>
   );

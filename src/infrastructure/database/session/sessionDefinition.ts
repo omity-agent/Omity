@@ -72,6 +72,18 @@ export function applySessionDefinition(
     model: restoreModel(settings.model, definition.prefix.model),
   };
 }
+export function refreshSessionDefinition(
+  settings: Settings,
+  definition: SessionDefinition,
+): SessionDefinition {
+  return {
+    prefix: {
+      model: snapshotModel(settings.model),
+      systemPrompt: settings.agent.systemPrompt,
+      tools: definition.prefix.tools,
+    },
+  };
+}
 function snapshotModel(settings: ModelSettings): ModelPrefixSettings {
   const shared = {
     model: settings.model,

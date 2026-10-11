@@ -49,6 +49,15 @@ export async function createSession(
 export async function deleteSession(sessionId: string) {
   return request(sessions.$delete(sessionRequest(sessionId)), deletedResponseSchema);
 }
+export async function setSessionProfile(sessionId: string, profile?: string) {
+  return request(
+    sessions.profile.$put({
+      ...sessionRequest(sessionId),
+      json: { profile },
+    }),
+    sessionResponseSchema,
+  );
+}
 export async function clearTemporaryFiles(sessionId: string) {
   return request(
     sessions["temporary-files"].$delete(sessionRequest(sessionId)),

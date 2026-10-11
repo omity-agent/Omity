@@ -9,6 +9,7 @@ export type DomainErrorCode =
   | "SESSION_CONFLICT"
   | "HOST_LEASE_CONFLICT"
   | "INPUT_CLAIM_CONFLICT"
+  | "SESSION_PROFILE_BUSY"
   | "TOOL_NOT_RUNNING"
   | "FORK_MESSAGE_NOT_FOUND"
   | "ATTACHMENT_INVALID"
@@ -32,6 +33,12 @@ export function sessionConflict(sessionId: string) {
   return new DomainError(
     "SESSION_CONFLICT",
     localize("errors:session.alreadyExists", { value0: sessionId }),
+  );
+}
+export function sessionProfileBusy(sessionId: string) {
+  return new DomainError(
+    "SESSION_PROFILE_BUSY",
+    localize("errors:session.profileBusy", { value0: sessionId }),
   );
 }
 export function toolNotRunning(callId: string) {

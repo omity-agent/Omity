@@ -12,6 +12,7 @@ import { removeSession, useBootstrap, useUserMessages } from "./services/queries
 import { AccessGate } from "./components/Access/AccessGate";
 import { ApplicationFrame } from "./components/Application";
 import { ChatPage } from "./components/Chat/ChatPage";
+import { createProfileChangeHandler } from "./services/profileChange";
 import { pauseRequestPending } from "./components/Chat/actionState";
 import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
@@ -38,6 +39,7 @@ function AuthenticatedApp() {
     [page, setPage] = useState(readPage),
     [pausingSessionId, setPausingSessionId] = useState<string>(),
     [deletingId, setDeletingId] = useState<string>(),
+    [profileChangePending, setProfileChangePending] = useState(false),
     navigate = usePageNavigator(setPage),
     sessions = bootstrap.data?.sessions ?? emptySessions,
     cwd = bootstrap.data?.cwd ?? "",
@@ -97,6 +99,16 @@ function AuthenticatedApp() {
       [userMessages.data],
     ),
     selectSession = useCallback((id: string) => navigate({ id, kind: "session" }), [navigate]),
+    changeProfile = createProfileChangeHandler({
+      activeSession,
+      newSession: currentPage.kind === "new",
+      pendingFork: Boolean(pendingFork),
+      profileChangePending,
+      queryClient,
+      sessionStatus: displayedActiveSession?.status,
+      setNewProfile,
+      setProfileChangePending,
+    }),
     toolActions = useSessionToolActions(activeSession),
     changeControl = useCallback<ChatPageProps["onControl"]>(
       async (control) => {
@@ -173,10 +185,12 @@ function AuthenticatedApp() {
         draftTarget={draftTarget}
         newSession={currentPage.kind === "new"}
         pausing={pausing}
+        profileChangePending={profileChangePending}
+        profileEditable={Boolean(activeSession && !pendingFork)}
         queue={pendingFork ? emptyQueue : transcript.queue}
         recentWorkspaces={workspaces}
         availableProfiles={bootstrap.data?.profiles.available ?? emptyProfiles}
-        selectedProfile={newProfile}
+        selectedProfile={currentPage.kind === "new" ? newProfile : activeSession?.profile}
         sessionStatus={pendingFork ? "paused" : displayedActiveSession?.status}
         translationSettings={bootstrap.data?.frontend.reasoningTranslation}
         view={pendingPreview?.view ?? submissions.view}
@@ -190,7 +204,7 @@ function AuthenticatedApp() {
         onDelete={deleteActiveSession}
         onFork={beginFork}
         onPickWorkspace={pickWorkspacePath}
-        onProfileChange={setNewProfile}
+        onProfileChange={changeProfile}
         onSend={sendSessionMessage}
         onWorkspaceChange={setNewWorkspace}
       />

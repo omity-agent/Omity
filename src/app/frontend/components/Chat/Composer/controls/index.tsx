@@ -5,6 +5,7 @@ import type { ChatControlState } from "../../actionState";
 import { ConfirmAction } from "./ConfirmAction";
 import { ContextUsage } from "../../ContextUsage";
 import type { Control } from "../../../../../../types";
+import { ProfileAction } from "./ProfileAction";
 import { RuntimeControl } from "./RuntimeControl";
 import { SubmitButton } from "./SubmitButton";
 import type { TokenUsage } from "../../../../../timeline";
@@ -12,10 +13,14 @@ import { clearTemporaryFiles } from "../../../../services/client";
 import { useTranslation } from "react-i18next";
 
 export function Actions({
+  availableProfiles,
   cacheHitWarningRatio,
   controlDisabled,
   controlState,
+  currentProfile,
   deleteDisabled,
+  profileChangeDisabled,
+  profileChangePending,
   sessionId,
   submitDisabled,
   submitLabel,
@@ -23,11 +28,16 @@ export function Actions({
   usage,
   onControl,
   onDelete,
+  onProfileChange,
 }: {
+  availableProfiles?: string[];
   cacheHitWarningRatio?: number;
   controlDisabled: boolean;
   controlState?: ChatControlState;
+  currentProfile?: string;
   deleteDisabled: boolean;
+  profileChangeDisabled?: boolean;
+  profileChangePending?: boolean;
   sessionId?: string;
   submitDisabled: boolean;
   submitLabel?: string;
@@ -35,6 +45,7 @@ export function Actions({
   usage?: TokenUsage | null;
   onControl?: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
   onDelete?: () => Promise<void>;
+  onProfileChange?: (profile?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation(),
     cleanup = useCallback(async () => {
@@ -80,6 +91,15 @@ export function Actions({
           controlState={controlState}
           onControl={onControl}
           stepAvailable={stepAvailable}
+        />
+      ) : null}
+      {availableProfiles && onProfileChange ? (
+        <ProfileAction
+          availableProfiles={availableProfiles}
+          currentProfile={currentProfile}
+          disabled={profileChangeDisabled ?? false}
+          pending={profileChangePending ?? false}
+          onChange={onProfileChange}
         />
       ) : null}
       <SubmitButton disabled={submitDisabled} label={submitLabel ?? t("send")} />

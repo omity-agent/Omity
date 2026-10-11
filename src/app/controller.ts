@@ -34,6 +34,7 @@ import { materializeAppFork } from "./runtime/sessionActions";
 import { pickWorkspaceDirectory } from "./workspaceDialog/bridge";
 import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 import { setSessionControl } from "../client";
+import { updateSessionProfile } from "./runtime/sessionProfile";
 
 export class AppController {
   readonly events: AppEvents;
@@ -74,6 +75,25 @@ export class AppController {
     return this.registry.list().map((session) => this.sessionInfo(session));
   }
   sessionOptions = (profile?: string) => availableSessionOptions(this.settingsContext, profile);
+  async updateProfile(sessionId: string, profile?: string) {
+    const session = this.registry.require(sessionId),
+      info = await updateSessionProfile({
+        baseContext: this.settingsContext,
+        clearError: () => this.hosts.clearError(sessionId),
+        currentProfiles: session.profiles,
+        isBound: () => this.hosts.isBound(sessionId),
+        profile,
+        readSession: () => this.sessionInfo(this.registry.refresh(sessionId)),
+        restart: () => this.hosts.startDetached(sessionId, session.workspace, "load"),
+        root: this.appRoot,
+        sessionId,
+        sessionStatus: this.sessionInfo(session).status,
+        stop: () => this.hosts.stop(sessionId),
+        workspace: session.workspace,
+      });
+    this.events.notifySession(info);
+    return info;
+  }
   userMessages() {
     return { messages: loadUserMessages() };
   }

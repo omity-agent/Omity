@@ -10,6 +10,8 @@ export interface ComposerProps {
   disabled: boolean;
   attachmentSettings?: AttachmentSettings;
   cacheHitWarningRatio?: number;
+  availableProfiles?: string[];
+  currentProfile?: string;
   draft?: string;
   draftSaveDelayMs?: number;
   draftTarget: ComposerDraftTarget;
@@ -18,12 +20,15 @@ export interface ComposerProps {
   controlDisabled?: boolean;
   controlState?: ChatControlState;
   deleteDisabled?: boolean;
+  profileChangeDisabled?: boolean;
+  profileChangePending?: boolean;
   stepAvailable?: boolean;
   usage?: TokenUsage | null;
   askUser?: AskUserQuestion | null;
   onControl?: (control: Extract<Control, "running" | "step" | "pause">) => Promise<void>;
   onDelete?: () => Promise<void>;
   onAnswer?: (callId: string, answer: AskUserAnswer) => Promise<void>;
+  onProfileChange?: (profile?: string) => void | Promise<void>;
   onSend: (
     optimistic: OptimisticUser,
     draftRevision: number,

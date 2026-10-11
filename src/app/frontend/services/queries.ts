@@ -77,6 +77,12 @@ export function addSession(queryClient: QueryClient, session: SessionInfo) {
   updateCachedSessions(queryClient, (sessions) => upsertSessionList(sessions, session));
   refreshUserMessages(queryClient);
 }
+export function updateSession(queryClient: QueryClient, session: SessionInfo) {
+  sessionAttentionStore(queryClient).upsert(session);
+  updateCachedSessions(queryClient, (sessions) =>
+    sessions.map((current) => (current.id === session.id ? session : current)),
+  );
+}
 export function removeSession(queryClient: QueryClient, sessionId: string) {
   sessionAttentionStore(queryClient).remove(sessionId);
   updateCachedSessions(queryClient, (sessions) => withoutSession(sessions, sessionId));

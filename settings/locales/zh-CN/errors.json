@@ -1,7 +1,8 @@
 {
   "session": {
     "notFound": "会话不存在：{{value0}}",
-    "alreadyExists": "会话已存在：{{value0}}"
+    "alreadyExists": "会话已存在：{{value0}}",
+    "profileBusy": "会话正在运行，不能切换 Profile：{{value0}}"
   },
   "tool": {
     "notRunning": "工具调用未在运行：{{value0}}"

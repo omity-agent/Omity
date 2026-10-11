@@ -12,6 +12,7 @@ import {
   jsonBody,
   limitRequestBody,
   preparationDraftBody,
+  profileBody,
   reasoningTranslationBody,
 } from "./request";
 import { readMessageForm, readSessionForm } from "./multipart";
@@ -41,6 +42,7 @@ type ApiController = Pick<
   | "saveComposerDraft"
   | "preparationDraft"
   | "savePreparationDraft"
+  | "updateProfile"
   | "sendMessage"
   | "control"
   | "cancelTool"
@@ -91,6 +93,12 @@ export function createApi(controller: ApiController, access?: AccessService) {
     .delete("/api/sessions/:sessionId", async (c) => {
       const deletedSessionId = decodeSessionId(c.req.param("sessionId"));
       return c.json(await controller.deleteSession(deletedSessionId));
+    })
+    .put("/api/sessions/:sessionId/profile", jsonBody(profileBody), async (c) => {
+      const body = c.req.valid("json");
+      return c.json({
+        session: await controller.updateProfile(sessionId(c), body.profile),
+      });
     })
     .delete("/api/sessions/:sessionId/temporary-files", async (c) =>
       c.json(await controller.clearTemporaryFiles(sessionId(c))),

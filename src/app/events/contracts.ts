@@ -8,6 +8,7 @@ export const sessionInfoSchema = z.object({
   createdAt: z.number().int(),
   error: errorDetailsSchema.nullable(),
   id: z.string(),
+  profile: z.string().min(1).optional(),
   status: sessionStatusSchema,
   title: z.string(),
   updatedAt: z.number().int(),

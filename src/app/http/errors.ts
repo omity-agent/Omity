@@ -29,6 +29,7 @@ const domainStatuses: Record<DomainErrorCode, ContentfulStatusCode> = {
   MCP_SELECTION_INVALID: 400,
   SESSION_CONFLICT: 409,
   SESSION_NOT_FOUND: 404,
+  SESSION_PROFILE_BUSY: 409,
   TOOL_NOT_RUNNING: 409,
 };
 export class HttpError extends Error {

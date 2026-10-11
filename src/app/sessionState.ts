@@ -23,12 +23,13 @@ export function projectSession(
   };
 }
 function resolveSessionState(
-  session: Pick<RegisteredSession, "control" | "paused" | "queueRunning" | "error">,
+  session: Pick<RegisteredSession, "control" | "error" | "paused" | "profiles" | "queueRunning">,
   activity: HostActivity,
   hostError: ErrorDetails | null,
 ) {
   return {
     error: hostError ?? session.error,
+    profile: session.profiles.at(-1),
     status: resolveSessionStatus(session, activity, hostError),
   };
 }
