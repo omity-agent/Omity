@@ -41,31 +41,31 @@ export function modelToolDefinitions(
 }
 export function applyMcpToolSnapshot(tools: StructuredToolInterface[], snapshot: McpToolSnapshot) {
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool])),
-    frozenNames = new Set<string>();
-  const frozenTools = snapshot.tools.map((definition) => {
-    if (frozenNames.has(definition.name)) {
-      throw new Error(
-        localize("mcp:definitions.duplicateFrozenTool", {
-          value0: definition.name,
-        }),
-      );
-    }
-    frozenNames.add(definition.name);
-    const tool = toolsByName.get(definition.name);
-    if (!tool) {
-      throw new Error(
-        localize("mcp:definitions.frozenToolMissing", {
-          value0: definition.name,
-        }),
-      );
-    }
-    tool.extras = { ...tool.extras, defer_loading: definition.deferLoading === true };
-    return tool;
-  });
-  const freeformToolParameters = configureFreeformMcpTools(
-    frozenTools,
-    snapshot.tools.filter(({ freeform }) => freeform).map(({ name }) => name),
-  ).parameters;
+    frozenNames = new Set<string>(),
+    frozenTools = snapshot.tools.map((definition) => {
+      if (frozenNames.has(definition.name)) {
+        throw new Error(
+          localize("mcp:definitions.duplicateFrozenTool", {
+            value0: definition.name,
+          }),
+        );
+      }
+      frozenNames.add(definition.name);
+      const tool = toolsByName.get(definition.name);
+      if (!tool) {
+        throw new Error(
+          localize("mcp:definitions.frozenToolMissing", {
+            value0: definition.name,
+          }),
+        );
+      }
+      tool.extras = { ...tool.extras, defer_loading: definition.deferLoading === true };
+      return tool;
+    }),
+    freeformToolParameters = configureFreeformMcpTools(
+      frozenTools,
+      snapshot.tools.filter(({ freeform }) => freeform).map(({ name }) => name),
+    ).parameters;
   return { freeformToolParameters, tools: frozenTools };
 }
 export function emptyMcpToolSnapshot(): McpToolSnapshot {

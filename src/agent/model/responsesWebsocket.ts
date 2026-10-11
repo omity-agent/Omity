@@ -1,5 +1,5 @@
 import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
-import { type FailureEvent, ResponsesWebsocketError } from "./websocketFailure";
+import { type FailureEvent, ResponsesWebsocketError, responseEventError } from "./websocketFailure";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
 import { StreamEvidence } from "./streamEvidence";
 import { isPlainObject } from "es-toolkit";
@@ -116,7 +116,7 @@ export function createResponsesWebsocketFetch(
                 }
                 progress.event(message);
                 if (message["type"] === "error") {
-                  throw message;
+                  throw responseEventError(request.url, body, message);
                 }
                 controller.enqueue(
                   encoder.encode(`event: ${message["type"]}\ndata: ${JSON.stringify(message)}\n\n`),

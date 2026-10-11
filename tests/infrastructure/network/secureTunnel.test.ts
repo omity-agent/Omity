@@ -34,14 +34,14 @@ test("wss:// retains the HTTP proxy's default CONNECT route", async () => {
   globalThis.fetch = runtime.fetch;
   try {
     const response = await createResponsesWebsocketFetch({ apiKey: "test-key" })(
-      "https://secure-socket.invalid/responses",
-      {
-        body: JSON.stringify({ input: [], model: "test-model" }),
-        method: "POST",
-        signal: AbortSignal.timeout(2000),
-      },
-    );
-    const failure: unknown = await response.text().catch((error: unknown) => error);
+        "https://secure-socket.invalid/responses",
+        {
+          body: JSON.stringify({ input: [], model: "test-model" }),
+          method: "POST",
+          signal: AbortSignal.timeout(2000),
+        },
+      ),
+      failure: unknown = await response.text().catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(Error);
     if (!(failure instanceof Error)) {
       throw new Error("CONNECT 拒绝测试没有收到 WebSocket 错误");

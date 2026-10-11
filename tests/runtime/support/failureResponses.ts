@@ -18,7 +18,54 @@ const upstreamError = {
     code: "invalid_request",
     message: "Invalid request",
     type: "invalid_request_error",
+  },
+  usageLimitEvent = {
+    error: {
+      eligible_promo: null,
+      limit_window_minutes: 300,
+      message: "The usage limit has been reached",
+      plan_type: "plus",
+      resets_at: 1_791_720_178,
+      resets_in_seconds: 8783,
+      type: "usage_limit_reached",
+    },
+    status_code: 429,
+    type: "error",
+  },
+  invalidEvent = {
+    code: "invalid_request",
+    message: "Invalid request",
+    param: null,
+    sequence_number: 1,
+    status_code: 400,
+    type: "error",
   };
+export const websocketFailures = [
+  {
+    errorDetails: { close: { code: 1006, wasClean: false }, phase: "stream" },
+    errorName: "ResponsesWebsocketError",
+    event: undefined,
+    message: undefined,
+    name: "an abnormal WebSocket disconnection",
+    retryable: true,
+  },
+  {
+    errorDetails: { data: usageLimitEvent, isRetryable: false, statusCode: 429 },
+    errorName: "AI_APICallError",
+    event: usageLimitEvent,
+    message: usageLimitEvent.error.message,
+    name: "a Codex usage-limit error event",
+    retryable: false,
+  },
+  {
+    errorDetails: { data: invalidEvent, isRetryable: false, statusCode: 400 },
+    errorName: "AI_APICallError",
+    event: invalidEvent,
+    message: invalidEvent.message,
+    name: "a top-level Responses error event",
+    retryable: false,
+  },
+];
 export const providerFailures = [
   {
     errorName: "AI_APICallError",

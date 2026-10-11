@@ -1,14 +1,34 @@
 import { captureError, summarizeError } from "../../failures/details";
 import {
+  nonRetryableApiErrorTypes,
   nonRetryableWebsocketCloseCodes,
   retryableHandshakeStatuses,
 } from "../../../settings/resilience";
+import { APICallError } from "@ai-sdk/provider";
 import type { SocketHandshake } from "../../infrastructure/network/handshakeChannels";
 import type { StreamEvidence } from "./streamEvidence";
 import { handshakeDiagnosticHeaders } from "../../../settings/networking";
 import { localize } from "../../i18n/server";
 import { version as undiciVersion } from "undici/package.json";
+import { z } from "zod";
 
+const responseErrorSchema = z.looseObject({
+    message: z.string().min(1),
+    type: z.string().optional(),
+  }),
+  errorStatusSchema = z.int().min(400).max(599).optional(),
+  responseErrorEventSchema = z.union([
+    z
+      .object({
+        error: responseErrorSchema,
+        status_code: errorStatusSchema,
+        type: z.literal("error"),
+      })
+      .transform((frame) => ({ error: frame.error, statusCode: frame.status_code })),
+    responseErrorSchema
+      .extend({ status_code: errorStatusSchema, type: z.literal("error") })
+      .transform((frame) => ({ error: frame, statusCode: frame.status_code })),
+  ]);
 export interface FailureEvent {
   close?: { code: number; reason: string; wasClean: boolean };
   error?: unknown;
@@ -80,6 +100,18 @@ export class ResponsesWebsocketError extends Error {
     this.timing = snapshot.timing;
     this.transport = current?.snapshot();
   }
+}
+export function responseEventError(url: string, requestBodyValues: unknown, event: unknown) {
+  const { error, statusCode } = responseErrorEventSchema.parse(event);
+  return new APICallError({
+    data: event,
+    isRetryable:
+      error.type !== undefined && nonRetryableApiErrorTypes.has(error.type) ? false : undefined,
+    message: error.message,
+    requestBodyValues,
+    statusCode,
+    url,
+  });
 }
 function describeAttempt(
   attempt: NonNullable<SocketHandshake["current"]>,

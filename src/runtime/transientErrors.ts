@@ -7,7 +7,6 @@ import {
   retryableMessages,
   retryableNames,
 } from "../../settings/resilience";
-import { APICallError } from "@ai-sdk/provider";
 import isNetworkError from "is-network-error";
 import { localize } from "../i18n/server";
 
@@ -23,11 +22,14 @@ export function isRetryableModelError(error: unknown): boolean {
   let retryable = false;
   while (pending.length > 0) {
     const current = pending.pop();
-    if (isNetworkError(current) || (APICallError.isInstance(current) && current.isRetryable)) {
+    if (isNetworkError(current)) {
       retryable = true;
     }
     if (isRecord(current) && !visited.has(current)) {
       visited.add(current);
+      if (current["isRetryable"] === true) {
+        retryable = true;
+      }
       const { type } = current;
       if (typeof type === "string") {
         if (nonRetryableApiErrorTypes.has(type)) {

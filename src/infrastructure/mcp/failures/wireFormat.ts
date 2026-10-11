@@ -27,20 +27,27 @@ const connectionDiagnosticSchema = z.discriminatedUnion("transport", [
     capturedBytes: z.number().int().nonnegative(),
     discardedBytes: z.number().int().nonnegative(),
     text: z.string(),
+  }),
+  mcpFailureSchema = z.strictObject({
+    connection: connectionDiagnosticSchema.optional(),
+    durationMs: z.number().nonnegative().optional(),
+    error: errorDetailsSchema,
+    issues: z.array(z.string()).optional(),
+    process: processDiagnosticSchema.optional(),
+    server: z.string().optional(),
+    stage: z.enum([
+      "configuration",
+      "spawn",
+      "initialize",
+      "list_tools",
+      "customization",
+      "cleanup",
+    ]),
+    stderr: outputDiagnosticSchema.optional(),
+    stdout: outputDiagnosticSchema.optional(),
+    transportErrors: z.array(errorDetailsSchema).optional(),
+    transportErrorsDiscarded: z.number().int().nonnegative().optional(),
   });
-const mcpFailureSchema = z.strictObject({
-  connection: connectionDiagnosticSchema.optional(),
-  durationMs: z.number().nonnegative().optional(),
-  error: errorDetailsSchema,
-  issues: z.array(z.string()).optional(),
-  process: processDiagnosticSchema.optional(),
-  server: z.string().optional(),
-  stage: z.enum(["configuration", "spawn", "initialize", "list_tools", "customization", "cleanup"]),
-  stderr: outputDiagnosticSchema.optional(),
-  stdout: outputDiagnosticSchema.optional(),
-  transportErrors: z.array(errorDetailsSchema).optional(),
-  transportErrorsDiscarded: z.number().int().nonnegative().optional(),
-});
 export const mcpLoadDetailsSchema = z.strictObject({
   failures: z.array(mcpFailureSchema).min(1),
 });

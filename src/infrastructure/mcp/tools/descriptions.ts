@@ -9,8 +9,8 @@ type McpToolDescriptionOverrides = Record<string, string>;
 const sessionDescriptions = new WeakMap<StructuredToolInterface, string>();
 export function renameMcpTools(tools: StructuredToolInterface[], overrides: McpToolNameOverrides) {
   indexMcpTools(tools);
-  const names = new Map(Object.entries(overrides));
-  const finalNames = new Set<string>();
+  const names = new Map(Object.entries(overrides)),
+    finalNames = new Set<string>();
   for (const tool of tools) {
     const name = names.get(tool.name) ?? tool.name;
     if (name === "agent") {
