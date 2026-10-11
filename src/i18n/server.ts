@@ -1,5 +1,5 @@
 import { type TOptions, createInstance } from "i18next";
-import { resources } from "./resources";
+import { resources } from "./resources.ts";
 
 const instance = createInstance();
 void instance.init({

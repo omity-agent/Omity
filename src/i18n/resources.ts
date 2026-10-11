@@ -1,20 +1,20 @@
-import access from "../../settings/locales/zh-CN/access.json";
-import agent from "../../settings/locales/zh-CN/agent.json";
-import app from "../../settings/locales/zh-CN/app.json";
-import application from "../../settings/locales/zh-CN/application.json";
-import build from "../../settings/locales/zh-CN/build.json";
-import checkpoint from "../../settings/locales/zh-CN/checkpoint.json";
-import cli from "../../settings/locales/zh-CN/cli.json";
-import configuration from "../../settings/locales/zh-CN/configuration.json";
-import database from "../../settings/locales/zh-CN/database.json";
-import errors from "../../settings/locales/zh-CN/errors.json";
-import frontend from "../../settings/locales/zh-CN/frontend.json";
-import hooks from "../../settings/locales/zh-CN/hooks.json";
-import http from "../../settings/locales/zh-CN/http.json";
-import mcp from "../../settings/locales/zh-CN/mcp.json";
-import network from "../../settings/locales/zh-CN/network.json";
-import runtime from "../../settings/locales/zh-CN/runtime.json";
-import toolbox from "../../settings/locales/zh-CN/toolbox.json";
+import access from "../../settings/locales/zh-CN/access.json" with { type: "json" };
+import agent from "../../settings/locales/zh-CN/agent.json" with { type: "json" };
+import app from "../../settings/locales/zh-CN/app.json" with { type: "json" };
+import application from "../../settings/locales/zh-CN/application.json" with { type: "json" };
+import build from "../../settings/locales/zh-CN/build.json" with { type: "json" };
+import checkpoint from "../../settings/locales/zh-CN/checkpoint.json" with { type: "json" };
+import cli from "../../settings/locales/zh-CN/cli.json" with { type: "json" };
+import configuration from "../../settings/locales/zh-CN/configuration.json" with { type: "json" };
+import database from "../../settings/locales/zh-CN/database.json" with { type: "json" };
+import errors from "../../settings/locales/zh-CN/errors.json" with { type: "json" };
+import frontend from "../../settings/locales/zh-CN/frontend.json" with { type: "json" };
+import hooks from "../../settings/locales/zh-CN/hooks.json" with { type: "json" };
+import http from "../../settings/locales/zh-CN/http.json" with { type: "json" };
+import mcp from "../../settings/locales/zh-CN/mcp.json" with { type: "json" };
+import network from "../../settings/locales/zh-CN/network.json" with { type: "json" };
+import runtime from "../../settings/locales/zh-CN/runtime.json" with { type: "json" };
+import toolbox from "../../settings/locales/zh-CN/toolbox.json" with { type: "json" };
 
 export const resources = {
   "zh-CN": {
