@@ -14,7 +14,7 @@ import type { FilePathMatch } from "../../../../fileLinks/types";
 import { codeWindow } from "../../../../../settings/rendering";
 import { cx } from "styled-system/css";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
-import { useFollowBottom } from "../Transcript/followBottom";
+import { useFollowBottom } from "../Transcript/useFollowBottom";
 import { useHighlight } from "./useHighlight";
 
 const noFileLinks: FilePathMatch[] = [];
@@ -49,14 +49,19 @@ function HighlightedCodeView({
     highlight = useHighlight(normalized.code, language),
     appendOnly = highlight !== undefined && normalized.code.startsWith(highlight.code),
     blockRef = useRef<HTMLPreElement>(null),
-    onScroll = useFollowBottom({
+    { onResize, onScroll } = useFollowBottom({
       enabled: autoFollow,
       ref: blockRef,
     });
   return (
     <div className={container}>
       <CopyButton className={copyButton} value={code} />
-      <pre className={cx(block({ layout }), className)} ref={blockRef} onScroll={onScroll}>
+      <pre
+        className={cx(block({ layout }), className)}
+        ref={blockRef}
+        onScroll={onScroll}
+        tabIndex={layout === "contained" ? 0 : undefined}
+      >
         <code className={codeElement({ layout })}>
           {layout === "flow" ? (
             lines.map((line, index) => (
@@ -81,6 +86,7 @@ function HighlightedCodeView({
                 data={lines}
                 item="span"
                 itemSize={codeWindow.estimatedLineHeight}
+                onResize={onResize}
                 scrollRef={blockRef}
               >
                 {(line, index) => (

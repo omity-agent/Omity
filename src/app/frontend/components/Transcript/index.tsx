@@ -42,7 +42,7 @@ export function Transcript({
     handleRef = useRef<VirtualizerHandle>(null),
     firstUserMessageId = messages.find((item) => item.role === "user")?.id,
     latestDetails = findLatestDetails(messages),
-    registerDetail = useTranscriptScroll({
+    { onResize, registerDetail } = useTranscriptScroll({
       contentRef,
       handleRef,
       onLayout: copies.update,
@@ -50,13 +50,14 @@ export function Transcript({
     });
   return (
     <DisclosureProvider registerDetail={registerDetail}>
-      <section className={cx(scroll, viewport)} ref={scrollRef}>
+      <section className={cx(scroll, viewport)} ref={scrollRef} tabIndex={0}>
         <div className={content} ref={contentRef}>
           <Virtualizer
             as={FlowWindow}
             bufferSize={transcriptWindow.bufferSize}
             data={segments}
             item={FlowItem}
+            onResize={onResize}
             ref={handleRef}
             scrollRef={scrollRef}
           >

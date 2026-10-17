@@ -16,6 +16,7 @@ export function useTranscriptScroll({
 }) {
   const details = useRef(new Set<HTMLDivElement>()),
     observerRef = useRef<ResizeObserver | null>(null),
+    scheduleRef = useRef<(() => void) | null>(null),
     notify = useEffectEvent(onLayout);
   useLayoutEffect(() => {
     const element = scrollRef.current,
@@ -24,7 +25,8 @@ export function useTranscriptScroll({
     if (!element || !content || !handle) {
       throw new Error(localize("frontend:transcript.scrollContainerMissing"));
     }
-    let disposed = false;
+    let disposed = false,
+      frame: number | undefined;
     const layout = new ReadingAnchor(element, content, handle, details.current, () =>
         notify(handle),
       ),
@@ -32,7 +34,14 @@ export function useTranscriptScroll({
         notify(handle);
         layout.stabilize();
       },
+      schedule = () => {
+        frame ??= requestAnimationFrame(() => {
+          frame = undefined;
+          resize();
+        });
+      },
       scroll = () => {
+        schedule();
         if (!layout.scroll()) {
           return;
         }
@@ -44,13 +53,19 @@ export function useTranscriptScroll({
           }
         });
       },
-      observer = new ResizeObserver(resize),
+      observer = new ResizeObserver(() => {
+        resize();
+        schedule();
+      }),
       mutations = new MutationObserver((records) => {
         if (records.some((record) => record.target !== content)) {
           layout.stabilize();
+          schedule();
         }
-      });
+      }),
+      stopFollowing = layout.observe();
     observerRef.current = observer;
+    scheduleRef.current = schedule;
     for (const detail of details.current) {
       observer.observe(detail);
     }
@@ -66,19 +81,26 @@ export function useTranscriptScroll({
     resize();
     return () => {
       disposed = true;
+      if (frame !== undefined) {
+        cancelAnimationFrame(frame);
+      }
       observer.disconnect();
       mutations.disconnect();
+      stopFollowing();
       layout.release();
       observerRef.current = null;
+      scheduleRef.current = null;
       element.removeEventListener("scroll", scroll);
     };
   }, [contentRef, handleRef, scrollRef]);
-  return useCallback((element: HTMLDivElement) => {
-    details.current.add(element);
-    observerRef.current?.observe(element);
-    return () => {
-      details.current.delete(element);
-      observerRef.current?.unobserve(element);
-    };
-  }, []);
+  const registerDetail = useCallback((element: HTMLDivElement) => {
+      details.current.add(element);
+      observerRef.current?.observe(element);
+      return () => {
+        details.current.delete(element);
+        observerRef.current?.unobserve(element);
+      };
+    }, []),
+    onResize = useCallback(() => scheduleRef.current?.(), []);
+  return { onResize, registerDetail };
 }

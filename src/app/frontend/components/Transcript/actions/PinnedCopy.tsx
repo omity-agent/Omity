@@ -40,9 +40,15 @@ const boundary = css({
   button = css({ background: "surface", color: "statusModel", pointerEvents: "auto" });
 function placeCopy(instance: VirtualizerHandle, { element, span }: MountedCopy) {
   const first = instance.getItemOffset(span.first),
-    end = instance.getItemOffset(span.last) + instance.getItemSize(span.last);
-  element.style.top = `${first.toString()}px`;
-  element.style.height = `${(end - first).toString()}px`;
+    end = instance.getItemOffset(span.last) + instance.getItemSize(span.last),
+    top = `${first.toString()}px`,
+    height = `${(end - first).toString()}px`;
+  if (element.style.top !== top) {
+    element.style.top = top;
+  }
+  if (element.style.height !== height) {
+    element.style.height = height;
+  }
 }
 export function useMessageCopies(segments: ReturnType<typeof segmentTranscript>) {
   const mounted = useRef(new Map<string, MountedCopy>()),

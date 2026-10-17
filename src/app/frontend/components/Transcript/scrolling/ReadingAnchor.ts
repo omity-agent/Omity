@@ -1,4 +1,4 @@
-import { FollowBottomController } from "../followBottom";
+import { BottomFollower } from "./BottomFollower";
 import type { VirtualizerHandle } from "virtua";
 import { localize } from "../../../i18n";
 
@@ -9,7 +9,7 @@ interface FooterSnapshot {
 }
 type Geometry = Pick<VirtualizerHandle, "getItemSize" | "scrollSize">;
 export class ReadingAnchor {
-  private readonly following = new FollowBottomController();
+  private readonly following = new BottomFollower();
   private footers: FooterSnapshot[] = [];
   private pending?: FooterSnapshot;
   private previousTop: number;
@@ -21,6 +21,9 @@ export class ReadingAnchor {
     private readonly onLayout: () => void,
   ) {
     this.previousTop = viewport.scrollTop;
+  }
+  observe() {
+    return this.following.observe(this.viewport);
   }
   capture() {
     const bounds = this.viewport.getBoundingClientRect(),
@@ -36,14 +39,17 @@ export class ReadingAnchor {
   }
   stabilize() {
     const { content, viewport } = this;
-    if (!this.pending && viewport.scrollTop !== this.previousTop) {
-      this.following.update(viewport);
+    content.style.translate = "";
+    if (this.following.isFollowing) {
+      this.pending = undefined;
+      this.following.align(viewport);
+      this.capture();
+      return;
     }
     this.pending ??= this.footers.findLast(
       ({ element, height }) =>
         element.isConnected && element.getBoundingClientRect().height !== height,
     );
-    content.style.translate = "";
     if (this.pending?.element.isConnected) {
       const { element, bottom } = this.pending,
         row = element.closest<HTMLElement>("[data-transcript-index]");
@@ -59,13 +65,9 @@ export class ReadingAnchor {
       }
       // Settling copy overlays can clamp scrollTop, so measure the remaining delta afterwards.
       this.onLayout();
-      if (this.following.isFollowing) {
-        this.following.align(viewport);
-      } else {
-        const delta = measureDelta();
-        if (delta !== 0) {
-          viewport.scrollTop += delta;
-        }
+      const delta = measureDelta();
+      if (delta !== 0) {
+        viewport.scrollTop += delta;
       }
     } else {
       this.following.align(viewport);
@@ -74,10 +76,10 @@ export class ReadingAnchor {
     this.capture();
   }
   scroll() {
+    this.following.update(this.viewport);
     if (this.viewport.scrollTop === this.previousTop) {
       return false;
     }
-    this.following.update(this.viewport);
     this.release();
     return true;
   }
