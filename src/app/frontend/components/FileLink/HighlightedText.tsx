@@ -1,4 +1,4 @@
-import { type CSSProperties, useMemo } from "react";
+import { type CSSProperties, Fragment, useMemo } from "react";
 import { FileLinkMenu } from "./Menu";
 import type { FilePathMatch } from "../../../../fileLinks/types";
 import { chunkBy } from "es-toolkit";
@@ -101,19 +101,17 @@ function nonOverlapping(matches: FilePathMatch[]) {
     });
 }
 function groupPieces(pieces: HighlightPiece[]) {
-  return chunkBy(pieces, ({ link }) => link && `${link.kind}:${link.path}`).flatMap(
-    (group, index) => {
-      const { link } = group[0]!,
-        children = group.map(tokenNode);
-      return link ? (
-        <FileLinkMenu key={`path-${index.toString()}`} kind={link.kind} path={link.path}>
-          {children}
-        </FileLinkMenu>
-      ) : (
-        children
-      );
-    },
-  );
+  return chunkBy(pieces, ({ link }) => link && `${link.kind}:${link.path}`).map((group, index) => {
+    const { link } = group[0]!,
+      children = group.map(tokenNode);
+    return link ? (
+      <FileLinkMenu key={`path-${index.toString()}`} kind={link.kind} path={link.path}>
+        {children}
+      </FileLinkMenu>
+    ) : (
+      <Fragment key={`text-${index.toString()}`}>{children}</Fragment>
+    );
+  });
 }
 function tokenNode(token: HighlightPiece, index: number) {
   return (
