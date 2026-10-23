@@ -20,8 +20,7 @@ interface ProfilePreferences {
   model?: string;
 }
 type PreferenceUpdate = { profile?: string } & (
-  | { kind: "model"; value: string }
-  | { enable: boolean; id: string; kind: "hooks" | "mcpServers" }
+  { kind: "model"; value: string } | { enable: boolean; id: string; kind: "hooks" | "mcpServers" }
 );
 function updatePreferences(
   current: Map<string | undefined, ProfilePreferences>,

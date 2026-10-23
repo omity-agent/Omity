@@ -5,3 +5,6 @@ preload = ["./tests/setup.ts"]
 saveTextLockfile = false
 [lockfile]
 save = true
+
+[fmt]
+printWidth = 100

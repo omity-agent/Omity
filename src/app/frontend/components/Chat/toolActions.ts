@@ -4,8 +4,7 @@ import { useCallback } from "react";
 
 export type AskUserQuestion = NonNullable<SessionInfo["askUser"]>;
 export type AskUserAnswer =
-  | { answer: string; kind: "open_ended" }
-  | { kind: "choice"; note: string; options: string[] };
+  { answer: string; kind: "open_ended" } | { kind: "choice"; note: string; options: string[] };
 export function useSessionToolActions(session?: SessionInfo) {
   const handleAnswer = useCallback(
       async (toolCallId: string, value: AskUserAnswer) => {

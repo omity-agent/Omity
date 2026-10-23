@@ -43,11 +43,7 @@ export type RunStatus = z.infer<typeof runStatusSchema>;
 export type LogLevel = z.infer<typeof logLevelSchema>;
 export type ModelAdapter = z.infer<typeof modelAdapterSchema>;
 export type ModelApi =
-  | "responses"
-  | "completions"
-  | "messages"
-  | "interactions"
-  | "generate-content";
+  "responses" | "completions" | "messages" | "interactions" | "generate-content";
 export function isRunningStatus(status: SessionStatus | undefined) {
   return (
     status === "waiting" || status === "streaming" || status === "pausing" || status === "tool"
