@@ -1,7 +1,8 @@
 /* oxlint-disable @pandacss/no-margin-properties -- The virtualizer offset is required for scroll positioning. */
-import type { CustomContainerComponentProps, CustomItemComponentProps } from "virtua";
 import type { CSSProperties } from "react";
 import { css } from "styled-system/css";
+import type { CustomContainerComponentProps, CustomItemComponentProps } from "virtua";
+
 import { localize } from "../../../i18n";
 
 const row = css({

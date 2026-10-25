@@ -1,20 +1,18 @@
-import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
-import { MarkdownView } from "../MarkdownView";
+import type { TimelineMessage } from "../../../timeline";
 import { Reasoning } from "../Details/Reasoning";
 import { ToolCall } from "../Details/ToolCall";
+import { MarkdownView } from "../MarkdownView";
 
 export function Body({
   item,
   latestReasoningIndex,
   latestToolIndex,
-  liveTranslation,
   onCancelTool,
   partIndex,
 }: {
   item: TimelineMessage;
   latestReasoningIndex?: number;
   latestToolIndex?: number;
-  liveTranslation?: ReasoningTranslation;
   onCancelTool: (toolCallId: string) => Promise<void>;
   partIndex?: number;
 }) {
@@ -39,7 +37,6 @@ export function Body({
           fileLinks={part.fileLinks}
           key={`reasoning-${index.toString()}-${latest ? "latest" : "settled"}`}
           latest={latest}
-          liveTranslation={liveTranslation}
           part={part}
         />
       );

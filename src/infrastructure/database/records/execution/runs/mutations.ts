@@ -1,13 +1,15 @@
-import { activeRuns, inputs, runs } from "../../../schema/execution";
-import { and, eq, inArray } from "drizzle-orm";
-import { checkpoints, events, fileLinkUnits } from "../../../schema";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, inArray } from "drizzle-orm";
+
 import type { ErrorDetails } from "../../../../../failures/details";
-import type { RunStatus } from "../../../../../types";
-import { carryPendingInputs } from "./continuation";
 import { localize } from "../../../../../i18n/server";
-import { requireSessionRecord } from "../../session/metadata";
+import type { RunStatus } from "../../../../../types";
+import { checkpoints, events, fileLinkUnits } from "../../../schema";
+import { activeRuns, inputs, runs } from "../../../schema/execution";
 import { sessionDatabase } from "../../../sqlite/connection";
+import { requireSessionRecord } from "../../session/metadata";
+import { carryPendingInputs } from "./continuation";
 
 export function createRunRecord(db: Database, sessionId: string, status: RunStatus = "pending") {
   return sessionDatabase(db)

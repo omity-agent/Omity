@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { createCodeHighlighter } from "./tokenization";
 import { highlightChannel } from "./channel";
+import { createCodeHighlighter } from "./tokenization";
 
 highlightChannel(globalThis, createCodeHighlighter());

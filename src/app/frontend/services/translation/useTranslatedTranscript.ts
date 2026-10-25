@@ -1,12 +1,14 @@
-import type { ReasoningTranslation, TimelineMessage, TimelinePart } from "../../../timeline";
-import { browserTranslationSupported, preferredTranslationLanguage } from "./browser";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
-import { ReasoningTranslationCoordinator } from "./coordinator";
-import { reportError } from "../errors";
-import { saveReasoningTranslation } from "../client";
-import { transcriptKey } from "../transcript/query";
+import { useEffect, useEffectEvent, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
+
+import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
+import { saveReasoningTranslation } from "../client";
+import { reportError } from "../errors";
+import { transcriptKey } from "../transcript/query";
+import { browserTranslationSupported, preferredTranslationLanguage } from "./browser";
+import { ReasoningTranslationCoordinator } from "./coordinator";
+import { reasoningCandidates, rememberTranslation, withReasoningTranslations } from "./overlay";
 
 interface TranslationSettings {
   enabled: boolean;
@@ -14,9 +16,10 @@ interface TranslationSettings {
   minimumIntervalMs: number;
 }
 let unsupportedWarningPrinted = false;
-const reasoningTranslationKey = (sessionId: string) =>
-  [...transcriptKey(sessionId), "reasoningTranslation"] as const;
-export function useReasoningTranslation(
+const emptyTranslations: ReasoningTranslation[] = [],
+  reasoningTranslationsKey = (sessionId: string) =>
+    [...transcriptKey(sessionId), "reasoningTranslations"] as const;
+export function useTranslatedTranscript(
   sessionId: string,
   view: TimelineMessage[],
   settings?: TranslationSettings,
@@ -24,10 +27,12 @@ export function useReasoningTranslation(
   const { t } = useTranslation(),
     queryClient = useQueryClient(),
     coordinator = useRef<ReasoningTranslationCoordinator | undefined>(undefined),
-    part = useMemo(() => translationCandidate(view), [view]),
-    { data: liveTranslation } = useQuery<ReasoningTranslation>({
+    { data: translations = emptyTranslations } = useQuery<ReasoningTranslation[]>({
       queryFn: skipToken,
-      queryKey: reasoningTranslationKey(sessionId),
+      queryKey: reasoningTranslationsKey(sessionId),
+    }),
+    initialize = useEffectEvent((translation: ReasoningTranslationCoordinator) => {
+      translation.update(reasoningCandidates(view));
     });
   useEffect(() => {
     coordinator.current?.close();
@@ -44,13 +49,17 @@ export function useReasoningTranslation(
         highConfidenceThreshold: settings.highConfidenceThreshold,
         minimumIntervalMs: settings.minimumIntervalMs,
         onTranslation: (result) => {
-          queryClient.setQueryData(reasoningTranslationKey(sessionId), result);
+          queryClient.setQueryData<ReasoningTranslation[]>(
+            reasoningTranslationsKey(sessionId),
+            (current = emptyTranslations) => rememberTranslation(current, result),
+          );
         },
         persist: (result) => saveReasoningTranslation(sessionId, result),
         reportError,
         targetLanguage,
       });
     coordinator.current = translation;
+    initialize(translation);
     return () => {
       translation.close();
       if (coordinator.current === translation) {
@@ -66,16 +75,12 @@ export function useReasoningTranslation(
     t,
   ]);
   useEffect(() => {
-    if (part) {
-      coordinator.current?.update(part);
-    }
-  }, [part]);
-  return settings?.enabled &&
-    liveTranslation &&
-    part &&
-    isUsableLiveTranslation(liveTranslation, part)
-    ? liveTranslation
-    : undefined;
+    coordinator.current?.update(reasoningCandidates(view));
+  }, [view]);
+  return useMemo(
+    () => (settings?.enabled ? withReasoningTranslations(view, translations) : view),
+    [settings?.enabled, translations, view],
+  );
 }
 function warnUnsupportedBrowser(message: string) {
   if (unsupportedWarningPrinted) {
@@ -83,25 +88,4 @@ function warnUnsupportedBrowser(message: string) {
   }
   unsupportedWarningPrinted = true;
   console.warn(message);
-}
-function translationCandidate(
-  view: TimelineMessage[],
-): Extract<TimelinePart, { type: "reasoning" }> | undefined {
-  const parts = view.flatMap((message) =>
-      message.parts.filter(
-        (part): part is Extract<TimelinePart, { type: "reasoning" }> => part.type === "reasoning",
-      ),
-    ),
-    streaming = parts.findLast((part) => part.streaming && part.messageId !== undefined);
-  return streaming ?? parts.at(-1);
-}
-function isUsableLiveTranslation(
-  translation: ReasoningTranslation,
-  part: Extract<TimelinePart, { type: "reasoning" }>,
-) {
-  return (
-    translation.messageId === part.messageId &&
-    (translation.source === part.content ||
-      (part.streaming === true && part.content.startsWith(translation.source)))
-  );
 }

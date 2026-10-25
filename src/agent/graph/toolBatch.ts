@@ -1,6 +1,7 @@
 import { AIMessage, type BaseMessage, type ToolCall, ToolMessage } from "@langchain/core/messages";
-import { localize } from "../../i18n/server";
+
 import { requireCallId } from "../../hooks/plan";
+import { localize } from "../../i18n/server";
 
 type IdentifiedToolCall = ToolCall & { id: string };
 export function pendingToolBatch(messages: BaseMessage[], parallel: boolean): IdentifiedToolCall[] {

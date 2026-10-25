@@ -1,6 +1,6 @@
-import type { Control } from "./types";
-import { openStoredSession } from "./storedSessions";
 import { requestStepControlRecord } from "./infrastructure/database/records/execution/control";
+import { openStoredSession } from "./storedSessions";
+import type { Control } from "./types";
 
 export function appendSessionMessage(sessionId: string, content: string) {
   using db = openStoredSession(sessionId);

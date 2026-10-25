@@ -1,8 +1,9 @@
-import { type DiagnosticsChannel, util } from "undici/index.js";
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { Duplex } from "node:stream";
 import type { Socket } from "node:net";
+import type { Duplex } from "node:stream";
 import { TLSSocket } from "node:tls";
+
+import { type DiagnosticsChannel, util } from "undici/index.js";
 
 export const connectionContext = new AsyncLocalStorage<ConnectionEvidence>();
 export class ConnectionEvidence {

@@ -1,29 +1,30 @@
 import {
   type ComponentProps,
-  type ReactNode,
   createContext,
   createElement,
+  type ReactNode,
   useContext,
   useMemo,
 } from "react";
 import ReactMarkdown, { type Components, type ExtraProps } from "react-markdown";
+import remarkBreaks from "remark-breaks";
+
+import { markdownPlugins } from "../../../../settings/rendering";
+import type { FilePathMatch } from "../../../fileLinks/types";
+import { localize } from "../i18n";
+import { normalizeCodeMatches, normalizeLineBreaks } from "./FileLink/lineBreaks";
 import {
   fileLinkRemark,
   localizeMatches,
   matchInsideNode,
   pathFromFileLinkHref,
 } from "./FileLink/markdown";
-import { inlineCode, region, rendered, tableScroll } from "./Markdown/styles";
-import { normalizeCodeMatches, normalizeLineBreaks } from "./FileLink/lineBreaks";
-import { Code } from "./ParkUI";
 import { FileLinkMenu } from "./FileLink/Menu";
-import type { FilePathMatch } from "../../../fileLinks/types";
 import { HighlightedCode } from "./HighlightedCode";
-import { MarkdownSource } from "./Markdown/Source";
-import { localize } from "../i18n";
-import { markdownPlugins } from "../../../../settings/rendering";
-import remarkBreaks from "remark-breaks";
 import { useMarkdownSource } from "./Markdown/DisplayMode";
+import { MarkdownSource } from "./Markdown/Source";
+import { inlineCode, region, rendered, tableScroll } from "./Markdown/styles";
+import { Code } from "./ParkUI";
 
 interface MarkdownRenderContext {
   fileLinks: FilePathMatch[];

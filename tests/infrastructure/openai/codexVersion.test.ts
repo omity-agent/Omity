@@ -1,10 +1,11 @@
+import { expect, test } from "bun:test";
+
+import { codexProtocol } from "../../../settings/openai/codexProtocol";
+import { codexDefaultHeaders } from "../../../src/infrastructure/openai/clientIdentity";
 import {
   createCodexVersionResolver,
   fetchLatestCodexVersion,
 } from "../../../src/infrastructure/openai/codexVersion";
-import { expect, test } from "bun:test";
-import { codexDefaultHeaders } from "../../../src/infrastructure/openai/clientIdentity";
-import { codexProtocol } from "../../../settings/openai/codexProtocol";
 
 test("fetches the latest Codex version from npm", async () => {
   let requestedUrl: string | undefined;

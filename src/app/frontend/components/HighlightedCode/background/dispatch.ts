@@ -1,7 +1,8 @@
-import type { HighlightInput, HighlightResult } from "./tokenization";
 import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
-import { highlightChannel } from "./channel";
+
 import { localize } from "../../../i18n";
+import { highlightChannel } from "./channel";
+import type { HighlightInput, HighlightResult } from "./tokenization";
 
 export interface HighlightedCodeResult extends HighlightResult {
   code: string;

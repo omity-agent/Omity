@@ -1,11 +1,12 @@
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 import { mkdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
+
+import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpLoadError } from "../../../../src/infrastructure/mcp/failures/reportConstruction";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
-import { createTestDirectory } from "../../../support/artifacts";
-import { join } from "node:path";
 import { loadMcp } from "../../../../src/infrastructure/mcp/tools/catalog";
+import { createTestDirectory } from "../../../support/artifacts";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 
 export const failingStartupPath = join(import.meta.dir, "failingStartup.ts");
 export function configureFailure(root: string, mcpServers: Record<string, unknown>) {

@@ -1,9 +1,9 @@
+import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import {
-  type ProcessOwner,
   isProcessRunning,
   parseHostOwner,
+  type ProcessOwner,
 } from "../../infrastructure/process/ownership";
-import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 
 export function recoverHostSession(
   db: AgentDatabase,

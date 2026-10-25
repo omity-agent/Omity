@@ -1,20 +1,21 @@
-import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
-import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
-import { type ComposerDraftTarget, composerDraftKey } from "../../services/composerDrafts";
-import { type Control, type SessionStatus, isRunningStatus } from "../../../../types";
-import type { DisplayQueue, TimelineMessage } from "../../../timeline";
-import { Composer } from "./Composer";
-import { FileLinkProvider } from "../FileLink/context";
-import type { FrontendSettings } from "../../services/client";
-import type { InitialSessionState } from "../../../initialState";
-import { NewSessionPage } from "../NewSession";
-import type { OptimisticUser } from "../../services/transcript/optimistic";
-import { Transcript } from "../Transcript";
-import { css } from "styled-system/css";
-import { deriveChatActionState } from "./actionState";
-import { usePredictions } from "../../services/queries";
-import { useReasoningTranslation } from "../../services/translation/useReasoningTranslation";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import { type Control, isRunningStatus, type SessionStatus } from "../../../../types";
+import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
+import type { InitialSessionState } from "../../../initialState";
+import type { DisplayQueue, TimelineMessage } from "../../../timeline";
+import type { FrontendSettings } from "../../services/client";
+import { composerDraftKey, type ComposerDraftTarget } from "../../services/composerDrafts";
+import { usePredictions } from "../../services/queries";
+import type { OptimisticUser } from "../../services/transcript/optimistic";
+import { useTranslatedTranscript } from "../../services/translation/useTranslatedTranscript";
+import { FileLinkProvider } from "../FileLink/context";
+import { NewSessionPage } from "../NewSession";
+import { Transcript } from "../Transcript";
+import { deriveChatActionState } from "./actionState";
+import { Composer } from "./Composer";
+import type { AskUserAnswer, AskUserQuestion } from "./toolActions";
 
 const page = css({
     display: "grid",
@@ -115,7 +116,7 @@ export function ChatPage({
       sessionStatus,
     }),
     latestUsage = view.findLast((item) => item.usage !== undefined)?.usage ?? null,
-    liveTranslation = useReasoningTranslation(activeId ?? "", view, translationSettings);
+    translatedView = useTranslatedTranscript(activeId ?? "", view, translationSettings);
   if (!activeId) {
     if (newSession) {
       return (
@@ -151,8 +152,7 @@ export function ChatPage({
             allowFork={allowFork}
             forkDisabled={actionPending || actionState.sessionActionDisabled}
             key={activeId}
-            liveTranslation={liveTranslation}
-            messages={view}
+            messages={translatedView}
             onFork={onFork}
             onCancelTool={onCancelTool}
           />

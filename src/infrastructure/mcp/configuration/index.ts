@@ -1,17 +1,19 @@
-import { applyServerOverrides, describeMcpServers } from "./selection";
-import { enableConfiguredMcpServers, omitDisabledToolboxConfiguration } from "./activation";
+import { resolve } from "node:path";
+
+import { isPlainObject as isRecord } from "es-toolkit";
+import { z } from "zod";
+
+import { localize } from "../../../i18n/server";
+import { applicationAssetPath } from "../../applicationAssets";
+import { resolveConfiguredPath } from "../../configuration/configuredPath";
 import { readSettingsYamlValue, resolvePlaceholders } from "../../configuration/placeholders";
+import type { SettingsContext } from "../../configuration/settings/context";
+import { readLayeredSettingsYaml } from "../../configuration/settings/files";
 import type { BuiltInPreferences } from "../../toolbox/metadata";
 import type { McpToolSnapshot } from "../tools/definitions";
-import type { SettingsContext } from "../../configuration/settings/context";
-import { applicationAssetPath } from "../../applicationAssets";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../../../i18n/server";
-import { readLayeredSettingsYaml } from "../../configuration/settings/files";
-import { resolve } from "node:path";
-import { resolveConfiguredPath } from "../../configuration/configuredPath";
+import { enableConfiguredMcpServers, omitDisabledToolboxConfiguration } from "./activation";
 import { toolboxSchema } from "./declaration";
-import { z } from "zod";
+import { applyServerOverrides, describeMcpServers } from "./selection";
 
 export function readMcpConfiguration(path: string) {
   const parsed = resolvePlaceholders(

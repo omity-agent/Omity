@@ -1,9 +1,9 @@
-import type { HostActivity, SessionStatus } from "../types";
-import { pauseRequested, resolvePausePhase } from "./pauseState";
-import type { AskUserRequest } from "../infrastructure/toolbox/askUser";
 import type { ErrorDetails } from "../failures/details";
-import type { RegisteredSession } from "./registry";
+import type { AskUserRequest } from "../infrastructure/toolbox/askUser";
+import type { HostActivity, SessionStatus } from "../types";
 import type { SessionInfo } from "./events/contracts";
+import { pauseRequested, resolvePausePhase } from "./pauseState";
+import type { RegisteredSession } from "./registry";
 
 export type { SessionInfo } from "./events/contracts";
 export function projectSession(

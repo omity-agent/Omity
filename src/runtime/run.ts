@@ -1,10 +1,11 @@
 import type { BaseMessage } from "@langchain/core/messages";
+
 import type { ErrorDetails } from "../failures/details";
-import type { HostContext } from "./context";
-import type { QueuedInput } from "../types";
 import { localize } from "../i18n/server";
-import { messageContentToText } from "./modelContent";
 import { runTransaction } from "../infrastructure/database/sqlite/connection";
+import type { QueuedInput } from "../types";
+import type { HostContext } from "./context";
+import { messageContentToText } from "./modelContent";
 
 export class CanceledRunError extends Error {
   override readonly name = "CanceledRunError";

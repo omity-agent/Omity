@@ -1,10 +1,12 @@
-import { createInterface } from "node:readline";
-import { fileURLToPath } from "node:url";
-import folderDialog from "../../../settings/folderDialog.json";
-import { once } from "node:events";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { createInterface } from "node:readline";
 import { text } from "node:stream/consumers";
+import { fileURLToPath } from "node:url";
+
 import { z } from "zod";
+
+import folderDialog from "../../../settings/folderDialog.json";
 
 export const workspaceDialogArgument = "--internal-pick-workspace";
 const selectionSchema = z.string().min(1).nullable(),

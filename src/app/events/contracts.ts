@@ -1,7 +1,8 @@
-import { askUserRequestSchema } from "../../infrastructure/toolbox/questionnaire";
-import { errorDetailsSchema } from "../../failures/details";
-import { sessionStatusSchema } from "../../types";
 import { z } from "zod";
+
+import { errorDetailsSchema } from "../../failures/details";
+import { askUserRequestSchema } from "../../infrastructure/toolbox/questionnaire";
+import { sessionStatusSchema } from "../../types";
 
 export const sessionInfoSchema = z.object({
   askUser: askUserRequestSchema.nullable().optional(),

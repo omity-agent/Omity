@@ -1,22 +1,23 @@
-import { type SettingsContext, createSettingsContext } from "./context";
+import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+
+import { localize } from "../../../i18n/server";
+import { buildSkillsList } from "../../../skills";
+import type { Settings } from "../../../types";
+import { resolveConfiguredPath } from "../configuredPath";
+import { loadConfiguredHookRules } from "../hookRules";
+import { readSettingsText } from "../placeholders";
+import { safeId } from "../sessionPaths";
+import { normalizeWorkspacePath } from "../workspacePath";
+import { createSettingsContext, type SettingsContext } from "./context";
+import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
+import { prepareMainSettings } from "./models";
 import {
   omitCodexConnectionSettings,
   parseAgentSettings,
   parseMainSettings,
   parseModelSettings,
 } from "./schema";
-import { readLayeredSettingsYaml, resolveLayeredSettingsText, userDataDirectory } from "./files";
-import type { Settings } from "../../../types";
-import { buildSkillsList } from "../../../skills";
-import { loadConfiguredHookRules } from "../hookRules";
-import { localize } from "../../../i18n/server";
-import { mkdirSync } from "node:fs";
-import { normalizeWorkspacePath } from "../workspacePath";
-import { prepareMainSettings } from "./models";
-import { readSettingsText } from "../placeholders";
-import { resolveConfiguredPath } from "../configuredPath";
-import { safeId } from "../sessionPaths";
 
 interface LoadSettingsOptions {
   cwd?: string;

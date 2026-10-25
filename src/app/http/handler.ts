@@ -1,57 +1,28 @@
-import { type AccessEnvironment, mountAccess } from "./access";
 import { type Context, Hono } from "hono";
-import { HttpError, errorResponse } from "./errors";
+import { compress } from "hono/compress";
+
+import { requestBodyLimit } from "../../../settings/networking";
+import { localize } from "../../i18n/server";
+import type { AccessService } from "../access/service";
 import {
   answerToolBody,
   cancelToolBody,
   composerDraftBody,
   controlBody,
-  decodeSessionId,
   fileLinkActionBody,
   forkMaterializationBody,
-  jsonBody,
-  limitRequestBody,
   preparationDraftBody,
   profileBody,
   reasoningTranslationBody,
-} from "./request";
-import { readMessageForm, readSessionForm } from "./multipart";
-import type { AccessService } from "../access/service";
+} from "../contracts/commands";
 import type { AppController } from "../controller";
-import { compress } from "hono/compress";
-import { localize } from "../../i18n/server";
-import { requestBodyLimit } from "../../../settings/networking";
-import { validator } from "hono/validator";
 import { writeReasoningTranslation } from "../reasoningTranslation";
+import { type AccessEnvironment, mountAccess } from "./access";
+import { errorResponse, HttpError } from "./errors";
+import { messageForm, sessionForm } from "./multipart";
+import { decodeSessionId, jsonBody, limitRequestBody, validate } from "./request";
 
-type ApiController = Pick<
-  AppController,
-  | "bootstrap"
-  | "sessionOptions"
-  | "activateFileLink"
-  | "sessions"
-  | "userMessages"
-  | "predictions"
-  | "pickWorkspace"
-  | "createSession"
-  | "deleteSession"
-  | "clearTemporaryFiles"
-  | "transcript"
-  | "eventCursor"
-  | "composerDraft"
-  | "saveComposerDraft"
-  | "preparationDraft"
-  | "savePreparationDraft"
-  | "updateProfile"
-  | "sendMessage"
-  | "control"
-  | "cancelTool"
-  | "answerTool"
-  | "materializeFork"
-  | "assertSession"
-  | "events"
->;
-export function createApi(controller: ApiController, access?: AccessService) {
+export function createApi(controller: AppController, access?: AccessService) {
   const app = new Hono<AccessEnvironment>(),
     attachmentBodyLimit = requestBodyLimit + controller.bootstrap().attachments.maxSizeBytes,
     attachmentRequestLimit = limitRequestBody(
@@ -69,32 +40,28 @@ export function createApi(controller: ApiController, access?: AccessService) {
     .get("/api/bootstrap", (c) => c.json(controller.bootstrap()))
     .get("/api/user-messages", (c) => c.json(controller.userMessages()))
     .get("/api/session-preparation", (c) => c.json(controller.preparationDraft()))
-    .on(["PUT", "POST"], "/api/session-preparation", jsonBody(preparationDraftBody), (c) => {
+    .on(["PUT", "POST"], "/api/session-preparation", ...jsonBody(preparationDraftBody), (c) => {
       const body = c.req.valid("json");
       return c.json(controller.savePreparationDraft(body.content, body.revision));
     })
-    .get(
-      "/api/session-options",
-      validator("query", (_query: { profile?: string }, c) => ({
-        profile: c.req.query("profile"),
-      })),
-      (c) => c.json(controller.sessionOptions(c.req.valid("query").profile)),
+    .get("/api/session-options", validate("query", profileBody), (c) =>
+      c.json(controller.sessionOptions(c.req.valid("query").profile)),
     )
     .get("/api/sessions", (c) => c.json({ sessions: controller.sessions() }))
     .get("/api/events/state", (c) => controller.events.streamState(c, () => controller.sessions()))
     .post("/api/workspace-picker", async (c) =>
       c.json({ workspace: await controller.pickWorkspace() }),
     )
-    .post("/api/sessions", attachmentRequestLimit, async (c) =>
+    .post("/api/sessions", attachmentRequestLimit, sessionForm, async (c) =>
       c.json({
-        session: await controller.createSession(await readSessionForm(c.req)),
+        session: await controller.createSession(c.req.valid("form")),
       }),
     )
     .delete("/api/sessions/:sessionId", async (c) => {
       const deletedSessionId = decodeSessionId(c.req.param("sessionId"));
       return c.json(await controller.deleteSession(deletedSessionId));
     })
-    .put("/api/sessions/:sessionId/profile", jsonBody(profileBody), async (c) => {
+    .put("/api/sessions/:sessionId/profile", ...jsonBody(profileBody), async (c) => {
       const body = c.req.valid("json");
       return c.json({
         session: await controller.updateProfile(sessionId(c), body.profile),
@@ -109,7 +76,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
     )
     .post(
       "/api/sessions/:sessionId/file-links/activate",
-      jsonBody(fileLinkActionBody),
+      ...jsonBody(fileLinkActionBody),
       async (c) => {
         const body = c.req.valid("json");
         return c.json(await controller.activateFileLink(sessionId(c), body.path, body.action));
@@ -126,7 +93,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
     .on(
       ["PUT", "POST"],
       "/api/sessions/:sessionId/composer-draft",
-      jsonBody(composerDraftBody),
+      ...jsonBody(composerDraftBody),
       (c) => {
         const body = c.req.valid("json");
         return c.json(controller.saveComposerDraft(sessionId(c), body.content, body.revision));
@@ -134,7 +101,7 @@ export function createApi(controller: ApiController, access?: AccessService) {
     )
     .put(
       "/api/sessions/:sessionId/reasoning-translation",
-      jsonBody(reasoningTranslationBody),
+      ...jsonBody(reasoningTranslationBody),
       (c) => {
         const body = c.req.valid("json"),
           id = sessionId(c);
@@ -144,25 +111,24 @@ export function createApi(controller: ApiController, access?: AccessService) {
         return c.json(result);
       },
     )
-    .post("/api/sessions/:sessionId/messages", async (c) => {
-      const submission = await readMessageForm(c.req);
-      return c.json(await controller.sendMessage(sessionId(c), submission));
-    })
-    .post("/api/sessions/:sessionId/control", jsonBody(controlBody), async (c) => {
+    .post("/api/sessions/:sessionId/messages", messageForm, async (c) =>
+      c.json(await controller.sendMessage(sessionId(c), c.req.valid("form"))),
+    )
+    .post("/api/sessions/:sessionId/control", ...jsonBody(controlBody), async (c) => {
       const body = c.req.valid("json");
       return c.json(await controller.control(sessionId(c), body.control));
     })
-    .post("/api/sessions/:sessionId/tools/cancel", jsonBody(cancelToolBody), (c) => {
+    .post("/api/sessions/:sessionId/tools/cancel", ...jsonBody(cancelToolBody), (c) => {
       const body = c.req.valid("json");
       return c.json(controller.cancelTool(sessionId(c), body.toolCallId));
     })
-    .post("/api/sessions/:sessionId/tools/answer", jsonBody(answerToolBody), (c) => {
+    .post("/api/sessions/:sessionId/tools/answer", ...jsonBody(answerToolBody), (c) => {
       const body = c.req.valid("json");
       return c.json(controller.answerTool(sessionId(c), body.toolCallId, body.answer));
     })
     .post(
       "/api/sessions/:sessionId/fork/materialize",
-      jsonBody(forkMaterializationBody),
+      ...jsonBody(forkMaterializationBody),
       async (c) => {
         const body = c.req.valid("json");
         return c.json({

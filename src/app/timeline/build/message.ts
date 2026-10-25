@@ -1,3 +1,4 @@
+import type { FileLinkUnit } from "../../../fileLinks/types";
 import type {
   DisplayMessage,
   DisplayToolCall,
@@ -6,9 +7,8 @@ import type {
   TimelineMessage,
   TimelinePart,
 } from "../contracts/projection";
-import { linkedCall, linkedOutput, matchesFor, optionalLinks } from "./fileLinks";
-import type { FileLinkUnit } from "../../../fileLinks/types";
 import { displayToolCallKey } from "../tool/correlation";
+import { linkedCall, linkedOutput, matchesFor, optionalLinks } from "./fileLinks";
 
 type ToolLifecycle = Map<
   string,

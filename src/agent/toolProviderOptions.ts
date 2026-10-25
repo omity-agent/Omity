@@ -1,5 +1,5 @@
-import { isJSONObject, isPlainObject, omit } from "es-toolkit";
 import type { SharedV4ProviderOptions as ProviderOptions } from "@ai-sdk/provider";
+import { isJSONObject, isPlainObject, omit } from "es-toolkit";
 
 export function isProviderOptions(value: unknown): value is ProviderOptions {
   return isPlainObject(value) && Object.values(value).every(isJSONObject);

@@ -1,6 +1,6 @@
-import type { DisplayEvent } from "../contracts/projection";
-import { localize } from "../../../i18n/server";
 import { parseToolInput } from "../../../fileLinks/toolInput";
+import { localize } from "../../../i18n/server";
+import type { DisplayEvent } from "../contracts/projection";
 
 type ToolDelta = Extract<DisplayEvent, { kind: "tool_call_delta" }>["value"];
 export interface ToolPart {

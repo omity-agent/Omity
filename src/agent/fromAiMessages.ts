@@ -7,9 +7,10 @@ import {
 } from "@langchain/core/messages";
 import type { LanguageModelUsage, ModelMessage } from "ai";
 import { isPlainObject as isRecord } from "es-toolkit";
+
 import { localize } from "../i18n/server";
-import { omitToolItemIds } from "./toolProviderOptions";
 import { trimFreeformInput } from "../runtime/freeform";
+import { omitToolItemIds } from "./toolProviderOptions";
 
 export function fromModelMessages(
   messages: ModelMessage[],

@@ -1,7 +1,8 @@
 import { type RefObject, useCallback, useEffectEvent, useLayoutEffect, useRef } from "react";
-import { ReadingAnchor } from "./ReadingAnchor";
 import type { VirtualizerHandle } from "virtua";
+
 import { localize } from "../../../i18n";
+import { ReadingAnchor } from "./ReadingAnchor";
 
 export function useTranscriptScroll({
   contentRef,
@@ -42,7 +43,8 @@ export function useTranscriptScroll({
       },
       scroll = () => {
         schedule();
-        if (!layout.scroll()) {
+        const { changed, userIntent } = layout.scroll();
+        if (!changed || !userIntent) {
           return;
         }
         // Virtua's scroll observer may run after this listener.

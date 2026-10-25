@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
+
+import { submissionForm } from "../../../src/app/attachments/submission";
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
 import { liveApplication } from "./liveApplication";
-import { submissionForm } from "../../../src/app/attachments/submission";
 
 const preparation = {
   message: "latest question",

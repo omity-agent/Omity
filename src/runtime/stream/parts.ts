@@ -1,4 +1,4 @@
-import { type ReasoningStreamState, createReasoningStreamState } from "../content";
+import { createReasoningStreamState, type ReasoningStreamState } from "../content";
 
 type SequentialPartKind = "assistant_reasoning_delta" | "assistant_text_delta";
 interface StreamPartState {

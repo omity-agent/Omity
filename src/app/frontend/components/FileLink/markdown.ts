@@ -1,6 +1,7 @@
 import type { Link, Nodes, PhrasingContent, Root, Text } from "mdast";
-import type { FilePathMatch } from "../../../../fileLinks/types";
 import type { Plugin } from "unified";
+
+import type { FilePathMatch } from "../../../../fileLinks/types";
 
 const marker = "#omity-file=";
 interface PositionedNode {

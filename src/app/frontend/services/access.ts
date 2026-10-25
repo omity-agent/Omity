@@ -1,35 +1,21 @@
 import {
-  type PublicKeyCredentialCreationOptionsJSON,
-  type PublicKeyCredentialRequestOptionsJSON,
   browserSupportsWebAuthn,
   startAuthentication,
   startRegistration,
 } from "@simplewebauthn/browser";
-import { api, request } from "./httpTransport";
-import { localize } from "../i18n";
-import { z } from "./validation";
 
-const accessStatusSchema = z.object({
-    authenticated: z.boolean(),
-    configured: z.boolean(),
-    credentialCount: z.number().int().nonnegative(),
-    local: z.boolean(),
-    publicOrigin: z.string().nullable(),
-  }),
-  loginOptionsSchema = z.object({
-    options: z.custom<PublicKeyCredentialRequestOptionsJSON>(),
-  }),
-  registrationOptionsSchema = z.object({
-    options: z.custom<PublicKeyCredentialCreationOptionsJSON>(),
-    origin: z.string(),
-  }),
-  authenticatedSchema = z.object({ authenticated: z.boolean() }),
-  registeredSchema = z.object({
-    credentialCount: z.number().int().positive(),
-    verified: z.boolean(),
-  }),
-  ticketSchema = z.object({ ticket: z.string().min(1) });
-export type AccessStatus = z.infer<typeof accessStatusSchema>;
+import {
+  accessStatusSchema,
+  authenticatedSchema,
+  loginOptionsSchema,
+  registeredSchema,
+  registrationOptionsSchema,
+  ticketSchema,
+} from "../../contracts/authentication";
+import { localize } from "../i18n";
+import { api, request } from "./httpTransport";
+
+export type { AccessStatus } from "../../contracts/authentication";
 export async function accessStatus() {
   return request(api.access.$get(), accessStatusSchema);
 }

@@ -1,26 +1,28 @@
-import {
-  type HostLeaseClaim,
-  type HostLeaseRecord,
-  acquireHostLeaseRecord,
-  readHostLeaseRecord,
-  releaseHostLeaseRecord,
-  renewHostLeaseRecord,
-} from "./hostLeases";
-import { activeRuns, inputs, runs } from "../../schema/execution";
+import type { Database } from "bun:sqlite";
+
 import { and, eq, inArray, ne } from "drizzle-orm";
+
+import type { ErrorDetails } from "../../../../failures/details";
 import { checkpoints, events } from "../../schema";
+import { activeRuns, inputs, runs } from "../../schema/execution";
+import { runTransaction, sessionDatabase } from "../../sqlite/connection";
 import {
   consumeStepControlRecord,
   readControlRecord,
   touchSessionRecord,
   writeControlRecord,
 } from "../session/metadata";
-import { runTransaction, sessionDatabase } from "../../sqlite/connection";
-import type { Database } from "bun:sqlite";
-import type { ErrorDetails } from "../../../../failures/details";
+import { pruneUnreferencedMessages } from "../transcript/messages/writing";
+import {
+  acquireHostLeaseRecord,
+  type HostLeaseClaim,
+  type HostLeaseRecord,
+  readHostLeaseRecord,
+  releaseHostLeaseRecord,
+  renewHostLeaseRecord,
+} from "./hostLeases";
 import { activeInputRows } from "./queue/workItems";
 import { pauseRunRecord } from "./runs/mutations";
-import { pruneUnreferencedMessages } from "../transcript/messages/writing";
 
 interface InterruptedSessionClaim {
   sessionId: string;

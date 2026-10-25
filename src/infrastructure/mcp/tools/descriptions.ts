@@ -1,8 +1,10 @@
 import { isAbsolute, relative, resolve } from "node:path";
+
 import type { StructuredToolInterface } from "@langchain/core/tools";
+
 import { localize } from "../../../i18n/server";
-import { readSettingsText } from "../../configuration/placeholders";
 import { resolveConfiguredPath } from "../../configuration/configuredPath";
+import { readSettingsText } from "../../configuration/placeholders";
 
 type McpToolNameOverrides = Record<string, string>;
 type McpToolDescriptionOverrides = Record<string, string>;

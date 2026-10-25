@@ -1,7 +1,8 @@
+import { sql } from "drizzle-orm";
 import { check, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
 import type { Control } from "../../../types";
 import type { SessionDefinition } from "../session/sessionDefinition";
-import { sql } from "drizzle-orm";
 
 const controls = [
   "running",

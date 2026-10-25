@@ -1,14 +1,15 @@
-import { forkSessionStorage, removeSessionStorage } from "./sessionStorage";
-import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
-import type { SessionSubmission } from "../attachments/contract";
-import type { Settings } from "../../types";
-import { claimShortId } from "../../infrastructure/randomId";
-import { clearPreparationDraft } from "../composition/draftStorage";
-import { createSessionWithAttachments } from "../attachments/session";
 import { mkdirSync } from "node:fs";
-import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
 import { resolve } from "node:path";
+
 import { userDataDirectory } from "../../infrastructure/configuration/settings/files";
+import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
+import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
+import { claimShortId } from "../../infrastructure/randomId";
+import type { Settings } from "../../types";
+import type { SessionSubmission } from "../attachments/contract";
+import { createSessionWithAttachments } from "../attachments/session";
+import { clearPreparationDraft } from "../composition/draftStorage";
+import { forkSessionStorage, removeSessionStorage } from "./sessionStorage";
 
 export async function createAppSession(
   appRoot: string,

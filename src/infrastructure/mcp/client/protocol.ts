@@ -1,6 +1,7 @@
 import { Client, type Transport } from "@modelcontextprotocol/client";
-import { cleanupFailedInitialization } from "../lifecycle";
+
 import { localize } from "../../../i18n/server";
+import { cleanupFailedInitialization } from "../lifecycle";
 
 export type McpOperations = Pick<
   Client,

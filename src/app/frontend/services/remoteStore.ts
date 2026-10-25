@@ -1,4 +1,5 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
+
 import { queryClientDefaults } from "../../../../settings/networking";
 import { reportError } from "./errors";
 

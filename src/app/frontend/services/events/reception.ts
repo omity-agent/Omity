@@ -1,3 +1,5 @@
+import type { SessionInfo } from "../../../events/contracts";
+import { reportBrowserWarning, reportSessionFailure, restoreSessionConsole } from "./console";
 import {
   readDeletedEvent,
   readFailureEvent,
@@ -6,8 +8,6 @@ import {
   readSessionsEvent,
   readWarningEvent,
 } from "./data";
-import { reportBrowserWarning, reportSessionFailure, restoreSessionConsole } from "./console";
-import type { SessionInfo } from "../../../events/contracts";
 import { subscribeEvents } from "./subscription";
 
 export function subscribeStateEvents(

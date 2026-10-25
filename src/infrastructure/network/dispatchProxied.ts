@@ -1,7 +1,8 @@
 import { Agent, type Dispatcher, ProxyAgent } from "undici/index.js";
-import { connectionContext } from "./connectionEvidence";
-import { localize } from "../../i18n/server";
+
 import { outboundAgentOptions } from "../../../settings/networking";
+import { localize } from "../../i18n/server";
+import { connectionContext } from "./connectionEvidence";
 
 export type ResolveOutboundProxy = (url: string) => Promise<string | undefined>;
 export function createProxyDispatcher(resolveProxy: ResolveOutboundProxy) {

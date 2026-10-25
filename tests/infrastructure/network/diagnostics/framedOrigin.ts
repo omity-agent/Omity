@@ -1,8 +1,8 @@
-import type { Duplex } from "node:stream";
-import { Socket } from "node:net";
 import { createHash } from "node:crypto";
-import { createServer } from "node:http";
 import { once } from "node:events";
+import { createServer } from "node:http";
+import { Socket } from "node:net";
+import type { Duplex } from "node:stream";
 import { promisify } from "node:util";
 
 export type FramedOriginMode = "end" | "reset" | "close" | "hold";

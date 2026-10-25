@@ -1,9 +1,10 @@
-import { type ToolSet, dynamicTool, jsonSchema } from "ai";
-import type { ModelApi } from "../../types";
-import type { ModelToolDefinition } from "../../infrastructure/mcp/tools/definitions";
 import { anthropic } from "@ai-sdk/anthropic";
-import { localize } from "../../i18n/server";
 import { openai } from "@ai-sdk/openai";
+import { dynamicTool, jsonSchema, type ToolSet } from "ai";
+
+import { localize } from "../../i18n/server";
+import type { ModelToolDefinition } from "../../infrastructure/mcp/tools/definitions";
+import type { ModelApi } from "../../types";
 
 export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolSet {
   const deferred = tools.some((tool) => tool.deferLoading);
@@ -26,6 +27,7 @@ export function aiModelTools(tools: ModelToolDefinition[], api: ModelApi): ToolS
         : dynamicTool({
             description: tool.description,
             inputSchema: jsonSchema(tool.inputSchema),
+            strict: true,
             ...(tool.deferLoading
               ? {
                   providerOptions: {

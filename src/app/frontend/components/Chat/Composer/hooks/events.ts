@@ -1,8 +1,9 @@
 import type { RefObject, SubmitEvent } from "react";
-import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
-import type { UserInputPrediction } from "../prediction";
-import type { UserMessageHistory } from "../history";
+
 import { reportPromiseErrors } from "../../../../services/errors";
+import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
+import type { UserMessageHistory } from "../history";
+import type { UserInputPrediction } from "../prediction";
 
 export function useComposerEvents({
   contentRef,

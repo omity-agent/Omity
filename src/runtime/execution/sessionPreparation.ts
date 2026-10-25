@@ -1,22 +1,23 @@
+import { existsSync } from "node:fs";
+
+import { sessionConflict, sessionNotFound } from "../../errors";
+import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import {
   createSettingsContext,
   prioritizeSettingsProfile,
   selectSettingsProfiles,
   settingsProfileNames,
 } from "../../infrastructure/configuration/settings/context";
-import { resolveSessionPaths, sessionPaths } from "../../infrastructure/configuration/sessionPaths";
-import { sessionConflict, sessionNotFound } from "../../errors";
-import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
-import type { HostMode } from "../../types";
-import type { HostRunOptions } from "./hostOptions";
-import { applySessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
-import { existsSync } from "node:fs";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
 import { normalizeWorkspacePath } from "../../infrastructure/configuration/workspacePath";
-import { openStoredSession } from "../../storedSessions";
+import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
 import { readDefinitionRecord } from "../../infrastructure/database/records/session/metadata";
-import { recoverHostSession } from "./recovery";
+import { applySessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import { removeDatabaseDirectory } from "../../infrastructure/database/sqlite/connection";
+import { openStoredSession } from "../../storedSessions";
+import type { HostMode } from "../../types";
+import type { HostRunOptions } from "./hostOptions";
+import { recoverHostSession } from "./recovery";
 
 export function prepareHostSession(
   mode: HostMode,

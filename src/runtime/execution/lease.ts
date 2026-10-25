@@ -1,12 +1,12 @@
+import { DomainError } from "../../errors";
+import { localize } from "../../i18n/server";
+import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
+import type { Logger } from "../../infrastructure/logging/logger";
 import {
-  type ProcessOwner,
   hostOwnerId,
+  type ProcessOwner,
   standaloneOwner,
 } from "../../infrastructure/process/ownership";
-import type { AgentDatabase } from "../../infrastructure/database/agentDatabase";
-import { DomainError } from "../../errors";
-import type { Logger } from "../../infrastructure/logging/logger";
-import { localize } from "../../i18n/server";
 
 export class HostLeaseLostError extends Error {
   override readonly name = "HostLeaseLostError";

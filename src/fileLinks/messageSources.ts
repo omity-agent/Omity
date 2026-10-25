@@ -1,10 +1,12 @@
-import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
-import { contentToText, messageReasoning } from "../runtime/content";
-import type { FileLinkSurface } from "./types";
-import { formatToolInput } from "./toolInput";
-import { localize } from "../i18n/server";
 import { randomUUID } from "node:crypto";
+
+import { AIMessage, type BaseMessage, ToolMessage } from "@langchain/core/messages";
+
+import { localize } from "../i18n/server";
+import { contentToText, messageReasoning } from "../runtime/content";
 import { rawFreeformInput } from "../runtime/freeform";
+import { formatToolInput } from "./toolInput";
+import type { FileLinkSurface } from "./types";
 
 export interface FileLinkSource {
   mode: "lines" | "output";

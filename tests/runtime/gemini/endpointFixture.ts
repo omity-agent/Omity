@@ -1,9 +1,11 @@
-import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
+import { randomUUID } from "node:crypto";
+
+import { z } from "zod";
+
 import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
 import { parseModelSettings } from "../../../src/infrastructure/configuration/settings/schema";
-import { randomUUID } from "node:crypto";
+import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
 import { testSettings } from "../../support/settings";
-import { z } from "zod";
 
 export const geminiApis = ["interactions", "generate-content"] as const;
 export type GeminiApi = (typeof geminiApis)[number];

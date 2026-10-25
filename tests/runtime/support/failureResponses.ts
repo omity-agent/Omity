@@ -1,6 +1,6 @@
-import { MockLanguageModelV4 } from "ai/test";
 import { createOpenAI } from "@ai-sdk/openai";
 import { simulateReadableStream } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 
 const upstreamError = {
     code: "basispoints_upstream_error",

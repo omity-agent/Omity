@@ -1,7 +1,9 @@
 import { ChildProcess } from "node:child_process";
-import type { McpFailure } from "../failures/wireFormat";
+
 import type { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+
 import { localize } from "../../../i18n/server";
+import type { McpFailure } from "../failures/wireFormat";
 
 export function observeStdioProcess(
   transport: StdioClientTransport,

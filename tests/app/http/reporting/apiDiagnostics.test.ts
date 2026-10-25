@@ -1,12 +1,13 @@
+import { expect, spyOn, test } from "bun:test";
+
+import { createSession } from "../../../../src/app/frontend/services/client";
+import { reportError } from "../../../../src/app/frontend/services/errors";
+import { ApiError } from "../../../../src/app/frontend/services/httpTransport";
 import {
   configureFailure,
   failingStartupPath,
 } from "../../../infrastructure/mcp/initialization/isolatedCatalog";
-import { expect, spyOn, test } from "bun:test";
-import { ApiError } from "../../../../src/app/frontend/services/httpTransport";
-import { createSession } from "../../../../src/app/frontend/services/client";
 import { liveApplication } from "../liveApplication";
-import { reportError } from "../../../../src/app/frontend/services/errors";
 
 test("MCP startup diagnostics survive the API and are reported as one summary and a structured browser record", async () => {
   await using app = await liveApplication();

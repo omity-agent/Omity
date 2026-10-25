@@ -1,13 +1,15 @@
-import { type MessageContent, ToolMessage } from "@langchain/core/messages";
-import { claimShortIdAsync } from "../infrastructure/randomId";
-import { countTokens } from "./tokenizer";
-import { inspectToolTextContent } from "./outputText";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { join } from "node:path";
-import { localize } from "../i18n/server";
 import { mkdirSync } from "node:fs";
-import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+import { type MessageContent, ToolMessage } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
+
+import { localize } from "../i18n/server";
+import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
+import { claimShortIdAsync } from "../infrastructure/randomId";
+import { inspectToolTextContent } from "./outputText";
+import { countTokens } from "./tokenizer";
 
 interface LargeToolOutputOptions {
   maxTokens: number;

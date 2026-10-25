@@ -1,5 +1,6 @@
-import { emptyAs } from "../configuration/settings/values";
 import { z } from "zod";
+
+import { emptyAs } from "../configuration/settings/fieldSchemas";
 
 const description = emptyAs(z.string(), ""),
   count = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),

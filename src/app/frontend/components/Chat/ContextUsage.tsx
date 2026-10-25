@@ -1,8 +1,9 @@
 import { DatabaseZap } from "lucide-react";
-import type { TokenUsage } from "../../../timeline";
-import { css } from "styled-system/css";
-import { formatTokens } from "../../tokenUnits";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { TokenUsage } from "../../../timeline";
+import { formatTokens } from "../../tokenUnits";
 
 const panel = css({
     alignItems: "end",

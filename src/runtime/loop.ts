@@ -1,6 +1,6 @@
-import { type HostContext, waitForWake } from "./context";
 import { localize } from "../i18n/server";
 import { processInput } from "./consumeInputs";
+import { type HostContext, waitForWake } from "./context";
 
 export async function hostLoop(ctx: HostContext) {
   let lastIdle = 0;

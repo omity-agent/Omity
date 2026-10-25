@@ -1,5 +1,12 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
-import { type SessionInfo, deleteSession, pickWorkspacePath, setControl } from "./services/client";
+
+import { AccessGate } from "./components/Access/AccessGate";
+import { ApplicationFrame } from "./components/Application";
+import { pauseRequestPending } from "./components/Chat/actionState";
+import { ChatPage } from "./components/Chat/ChatPage";
+import { useSessionToolActions } from "./components/Chat/toolActions";
+import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
 import {
   pagePath,
   readPage,
@@ -8,18 +15,12 @@ import {
   usePageNavigation,
   usePageNavigator,
 } from "./route";
-import { removeSession, useBootstrap, useUserMessages } from "./services/queries";
-import { AccessGate } from "./components/Access/AccessGate";
-import { ApplicationFrame } from "./components/Application";
-import { ChatPage } from "./components/Chat/ChatPage";
+import { deleteSession, pickWorkspacePath, type SessionInfo, setControl } from "./services/client";
+import { useNewSession } from "./services/newSession";
 import { createProfileChangeHandler } from "./services/profileChange";
-import { pauseRequestPending } from "./components/Chat/actionState";
+import { removeSession, useBootstrap, useUserMessages } from "./services/queries";
 import { recentWorkspaces } from "./services/recentWorkspaces";
 import { useForkableTranscript } from "./services/transcript/fork";
-import { useNewSession } from "./services/newSession";
-import { useQueryClient } from "@tanstack/react-query";
-import { useSessionPresentation } from "./components/Sidebar/useSessionPresentation";
-import { useSessionToolActions } from "./components/Chat/toolActions";
 
 const emptySessions: SessionInfo[] = [],
   emptyProfiles: string[] = [],

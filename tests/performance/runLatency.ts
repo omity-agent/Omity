@@ -1,12 +1,13 @@
+import assert from "node:assert/strict";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { cpus, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import { prepareBenchmarkSettings, readLatencyProfile } from "./typicalProfile";
-import type { RoundtripSample } from "./timing/roundtripCapture";
-import assert from "node:assert/strict";
+
 import { createTypicalHistory } from "./historyFixture";
 import { measureApplication } from "./timedApplication";
 import { printLatencyReport } from "./timing/latencyReport";
+import type { RoundtripSample } from "./timing/roundtripCapture";
+import { prepareBenchmarkSettings, readLatencyProfile } from "./typicalProfile";
 
 const repository = resolve(import.meta.dir, "../.."),
   profile = await readLatencyProfile(repository),

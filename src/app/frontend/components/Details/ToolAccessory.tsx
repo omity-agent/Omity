@@ -1,10 +1,11 @@
-import { Badge, IconButton } from "../ParkUI";
 import { CircleStop, LoaderCircle } from "lucide-react";
 import { useCallback, useState } from "react";
-import type { ToolCallPhase } from "../../../timeline";
-import { css } from "styled-system/css";
-import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { ToolCallPhase } from "../../../timeline";
+import { reportPromiseErrors } from "../../services/errors";
+import { Badge, IconButton } from "../ParkUI";
 
 const accessory = css({ alignItems: "center", display: "flex", gap: "2" }),
   stopButton = css({

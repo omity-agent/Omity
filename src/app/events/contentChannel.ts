@@ -1,7 +1,8 @@
-import { type OutboundEvent, eventStream } from "./stream";
 import type { Context } from "hono";
-import type { DisplayEvent } from "../timeline";
 import mitt from "mitt";
+
+import type { DisplayEvent } from "../timeline";
+import { eventStream, type OutboundEvent } from "./stream";
 
 export class ContentChannel {
   private readonly bus = mitt<Record<`session:${string}`, OutboundEvent>>();

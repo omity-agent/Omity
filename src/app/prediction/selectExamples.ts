@@ -1,5 +1,5 @@
-import type { PredictionSample, loadPredictionSnapshot } from "./samples";
 import type { Settings } from "../../types";
+import type { loadPredictionSnapshot, PredictionSample } from "./samples";
 
 export type PredictionSettings = Extract<NonNullable<Settings["prediction"]>, { enabled: true }>;
 interface SampleCache {

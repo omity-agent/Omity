@@ -1,3 +1,6 @@
+import type { FileLinkUnit } from "../../fileLinks/types";
+import { persistedTimelineMessage } from "./build/message";
+import { syntheticMessage } from "./build/synthetic";
 import type {
   DisplayEvent,
   DisplayMessage,
@@ -7,12 +10,9 @@ import type {
   ReasoningTranslation,
   TimelineMessage,
 } from "./contracts/projection";
-import { streamTimelineMessages, toolCallLifecycle } from "./streamEvents";
-import type { FileLinkUnit } from "../../fileLinks/types";
 import { groupAssistantMessages } from "./grouping";
-import { persistedTimelineMessage } from "./build/message";
+import { streamTimelineMessages, toolCallLifecycle } from "./streamEvents";
 import { sameToolCall } from "./tool/correlation";
-import { syntheticMessage } from "./build/synthetic";
 
 export type {
   DisplayEvent,

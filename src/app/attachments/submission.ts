@@ -1,6 +1,7 @@
-import type { PendingAttachment } from "./contract";
-import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
 import { z } from "zod";
+
+import { settingsProfileNameSchema } from "../../infrastructure/configuration/settings/profileNames";
+import type { PendingAttachment } from "./contract";
 
 const nonEmptyMessage = z.string().refine((value) => value.trim().length > 0),
   initialPair = z.strictObject({ assistant: nonEmptyMessage, user: nonEmptyMessage });

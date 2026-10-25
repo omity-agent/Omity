@@ -1,8 +1,9 @@
-import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
-import type { AskUserRequest } from "./askUser";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../../i18n/server";
 import { raceSignal } from "race-signal";
+
+import { askUserAnswerInvalid, toolNotRunning } from "../../errors";
+import { localize } from "../../i18n/server";
+import type { AskUserRequest } from "./askUser";
 
 type AskUserAnswer = { options: string[]; note: string } | { answer: string };
 interface PendingQuestion {

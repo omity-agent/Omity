@@ -1,14 +1,15 @@
 import {
-  type SettingsContext,
   availableSettingsProfiles,
   createSettingsContext,
+  type SettingsContext,
 } from "../../infrastructure/configuration/settings/context";
-import type { AppInstanceOwner } from "./instanceLock";
-import { AppRegistry } from "../registry";
-import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { SessionInfo } from "../sessionState";
-import type { Settings } from "../../types";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
+import type { ProcessOwner } from "../../infrastructure/process/ownership";
+import type { Settings } from "../../types";
+import type { BootstrapResponse } from "../contracts/results";
+import { AppRegistry } from "../registry";
+import type { SessionInfo } from "../sessionState";
+import type { AppInstanceOwner } from "./instanceLock";
 import { recoverAppSessions } from "./recovery";
 
 export interface ControllerOptions {
@@ -34,7 +35,7 @@ export function bootstrapPayload(
   settings: Settings,
   context: SettingsContext,
   sessions: SessionInfo[],
-) {
+): BootstrapResponse {
   return {
     attachments: settings.attachments,
     cwd,

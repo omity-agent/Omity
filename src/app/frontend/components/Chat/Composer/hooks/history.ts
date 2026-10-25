@@ -1,5 +1,6 @@
-import type { HistoryDirection, UserMessageHistory } from "../history";
 import { useCallback, useLayoutEffect, useRef } from "react";
+
+import type { HistoryDirection, UserMessageHistory } from "../history";
 
 export function useHistoryNavigation(
   historyRef: { current: UserMessageHistory },

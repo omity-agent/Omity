@@ -1,10 +1,12 @@
-import { eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
-import { decodeMessage } from "./messages/hydration";
+
+import { eq, sql } from "drizzle-orm";
+
 import { localize } from "../../../../i18n/server";
 import { messageReasoning } from "../../../../runtime/content";
 import { reasoningTranslations } from "../../schema";
 import { sessionDatabase } from "../../sqlite/connection";
+import { decodeMessage } from "./messages/hydration";
 
 export interface ReasoningTranslation {
   messageId: string;

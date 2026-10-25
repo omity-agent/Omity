@@ -1,16 +1,17 @@
 import { BrushCleaning, Trash2 } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { ActionPanel } from "./ActionPanel";
-import type { ChatControlState } from "../../actionState";
-import { ConfirmAction } from "./ConfirmAction";
-import { ContextUsage } from "../../ContextUsage";
+import { useTranslation } from "react-i18next";
+
 import type { Control } from "../../../../../../types";
+import type { TokenUsage } from "../../../../../timeline";
+import { clearTemporaryFiles } from "../../../../services/client";
+import type { ChatControlState } from "../../actionState";
+import { ContextUsage } from "../../ContextUsage";
+import { ActionPanel } from "./ActionPanel";
+import { ConfirmAction } from "./ConfirmAction";
 import { ProfileAction } from "./ProfileAction";
 import { RuntimeControl } from "./RuntimeControl";
 import { SubmitButton } from "./SubmitButton";
-import type { TokenUsage } from "../../../../../timeline";
-import { clearTemporaryFiles } from "../../../../services/client";
-import { useTranslation } from "react-i18next";
 
 export function Actions({
   availableProfiles,

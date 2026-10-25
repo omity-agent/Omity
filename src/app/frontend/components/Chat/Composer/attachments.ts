@@ -1,11 +1,11 @@
+import { claimShortId } from "../../../../../infrastructure/randomId";
 import {
-  type AttachmentSettings,
-  type PendingAttachment,
   attachmentIds,
   attachmentPlaceholder,
+  type AttachmentSettings,
+  type PendingAttachment,
   validateAttachmentBatch,
 } from "../../../../attachments/contract";
-import { claimShortId } from "../../../../../infrastructure/randomId";
 import { reportError } from "../../../services/errors";
 
 export class PendingAttachments {

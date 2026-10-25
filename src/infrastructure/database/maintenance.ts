@@ -1,10 +1,12 @@
-import { runTransaction, sessionDatabase } from "./sqlite/connection";
 import type { Database } from "bun:sqlite";
-import type { SessionDefinition } from "./session/sessionDefinition";
-import { createSessionRecord } from "./records/session/metadata";
+
 import { eq } from "drizzle-orm";
+
 import { localize } from "../../i18n/server";
+import { createSessionRecord } from "./records/session/metadata";
 import { sessions } from "./schema";
+import type { SessionDefinition } from "./session/sessionDefinition";
+import { runTransaction, sessionDatabase } from "./sqlite/connection";
 
 export function resetSessionStorage(
   db: Database,

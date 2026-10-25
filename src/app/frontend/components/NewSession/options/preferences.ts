@@ -1,19 +1,10 @@
-import { api, request } from "../../../services/httpTransport";
 import { useQuery } from "@tanstack/react-query";
 import { useReducer } from "react";
-import { z } from "../../../services/validation";
 
-const capabilitySchema = z.object({
-    description: z.string().optional(),
-    enable: z.boolean(),
-    id: z.string().min(1),
-  }),
-  sessionOptionsSchema = z.object({
-    hooks: z.array(capabilitySchema),
-    mcpServers: z.array(capabilitySchema),
-    model: z.string().min(1),
-  });
-export type CapabilityOption = z.infer<typeof capabilitySchema>;
+import { type CapabilityOption, sessionOptionsSchema } from "../../../../contracts/results";
+import { api, request } from "../../../services/httpTransport";
+
+export type { CapabilityOption } from "../../../../contracts/results";
 interface ProfilePreferences {
   hooks?: ReadonlyMap<string, boolean>;
   mcpServers?: ReadonlyMap<string, boolean>;

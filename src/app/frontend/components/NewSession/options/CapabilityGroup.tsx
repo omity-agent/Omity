@@ -1,9 +1,10 @@
-import { Badge, Field } from "../../ParkUI";
-import { css, cx } from "styled-system/css";
-import { useCallback, useId } from "react";
-import type { CapabilityOption } from "./preferences";
 import { Switch } from "@ark-ui/react/switch";
+import { useCallback, useId } from "react";
+import { css, cx } from "styled-system/css";
 import { switchRecipe } from "styled-system/recipes";
+
+import { Badge, Field } from "../../ParkUI";
+import type { CapabilityOption } from "./preferences";
 
 const classes = switchRecipe({ size: "sm" }),
   group = css({

@@ -1,12 +1,13 @@
+import { defineConfig } from "@pandacss/dev";
+import { createPreset } from "@park-ui/panda-preset";
+import neutral from "@park-ui/panda-preset/colors/neutral";
+
 import {
   compactViewport,
   interfaceLayerStyles,
   interfaceMetrics,
   interfaceTextStyles,
 } from "./settings/appearance";
-import { createPreset } from "@park-ui/panda-preset";
-import { defineConfig } from "@pandacss/dev";
-import neutral from "@park-ui/panda-preset/colors/neutral";
 
 export default defineConfig({
   conditions: {

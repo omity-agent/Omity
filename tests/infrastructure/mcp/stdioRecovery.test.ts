@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
+import { join } from "node:path";
+
+import { z } from "zod";
+
 import { Logger } from "../../../src/infrastructure/logging/logger";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
-import { join } from "node:path";
-import { z } from "zod";
 
 test("real MCP process crash rejects the interrupted call and the next call uses a new child", async () => {
   const client = await RestartingStdioClient.create(

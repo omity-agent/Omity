@@ -1,8 +1,9 @@
-import { type SessionPlaceholders, resolvePlaceholders } from "../../configuration/placeholders";
-import { hasSessionDescription, sessionDescription } from "./descriptions";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { localize } from "../../../i18n/server";
 import { z } from "zod";
+
+import { localize } from "../../../i18n/server";
+import { resolvePlaceholders, type SessionPlaceholders } from "../../configuration/placeholders";
+import { hasSessionDescription, sessionDescription } from "./descriptions";
 
 interface FreeformMcpTools {
   parameters: ReadonlyMap<string, string>;

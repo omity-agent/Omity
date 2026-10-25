@@ -1,4 +1,9 @@
-import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
+import type {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+} from "@simplewebauthn/server";
 import { z } from "zod";
 
 const authenticatorAttachment = z.enum(["cross-platform", "platform"]).optional(),
@@ -30,3 +35,24 @@ export const authenticationBody: z.ZodType<AuthenticationResponseJSON> = z.objec
   }),
 });
 export const registrationOptionsBody = z.strictObject({ ticket: z.string().min(1).optional() });
+export const accessStatusSchema = z.object({
+  authenticated: z.boolean(),
+  configured: z.boolean(),
+  credentialCount: z.number().int().nonnegative(),
+  local: z.boolean(),
+  publicOrigin: z.string().nullable(),
+});
+export const loginOptionsSchema = z.object({
+  options: z.custom<PublicKeyCredentialRequestOptionsJSON>(),
+});
+export const registrationOptionsSchema = z.object({
+  options: z.custom<PublicKeyCredentialCreationOptionsJSON>(),
+  origin: z.string(),
+});
+export const authenticatedSchema = z.object({ authenticated: z.boolean() });
+export const registeredSchema = z.object({
+  credentialCount: z.number().int().positive(),
+  verified: z.boolean(),
+});
+export const ticketSchema = z.object({ ticket: z.string().min(1) });
+export type AccessStatus = z.infer<typeof accessStatusSchema>;

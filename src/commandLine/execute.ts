@@ -1,11 +1,11 @@
-import { appendSessionMessage, setSessionControl } from "../client";
-import type { CliCommand } from "./parser";
-import type { HostMode } from "../types";
-import { deleteHostSession } from "../storedSessions";
-import { localize } from "../i18n/server";
 import { openBrowser } from "../app/launch";
-import { runHost } from "../host";
 import { startAppServer } from "../app/server";
+import { appendSessionMessage, setSessionControl } from "../client";
+import { runHost } from "../host";
+import { localize } from "../i18n/server";
+import { deleteHostSession } from "../storedSessions";
+import type { HostMode } from "../types";
+import type { CliCommand } from "./parser";
 
 export async function executeCommand(command: CliCommand, root = process.cwd()) {
   switch (command.action) {

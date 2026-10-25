@@ -1,7 +1,8 @@
-import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
-import { installNetworking } from "../../../src/infrastructure/network/installNetworking";
 import { openaiCredentials } from "@openai-oauth/local";
+
+import { installNetworking } from "../../../src/infrastructure/network/installNetworking";
 import { testSettings } from "../../support/settings";
+import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 
 const closeNetworking = installNetworking();
 try {

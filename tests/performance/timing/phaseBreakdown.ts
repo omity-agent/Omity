@@ -1,5 +1,6 @@
-import type { Boundaries, TimingSpan } from "./spanRecorder";
 import assert from "node:assert/strict";
+
+import type { Boundaries, TimingSpan } from "./spanRecorder";
 
 interface Interval {
   start: number;

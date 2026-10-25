@@ -1,11 +1,13 @@
-import { type FramedOriginMode, startFramedOrigin } from "./framedOrigin";
-import { captureError, summarizeError } from "../../../../src/failures/details";
 import { expect, test } from "bun:test";
-import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
+
 import { isPlainObject } from "es-toolkit";
+
+import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
+import { captureError, summarizeError } from "../../../../src/failures/details";
+import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
 import { startRecordingProxy } from "../localProxyFixture";
+import { type FramedOriginMode, startFramedOrigin } from "./framedOrigin";
 
 async function streamFailure(mode: FramedOriginMode, proxied = false) {
   const origin = await startFramedOrigin(mode),

@@ -1,10 +1,12 @@
 import { Database, type SQLQueryBindings } from "bun:sqlite";
-import { type SQLiteBunDatabase, drizzle } from "drizzle-orm/bun-sqlite";
-import { parse, resolve } from "node:path";
-import { DrizzleQueryError } from "drizzle-orm";
-import { initializeDatabase } from "./initialization";
-import { localize } from "../../../i18n/server";
 import { rmSync } from "node:fs";
+import { parse, resolve } from "node:path";
+
+import { DrizzleQueryError } from "drizzle-orm";
+import { drizzle, type SQLiteBunDatabase } from "drizzle-orm/bun-sqlite";
+
+import { localize } from "../../../i18n/server";
+import { initializeDatabase } from "./initialization";
 
 const sqliteBusyTimeoutMs = 5000,
   databases = new WeakMap<Database, SQLiteBunDatabase>(),

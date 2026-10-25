@@ -1,9 +1,12 @@
-import { DomainError, type DomainErrorCode } from "../../errors";
+import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { McpLoadDetails } from "../../infrastructure/mcp/failures/wireFormat";
-import { McpLoadError } from "../../infrastructure/mcp/failures/reportConstruction";
-import { isRetryableModelError } from "../../runtime/transientErrors";
+
+import { DomainError, type DomainErrorCode } from "../../errors";
 import { isTerminalErrorSuppressed } from "../../failures/output";
+import { localize } from "../../i18n/server";
+import { McpLoadError } from "../../infrastructure/mcp/failures/reportConstruction";
+import type { McpLoadDetails } from "../../infrastructure/mcp/failures/wireFormat";
+import { isRetryableModelError } from "../../runtime/transientErrors";
 
 type ApiErrorCode =
   | DomainErrorCode
@@ -68,6 +71,12 @@ export function errorResponse(error: unknown) {
 function normalizeError(error: unknown) {
   if (error instanceof HttpError) {
     return error;
+  }
+  if (error instanceof HTTPException) {
+    return new HttpError(
+      error.status,
+      error.status === 400 ? localize("http:request.invalidBody") : error.message,
+    );
   }
   if (error instanceof DomainError) {
     return new HttpError(domainStatuses[error.code], error.message, error.code);

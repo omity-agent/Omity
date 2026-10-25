@@ -1,8 +1,8 @@
 import {
   type Control,
+  isRunningStatus,
   type RunStatus,
   type SessionStatus,
-  isRunningStatus,
 } from "../../../../types";
 import { pauseRequested, resolvePausePhase } from "../../../pauseState";
 

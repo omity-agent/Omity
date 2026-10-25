@@ -1,5 +1,5 @@
-import { encodeTranslationLineBreaks } from "./lineBreaks";
 import { localize } from "../../i18n";
+import { encodeTranslationLineBreaks } from "./lineBreaks";
 
 interface BrowserTranslator {
   translate: (text: string, signal?: AbortSignal) => Promise<string | null>;

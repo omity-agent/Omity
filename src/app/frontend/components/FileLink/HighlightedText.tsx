@@ -1,7 +1,8 @@
-import { type CSSProperties, Fragment, useMemo } from "react";
-import { FileLinkMenu } from "./Menu";
-import type { FilePathMatch } from "../../../../fileLinks/types";
 import { chunkBy } from "es-toolkit";
+import { type CSSProperties, Fragment, useMemo } from "react";
+
+import type { FilePathMatch } from "../../../../fileLinks/types";
+import { FileLinkMenu } from "./Menu";
 
 interface HighlightToken {
   className?: string;

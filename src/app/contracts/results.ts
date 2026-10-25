@@ -1,35 +1,35 @@
-import type { AttachmentSettings } from "../../../attachments/contract";
-import { controlCommandSchema } from "../../../../types";
-import { sessionInfoSchema } from "../../../events/contracts";
-import { z } from ".";
+import { z } from "zod";
+
+import {
+  attachmentSettingsSchema,
+  frontendSettingsSchema,
+} from "../../infrastructure/configuration/settings/fieldSchemas";
+import { controlCommandSchema } from "../../types";
+import { sessionInfoSchema } from "../events/contracts";
 
 export {
   reasoningTranslationSchema as reasoningTranslationResponseSchema,
   transcriptResponseSchema,
-} from "../../../timeline/contracts/records";
-export { streamEventSchema as eventSchema } from "../../../../types";
+} from "../timeline/contracts/records";
 const integer = z.number().int(),
-  attachmentSettingsSchema: z.ZodType<AttachmentSettings> = z.object({
-    allowedSuffixes: z.array(z.string()),
-    maxSizeBytes: integer.nonnegative(),
+  capabilitySchema = z.object({
+    description: z.string().optional(),
+    enable: z.boolean(),
+    id: z.string().min(1),
   });
 export const bootstrapResponseSchema = z.object({
   attachments: attachmentSettingsSchema,
   cwd: z.string(),
-  frontend: z.object({
-    cacheHitWarningRatio: z.number().min(0).max(1),
-    draftSaveDelayMs: integer.nonnegative(),
-    reasoningTranslation: z.object({
-      enabled: z.boolean(),
-      highConfidenceThreshold: z.number().min(0).max(1),
-      minimumIntervalMs: integer.nonnegative(),
-    }),
-    transcriptSnapshotThrottleMs: integer.nonnegative(),
-  }),
+  frontend: frontendSettingsSchema,
   profiles: z.object({
     available: z.array(z.string()),
   }),
   sessions: z.array(sessionInfoSchema),
+});
+export const sessionOptionsSchema = z.object({
+  hooks: z.array(capabilitySchema),
+  mcpServers: z.array(capabilitySchema),
+  model: z.string().min(1),
 });
 export const userMessagesResponseSchema = z.object({
   messages: z.array(z.object({ content: z.string(), createdAt: integer.nonnegative() })),
@@ -52,3 +52,6 @@ export const controlResponseSchema = z.object({
 });
 export const toolCallResponseSchema = z.object({ toolCallId: z.string() });
 export const activatedFileResponseSchema = z.object({ path: z.string() });
+export type BootstrapResponse = z.infer<typeof bootstrapResponseSchema>;
+export type CapabilityOption = z.infer<typeof capabilitySchema>;
+export type SessionOptions = z.infer<typeof sessionOptionsSchema>;

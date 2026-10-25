@@ -1,17 +1,18 @@
 import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+
+import type { BootstrapResponse } from "../../contracts/results";
 import {
-  type SessionInfo,
   bootstrap,
   loadPredictions,
   loadUserMessages,
+  type SessionInfo,
   stateEvents,
 } from "./client";
-import { useEffect, useRef } from "react";
 import { sessionAttentionStore } from "./events/attention";
 import { subscribeStateEvents } from "./events/reception";
 import { transcriptKey } from "./transcript/query";
 
-type BootstrapData = Awaited<ReturnType<typeof bootstrap>>;
 const bootstrapKey = ["bootstrap"] as const,
   userMessagesKey = ["user-messages"] as const,
   predictionKey = (sessionId: string) => ["predictions", sessionId] as const;
@@ -97,7 +98,7 @@ function updateCachedSessions(
   queryClient: QueryClient,
   update: (sessions: SessionInfo[]) => SessionInfo[],
 ) {
-  queryClient.setQueryData<BootstrapData>(bootstrapKey, (current) =>
+  queryClient.setQueryData<BootstrapResponse>(bootstrapKey, (current) =>
     current ? { ...current, sessions: update(current.sessions) } : current,
   );
 }

@@ -1,18 +1,18 @@
-import { PredictionExamples, type PredictionSettings } from "./selectExamples";
-import { type PredictionSample, loadPredictionSnapshot } from "./samples";
-import {
-  openSessionDatabase,
-  runTransaction,
-} from "../../infrastructure/database/sqlite/connection";
+import { localize } from "../../i18n/server";
+import { databasePath } from "../../infrastructure/configuration/sessionPaths";
 import {
   readPredictionContext,
   readPredictionRecord,
   writePredictionRecord,
 } from "../../infrastructure/database/records/session/inputForecast";
+import {
+  openSessionDatabase,
+  runTransaction,
+} from "../../infrastructure/database/sqlite/connection";
 import type { Settings } from "../../types";
-import { databasePath } from "../../infrastructure/configuration/sessionPaths";
-import { localize } from "../../i18n/server";
 import { requestCandidates } from "./requestCandidates";
+import { loadPredictionSnapshot, type PredictionSample } from "./samples";
+import { PredictionExamples, type PredictionSettings } from "./selectExamples";
 
 interface PredictionTask {
   controller: AbortController;

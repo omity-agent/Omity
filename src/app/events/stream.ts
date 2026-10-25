@@ -1,7 +1,8 @@
 import { AsyncQueuer } from "@tanstack/pacer/async-queuer";
 import type { Context } from "hono";
-import { localize } from "../../i18n/server";
 import { streamSSE } from "hono/streaming";
+
+import { localize } from "../../i18n/server";
 
 export interface OutboundEvent {
   data: unknown;

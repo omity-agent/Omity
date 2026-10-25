@@ -1,15 +1,16 @@
 /* oxlint-disable @pandacss/no-descendant-selectors -- Menu labels style arbitrary link content supplied by callers. */
-import { ExternalLink, FolderOpen } from "lucide-react";
-import { type ReactNode, useCallback } from "react";
-import { css, cx } from "styled-system/css";
-import type { FilePathKind } from "../../../../fileLinks/types";
 import { Menu } from "@ark-ui/react/menu";
 import { Portal } from "@ark-ui/react/portal";
-import { activateFileLink } from "../../services/client";
+import { ExternalLink, FolderOpen } from "lucide-react";
+import { type ReactNode, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { css, cx } from "styled-system/css";
 import { menu } from "styled-system/recipes";
+
+import type { FilePathKind } from "../../../../fileLinks/types";
+import { activateFileLink } from "../../services/client";
 import { reportPromiseErrors } from "../../services/errors";
 import { useFileLinkSession } from "./context";
-import { useTranslation } from "react-i18next";
 
 const classes = menu({ size: "sm" }),
   positioning = { gutter: 4, placement: "bottom-start" as const },

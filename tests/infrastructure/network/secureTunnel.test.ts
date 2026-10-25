@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
+import { once } from "node:events";
+import { createServer } from "node:http";
 import type { Socket } from "node:net";
+import { promisify } from "node:util";
+
+import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { captureError } from "../../../src/failures/details";
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
-import { createServer } from "node:http";
-import { once } from "node:events";
-import { promisify } from "node:util";
 
 test("wss:// retains the HTTP proxy's default CONNECT route", async () => {
   const requests: { method: string | undefined; target: string | undefined }[] = [],

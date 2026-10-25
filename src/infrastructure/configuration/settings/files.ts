@@ -1,17 +1,19 @@
+import { existsSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+
+import { deepmergeCustom } from "deepmerge-ts";
+import { config as loadDotenv } from "dotenv";
+import { isPlainObject as isRecord } from "es-toolkit";
+import untildify from "untildify";
+
+import { localize } from "../../../i18n/server";
 import {
   type PlaceholderOptions,
   readSettingsYamlFile,
   resolvePlaceholders,
 } from "../placeholders";
-import { dirname, join, resolve } from "node:path";
-import { existsSync, statSync } from "node:fs";
 import type { SettingsContext } from "./context";
-import { deepmergeCustom } from "deepmerge-ts";
-import { homedir } from "node:os";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { config as loadDotenv } from "dotenv";
-import { localize } from "../../../i18n/server";
-import untildify from "untildify";
 
 const mergeSettings = deepmergeCustom({
   filterValues: false,

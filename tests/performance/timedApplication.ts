@@ -1,12 +1,14 @@
-import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
-import { AppController } from "../../src/app/controller";
-import type { LatencyProfile } from "./typicalProfile";
-import { RoundtripCapture } from "./timing/roundtripCapture";
-import type { SettingsContext } from "../../src/infrastructure/configuration/settings/context";
-import type { TypicalHistory } from "./historyFixture";
 import assert from "node:assert/strict";
+
 import { raceSignal } from "race-signal";
+
+import { AppController } from "../../src/app/controller";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import type { SettingsContext } from "../../src/infrastructure/configuration/settings/context";
+import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
+import type { TypicalHistory } from "./historyFixture";
+import { RoundtripCapture } from "./timing/roundtripCapture";
+import type { LatencyProfile } from "./typicalProfile";
 
 export async function measureApplication(
   settingsContext: SettingsContext,

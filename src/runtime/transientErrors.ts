@@ -1,3 +1,5 @@
+import isNetworkError from "is-network-error";
+
 import {
   nonRetryableApiErrorTypes,
   retryableApiCodes,
@@ -7,7 +9,6 @@ import {
   retryableMessages,
   retryableNames,
 } from "../../settings/resilience";
-import isNetworkError from "is-network-error";
 import { localize } from "../i18n/server";
 
 export class ModelEmptyResponseError extends Error {

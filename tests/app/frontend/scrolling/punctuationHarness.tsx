@@ -1,10 +1,11 @@
+import { useMemo } from "react";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
+
 import { FileLinkProvider } from "../../../../src/app/frontend/components/FileLink/context";
-import type { FilePathMatch } from "../../../../src/fileLinks/types";
 import { HighlightedCode } from "../../../../src/app/frontend/components/HighlightedCode";
 import { HighlightedLine } from "../../../../src/app/frontend/components/HighlightedCode/lines";
-import { createRoot } from "react-dom/client";
-import { flushSync } from "react-dom";
-import { useMemo } from "react";
+import type { FilePathMatch } from "../../../../src/fileLinks/types";
 
 interface LinkedFrame {
   code: string;

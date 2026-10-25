@@ -1,9 +1,10 @@
-import { type BundledLanguage, type Highlighter, bundledLanguages, createHighlighter } from "shiki";
-import { type ThemedToken, getTokenStyleObject, stringifyTokenStyle } from "shiki/core";
-import { syntaxTheme, syntaxThemeName } from "./palette";
-import { Magika } from "magika";
 import { ShikiStreamTokenizer } from "@shikijs/stream";
 import { escape as escapeHtml } from "es-toolkit";
+import { Magika } from "magika";
+import { type BundledLanguage, bundledLanguages, createHighlighter, type Highlighter } from "shiki";
+import { getTokenStyleObject, stringifyTokenStyle, type ThemedToken } from "shiki/core";
+
+import { syntaxTheme, syntaxThemeName } from "./palette";
 
 export interface HighlightInput {
   code: string;

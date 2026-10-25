@@ -1,10 +1,11 @@
-import { type Page, sessionPage } from "../route";
-import { useCallback, useState } from "react";
-import type { InitialSessionState } from "../../initialState";
-import type { PendingAttachment } from "../../attachments/contract";
 import type { QueryClient } from "@tanstack/react-query";
-import { addSession } from "./queries";
+import { useCallback, useState } from "react";
+
+import type { PendingAttachment } from "../../attachments/contract";
+import type { InitialSessionState } from "../../initialState";
+import { type Page, sessionPage } from "../route";
 import { createSession } from "./client";
+import { addSession } from "./queries";
 
 function resolveNewSessionWorkspace(sourceWorkspace: string | undefined, cwd: string) {
   return sourceWorkspace ?? cwd;

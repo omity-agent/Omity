@@ -1,6 +1,7 @@
-import { isIP } from "node:net";
-import { localize } from "../i18n/server";
 import { spawn } from "node:child_process";
+import { isIP } from "node:net";
+
+import { localize } from "../i18n/server";
 
 export function appUrl(host: string, port: number) {
   return `http://${urlHost(host)}:${port.toString()}/`;

@@ -1,8 +1,10 @@
-import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
+
 import { Magika } from "magika";
-import { localize } from "../src/i18n/server";
 import { z } from "zod";
+
+import { localize } from "../src/i18n/server";
 
 const modelManifestSchema = z.object({
     weightsManifest: z.array(

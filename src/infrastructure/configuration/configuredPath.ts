@@ -1,4 +1,5 @@
 import { isAbsolute, resolve } from "node:path";
+
 import untildify from "untildify";
 
 export function resolveConfiguredPath(root: string, path: string) {

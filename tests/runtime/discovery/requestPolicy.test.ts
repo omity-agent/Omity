@@ -1,13 +1,15 @@
-import { Output, generateText } from "ai";
-import { discoverySettings, wireModel } from "./wireFixtures";
 import { expect, test } from "bun:test";
-import { HumanMessage } from "@langchain/core/messages";
-import { aiModelTools } from "../../../src/agent/model/tools";
+
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
-import { streamAiModel } from "../../../src/agent/model/request";
-import { structuredRequestOptions } from "../../../src/agent/model/provider";
+import { HumanMessage } from "@langchain/core/messages";
+import { generateText, Output } from "ai";
 import { z } from "zod";
+
+import { structuredRequestOptions } from "../../../src/agent/model/provider";
+import { streamAiModel } from "../../../src/agent/model/request";
+import { aiModelTools } from "../../../src/agent/model/tools";
+import { discoverySettings, wireModel } from "./wireFixtures";
 
 test.each(["completions", "responses", "messages"] as const)(
   "%s explicitly disables tools for empty main and structured requests",

@@ -1,7 +1,7 @@
-import type { PendingAttachment } from "./contract";
-import type { Settings } from "../../types";
-import { saveMessageAttachments } from "./storage";
 import { submitSessionMessage } from "../../client";
+import type { Settings } from "../../types";
+import type { PendingAttachment } from "./contract";
+import { saveMessageAttachments } from "./storage";
 
 export async function enqueueMessageWithAttachments(
   settings: Settings,

@@ -1,13 +1,15 @@
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { parse, stringify } from "yaml";
+import { z } from "zod";
+
+import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import {
   parseAgentSettings,
   parseModelSettings,
 } from "../../src/infrastructure/configuration/settings/schema";
-import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
 import { emptyMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
-import { join } from "node:path";
-import { z } from "zod";
 
 const positive = z.number().int().positive(),
   contextSchema = z

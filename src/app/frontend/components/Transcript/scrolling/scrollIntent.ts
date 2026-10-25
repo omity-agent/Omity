@@ -1,14 +1,14 @@
 function ownsScroll(viewport: HTMLElement, target: EventTarget | null, delta: number) {
+  const canScroll = (element: HTMLElement) =>
+    delta < 0
+      ? element.scrollTop > 0
+      : element.scrollTop < element.scrollHeight - element.clientHeight;
   let element = target instanceof Element ? target : null;
   while (element && element !== viewport) {
     if (element instanceof HTMLElement && element.scrollHeight > element.clientHeight) {
       const style = getComputedStyle(element);
       if (style.overflowY === "auto" || style.overflowY === "scroll") {
-        const canScroll =
-          delta < 0
-            ? element.scrollTop > 0
-            : element.scrollTop < element.scrollHeight - element.clientHeight;
-        if (canScroll || style.overscrollBehaviorY !== "auto") {
+        if (canScroll(element) || style.overscrollBehaviorY !== "auto") {
           return false;
         }
       }
@@ -17,12 +17,25 @@ function ownsScroll(viewport: HTMLElement, target: EventTarget | null, delta: nu
   }
   return element === viewport && viewport.scrollHeight > viewport.clientHeight;
 }
+function isScrollbarPointer(viewport: HTMLElement, event: PointerEvent | MouseEvent) {
+  if (event.target !== viewport) {
+    return false;
+  }
+  const bounds = viewport.getBoundingClientRect(),
+    scrollbarWidth = Math.max(viewport.offsetWidth - viewport.clientWidth, 16);
+  return (
+    event.clientX >= bounds.right - scrollbarWidth &&
+    event.clientY >= bounds.top &&
+    event.clientY < bounds.bottom
+  );
+}
 export function observeScrollIntent(
   viewport: HTMLElement,
   onDirection: (delta: number) => void,
   onDrag: (active: boolean) => void,
 ) {
-  let touchY: number | undefined;
+  let dragging = false,
+    touchY: number | undefined;
   const document = viewport.ownerDocument,
     input = (event: Event, delta: number) => {
       if (delta !== 0 && ownsScroll(viewport, event.target, delta)) {
@@ -61,30 +74,40 @@ export function observeScrollIntent(
         input(event, event.key === " " && event.shiftKey ? -1 : 1);
       }
     },
-    pointerDown = (event: PointerEvent) => {
-      if (event.target !== viewport || viewport.scrollHeight <= viewport.clientHeight) {
-        return;
-      }
-      const left = viewport.getBoundingClientRect().left + viewport.clientLeft;
-      if (event.clientX < left || event.clientX >= left + viewport.clientWidth) {
+    beginDrag = (event: PointerEvent | MouseEvent) => {
+      if (
+        !dragging &&
+        viewport.scrollHeight > viewport.clientHeight &&
+        isScrollbarPointer(viewport, event)
+      ) {
+        dragging = true;
         onDrag(true);
       }
     },
-    pointerUp = () => onDrag(false);
+    pointerUp = () => {
+      if (dragging) {
+        dragging = false;
+        onDrag(false);
+      }
+    };
   viewport.addEventListener("wheel", wheel, { passive: true });
   viewport.addEventListener("touchstart", touchStart, { passive: true });
   viewport.addEventListener("touchmove", touchMove, { passive: true });
   viewport.addEventListener("keydown", keyDown);
-  viewport.addEventListener("pointerdown", pointerDown);
+  viewport.addEventListener("mousedown", beginDrag);
+  viewport.addEventListener("pointerdown", beginDrag);
   document.addEventListener("pointerup", pointerUp);
   document.addEventListener("pointercancel", pointerUp);
+  document.addEventListener("mouseup", pointerUp);
   return () => {
     viewport.removeEventListener("wheel", wheel);
     viewport.removeEventListener("touchstart", touchStart);
     viewport.removeEventListener("touchmove", touchMove);
     viewport.removeEventListener("keydown", keyDown);
-    viewport.removeEventListener("pointerdown", pointerDown);
+    viewport.removeEventListener("mousedown", beginDrag);
+    viewport.removeEventListener("pointerdown", beginDrag);
     document.removeEventListener("pointerup", pointerUp);
     document.removeEventListener("pointercancel", pointerUp);
+    document.removeEventListener("mouseup", pointerUp);
   };
 }

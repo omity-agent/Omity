@@ -1,5 +1,6 @@
-import { type ComposerDraftTarget, writeComposerDraft } from "../composerDrafts";
 import { Debouncer } from "@tanstack/pacer";
+
+import { type ComposerDraftTarget, writeComposerDraft } from "../composerDrafts";
 
 interface DraftSnapshot {
   content: string;

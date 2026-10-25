@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+
 import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { startRecordingProxy } from "./localProxyFixture";
 

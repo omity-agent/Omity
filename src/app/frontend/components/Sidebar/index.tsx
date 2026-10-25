@@ -1,12 +1,13 @@
-import { type MouseEvent, useCallback } from "react";
-import { groupSessions, isRunning } from "./sessions";
-import { navigateLink, pagePath } from "../../route";
-import { LinkButton } from "../ParkUI";
 import { Plus } from "lucide-react";
-import { SessionGroup } from "./SessionGroup";
-import type { SessionInfo } from "../../services/client";
-import { css } from "styled-system/css";
+import { type MouseEvent, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import { navigateLink, pagePath } from "../../route";
+import type { SessionInfo } from "../../services/client";
+import { LinkButton } from "../ParkUI";
+import { SessionGroup } from "./SessionGroup";
+import { groupSessions, isRunning } from "./sessions";
 
 const panel = css({
     alignItems: "center",

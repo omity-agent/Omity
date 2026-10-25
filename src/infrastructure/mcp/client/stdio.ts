@@ -1,17 +1,19 @@
+import { Writable } from "node:stream";
+
+import type { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+
 import {
   maximumMcpStderrBytes,
   maximumMcpStdoutBytes,
 } from "../../../../settings/diagnosticPolicy";
-import type { Client } from "@modelcontextprotocol/client";
-import { HandshakeEvidence } from "./handshakeEvidence";
-import { ProcessOutputCapture } from "./diagnostics";
-import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import type { StdioConnection } from "../configuration/connections";
-import { Writable } from "node:stream";
-import { connectProtocolClient } from "./protocol";
 import { localize } from "../../../i18n/server";
-import { observeStdioProcess } from "./processObservation";
+import type { StdioConnection } from "../configuration/connections";
 import { reportMcpFailure } from "../failures/reportConstruction";
+import { ProcessOutputCapture } from "./diagnostics";
+import { HandshakeEvidence } from "./handshakeEvidence";
+import { observeStdioProcess } from "./processObservation";
+import { connectProtocolClient } from "./protocol";
 
 export interface ConnectedStdioClient {
   client: Client;

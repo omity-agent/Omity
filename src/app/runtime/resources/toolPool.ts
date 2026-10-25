@@ -1,19 +1,19 @@
+import { localize } from "../../../i18n/server";
 import {
-  type LoadMcpOptions,
+  selectSettingsProfiles,
+  type SettingsContext,
+} from "../../../infrastructure/configuration/settings/context";
+import { Logger } from "../../../infrastructure/logging/logger";
+import { AsyncResourceCache } from "../../../infrastructure/mcp/lifecycle";
+import {
   type LoadedMcp,
   loadMcp,
+  type LoadMcpOptions,
   loadSessionMcp,
 } from "../../../infrastructure/mcp/tools/catalog";
-import {
-  type SettingsContext,
-  selectSettingsProfiles,
-} from "../../../infrastructure/configuration/settings/context";
-import type { AskUserRuntime } from "../../../infrastructure/toolbox/runtime";
-import { AsyncResourceCache } from "../../../infrastructure/mcp/lifecycle";
-import type { LogLevel } from "../../../types";
-import { Logger } from "../../../infrastructure/logging/logger";
 import type { McpToolSnapshot } from "../../../infrastructure/mcp/tools/definitions";
-import { localize } from "../../../i18n/server";
+import type { AskUserRuntime } from "../../../infrastructure/toolbox/runtime";
+import type { LogLevel } from "../../../types";
 
 export function createAppMcp(
   root: string,

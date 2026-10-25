@@ -1,6 +1,7 @@
-import { EditorView, type KeyBinding, keymap } from "@codemirror/view";
-import type { HistoryDirection } from "../Composer/history";
 import { Prec } from "@codemirror/state";
+import { EditorView, type KeyBinding, keymap } from "@codemirror/view";
+
+import type { HistoryDirection } from "../Composer/history";
 
 interface EditorHandlers {
   disabled: boolean;

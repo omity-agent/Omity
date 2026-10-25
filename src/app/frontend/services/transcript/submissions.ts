@@ -1,9 +1,10 @@
-import { type OptimisticUser, optimisticTimelineMessage } from "./optimistic";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { type TranscriptData, rebuildTranscript } from "./cache";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+
 import type { PendingAttachment } from "../../../attachments/contract";
 import { sendMessage } from "../client";
+import { rebuildTranscript, type TranscriptData } from "./cache";
+import { optimisticTimelineMessage, type OptimisticUser } from "./optimistic";
 import { transcriptKey } from "./query";
 
 interface StagedUser extends OptimisticUser {

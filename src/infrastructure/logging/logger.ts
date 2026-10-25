@@ -1,7 +1,8 @@
-import { type ConsolaInstance, LogLevels, createConsola } from "consola/basic";
-import type { LogLevel } from "../../types";
+import { type ConsolaInstance, createConsola, LogLevels } from "consola/basic";
 import { once } from "es-toolkit";
 import { serializeError } from "serialize-error";
+
+import type { LogLevel } from "../../types";
 
 export class Logger {
   private indent = 0;

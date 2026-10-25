@@ -1,11 +1,13 @@
 import { expect, test } from "bun:test";
+import { once } from "node:events";
 import { createServer } from "node:http";
+import { join } from "node:path";
+
+import { getRequestListener } from "@hono/node-server";
+
+import { requestListenerOptions } from "../../../settings/networking";
 import { createStaticApp } from "../../../src/app/http/static";
 import { createTestDirectory } from "../../support/artifacts";
-import { getRequestListener } from "@hono/node-server";
-import { join } from "node:path";
-import { once } from "node:events";
-import { requestListenerOptions } from "../../../settings/networking";
 
 test("static asset responses expose their complete body length", async () => {
   const root = createTestDirectory("static-assets"),

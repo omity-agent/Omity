@@ -1,6 +1,6 @@
-import { type ActiveRun } from "../run";
-import type { HostContext } from "../context";
 import { localize } from "../../i18n/server";
+import type { HostContext } from "../context";
+import { type ActiveRun } from "../run";
 import { waitIfPaused } from "./pause";
 
 export async function waitAfterCompletedStep(ctx: HostContext, run: ActiveRun) {

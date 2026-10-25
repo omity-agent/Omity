@@ -1,16 +1,18 @@
-import type { McpConnection, McpFailure } from "./failures/wireFormat";
+import { resolve } from "node:path";
+
+import type { StructuredToolInterface } from "@langchain/core/tools";
+import { loadMcpTools } from "@langchain/mcp-adapters";
+import pMap from "p-map";
+
+import type { SettingsContext } from "../configuration/settings/context";
 import type { McpClientPool } from "./client/pool";
 import type { McpConfiguration } from "./configuration";
-import type { SettingsContext } from "../configuration/settings/context";
-import type { StructuredToolInterface } from "@langchain/core/tools";
-import { configureFreeformMcpTools } from "./tools/freeform";
-import { langChainClient } from "./tools/langchain";
-import { loadMcpTools } from "@langchain/mcp-adapters";
-import { overrideMcpToolDescriptions } from "./tools/descriptions";
-import pMap from "p-map";
 import { parseMcpConnection } from "./configuration/connections";
 import { reportMcpFailure } from "./failures/reportConstruction";
-import { resolve } from "node:path";
+import type { McpConnection, McpFailure } from "./failures/wireFormat";
+import { overrideMcpToolDescriptions } from "./tools/descriptions";
+import { configureFreeformMcpTools } from "./tools/freeform";
+import { langChainClient } from "./tools/langchain";
 
 interface ServerCatalog {
   freeformToolParameters: ReadonlyMap<string, string>;

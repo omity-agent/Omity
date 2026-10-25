@@ -1,9 +1,10 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
-import type { TokenUsage } from "./contracts/projection";
-import { countTokens } from "../../runtime/tokenizer";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../../i18n/server";
+
 import { readCacheExpectation } from "../../agent/model/cacheExpectation";
+import { localize } from "../../i18n/server";
+import { countTokens } from "../../runtime/tokenizer";
+import type { TokenUsage } from "./contracts/projection";
 
 export function toolInputTokens(call: Record<string, unknown>, input: unknown) {
   if (call["isCustomTool"] === true) {

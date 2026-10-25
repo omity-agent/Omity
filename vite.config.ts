@@ -1,9 +1,11 @@
 import { dirname, resolve } from "node:path";
-import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling.ts";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import babel from "@rolldown/plugin-babel";
-import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
+
+import babel from "@rolldown/plugin-babel";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+import { frontendBuild, frontendPlugins, highlightWorker } from "./settings/bundling.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({

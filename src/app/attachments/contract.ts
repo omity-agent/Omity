@@ -1,6 +1,6 @@
 import { DomainError } from "../../errors";
-import type { Settings } from "../../types";
 import { localize } from "../../i18n/server";
+import type { Settings } from "../../types";
 
 export type { MessageSubmission, SessionSubmission } from "./submission";
 export interface PendingAttachment {

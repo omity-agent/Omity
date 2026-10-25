@@ -1,6 +1,6 @@
+import { summarizeError } from "../../../../failures/details";
 import type { BrowserWarning, SessionFailure, SessionInfo } from "../../../events/contracts";
 import { localize } from "../../i18n";
-import { summarizeError } from "../../../../failures/details";
 
 export function restoreSessionConsole(sessions: SessionInfo[]) {
   for (const session of sessions) {

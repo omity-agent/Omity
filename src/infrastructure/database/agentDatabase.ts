@@ -1,17 +1,24 @@
+import type { BaseMessage } from "@langchain/core/messages";
+
+import type { ErrorDetails } from "../../failures/details";
 import type { Control, QueuedInput, RunStatus } from "../../types";
-import { type SessionDefinition, emptySessionDefinition } from "./session/sessionDefinition";
-import type { StreamEvent, StreamEventDraft } from "./schema/streamEvent";
-import {
-  closeDatabase,
-  openSessionDatabase,
-  reclaimDatabasePages,
-  runTransaction,
-} from "./sqlite/connection";
+import { syncIndexedHistory } from "./indexing/historySync";
+import { FileLinkIndexer } from "./indexing/linkScanner";
+import { appendFileLinkStream } from "./indexing/streamAppend";
+import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
+import { InputSubmissionStore } from "./records/execution/acceptance";
+import { RecoverableDatabase } from "./records/execution/interruption";
+import { consumeInputRecord } from "./records/execution/queue/admission";
 import {
   consumedInputRows,
   nextInputRow,
   pendingInputRows,
 } from "./records/execution/queue/workItems";
+import { runStatusRecord, setRunStatusRecord } from "./records/execution/runs/mutations";
+import {
+  readToolCancellation,
+  requestToolCancellation,
+} from "./records/execution/toolCancellations";
 import {
   createSessionRecord,
   hasSessionRecord,
@@ -24,27 +31,21 @@ import {
   touchSessionRecord,
   writeControlRecord,
 } from "./records/session/metadata";
+import { deleteInputFileLinkUnits } from "./records/transcript/fileLinks";
+import { loadMessages } from "./records/transcript/messages/history";
 import {
   deleteInputStream,
   insertUserBoundaryEvent,
   streamEventCursor,
 } from "./records/transcript/streamEvents";
-import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
+import type { StreamEvent, StreamEventDraft } from "./schema/streamEvent";
+import { emptySessionDefinition, type SessionDefinition } from "./session/sessionDefinition";
 import {
-  readToolCancellation,
-  requestToolCancellation,
-} from "./records/execution/toolCancellations";
-import { runStatusRecord, setRunStatusRecord } from "./records/execution/runs/mutations";
-import type { BaseMessage } from "@langchain/core/messages";
-import type { ErrorDetails } from "../../failures/details";
-import { FileLinkIndexer } from "./indexing/linkScanner";
-import { InputSubmissionStore } from "./records/execution/acceptance";
-import { RecoverableDatabase } from "./records/execution/interruption";
-import { appendFileLinkStream } from "./indexing/streamAppend";
-import { consumeInputRecord } from "./records/execution/queue/admission";
-import { deleteInputFileLinkUnits } from "./records/transcript/fileLinks";
-import { loadMessages } from "./records/transcript/messages/history";
-import { syncIndexedHistory } from "./indexing/historySync";
+  closeDatabase,
+  openSessionDatabase,
+  reclaimDatabasePages,
+  runTransaction,
+} from "./sqlite/connection";
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;

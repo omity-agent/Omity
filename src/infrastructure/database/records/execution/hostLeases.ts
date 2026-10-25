@@ -1,8 +1,10 @@
-import { and, eq, lte, or } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, lte, or } from "drizzle-orm";
+
 import { hostLeases } from "../../schema";
-import { requireSessionRecord } from "../session/metadata";
 import { sessionDatabase } from "../../sqlite/connection";
+import { requireSessionRecord } from "../session/metadata";
 
 export interface HostLeaseClaim {
   sessionId: string;

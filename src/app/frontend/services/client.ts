@@ -1,4 +1,7 @@
+import type { FileLinkAction } from "../../../fileLinks/types";
 import type { Control, Settings } from "../../../types";
+import type { PendingAttachment } from "../../attachments/contract";
+import { submissionForm } from "../../attachments/submission";
 import {
   activatedFileResponseSchema,
   bootstrapResponseSchema,
@@ -15,13 +18,10 @@ import {
   transcriptResponseSchema,
   userMessagesResponseSchema,
   workspaceResponseSchema,
-} from "./validation/responses";
-import { api, request } from "./httpTransport";
-import type { FileLinkAction } from "../../../fileLinks/types";
+} from "../../contracts/results";
 import type { InitialSessionState } from "../../initialState";
-import type { PendingAttachment } from "../../attachments/contract";
 import type { ReasoningTranslation } from "../../timeline";
-import { submissionForm } from "../../attachments/submission";
+import { api, request } from "./httpTransport";
 
 export type { SessionInfo } from "../../sessionState";
 const sessions = api.sessions[":sessionId"];
@@ -40,7 +40,7 @@ export async function createSession(
 ) {
   return request(
     api.sessions.$post(
-      {},
+      { form: {} },
       { init: { body: submissionForm({ ...initialState, profile, workspace }, attachments) } },
     ),
     sessionResponseSchema,
@@ -142,9 +142,12 @@ export async function sendMessage(
   attachments: PendingAttachment[],
 ) {
   return request(
-    sessions.messages.$post(sessionRequest(sessionId), {
-      init: { body: submissionForm({ content, draftRevision, submissionId }, attachments) },
-    }),
+    sessions.messages.$post(
+      { ...sessionRequest(sessionId), form: {} },
+      {
+        init: { body: submissionForm({ content, draftRevision, submissionId }, attachments) },
+      },
+    ),
     messageResponseSchema,
   );
 }

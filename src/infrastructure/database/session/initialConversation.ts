@@ -1,7 +1,9 @@
-import { requireSessionRecord, touchSessionRecord } from "../records/session/metadata";
-import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
+
+import type { BaseMessage } from "@langchain/core/messages";
+
 import { enqueueInputRecord } from "../records/execution/queue/admission";
+import { requireSessionRecord, touchSessionRecord } from "../records/session/metadata";
 import { prepareMessageSync } from "../records/transcript/messages/sync";
 import { runTransaction } from "../sqlite/connection";
 

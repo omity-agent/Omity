@@ -1,9 +1,10 @@
-import { Agent, request as requestDirect, upgrade as upgradeDirect } from "undici/index.js";
-import type { Duplex } from "node:stream";
-import { connect } from "node:net";
-import { createServer } from "node:http";
 import { once } from "node:events";
+import { createServer } from "node:http";
+import { connect } from "node:net";
+import type { Duplex } from "node:stream";
 import { promisify } from "node:util";
+
+import { Agent, request as requestDirect, upgrade as upgradeDirect } from "undici/index.js";
 
 export async function startRecordingProxy(targetPort: number) {
   const requests: { authority: string; authorization?: string }[] = [],

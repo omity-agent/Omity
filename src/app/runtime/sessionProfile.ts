@@ -1,20 +1,20 @@
+import { sessionProfileBusy } from "../../errors";
 import {
-  type SessionDefinition,
-  refreshSessionDefinition,
-} from "../../infrastructure/database/session/sessionDefinition";
-import { type SessionStatus, isRunningStatus } from "../../types";
-import {
-  type SettingsContext,
   prioritizeSettingsProfile,
   selectSettingsProfiles,
+  type SettingsContext,
   settingsProfileNames,
 } from "../../infrastructure/configuration/settings/context";
-import type { SessionInfo } from "../events/contracts";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
-import { openStoredSession } from "../../storedSessions";
 import { readDefinitionRecord } from "../../infrastructure/database/records/session/metadata";
-import { sessionProfileBusy } from "../../errors";
 import { writeSessionConfigurationRecord } from "../../infrastructure/database/records/session/sessionConfiguration";
+import {
+  refreshSessionDefinition,
+  type SessionDefinition,
+} from "../../infrastructure/database/session/sessionDefinition";
+import { openStoredSession } from "../../storedSessions";
+import { isRunningStatus, type SessionStatus } from "../../types";
+import type { SessionInfo } from "../events/contracts";
 
 function prepareSessionProfile(options: {
   baseContext: SettingsContext;

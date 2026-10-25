@@ -1,11 +1,13 @@
-import { type AiStreamEvent, streamAiModel } from "../../../src/agent/model/request";
-import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
+
+import { HumanMessage, ToolMessage } from "@langchain/core/messages";
+
+import { toModelMessages } from "../../../src/agent/aiMessages";
+import { type AiStreamEvent, streamAiModel } from "../../../src/agent/model/request";
+import { aiModelTools } from "../../../src/agent/model/tools";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
 import { echoDefinition, geminiApis, geminiWire } from "./endpointFixture";
 import { replyStream, toolStream } from "./exchangeSamples";
-import { aiModelTools } from "../../../src/agent/model/tools";
-import { toModelMessages } from "../../../src/agent/aiMessages";
 
 afterEach(cleanupDatabaseDirs);
 test.each([...geminiApis])(
@@ -130,7 +132,7 @@ test.each([...geminiApis])(
         ]),
         generationConfig: { thinkingConfig: { includeThoughts: true, thinkingLevel: "high" } },
         systemInstruction: { parts: [{ text: "test" }] },
-        toolConfig: { functionCallingConfig: { mode: "AUTO" } },
+        toolConfig: { functionCallingConfig: { mode: "VALIDATED" } },
       });
     }
   },

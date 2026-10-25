@@ -1,9 +1,10 @@
-import { messageSubmissionSchema, sessionSubmissionSchema } from "../attachments/submission";
-import type { HonoRequest } from "hono/request";
-import { HttpError } from "./errors";
-import { localize } from "../../i18n/server";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+import { localize } from "../../i18n/server";
+import type { PendingAttachment } from "../attachments/contract";
+import { messageSubmissionSchema, sessionSubmissionSchema } from "../attachments/submission";
+import { validate } from "./request";
 
 const attachmentsSchema = z.array(
   z.tuple([
@@ -16,37 +17,25 @@ const attachmentsSchema = z.array(
       ),
   ]),
 );
-export function readMessageForm(request: HonoRequest) {
-  return readSubmission(request, messageSubmissionSchema);
-}
-export function readSessionForm(request: HonoRequest) {
-  return readSubmission(request, sessionSubmissionSchema);
-}
-async function readSubmission<T extends object>(request: HonoRequest, schema: z.ZodType<T>) {
-  let fields: Record<string, unknown>;
-  try {
-    fields = await request.parseBody({ all: true });
-  } catch {
-    throw new HttpError(400, localize("http:multipart.invalidBody"));
-  }
-  const { submission, ...files } = fields,
-    result = z
-      .object({
-        files: attachmentsSchema,
-        submission: zfd.json(schema),
-      })
-      .safeParse({ files: Object.entries(files), submission });
-  if (!result.success) {
-    throw new HttpError(
-      400,
-      localize("http:multipart.invalidParameters", { value0: z.prettifyError(result.error) }),
-    );
-  }
-  return {
-    ...result.data.submission,
-    attachments: result.data.files.map(([key, file]) => ({
-      file,
-      id: key.slice("file:".length),
-    })),
-  };
+export const messageForm = validate("form", submissionBody(messageSubmissionSchema)),
+  sessionForm = validate("form", submissionBody(sessionSubmissionSchema));
+function submissionBody<Schema extends z.ZodType<object>>(
+  schema: Schema,
+): z.ZodType<z.output<Schema> & { attachments: PendingAttachment[] }, Record<string, unknown>>;
+function submissionBody(schema: z.ZodType<object>) {
+  return z
+    .preprocess(
+      ({ submission, ...files }: Record<string, unknown>) => ({
+        files: Object.entries(files),
+        submission,
+      }),
+      z.object({ files: attachmentsSchema, submission: zfd.json(schema) }),
+    )
+    .transform(({ files, submission }) => ({
+      ...submission,
+      attachments: files.map(([key, file]) => ({
+        file,
+        id: key.slice("file:".length),
+      })),
+    }));
 }

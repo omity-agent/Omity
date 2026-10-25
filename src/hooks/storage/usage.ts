@@ -1,5 +1,7 @@
-import { eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+
+import { eq, sql } from "drizzle-orm";
+
 import { hookUsage } from "../../infrastructure/database/schema";
 import { sessionDatabase } from "../../infrastructure/database/sqlite/connection";
 

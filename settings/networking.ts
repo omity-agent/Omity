@@ -1,4 +1,5 @@
 export const requestBodyLimit = 1024 * 1024;
+export const jsonContentType = /^application\/(?:[a-z.-]+\+)?json(?:;\s*[a-z0-9-]+=[^;]+)*$/iu;
 export const requestListenerOptions = { overrideGlobalObjects: false };
 export const queryClientDefaults = {
   mutations: { retry: false },

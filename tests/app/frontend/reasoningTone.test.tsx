@@ -1,12 +1,14 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+
+import panda from "@pandacss/dev/postcss";
 import postcss, { type Root } from "postcss";
-import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
-import { MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
+import { renderToStaticMarkup } from "react-dom/server";
+
 import { Reasoning } from "../../../src/app/frontend/components/Details/Reasoning";
 import { createCodeHighlighter } from "../../../src/app/frontend/components/HighlightedCode/background/tokenization";
+import { MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
+import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
 import { i18nReady } from "../../../src/app/frontend/i18n";
-import panda from "@pandacss/dev/postcss";
-import { renderToStaticMarkup } from "react-dom/server";
 
 const paletteClass = "layerStyle_reasoningText",
   languageDescriptor = Object.getOwnPropertyDescriptor(navigator, "languages"),

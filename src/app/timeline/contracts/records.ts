@@ -1,14 +1,11 @@
-import { controlSchema, runStatusSchema, streamEventSchema } from "../../../types";
-import { fileLinkUnitSchema, filePathMatchSchema } from "../../../fileLinks/types";
-import { errorDetailsSchema } from "../../../failures/details";
 import { z } from "zod";
 
+import { errorDetailsSchema } from "../../../failures/details";
+import { fileLinkUnitSchema, filePathMatchSchema } from "../../../fileLinks/types";
+import { toolOutputSnapshotSchema } from "../../../infrastructure/database/schema/streamEvent";
+import { controlSchema, runStatusSchema, streamEventSchema } from "../../../types";
+
 const integer = z.number().int(),
-  toolOutputSchema = z.object({
-    content: z.string(),
-    images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
-    outputTokens: integer.nonnegative().optional(),
-  }),
   toolCallSchema = z.object({
     fileLinks: z.array(filePathMatchSchema).optional(),
     id: z.string(),
@@ -43,7 +40,7 @@ const integer = z.number().int(),
     tokenCount: integer.nonnegative().nullable().optional(),
     toolCallId: z.string().optional(),
     toolCalls: z.array(toolCallSchema),
-    toolOutputs: z.record(z.string(), toolOutputSchema).optional(),
+    toolOutputs: z.record(z.string(), toolOutputSnapshotSchema).optional(),
     usage: tokenUsageSchema.optional(),
   }),
   queueSchema = z.object({

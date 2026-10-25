@@ -1,8 +1,9 @@
-import { mcpServerSchema, normalizeMcpServers } from "./connections";
-import { builtInPreferencesSchema } from "../../toolbox/metadata";
-import { emptyAs } from "../../configuration/settings/values";
-import { localize } from "../../../i18n/server";
 import { z } from "zod";
+
+import { localize } from "../../../i18n/server";
+import { emptyAs } from "../../configuration/settings/fieldSchemas";
+import { builtInPreferencesSchema } from "../../toolbox/metadata";
+import { mcpServerSchema, normalizeMcpServers } from "./connections";
 
 const nonEmpty = z.string().min(1),
   toolName = nonEmpty.refine((name) => name !== "agent", {

@@ -1,5 +1,5 @@
-import type { AppHosts } from "./hosts";
 import { requestHostToolCancellation } from "../storedSessions";
+import type { AppHosts } from "./hosts";
 
 export function cancelSessionTool(hosts: AppHosts, sessionId: string, toolCallId: string) {
   requestHostToolCancellation(sessionId, toolCallId);

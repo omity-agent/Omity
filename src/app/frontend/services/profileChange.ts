@@ -1,8 +1,9 @@
-import { type SessionStatus, isRunningStatus } from "../../../types";
 import type { QueryClient } from "@tanstack/react-query";
+
+import { isRunningStatus, type SessionStatus } from "../../../types";
 import type { SessionInfo } from "../../sessionState";
-import { reportError } from "./errors";
 import { setSessionProfile } from "./client";
+import { reportError } from "./errors";
 import { updateSession } from "./queries";
 
 export function createProfileChangeHandler(options: {

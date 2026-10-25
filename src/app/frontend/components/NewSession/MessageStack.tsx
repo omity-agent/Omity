@@ -1,13 +1,14 @@
 import { Bot, Trash2, UserRound } from "lucide-react";
-import { composerFrame, composerRole } from "../Chat/Composer/layout";
 import { useCallback, useMemo } from "react";
-import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
-import type { EditablePair } from "../../../composition/preparation";
-import { IconButton } from "../ParkUI";
-import type { InitialMessagePair } from "../../../initialState";
-import { MarkdownEditor } from "../Chat/MarkdownEditor";
-import { css } from "styled-system/css";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { EditablePair } from "../../../composition/preparation";
+import type { InitialMessagePair } from "../../../initialState";
+import { ActionPanel } from "../Chat/Composer/controls/ActionPanel";
+import { composerFrame, composerRole } from "../Chat/Composer/layout";
+import { MarkdownEditor } from "../Chat/MarkdownEditor";
+import { IconButton } from "../ParkUI";
 
 const stack = css({ alignSelf: "stretch" });
 export function MessageStack({

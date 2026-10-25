@@ -1,16 +1,17 @@
-import { captureError, summarizeError } from "../../failures/details";
+import { APICallError } from "@ai-sdk/provider";
+import { version as undiciVersion } from "undici/package.json";
+import { z } from "zod";
+
+import { handshakeDiagnosticHeaders } from "../../../settings/networking";
 import {
   nonRetryableApiErrorTypes,
   nonRetryableWebsocketCloseCodes,
   retryableHandshakeStatuses,
 } from "../../../settings/resilience";
-import { APICallError } from "@ai-sdk/provider";
+import { captureError, summarizeError } from "../../failures/details";
+import { localize } from "../../i18n/server";
 import type { SocketHandshake } from "../../infrastructure/network/handshakeChannels";
 import type { StreamEvidence } from "./streamEvidence";
-import { handshakeDiagnosticHeaders } from "../../../settings/networking";
-import { localize } from "../../i18n/server";
-import { version as undiciVersion } from "undici/package.json";
-import { z } from "zod";
 
 const responseErrorSchema = z.looseObject({
     message: z.string().min(1),

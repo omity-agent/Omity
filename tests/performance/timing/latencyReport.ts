@@ -1,7 +1,9 @@
+import assert from "node:assert/strict";
+
+import { median } from "es-toolkit";
+
 import type { PhaseTiming } from "./phaseBreakdown";
 import type { RoundtripSample } from "./roundtripCapture";
-import assert from "node:assert/strict";
-import { median } from "es-toolkit";
 
 export function printLatencyReport(samples: RoundtripSample[]) {
   assert(samples.length > 0, "没有可统计的性能样本");

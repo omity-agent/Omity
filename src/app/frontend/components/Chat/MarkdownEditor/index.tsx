@@ -1,3 +1,14 @@
+import { markdown } from "@codemirror/lang-markdown";
+import { indentUnit } from "@codemirror/language";
+import { EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
+import CodeMirror from "@uiw/react-codemirror";
+import { useLayoutEffect, useMemo, useReducer } from "react";
+import { cx } from "styled-system/css";
+
+import { markdownSyntax } from "../../Markdown/syntax";
+import type { HistoryDirection } from "../Composer/history";
 import { EditorHandlerStore, editorInteractions } from "./interactions";
 import {
   bareRoot,
@@ -11,16 +22,6 @@ import {
   fluidTheme,
   root,
 } from "./theme";
-import { useLayoutEffect, useMemo, useReducer } from "react";
-import CodeMirror from "@uiw/react-codemirror";
-import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
-import type { HistoryDirection } from "../Composer/history";
-import { cx } from "styled-system/css";
-import { indentUnit } from "@codemirror/language";
-import { indentationMarkers } from "@replit/codemirror-indentation-markers";
-import { markdown } from "@codemirror/lang-markdown";
-import { markdownSyntax } from "../../Markdown/syntax";
 
 const basicSetup = {
   autocompletion: false,

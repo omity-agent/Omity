@@ -1,10 +1,12 @@
-import type { Settings, SkillInfo } from "./types";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { localize } from "./i18n/server";
+
 import matter from "gray-matter";
 import untildify from "untildify";
 import { z } from "zod";
+
+import { localize } from "./i18n/server";
+import type { Settings, SkillInfo } from "./types";
 
 const skillMetaSchema = z.object({
   description: z.string().min(1),

@@ -1,25 +1,21 @@
+import { type IncomingMessage } from "node:http";
+
 import {
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
-import { type ClientIdentity, ClientNetwork } from "./network";
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
-import { AccessStore } from "./store";
-import { HttpError } from "../http/errors";
-import { type IncomingMessage } from "node:http";
-import { type Settings } from "../../types";
-import { WebAuthnCeremony } from "./ceremony";
+
 import { localize } from "../../i18n/server";
+import { type Settings } from "../../types";
+import type { AccessStatus } from "../contracts/authentication";
+import { HttpError } from "../http/errors";
+import { WebAuthnCeremony } from "./ceremony";
+import { type ClientIdentity, ClientNetwork } from "./network";
+import { AccessStore } from "./store";
 
 export const accessSessionCookie = "__Host-omity_access";
 export const accessChallengeCookie = "__Host-omity_challenge";
-interface AccessStatus {
-  authenticated: boolean;
-  configured: boolean;
-  credentialCount: number;
-  local: boolean;
-  publicOrigin: string | null;
-}
 export class AccessService {
   private readonly network: ClientNetwork;
   private readonly store: AccessStore;

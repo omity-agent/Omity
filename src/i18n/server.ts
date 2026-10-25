@@ -1,4 +1,5 @@
-import { type TOptions, createInstance } from "i18next";
+import { createInstance, type TOptions } from "i18next";
+
 import { resources } from "./resources.ts";
 
 const instance = createInstance();
@@ -11,7 +12,6 @@ void instance.init({
   lng: "zh-CN",
   resources,
 });
-
 export function localize(key: string, options?: TOptions) {
   return instance.t(key, options);
 }

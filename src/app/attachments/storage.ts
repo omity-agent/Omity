@@ -1,16 +1,17 @@
-import {
-  type PendingAttachment,
-  attachmentIds,
-  fileSuffix,
-  validateAttachmentBatch,
-} from "./contract";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { DomainError } from "../../errors";
-import type { Settings } from "../../types";
-import { claimShortIdAsync } from "../../infrastructure/randomId";
 import { join } from "node:path";
+
+import { DomainError } from "../../errors";
 import { localize } from "../../i18n/server";
 import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
+import { claimShortIdAsync } from "../../infrastructure/randomId";
+import type { Settings } from "../../types";
+import {
+  attachmentIds,
+  fileSuffix,
+  type PendingAttachment,
+  validateAttachmentBatch,
+} from "./contract";
 
 export async function saveMessageAttachments(
   settings: Settings,

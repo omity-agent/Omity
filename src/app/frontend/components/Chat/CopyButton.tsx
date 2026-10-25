@@ -1,9 +1,10 @@
 import { Check, Copy } from "lucide-react";
-import { css, cx } from "styled-system/css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { IconButton } from "../ParkUI";
-import { reportPromiseErrors } from "../../services/errors";
 import { useTranslation } from "react-i18next";
+import { css, cx } from "styled-system/css";
+
+import { reportPromiseErrors } from "../../services/errors";
+import { IconButton } from "../ParkUI";
 
 const button = css({
     borderWidth: "zero",

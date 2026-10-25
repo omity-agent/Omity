@@ -1,8 +1,10 @@
-import type { BrowserWarning, SessionFailure, SessionInfo } from "./contracts";
-import { type OutboundEvent, eventStream } from "./stream";
+import { randomUUID } from "node:crypto";
+
 import type { Context } from "hono";
 import mitt from "mitt";
-import { randomUUID } from "node:crypto";
+
+import type { BrowserWarning, SessionFailure, SessionInfo } from "./contracts";
+import { eventStream, type OutboundEvent } from "./stream";
 
 export class StateChannel {
   private readonly bus = mitt<{ broadcast: OutboundEvent }>();

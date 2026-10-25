@@ -1,10 +1,11 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { settingsProfileNameSchema, settingsProfileNamesSchema } from "./profileNames";
-import { applicationAssetPath } from "../../applicationAssets";
-import { localize } from "../../../i18n/server";
-import { readSettingsYamlValue } from "../placeholders";
 import { resolve } from "node:path";
+
+import { localize } from "../../../i18n/server";
+import { applicationAssetPath } from "../../applicationAssets";
+import { readSettingsYamlValue } from "../placeholders";
 import { userSettingsDirectory } from "./files";
+import { settingsProfileNameSchema, settingsProfileNamesSchema } from "./profileNames";
 
 export { settingsProfileNamesSchema } from "./profileNames";
 interface SettingsProfile {

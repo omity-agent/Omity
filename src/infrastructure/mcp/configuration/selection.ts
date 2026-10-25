@@ -1,9 +1,10 @@
-import { DomainError } from "../../../errors";
-import { emptyAs } from "../../configuration/settings/values";
 import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../../../i18n/server";
-import { mcpServerSchema } from "./connections";
 import { z } from "zod";
+
+import { DomainError } from "../../../errors";
+import { localize } from "../../../i18n/server";
+import { emptyAs } from "../../configuration/settings/fieldSchemas";
+import { mcpServerSchema } from "./connections";
 
 const serverPreferencesSchema = z.object({
   mcpServers: emptyAs(z.record(z.string().min(1), mcpServerSchema.pick({ enabled: true })), {}),

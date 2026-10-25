@@ -1,9 +1,10 @@
-import { configureReadonlyDatabase, queryAll } from "../infrastructure/database/sqlite/connection";
 import { Database } from "bun:sqlite";
-import { contentToText } from "../runtime/content";
+import { existsSync } from "node:fs";
+
 import { databasePath } from "../infrastructure/configuration/sessionPaths";
 import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
-import { existsSync } from "node:fs";
+import { configureReadonlyDatabase, queryAll } from "../infrastructure/database/sqlite/connection";
+import { contentToText } from "../runtime/content";
 
 interface UserMessageRow {
   created_at: number;

@@ -1,4 +1,5 @@
 import { type ProxyConfig, ProxyResolver } from "@vscode/os-proxy-resolver";
+
 import { localize } from "../../i18n/server";
 
 type NativeResolver = Pick<

@@ -1,10 +1,12 @@
-import { and, eq, exists, inArray, not } from "drizzle-orm";
-import { readControlRecord, requireSessionRecord, reviseSessionRecord } from "../session/metadata";
-import { runs, sessions } from "../../schema";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, exists, inArray, not } from "drizzle-orm";
+
 import { controlNotReady } from "../../../../errors";
 import { localize } from "../../../../i18n/server";
+import { runs, sessions } from "../../schema";
 import { sessionDatabase } from "../../sqlite/connection";
+import { readControlRecord, requireSessionRecord, reviseSessionRecord } from "../session/metadata";
 
 export function requestStepControlRecord(db: Database, sessionId: string) {
   requireSessionRecord(db, sessionId);

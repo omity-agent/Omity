@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+
 import { PredictionService } from "../../../src/app/prediction/service";
 import { createPredictionFixture } from "./modelFixture";
 

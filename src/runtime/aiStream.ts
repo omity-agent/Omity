@@ -1,14 +1,15 @@
-import { type AiStreamEvent, hasModelContent } from "../agent/model/request";
-import { acceptMessageId, sequentialPart } from "./stream/parts";
-import { appendReasoningDelta, flushReasoning } from "./content";
 import type { BaseMessage } from "@langchain/core/messages";
+import { toUIMessageChunk } from "ai";
+
+import { pendingToolBatch } from "../agent/graph/toolBatch";
+import { type AiStreamEvent, hasModelContent } from "../agent/model/request";
+import { localize } from "../i18n/server";
+import { findToolStreamIdentity } from "../infrastructure/database/records/transcript/toolStreamIdentity";
+import { appendReasoningDelta, flushReasoning } from "./content";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
-import { findToolStreamIdentity } from "../infrastructure/database/records/transcript/toolStreamIdentity";
-import { localize } from "../i18n/server";
-import { pendingToolBatch } from "../agent/graph/toolBatch";
 import { recordInvocation } from "./stream/invocations";
-import { toUIMessageChunk } from "ai";
+import { acceptMessageId, sequentialPart } from "./stream/parts";
 
 type AiStreamContext = Pick<
   HostContext,

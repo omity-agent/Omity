@@ -1,11 +1,13 @@
-import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 import { expect, test } from "bun:test";
-import { CloudflareCookieStore } from "../../../src/infrastructure/openai/cloudflareStore";
-import { captureError } from "../../../src/failures/details";
-import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
+
 import { isPlainObject } from "es-toolkit";
+
+import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
+import { captureError } from "../../../src/failures/details";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
+import { CloudflareCookieStore } from "../../../src/infrastructure/openai/cloudflareStore";
+import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
+import { createOAuthFile, createTestJwt } from "../openai/authSessionFixture";
 import { startRecordingProxy } from "./localProxyFixture";
 
 test("Codex WebSocket uses the selected proxy and the official wire protocol", async () => {

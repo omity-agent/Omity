@@ -120,6 +120,7 @@
     "prefer-readonly-parameter-types": "allow",
     "prefer-default-export": "allow",
     "react-in-jsx-scope": "allow",
-    "require-hook": "allow"
+    "require-hook": "allow",
+    "sort-imports": "allow"
   }
 }

@@ -1,13 +1,14 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, PanelsTopLeft } from "lucide-react";
 import { type ComponentProps, type ReactNode, useCallback, useId } from "react";
+import { useTranslation } from "react-i18next";
+import { cx } from "styled-system/css";
+
 import { layout, main, panelCaption, panelToolbar, sidebar } from "../../design";
+import { useSessionAttention } from "../../services/events/attention";
 import { IconButton } from "../ParkUI";
 import { Sidebar } from "../Sidebar";
-import { cx } from "styled-system/css";
 import { usePanelNavigation } from "./navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { useSessionAttention } from "../../services/events/attention";
-import { useTranslation } from "react-i18next";
 
 type Props = Omit<ComponentProps<typeof Sidebar>, "unreadIds"> & {
   children: ReactNode;

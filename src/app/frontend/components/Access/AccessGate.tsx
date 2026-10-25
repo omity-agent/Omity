@@ -1,3 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { KeyRound, LogOut } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import { localize } from "../../i18n";
 import {
   type AccessStatus,
   accessStatus,
@@ -6,15 +13,9 @@ import {
   register,
   registrationTicket,
 } from "../../services/access";
-import { IconButton, LinkButton } from "../ParkUI";
-import { KeyRound, LogOut } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { AccessPage } from "./AccessPage";
-import { css } from "styled-system/css";
-import { localize } from "../../i18n";
 import { reportError } from "../../services/errors";
-import { useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { IconButton, LinkButton } from "../ParkUI";
+import { AccessPage } from "./AccessPage";
 
 const accessButton = css({
   height: "8",

@@ -1,4 +1,5 @@
 import { machine, platform, release } from "node:os";
+
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
 import { terminalProbes } from "../../../settings/openai/terminalProbes";
 

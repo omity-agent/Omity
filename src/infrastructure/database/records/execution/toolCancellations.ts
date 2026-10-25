@@ -1,12 +1,14 @@
+import type { Database } from "bun:sqlite";
+
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+
+import { toolNotRunning } from "../../../../errors";
 import { cancelledToolMessage, toolOutputSnapshot } from "../../../../runtime/toolOutput";
 import { events, inputs, runs, toolCancellations } from "../../schema";
 import { runTransaction, sessionDatabase } from "../../sqlite/connection";
-import type { Database } from "bun:sqlite";
-import { insertStreamEvent } from "../transcript/streamEvents";
-import { toolNotRunning } from "../../../../errors";
 import { touchSessionRecord } from "../session/metadata";
+import { insertStreamEvent } from "../transcript/streamEvents";
 
 export function requestToolCancellation(db: Database, sessionId: string, callId: string) {
   return runTransaction(db, () => {

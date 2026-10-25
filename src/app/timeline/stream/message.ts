@@ -1,3 +1,7 @@
+import type { FileLinkUnit } from "../../../fileLinks/types";
+import { localize } from "../../../i18n/server";
+import { countTokens } from "../../../runtime/tokenizer";
+import { allContent, lastContentGroup } from "../contentSelection";
 import type {
   DisplayEvent,
   DisplayToolCall,
@@ -6,13 +10,9 @@ import type {
   TimelineMessage,
   TimelinePart,
 } from "../contracts/projection";
-import { type ToolPart, beginToolPart, extendToolPart, latestParsedInput } from "./callAssembly";
-import { allContent, lastContentGroup } from "../contentSelection";
-import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
-import type { FileLinkUnit } from "../../../fileLinks/types";
-import { countTokens } from "../../../runtime/tokenizer";
-import { localize } from "../../../i18n/server";
 import { streamCallKey } from "../tool/correlation";
+import { beginToolPart, extendToolPart, latestParsedInput, type ToolPart } from "./callAssembly";
+import { localStreamLinks, optionalStreamLinks } from "./fileLinks";
 
 type StreamPart = TextPart | ToolPart;
 type TextPart = {

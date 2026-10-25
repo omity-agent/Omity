@@ -1,12 +1,14 @@
-import type { AppHosts } from "../hosts";
-import type { AppRegistry } from "../registry";
-import { Logger } from "../../infrastructure/logging/logger";
 import type { Server } from "node:http";
 import type { Socket } from "node:net";
+import { promisify } from "node:util";
+
+import pMap from "p-map";
+
 import { captureError } from "../../failures/details";
 import { localize } from "../../i18n/server";
-import pMap from "p-map";
-import { promisify } from "node:util";
+import { Logger } from "../../infrastructure/logging/logger";
+import type { AppHosts } from "../hosts";
+import type { AppRegistry } from "../registry";
 
 type ShutdownSignal = "SIGINT" | "SIGTERM";
 type ShutdownReason = ShutdownSignal | "startup-failure";

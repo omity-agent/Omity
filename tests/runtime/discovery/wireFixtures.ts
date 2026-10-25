@@ -1,8 +1,10 @@
-import type { ModelAdapter, ModelApi, Settings } from "../../../src/types";
-import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
-import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
-import { isPlainObject } from "es-toolkit";
 import { randomUUID } from "node:crypto";
+
+import { isPlainObject } from "es-toolkit";
+
+import { buildConfiguredAiModel } from "../../../src/agent/model/provider";
+import type { ModelToolDefinition } from "../../../src/infrastructure/mcp/tools/definitions";
+import type { ModelAdapter, ModelApi, Settings } from "../../../src/types";
 import { testSettings } from "../../support/settings";
 
 export const deferredDefinition: ModelToolDefinition = {

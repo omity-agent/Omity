@@ -1,13 +1,14 @@
-import { type AppHostEvents, type RunningHost, createHostObserver } from "./observation";
-import { type ErrorDetails, captureError } from "../../failures/details";
-import type { HostActivity, HostMode } from "../../types";
-import type { AppMcp } from "../runtime/resources/toolPool";
-import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
-import { localize } from "../../i18n/server";
 import { once } from "es-toolkit";
 import pMap from "p-map";
+
+import { captureError, type ErrorDetails } from "../../failures/details";
 import { runHostSession } from "../../host";
+import { localize } from "../../i18n/server";
+import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
+import type { ProcessOwner } from "../../infrastructure/process/ownership";
+import type { HostActivity, HostMode } from "../../types";
+import type { AppMcp } from "../runtime/resources/toolPool";
+import { type AppHostEvents, createHostObserver, type RunningHost } from "./observation";
 
 export type { AppHostEvents } from "./observation";
 const noToolCancellation: RunningHost["cancelTool"] = () => false;

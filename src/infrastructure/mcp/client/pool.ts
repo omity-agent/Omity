@@ -1,14 +1,15 @@
-import { type McpOperations, connectProtocolClient } from "./protocol";
-import { AsyncResourceCache } from "../lifecycle";
-import { HandshakeEvidence } from "./handshakeEvidence";
-import type { Logger } from "../../logging/logger";
-import { RestartingStdioClient } from "./restarting";
-import type { StdioRestartPolicy } from "./availability";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { localize } from "../../../i18n/server";
+
 import { mcpHttpReconnection } from "../../../../settings/networking";
+import { localize } from "../../../i18n/server";
+import type { Logger } from "../../logging/logger";
 import { parseMcpConnection } from "../configuration/connections";
 import { reportMcpFailure } from "../failures/reportConstruction";
+import { AsyncResourceCache } from "../lifecycle";
+import type { StdioRestartPolicy } from "./availability";
+import { HandshakeEvidence } from "./handshakeEvidence";
+import { connectProtocolClient, type McpOperations } from "./protocol";
+import { RestartingStdioClient } from "./restarting";
 
 export class McpClientPool {
   private readonly resources = new AsyncResourceCache<{

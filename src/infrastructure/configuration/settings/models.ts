@@ -1,7 +1,8 @@
 import { isPlainObject as isRecord, omit } from "es-toolkit";
-import { modelAdapterSchema, reasoningEffortSchema } from "../../../types";
-import { emptyAs } from "./values";
 import { z } from "zod";
+
+import { modelAdapterSchema, reasoningEffortSchema } from "../../../types";
+import { emptyAs } from "./fieldSchemas";
 
 const sharedModelSettings = {
     maxConcurrentRequests: z.number().int().positive(),

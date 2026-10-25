@@ -1,7 +1,7 @@
-import { type HostContext, waitForWake } from "./context";
-import type { BrowserWarning } from "../types";
 import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
+import type { BrowserWarning } from "../types";
+import { type HostContext, waitForWake } from "./context";
 
 interface RetriedRun {
   items: [{ id: number }, ...{ id: number }[]];

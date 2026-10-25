@@ -1,15 +1,17 @@
-import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
+
+import { AIMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+import { forkDatabaseBeforeMessage } from "../../src/app/fork";
 import {
   readComposerDraftRecord,
   writeComposerDraftRecord,
 } from "../../src/infrastructure/database/records/session/composerDrafts";
-import { agentFixture } from "./support/agentFixture";
-import { forkDatabaseBeforeMessage } from "../../src/app/fork";
 import { processInput } from "../../src/runtime/consumeInputs";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
+import { agentFixture } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
 test.each(["", "unsent draft"])(

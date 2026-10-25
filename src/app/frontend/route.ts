@@ -1,5 +1,5 @@
-import { type MouseEvent, startTransition, useCallback, useEffect } from "react";
 import { isEqual } from "es-toolkit";
+import { type MouseEvent, startTransition, useCallback, useEffect } from "react";
 
 export function navigateLink(
   event: Pick<

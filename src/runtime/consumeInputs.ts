@@ -1,11 +1,11 @@
-import { type ActiveRun, CanceledRunError, pauseFailedRun, setRunStatus } from "./run";
-import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
-import { type HostContext } from "./context";
-import { HostLeaseLostError } from "./execution/lease";
-import type { QueuedInput } from "../types";
 import { captureError } from "../failures/details";
 import { localize } from "../i18n/server";
+import type { QueuedInput } from "../types";
+import { type HostContext } from "./context";
+import { HostLeaseLostError } from "./execution/lease";
 import { runGraphUntilBoundary } from "./execution/nodeBoundary";
+import { pauseForMcpUnavailable, pauseForStop, waitIfPaused } from "./execution/pause";
+import { type ActiveRun, CanceledRunError, pauseFailedRun, setRunStatus } from "./run";
 
 export async function processInput(ctx: HostContext, item: QueuedInput) {
   const end = ctx.logger.child(localize("runtime:queue.label", { value0: item.id.toString() })),

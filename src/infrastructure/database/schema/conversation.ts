@@ -1,4 +1,4 @@
-import type { StreamEventKind, StreamEventValues } from "../../../types";
+import { sql } from "drizzle-orm";
 import {
   check,
   foreignKey,
@@ -7,11 +7,12 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+
 import type { FileLinkUnit } from "../../../fileLinks/types";
+import type { StreamEventKind, StreamEventValues } from "../../../types";
 import type { StoredConversationMessage } from "../records/transcript/messages/replayShape";
 import { inputs } from "./execution";
 import { sessions } from "./session";
-import { sql } from "drizzle-orm";
 
 const streamEventKinds = [
   "assistant_reasoning_delta",

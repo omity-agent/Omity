@@ -1,6 +1,7 @@
-import { answerTool, cancelTool } from "../../services/client";
-import type { SessionInfo } from "../../../sessionState";
 import { useCallback } from "react";
+
+import type { SessionInfo } from "../../../sessionState";
+import { answerTool, cancelTool } from "../../services/client";
 
 export type AskUserQuestion = NonNullable<SessionInfo["askUser"]>;
 export type AskUserAnswer =

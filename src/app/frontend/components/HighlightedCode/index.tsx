@@ -1,6 +1,10 @@
-import { type CustomContainerComponentProps, Virtualizer } from "virtua";
 import { Fragment, memo, useRef } from "react";
-import { HighlightedLine, codeLines } from "./lines";
+import { cx } from "styled-system/css";
+import { type CustomContainerComponentProps, Virtualizer } from "virtua";
+
+import { codeWindow } from "../../../../../settings/rendering";
+import type { FilePathMatch } from "../../../../fileLinks/types";
+import { CopyButton } from "../Chat/CopyButton";
 import {
   block,
   codeElement,
@@ -9,12 +13,9 @@ import {
   sourceLine,
   widthSizer,
 } from "../CodeBlock/styles";
-import { CopyButton } from "../Chat/CopyButton";
-import type { FilePathMatch } from "../../../../fileLinks/types";
-import { codeWindow } from "../../../../../settings/rendering";
-import { cx } from "styled-system/css";
 import { normalizeCodeMatches } from "../FileLink/lineBreaks";
 import { useFollowBottom } from "../Transcript/useFollowBottom";
+import { codeLines, HighlightedLine } from "./lines";
 import { useHighlight } from "./useHighlight";
 
 const noFileLinks: FilePathMatch[] = [];

@@ -6,5 +6,13 @@ export const scrollingBrowser = {
 export const regressionViewport = { height: 900, width: 1440 };
 export const fixtureServer = { host: "127.0.0.1", port: 0, strictPort: true };
 export const fixtureDependencies = {
-  entries: ["tests/app/frontend/scrolling/streamingPage.html"],
+  entries: [
+    "tests/app/frontend/scrolling/streamingPage.html",
+    "tests/app/frontend/translation/reasoningPage.html",
+  ],
+};
+export const translationFixture = {
+  enabled: true,
+  highConfidenceThreshold: 0.8,
+  minimumIntervalMs: 25,
 };

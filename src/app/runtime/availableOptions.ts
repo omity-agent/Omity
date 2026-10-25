@@ -1,17 +1,21 @@
+import { localize } from "../../i18n/server";
+import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
 import {
-  type SettingsContext,
   prioritizeSettingsProfile,
+  type SettingsContext,
 } from "../../infrastructure/configuration/settings/context";
+import { readLayeredSettingsYaml } from "../../infrastructure/configuration/settings/files";
 import {
   omitCodexConnectionSettings,
   parseModelSettings,
 } from "../../infrastructure/configuration/settings/models";
-import { loadConfiguredHookRules } from "../../infrastructure/configuration/hookRules";
-import { localize } from "../../i18n/server";
-import { readLayeredSettingsYaml } from "../../infrastructure/configuration/settings/files";
 import { readProfileMcpServerOptions } from "../../infrastructure/mcp/configuration";
+import type { SessionOptions } from "../contracts/results";
 
-export function availableSessionOptions(context: SettingsContext, profile?: string) {
+export function availableSessionOptions(
+  context: SettingsContext,
+  profile?: string,
+): SessionOptions {
   const selected = prioritizeSettingsProfile(context, profile),
     modelFile = readLayeredSettingsYaml(
       selected,

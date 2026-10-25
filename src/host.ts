@@ -1,18 +1,18 @@
-import { loadMcp, loadSessionMcp } from "./infrastructure/mcp/tools/catalog";
-import { HookRuntime } from "./hooks/runtime";
-import { HostLease } from "./runtime/execution/lease";
-import type { HostMode } from "./types";
-import type { HostRunOptions } from "./runtime/execution/hostOptions";
-import { Logger } from "./infrastructure/logging/logger";
-import { ToolExecutions } from "./agent/toolExecutions";
 import { buildGraph } from "./agent";
-import { createSessionDefinition } from "./infrastructure/database/session/sessionDefinition";
-import { fetchLatestCodexVersion } from "./infrastructure/openai/codexVersion";
-import { hostLoop } from "./runtime/loop";
+import { ToolExecutions } from "./agent/toolExecutions";
+import { HookRuntime } from "./hooks/runtime";
 import { localize } from "./i18n/server";
-import { prepareHostSession } from "./runtime/execution/sessionPreparation";
+import { createSessionDefinition } from "./infrastructure/database/session/sessionDefinition";
 import { removeDatabaseDirectory } from "./infrastructure/database/sqlite/connection";
+import { Logger } from "./infrastructure/logging/logger";
+import { loadMcp, loadSessionMcp } from "./infrastructure/mcp/tools/catalog";
+import { fetchLatestCodexVersion } from "./infrastructure/openai/codexVersion";
+import type { HostRunOptions } from "./runtime/execution/hostOptions";
+import { HostLease } from "./runtime/execution/lease";
+import { prepareHostSession } from "./runtime/execution/sessionPreparation";
 import { wireHostSignals } from "./runtime/execution/signals";
+import { hostLoop } from "./runtime/loop";
+import type { HostMode } from "./types";
 
 export async function runHost(mode: HostMode, root = process.cwd(), options: HostRunOptions = {}) {
   await runHostSession(mode, root, {

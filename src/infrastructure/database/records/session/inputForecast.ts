@@ -1,11 +1,13 @@
-import { and, eq } from "drizzle-orm";
-import { AIMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
-import { decodeMessage } from "../transcript/messages/hydration";
-import { inputPredictions } from "../../schema";
-import { messageContentToText } from "../../../../runtime/modelContent";
-import { sessionDatabase } from "../../sqlite/connection";
+
+import { AIMessage } from "@langchain/core/messages";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+
+import { messageContentToText } from "../../../../runtime/modelContent";
+import { inputPredictions } from "../../schema";
+import { sessionDatabase } from "../../sqlite/connection";
+import { decodeMessage } from "../transcript/messages/hydration";
 
 interface ContextRow {
   message_json: string;

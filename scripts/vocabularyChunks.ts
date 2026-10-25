@@ -1,4 +1,5 @@
 import type { Plugin } from "vite";
+
 import { localize } from "../src/i18n/server.ts";
 
 export const vocabularyModulePrefix = "\0omity-vocabulary:";

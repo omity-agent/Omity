@@ -1,24 +1,26 @@
+import { once } from "node:events";
+import { createServer } from "node:http";
 import type { AddressInfo, Socket } from "node:net";
+
+import { getRequestListener } from "@hono/node-server";
+
+import { requestListenerOptions } from "../../settings/networking";
+import { localize } from "../i18n/server";
+import { applicationAssetPath } from "../infrastructure/applicationAssets";
+import { createSettingsContext } from "../infrastructure/configuration/settings/context";
+import { userDataDirectory } from "../infrastructure/configuration/settings/files";
+import { loadSettings } from "../infrastructure/configuration/settings/load";
+import { AccessService } from "./access/service";
+import { AppController } from "./controller";
+import { createApi } from "./http/handler";
+import { createStaticApp } from "./http/static";
+import { appUrl } from "./launch";
+import { AppInstanceLock } from "./runtime/instanceLock";
 import {
   closeAppResources,
   createShutdownLogger,
   listenForShutdownSignal,
 } from "./runtime/shutdown";
-import { AccessService } from "./access/service";
-import { AppController } from "./controller";
-import { AppInstanceLock } from "./runtime/instanceLock";
-import { appUrl } from "./launch";
-import { applicationAssetPath } from "../infrastructure/applicationAssets";
-import { createApi } from "./http/handler";
-import { createServer } from "node:http";
-import { createSettingsContext } from "../infrastructure/configuration/settings/context";
-import { createStaticApp } from "./http/static";
-import { getRequestListener } from "@hono/node-server";
-import { loadSettings } from "../infrastructure/configuration/settings/load";
-import { localize } from "../i18n/server";
-import { once } from "node:events";
-import { requestListenerOptions } from "../../settings/networking";
-import { userDataDirectory } from "../infrastructure/configuration/settings/files";
 
 interface AppServerOptions {
   root: string;

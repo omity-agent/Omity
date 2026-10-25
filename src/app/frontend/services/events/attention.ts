@@ -1,9 +1,10 @@
-import { type SessionStatus, isRunningStatus } from "../../../../types";
-import { useEffect, useSyncExternalStore } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import type { SessionInfo } from "../client";
 import { isEqual } from "es-toolkit";
 import mitt from "mitt";
+import { useEffect, useSyncExternalStore } from "react";
+
+import { isRunningStatus, type SessionStatus } from "../../../../types";
+import type { SessionInfo } from "../client";
 
 type Listener = () => void;
 const stores = new WeakMap<QueryClient, SessionAttentionStore>();

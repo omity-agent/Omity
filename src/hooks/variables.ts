@@ -1,7 +1,8 @@
-import type { HookToolOutput } from "./storage/outputs";
 import { isPlainObject as isRecord } from "es-toolkit";
+
 import { localize } from "../i18n/server";
 import { resolvePlaceholders } from "../infrastructure/configuration/placeholders";
+import type { HookToolOutput } from "./storage/outputs";
 
 interface HookVariables {
   cwd: string;

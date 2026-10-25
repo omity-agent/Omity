@@ -1,16 +1,18 @@
-import { type ConnectedStdioClient, type StdioConnector, connectStdioClient } from "./stdio";
+import { setTimeout as sleep } from "node:timers/promises";
+
+import { raceSignal } from "race-signal";
+
+import { captureError, summarizeError } from "../../../failures/details";
+import { localize } from "../../../i18n/server";
+import type { Logger } from "../../logging/logger";
+import type { StdioConnection } from "../configuration/connections";
 import {
   McpStdioProcessExitedError,
   McpStdioUnavailableError,
   type StdioRestartPolicy,
 } from "./availability";
-import { captureError, summarizeError } from "../../../failures/details";
-import type { Logger } from "../../logging/logger";
 import type { McpOperations } from "./protocol";
-import type { StdioConnection } from "../configuration/connections";
-import { localize } from "../../../i18n/server";
-import { raceSignal } from "race-signal";
-import { setTimeout as sleep } from "node:timers/promises";
+import { type ConnectedStdioClient, connectStdioClient, type StdioConnector } from "./stdio";
 
 export class RestartingStdioClient implements McpOperations {
   private readonly controller = new AbortController();

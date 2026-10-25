@@ -1,6 +1,8 @@
-import { decode, encodingExists } from "iconv-lite";
-import { detect } from "chardet";
 import { isUtf8 } from "node:buffer";
+
+import { detect } from "chardet";
+import { decode, encodingExists } from "iconv-lite";
+
 import { localize } from "../../../i18n/server";
 
 export class ProcessOutputCapture {

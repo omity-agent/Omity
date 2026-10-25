@@ -8,3 +8,7 @@ save = true
 
 [fmt]
 printWidth = 100
+logLevel = "warn"
+sortImports = true
+sortTailwindcss = true
+sortPackageJson = true

@@ -1,18 +1,19 @@
+import type { ToolCall, ToolMessage } from "@langchain/core/messages";
 import { END, type LangGraphRunnableConfig } from "@langchain/langgraph";
+
+import { localize } from "../../i18n/server";
+import type { HookRule } from "../../types";
 import {
-  type HookPlan,
-  type HookState,
   agentPlan,
   finishAwaited,
+  type HookPlan,
+  type HookState,
   nextToolStage,
   requireCallId,
   restoreOriginal,
 } from "../plan";
-import type { ToolCall, ToolMessage } from "@langchain/core/messages";
-import { command, finishAgent, hookCommand, modelNode, originalToolsCommand } from "./commands";
-import type { HookRule } from "../../types";
 import type { HookRuntime } from "../runtime";
-import { localize } from "../../i18n/server";
+import { command, finishAgent, hookCommand, modelNode, originalToolsCommand } from "./commands";
 
 type ConsumeHook = (hookId: string, limit: number) => Promise<boolean>;
 type InvokeTool = (call: ToolCall) => Promise<ToolMessage>;

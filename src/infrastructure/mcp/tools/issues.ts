@@ -1,5 +1,6 @@
-import { ZodError, type z } from "zod";
 import { minBy, uniq } from "es-toolkit";
+import { type z, ZodError } from "zod";
+
 import { localize } from "../../../i18n/server";
 
 export function collectReadableZodIssues(error: unknown): string[] {

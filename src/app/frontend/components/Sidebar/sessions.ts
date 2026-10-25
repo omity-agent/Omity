@@ -1,6 +1,7 @@
-import { type SessionStatus, isRunningStatus } from "../../../../types";
-import type { SessionInfo } from "../../services/client";
 import { maxBy } from "es-toolkit";
+
+import { isRunningStatus, type SessionStatus } from "../../../../types";
+import type { SessionInfo } from "../../services/client";
 
 const minuteMs = 60_000,
   hourMs = 3_600_000,

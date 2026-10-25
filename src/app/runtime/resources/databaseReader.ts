@@ -1,11 +1,12 @@
+import { Database } from "bun:sqlite";
+import { existsSync } from "node:fs";
+
+import { localize } from "../../../i18n/server";
+import { databasePath } from "../../../infrastructure/configuration/sessionPaths";
 import {
   closeDatabase,
   configureReadonlyDatabase,
 } from "../../../infrastructure/database/sqlite/connection";
-import { Database } from "bun:sqlite";
-import { databasePath } from "../../../infrastructure/configuration/sessionPaths";
-import { existsSync } from "node:fs";
-import { localize } from "../../../i18n/server";
 
 export class DatabaseReader implements Disposable {
   private database?: Database;

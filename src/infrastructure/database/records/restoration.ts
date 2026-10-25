@@ -1,8 +1,10 @@
-import { and, eq, ne, sql } from "drizzle-orm";
-import { checkpointWrites, checkpoints } from "../schema";
-import { runTransaction, sessionDatabase } from "../sqlite/connection";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, ne, sql } from "drizzle-orm";
+
 import { localize } from "../../../i18n/server";
+import { checkpoints, checkpointWrites } from "../schema";
+import { runTransaction, sessionDatabase } from "../sqlite/connection";
 
 type Head = typeof checkpoints.$inferSelect;
 type Identity = Pick<Head, "runId" | "checkpointNs">;

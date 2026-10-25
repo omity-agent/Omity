@@ -1,10 +1,12 @@
-import { AIMessage, type BaseMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
-import type { ModelToolDefinition } from "../../src/infrastructure/mcp/tools/definitions";
-import type { StoredAiSdkPart } from "../../src/agent/fromAiMessages";
-import type { TypicalContext } from "./typicalProfile";
 import assert from "node:assert/strict";
-import { countTokens } from "../../src/runtime/tokenizer";
+
+import { AIMessage, type BaseMessage, HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { sum } from "es-toolkit";
+
+import type { StoredAiSdkPart } from "../../src/agent/fromAiMessages";
+import type { ModelToolDefinition } from "../../src/infrastructure/mcp/tools/definitions";
+import { countTokens } from "../../src/runtime/tokenizer";
+import type { TypicalContext } from "./typicalProfile";
 
 function syntheticText(tokens: number) {
   assert(Number.isSafeInteger(tokens) && tokens >= 0, "合成文本的 token 数无效");

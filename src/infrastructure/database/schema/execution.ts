@@ -1,17 +1,18 @@
-import { type ErrorDetails, parseError, stringifyError } from "../../../failures/details";
+import { sql } from "drizzle-orm";
 import {
-  type SQLiteColumn,
   check,
   customType,
   foreignKey,
   integer,
+  type SQLiteColumn,
   sqliteTable,
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+
+import { type ErrorDetails, parseError, stringifyError } from "../../../failures/details";
 import type { RunStatus } from "../../../types";
 import { sessions } from "./session";
-import { sql } from "drizzle-orm";
 
 const errorDetails = customType<{ data: ErrorDetails; driverData: string }>({
   dataType: () => "text",

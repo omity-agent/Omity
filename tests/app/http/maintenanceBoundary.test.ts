@@ -1,15 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
+import { randomUUID } from "node:crypto";
 import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
+import { join } from "node:path";
+
 import { AppController } from "../../../src/app/controller";
 import { createApi } from "../../../src/app/http/handler";
-import { createTestDirectory } from "../../support/artifacts";
-import { hostOwnerId } from "../../../src/infrastructure/process/ownership";
-import { join } from "node:path";
-import { randomUUID } from "node:crypto";
-import { runOf } from "../../support/database";
 import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
+import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
+import { hostOwnerId } from "../../../src/infrastructure/process/ownership";
+import { createTestDirectory } from "../../support/artifacts";
 import { writeTestConfiguration } from "../../support/configuration";
+import { runOf } from "../../support/database";
 
 const roots: string[] = [],
   originalHome = process.env["OMITY_HOME"];

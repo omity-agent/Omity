@@ -1,17 +1,19 @@
-import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
+import { Database } from "bun:sqlite";
+import assert from "node:assert/strict";
+
+import { createOpenAI } from "@ai-sdk/openai";
+import { StructuredTool } from "@langchain/core/tools";
+import { MemorySaver } from "@langchain/langgraph-checkpoint";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+
 import { AppController } from "../../../src/app/controller";
 import { AppRegistry } from "../../../src/app/registry";
 import { BunSqliteSaver } from "../../../src/checkpointer/saver";
-import { Database } from "bun:sqlite";
+import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
 import { FileLinkIndexer } from "../../../src/infrastructure/database/indexing/linkScanner";
-import { FunctionTracing } from "./functionTracing";
-import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
+import { FunctionTracing } from "./functionTracing";
 import type { SpanRecorder } from "./spanRecorder";
-import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { StructuredTool } from "@langchain/core/tools";
-import assert from "node:assert/strict";
-import { createOpenAI } from "@ai-sdk/openai";
 
 export class MethodTracing {
   private readonly restorations: (() => void)[] = [];

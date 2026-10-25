@@ -1,25 +1,27 @@
+import type { Database } from "bun:sqlite";
+import { randomUUID } from "node:crypto";
+
+import { HumanMessage } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
+
+import { DomainError } from "../errors";
+import { copyHookUsage } from "../hooks/storage/usage";
+import { localize } from "../i18n/server";
+import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
+import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
+import { writeComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
+import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
+import {
+  inputMessageId,
+  storeMessage,
+} from "../infrastructure/database/records/transcript/messages/history";
+import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import {
   cachedQuery,
   queryAll,
   runTransaction,
 } from "../infrastructure/database/sqlite/connection";
-import {
-  inputMessageId,
-  storeMessage,
-} from "../infrastructure/database/records/transcript/messages/history";
-import type { AgentDatabase } from "../infrastructure/database/agentDatabase";
-import type { Database } from "bun:sqlite";
-import { DomainError } from "../errors";
-import { HumanMessage } from "@langchain/core/messages";
 import { contentToText } from "../runtime/content";
-import { copyHookUsage } from "../hooks/storage/usage";
-import { createRunRecord } from "../infrastructure/database/records/execution/runs/mutations";
-import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../i18n/server";
-import { randomUUID } from "node:crypto";
-import { readDefinitionRecord } from "../infrastructure/database/records/session/metadata";
-import { writeComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
 
 interface MessageRow {
   id: number;

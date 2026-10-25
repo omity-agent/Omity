@@ -1,3 +1,4 @@
+import type { FileLinkUnit } from "../../fileLinks/types";
 import type {
   DisplayEvent,
   DisplayToolOutput,
@@ -5,12 +6,11 @@ import type {
   TimelineMessage,
 } from "./contracts/projection";
 import {
-  type StreamMessage,
   createStreamPart,
   mergeStreamPart,
   projectStreamMessage,
+  type StreamMessage,
 } from "./stream/message";
-import type { FileLinkUnit } from "../../fileLinks/types";
 import { reconcileToolStreams } from "./tool/correlation";
 
 type ToolLifecycle = { phase: "running" } | { output: DisplayToolOutput; phase: "completed" };

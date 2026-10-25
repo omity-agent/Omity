@@ -1,6 +1,8 @@
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
-import { inputs, messages } from "../../../schema";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, gte, isNull, sql } from "drizzle-orm";
+
+import { inputs, messages } from "../../../schema";
 import { sessionDatabase } from "../../../sqlite/connection";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareMessageMutations>>();

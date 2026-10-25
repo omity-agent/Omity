@@ -1,8 +1,9 @@
-import { Agent, request as requestDirect, upgrade as upgradeDirect } from "undici/index.js";
-import { type ServerHttp2Session, type ServerHttp2Stream, createSecureServer } from "node:http2";
-import type { Duplex } from "node:stream";
 import { once } from "node:events";
+import { createSecureServer, type ServerHttp2Session, type ServerHttp2Stream } from "node:http2";
+import type { Duplex } from "node:stream";
 import { promisify } from "node:util";
+
+import { Agent, request as requestDirect, upgrade as upgradeDirect } from "undici/index.js";
 
 export type RetryOriginMode = "invalid" | "rejected" | "complete" | "disconnect" | "reset";
 const key = `-----BEGIN PRIVATE KEY-----

@@ -1,3 +1,6 @@
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import {
   type ComposerDraftTarget,
   flushComposerDraft,
@@ -5,21 +8,19 @@ import {
   writeComposerDraft,
 } from "../../../services/composerDrafts";
 import { reportError, reportPromiseErrors } from "../../../services/errors";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { Actions } from "./controls";
-import { AskUserPrompt } from "./AskUser/Prompt";
-import type { ComposerProps } from "./props";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
 import { MarkdownEditor } from "../MarkdownEditor";
-import { UserInputPrediction } from "./prediction";
+import { AskUserPrompt } from "./AskUser/Prompt";
+import { useQuestionAnswerState } from "./AskUser/state";
+import { Actions } from "./controls";
 import { UserMessageHistory } from "./history";
-import { composerFrame } from "./layout";
+import { usePendingAttachments } from "./hooks/attachments";
 import { useComposerEvents } from "./hooks/events";
 import { useComposerSubmit } from "./hooks/submission";
-import { usePendingAttachments } from "./hooks/attachments";
-import { useQuestionAnswerState } from "./AskUser/state";
 import { useSuggestionNavigation } from "./hooks/suggestionNavigation";
-import { useTranslation } from "react-i18next";
+import { composerFrame } from "./layout";
+import { UserInputPrediction } from "./prediction";
+import type { ComposerProps } from "./props";
 
 const emptyPredictions: readonly string[] = [];
 export function Composer({

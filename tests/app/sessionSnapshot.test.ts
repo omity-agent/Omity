@@ -1,16 +1,17 @@
-import { type AppMcp, createAppMcp } from "../../src/app/runtime/resources/toolPool";
 import { afterEach, expect, test } from "bun:test";
-import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
-import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
-import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
-import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
-import { createTestDirectory } from "../support/artifacts";
 import { join } from "node:path";
-import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
-import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
+
+import { type AppMcp, createAppMcp } from "../../src/app/runtime/resources/toolPool";
+import { createSnapshotSession } from "../../src/app/runtime/sessionSnapshot";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
+import { createSettingsContext } from "../../src/infrastructure/configuration/settings/context";
+import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
+import { readDefinitionRecord } from "../../src/infrastructure/database/records/session/metadata";
+import { AskUserRuntime } from "../../src/infrastructure/toolbox/runtime";
+import { prepareHostSession } from "../../src/runtime/execution/sessionPreparation";
+import { createTestDirectory } from "../support/artifacts";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../support/builtins";
 import { writeTestConfiguration } from "../support/configuration";
 
 const roots: string[] = [],

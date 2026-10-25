@@ -1,10 +1,12 @@
 import { beforeAll, expect, test } from "bun:test";
+
+import { renderToStaticMarkup } from "react-dom/server";
+
 import { CapabilityGroup } from "../../../src/app/frontend/components/NewSession/options/CapabilityGroup";
 import { ModelInput } from "../../../src/app/frontend/components/NewSession/options/ModelInput";
 import { ProfilePicker } from "../../../src/app/frontend/components/NewSession/ProfilePicker";
 import { WorkspacePicker } from "../../../src/app/frontend/components/NewSession/WorkspacePicker";
 import { i18nReady } from "../../../src/app/frontend/i18n";
-import { renderToStaticMarkup } from "react-dom/server";
 
 const ignoreChange = () => undefined,
   pickWorkspace = async () => null,

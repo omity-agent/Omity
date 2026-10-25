@@ -1,5 +1,5 @@
-import type { DisplayEvent, DisplayToolCall } from "../contracts/projection";
 import { localize } from "../../../i18n/server";
+import type { DisplayEvent, DisplayToolCall } from "../contracts/projection";
 
 interface StreamIdentityPart {
   formal?: true;

@@ -1,4 +1,5 @@
-import { type ReactNode, createContext, useContext } from "react";
+import { createContext, type ReactNode, useContext } from "react";
+
 import { localize } from "../../i18n";
 
 const SessionContext = createContext<string | undefined>(undefined);

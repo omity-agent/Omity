@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
-import { createTestDirectory } from "../../support/artifacts";
 import { join } from "node:path";
+
 import { pickWorkspaceDirectory } from "../../../src/app/workspaceDialog/bridge";
+import { createTestDirectory } from "../../support/artifacts";
 
 const warning = "libpng warning: iCCP: known incorrect sRGB profile",
   selectedDirectory = ["F:", "工作目录", "example"].join("\\");

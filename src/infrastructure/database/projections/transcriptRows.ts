@@ -1,9 +1,11 @@
-import { and, eq, isNotNull, sql } from "drizzle-orm";
-import { events, messages } from "../schema";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, isNotNull, sql } from "drizzle-orm";
+
 import { localize } from "../../../i18n/server";
-import { sessionDatabase } from "../sqlite/connection";
+import { events, messages } from "../schema";
 import { streamEventSchema } from "../schema/streamEvent";
+import { sessionDatabase } from "../sqlite/connection";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareTranscriptRows>>();
 export function transcriptMessageRows(db: Database, sessionId: string) {

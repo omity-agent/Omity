@@ -1,6 +1,6 @@
-import type { AppInstanceOwner } from "./instanceLock";
-import { openStoredSession } from "../../storedSessions";
 import { recoverHostSession } from "../../runtime/execution/recovery";
+import { openStoredSession } from "../../storedSessions";
+import type { AppInstanceOwner } from "./instanceLock";
 
 interface RecoverableSession {
   id: string;

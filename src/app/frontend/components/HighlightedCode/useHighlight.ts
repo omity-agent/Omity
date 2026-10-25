@@ -1,6 +1,7 @@
-import { HighlightScheduler, type HighlightedCodeResult } from "./background/dispatch";
 import { useEffect, useId, useState } from "react";
+
 import { reportError } from "../../services/errors";
+import { type HighlightedCodeResult, HighlightScheduler } from "./background/dispatch";
 
 const scheduler = new HighlightScheduler(),
   hot = import.meta.hot as ImportMeta["hot"] | undefined;

@@ -1,12 +1,13 @@
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 import { expect, test } from "bun:test";
-import { loadMcp, loadSessionMcp } from "../../../../src/infrastructure/mcp/tools/catalog";
 import { mkdirSync, rmSync } from "node:fs";
-import { Logger } from "../../../../src/infrastructure/logging/logger";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
-import { createTestDirectory } from "../../../support/artifacts";
 import { join } from "node:path";
+
+import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
+import { Logger } from "../../../../src/infrastructure/logging/logger";
+import { loadMcp, loadSessionMcp } from "../../../../src/infrastructure/mcp/tools/catalog";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
+import { createTestDirectory } from "../../../support/artifacts";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 
 test.each([true, false])(
   "session tools remain callable after configuration disables them (server prefix: %s)",
@@ -105,7 +106,6 @@ test.each([true, false])(
   },
   15_000,
 );
-
 test("session server selections override changed configuration activation flags", async () => {
   const root = createTestDirectory("frozen-server-selection"),
     logger = new Logger("error", true),

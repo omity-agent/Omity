@@ -1,16 +1,17 @@
 import { type ComponentProps, useDeferredValue, useMemo, useRef } from "react";
-import { FlowItem, FlowWindow } from "./scrolling/FlowWindow";
-import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
-import { Virtualizer, type VirtualizerHandle } from "virtua";
 import { css, cx } from "styled-system/css";
-import { DisclosureProvider } from "./disclosures";
-import { Message } from "../Chat/Message";
-import type { TimelineMessage } from "../../../timeline";
-import { findLatestDetails } from "../Chat/detailFocus";
-import { scroll } from "../../design";
-import { segmentTranscript } from "./segments";
+import { Virtualizer, type VirtualizerHandle } from "virtua";
+
 import { transcriptWindow } from "../../../../../settings/rendering";
+import type { TimelineMessage } from "../../../timeline";
+import { scroll } from "../../design";
+import { findLatestDetails } from "../Chat/detailFocus";
+import { Message } from "../Chat/Message";
+import { MessageCopies, useMessageCopies } from "./actions/PinnedCopy";
+import { DisclosureProvider } from "./disclosures";
+import { FlowItem, FlowWindow } from "./scrolling/FlowWindow";
 import { useTranscriptScroll } from "./scrolling/viewportTracking";
+import { segmentTranscript } from "./segments";
 
 const viewport = css({ containerType: "size", overflowAnchor: "none" }),
   content = css({ minWidth: "zero", position: "relative", width: "full" }),
@@ -21,12 +22,11 @@ const viewport = css({ containerType: "size", overflowAnchor: "none" }),
   });
 type MessageActions = Pick<
   ComponentProps<typeof Message>,
-  "forkDisabled" | "liveTranslation" | "onCancelTool" | "onFork"
+  "forkDisabled" | "onCancelTool" | "onFork"
 >;
 export function Transcript({
   allowFork,
   forkDisabled,
-  liveTranslation,
   messages: incomingMessages,
   onCancelTool,
   onFork,
@@ -87,7 +87,6 @@ export function Transcript({
                       ? latestDetails.tool.partIndex
                       : undefined
                   }
-                  liveTranslation={liveTranslation}
                   onCancelTool={onCancelTool}
                   onFork={onFork}
                   partIndex={partIndex}

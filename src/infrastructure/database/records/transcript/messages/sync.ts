@@ -1,10 +1,12 @@
-import { type MessageInsert, messageInsert } from "./serialization";
-import { messageInputId, storePreparedMessage } from "./history";
-import { messageMutations, pruneUnreferencedMessages } from "./writing";
-import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
 import { randomUUID } from "node:crypto";
+
+import type { BaseMessage } from "@langchain/core/messages";
+
 import { transcriptMessageRows } from "../../../projections/transcriptRows";
+import { messageInputId, storePreparedMessage } from "./history";
+import { type MessageInsert, messageInsert } from "./serialization";
+import { messageMutations, pruneUnreferencedMessages } from "./writing";
 
 export function prepareMessageSync(db: Database, sessionId: string, messages: BaseMessage[]) {
   const items = messages.map((message) => {

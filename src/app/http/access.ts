@@ -1,12 +1,17 @@
-import { type AccessService, accessChallengeCookie, accessSessionCookie } from "../access/service";
-import { type Context, type Hono } from "hono";
-import { authenticationBody, registrationBody, registrationOptionsBody } from "./accessRequest";
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { jsonBody, limitRequestBody } from "./request";
-import type { ClientIdentity } from "../access/network";
 import type { HttpBindings } from "@hono/node-server";
-import { HttpError } from "./errors";
+import { type Context, type Hono } from "hono";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+
 import { localize } from "../../i18n/server";
+import type { ClientIdentity } from "../access/network";
+import { accessChallengeCookie, type AccessService, accessSessionCookie } from "../access/service";
+import {
+  authenticationBody,
+  registrationBody,
+  registrationOptionsBody,
+} from "../contracts/authentication";
+import { HttpError } from "./errors";
+import { jsonBody, limitRequestBody } from "./request";
 
 export interface AccessEnvironment {
   Bindings: HttpBindings;
@@ -43,7 +48,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
         },
       ),
     )
-    .post("/api/access/register/options", jsonBody(registrationOptionsBody), async (c) => {
+    .post("/api/access/register/options", ...jsonBody(registrationOptionsBody), async (c) => {
       const body = c.req.valid("json"),
         result = await required(access).registrationOptions(c.get("client"), body.ticket);
       setChallengeCookie(c, result.challengeId, access);
@@ -52,7 +57,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
     .post("/api/access/register/ticket", limitRequestBody(), (c) =>
       c.json(required(access).registrationTicket(c.get("client"))),
     )
-    .post("/api/access/register", jsonBody(registrationBody), async (c) => {
+    .post("/api/access/register", ...jsonBody(registrationBody), async (c) => {
       const result = await required(access).register(challengeCookie(c), c.req.valid("json"));
       setSessionCookie(c, result.token, access);
       clearChallengeCookie(c);
@@ -63,7 +68,7 @@ export function mountAccess(app: Hono<AccessEnvironment>, access: AccessService 
       setChallengeCookie(c, result.challengeId, access);
       return c.json({ options: result.options });
     })
-    .post("/api/access/login", jsonBody(authenticationBody), async (c) => {
+    .post("/api/access/login", ...jsonBody(authenticationBody), async (c) => {
       const service = required(access),
         token = await service.authenticate(
           c.get("client"),

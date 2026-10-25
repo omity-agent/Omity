@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { failedCatalog, failingStartupPath } from "./isolatedCatalog";
 import { join } from "node:path";
+
 import { maximumMcpStderrBytes } from "../../../../settings/diagnosticPolicy";
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
+import { failedCatalog, failingStartupPath } from "./isolatedCatalog";
 
 test("a real stdio startup exit preserves structured process, stderr, and sanitized launch diagnostics", async () => {
   const secret = "diagnostic-private-token",

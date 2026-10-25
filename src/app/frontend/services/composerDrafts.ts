@@ -1,3 +1,4 @@
+import { localize } from "../i18n";
 import {
   beaconComposerDraft,
   beaconPreparationDraft,
@@ -6,7 +7,6 @@ import {
   saveComposerDraft,
   savePreparationDraft,
 } from "./client";
-import { localize } from "../i18n";
 
 export type ComposerDraftTarget =
   | { beforeMessageId: number; kind: "fork"; sourceSessionId: string }

@@ -1,17 +1,18 @@
 import { afterEach, expect, spyOn, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { required, runOf } from "../support/database";
-import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
-import { AppController } from "../../src/app/controller";
-import { createTestDirectory } from "../support/artifacts";
-import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
-import { hostOwnerId } from "../../src/infrastructure/process/ownership";
-import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { recoverHostSession } from "../../src/runtime/execution/recovery";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { AppController } from "../../src/app/controller";
 import { sessionPaths } from "../../src/infrastructure/configuration/sessionPaths";
 import { userDataDirectory } from "../../src/infrastructure/configuration/settings/files";
+import { AgentDatabase } from "../../src/infrastructure/database/agentDatabase";
+import { emptySessionDefinition } from "../../src/infrastructure/database/session/sessionDefinition";
+import { hostOwnerId } from "../../src/infrastructure/process/ownership";
+import { recoverHostSession } from "../../src/runtime/execution/recovery";
+import { createTestDirectory } from "../support/artifacts";
 import { writeTestConfiguration } from "../support/configuration";
+import { required, runOf } from "../support/database";
 
 const roots: string[] = [];
 afterEach(() => {

@@ -1,8 +1,8 @@
-import type { HostObserver } from "../context";
+import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
+import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import type { LoadedMcp } from "../../infrastructure/mcp/tools/catalog";
 import type { ProcessOwner } from "../../infrastructure/process/ownership";
-import type { SessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
-import type { SettingsContext } from "../../infrastructure/configuration/settings/context";
+import type { HostObserver } from "../context";
 
 interface HostControls {
   cancelTool: (callId: string) => boolean;

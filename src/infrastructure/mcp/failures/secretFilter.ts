@@ -1,6 +1,6 @@
+import { sensitiveMcpKey } from "../../../../settings/diagnosticPolicy";
 import { captureError, errorDetailsSchema } from "../../../failures/details";
 import type { McpConnection } from "./wireFormat";
-import { sensitiveMcpKey } from "../../../../settings/diagnosticPolicy";
 
 export function createSecretFilter(connection?: McpConnection) {
   const secrets = new Set<string>();

@@ -1,8 +1,9 @@
-import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
 import { expect, test } from "bun:test";
-import { liveApplication } from "../liveApplication";
 import { resolve } from "node:path";
+
 import { submissionForm } from "../../../../src/app/attachments/submission";
+import { defaultBuiltIns, writeToolboxConfiguration } from "../../../support/builtins";
+import { liveApplication } from "../liveApplication";
 
 test.each(["freeformToolInputs", "toolDescriptionOverrides"] as const)(
   "enabled MCP validates original tool names in %s",

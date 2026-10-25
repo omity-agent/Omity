@@ -2,7 +2,7 @@
 
 为确保可靠性，在使用命令行或写命令脚本时，必须使用命令和参数的全称，避免使用简写或兼容性写法。
 Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.
-不可以使用 `git` 命令。
+不可以运行 `git` 命令，可以使用 Jujutsu VCS (`jj`)。
 可通过 `sudo.exe [OPTIONS] [COMMANDLINE]... [COMMAND]` 在非管理员命令行中临时使用管理员权限。
 
 ## How to use ripgrep

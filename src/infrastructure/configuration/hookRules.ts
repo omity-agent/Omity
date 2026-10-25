@@ -1,11 +1,12 @@
+import { z } from "zod";
+
+import { isHookOutputVariable } from "../../hooks/variables";
+import { localize } from "../../i18n/server";
 import type { HookRule } from "../../types";
 import type { PlaceholderOptions } from "./placeholders";
 import type { SettingsContext } from "./settings/context";
-import { emptyAs } from "./settings/values";
-import { isHookOutputVariable } from "../../hooks/variables";
-import { localize } from "../../i18n/server";
+import { emptyAs } from "./settings/fieldSchemas";
 import { readLayeredSettingsYaml } from "./settings/files";
-import { z } from "zod";
 
 const argsSchema = z.record(z.string(), z.unknown()),
   callFields = {

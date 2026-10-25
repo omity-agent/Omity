@@ -1,8 +1,9 @@
 import { type Dispatcher, WebSocket } from "undici/index.js";
-import { type OutboundFetch, explicitHeaderDispatcher } from "./explicitHeaders";
-import { SocketHandshake, registerHandshakeChannels } from "./handshakeChannels";
-import { localize } from "../../i18n/server";
+
 import { websocketHandshakeHeaders } from "../../../settings/networking";
+import { localize } from "../../i18n/server";
+import { explicitHeaderDispatcher, type OutboundFetch } from "./explicitHeaders";
+import { registerHandshakeChannels, SocketHandshake } from "./handshakeChannels";
 
 interface OutboundSocket {
   handshake: SocketHandshake;

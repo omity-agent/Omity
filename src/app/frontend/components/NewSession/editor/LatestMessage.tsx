@@ -1,12 +1,13 @@
 import { Plus, UserRound } from "lucide-react";
-import { composerFrame, composerRole } from "../../Chat/Composer/layout";
-import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
-import { IconButton } from "../../ParkUI";
-import { MarkdownEditor } from "../../Chat/MarkdownEditor";
-import { SubmitButton } from "../../Chat/Composer/controls/SubmitButton";
-import { useInputNavigation } from "./inputNavigation";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
+import { ActionPanel } from "../../Chat/Composer/controls/ActionPanel";
+import { SubmitButton } from "../../Chat/Composer/controls/SubmitButton";
+import { composerFrame, composerRole } from "../../Chat/Composer/layout";
+import { MarkdownEditor } from "../../Chat/MarkdownEditor";
+import { IconButton } from "../../ParkUI";
+import { useInputNavigation } from "./inputNavigation";
 
 export function LatestMessage({
   disabled,

@@ -23,7 +23,7 @@
     "freeformInputMissing": "Freeform 工具调用缺少原始字符串输入",
     "imagesUnsupportedByCompletions": "工具返回了 {{value0}} 张图片，但 Completions API 不支持工具返回图片给模型。",
     "contentTypeUnsupported": "工具消息包含不支持的内容类型：{{value0}}",
-    "cancelled": "工具运行 {{value0}} 后被用户手动终止。"
+    "cancelled": "工具运行 {{value0}}后被用户手动终止。"
   },
   "output": {
     "tooLarge": "工具输出过长（{{value0}} tokens），无法直接查看。\n输出原文已完整保存于：\n{{value1}}\n如有需要请检索其中片段。",

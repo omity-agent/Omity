@@ -1,5 +1,4 @@
 const terminalSuppressedErrors = new WeakSet<object>();
-
 export function suppressTerminalError<T extends Error>(error: T): T {
   terminalSuppressedErrors.add(error);
   return error;

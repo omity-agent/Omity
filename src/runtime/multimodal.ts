@@ -1,6 +1,7 @@
-import type { ModelApi } from "../types";
 import { isPlainObject as isRecord } from "es-toolkit";
+
 import { localize } from "../i18n/server";
+import type { ModelApi } from "../types";
 
 interface ToolImage {
   src: string;

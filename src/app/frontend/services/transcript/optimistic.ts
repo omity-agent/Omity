@@ -1,5 +1,5 @@
-import type { TimelineMessage } from "../../../timeline";
 import { createShortId } from "../../../../infrastructure/randomId";
+import type { TimelineMessage } from "../../../timeline";
 
 export interface OptimisticUser {
   content: string;

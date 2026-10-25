@@ -1,9 +1,10 @@
-import { realpath, stat } from "node:fs/promises";
-import type { FileLinkAction } from "../../fileLinks/types";
-import { dirname } from "node:path";
-import { localize } from "../../i18n/server";
-import { once } from "node:events";
 import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { realpath, stat } from "node:fs/promises";
+import { dirname } from "node:path";
+
+import type { FileLinkAction } from "../../fileLinks/types";
+import { localize } from "../../i18n/server";
 
 interface Launcher {
   args: string[];

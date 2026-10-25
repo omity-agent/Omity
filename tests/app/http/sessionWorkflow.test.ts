@@ -1,9 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
 import { expect, test } from "bun:test";
-import { liveApplication } from "./liveApplication";
-import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
-import { submissionForm } from "../../../src/app/attachments/submission";
+import { existsSync, readFileSync } from "node:fs";
+
 import { z } from "zod";
+
+import { requestBodyLimit } from "../../../settings/networking";
+import { submissionForm } from "../../../src/app/attachments/submission";
+import { sessionPaths } from "../../../src/infrastructure/configuration/sessionPaths";
+import { liveApplication } from "./liveApplication";
 
 test("HTTP session creation runs a model then preserves draft revisions and attachments until deletion", async () => {
   await using app = await liveApplication();
@@ -91,6 +94,56 @@ test("HTTP session creation runs a model then preserves draft revisions and atta
   expect(deletedTranscript.status).toBe(404);
   expect(await sessions.json()).toEqual({ sessions: [] });
 }, 15_000);
+test("HTTP validation rejects malformed or ambiguous submissions before session mutations", async () => {
+  await using app = await liveApplication();
+  const draftEndpoint = `${app.url}/api/sessions/absent/composer-draft`,
+    invalidJsonRequests = [
+      { body: "{", headers: { "content-type": "application/json" } },
+      { body: "null", headers: { "content-type": "application/json" } },
+      { body: '{"content":"draft","revision":0}', headers: { "content-type": "application/json" } },
+      { body: '{"content":"draft","revision":1}', headers: { "content-type": "text/plain" } },
+    ];
+  for (const init of invalidJsonRequests) {
+    const response = await fetch(draftEndpoint, { ...init, method: "POST" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } });
+  }
+  const oversized = await fetch(
+    draftEndpoint,
+    json({ content: "x".repeat(requestBodyLimit), revision: 1 }),
+  );
+  expect(oversized.status).toBe(413);
+  const optionalBody = await fetch(`${app.url}/api/access/register/options`, {
+    body: "{}",
+    headers: { "content-type": "text/plain" },
+    method: "POST",
+  });
+  expect(optionalBody.status).toBe(400);
+  for (const query of ["profile=first&profile=second", "profile=..%2Foutside"]) {
+    const response = await fetch(`${app.url}/api/session-options?${query}`);
+    expect(response.status).toBe(400);
+  }
+  const submission = { history: [], message: "do not start", workspace: app.root },
+    invalidForms = [
+      new FormData(),
+      submissionForm(submission, []),
+      submissionForm(submission, []),
+      submissionForm(submission, []),
+      submissionForm(submission, []),
+    ];
+  invalidForms[1]!.set("submission", "{");
+  invalidForms[2]!.append("submission", JSON.stringify(submission));
+  invalidForms[3]!.append("file:invalid", new File(["data"], "notes.txt"));
+  invalidForms[4]!.append("file:a1b2c3d4", new File(["first"], "notes.txt"));
+  invalidForms[4]!.append("file:a1b2c3d4", new File(["second"], "notes.txt"));
+  for (const body of invalidForms) {
+    const response = await fetch(`${app.url}/api/sessions`, { body, method: "POST" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { code: "BAD_REQUEST" } });
+  }
+  expect(app.controller.sessions()).toEqual([]);
+  expect(app.requests).toEqual([]);
+});
 function json(body: unknown): RequestInit {
   return {
     body: JSON.stringify(body),

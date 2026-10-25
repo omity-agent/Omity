@@ -1,6 +1,7 @@
-import { localize } from "../../i18n/server";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+
+import { localize } from "../../i18n/server";
 import { userDataDirectory } from "./settings/files";
 
 export function databasePath(storageDirectory = userDataDirectory()) {

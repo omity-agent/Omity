@@ -1,8 +1,9 @@
-import { type DisplayEvent, type TimelineMessage, buildTimeline } from "../../../timeline";
-import { keyBy, sortBy } from "es-toolkit";
-import type { FileLinkUnit } from "../../../../fileLinks/types";
-import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 import { replaceEqualDeep } from "@tanstack/react-query";
+import { keyBy, sortBy } from "es-toolkit";
+
+import type { FileLinkUnit } from "../../../../fileLinks/types";
+import { buildTimeline, type DisplayEvent, type TimelineMessage } from "../../../timeline";
+import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 
 export interface TranscriptData extends TranscriptSnapshot {
   snapshotCursor: number;

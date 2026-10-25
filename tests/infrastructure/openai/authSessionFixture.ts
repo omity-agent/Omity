@@ -1,6 +1,7 @@
-import { createTestDirectory } from "../../support/artifacts";
-import { join } from "node:path";
 import { rmSync } from "node:fs";
+import { join } from "node:path";
+
+import { createTestDirectory } from "../../support/artifacts";
 
 interface AuthFileOptions {
   accessToken?: string;

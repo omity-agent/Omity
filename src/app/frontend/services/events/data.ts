@@ -1,3 +1,4 @@
+import { streamEventSchema } from "../../../../types";
 import {
   deletedEventSchema,
   sessionFailureSchema,
@@ -6,7 +7,6 @@ import {
   syncEventSchema,
   warningEventSchema,
 } from "../../../events/contracts";
-import { eventSchema } from "../validation/responses";
 import { localize } from "../../i18n";
 import type { z } from "../validation";
 
@@ -35,7 +35,7 @@ export function readWarningEvent(event: Event) {
   return readEventData(event, warningEventSchema, "warning");
 }
 export function readTranscriptEvent(event: Event) {
-  const data = readEventData(event, eventSchema, "delta"),
+  const data = readEventData(event, streamEventSchema, "delta"),
     id = readNumericEventId(event, "delta");
   if (data.id !== id) {
     throw new Error(localize("frontend:events.deltaIdMismatch"));

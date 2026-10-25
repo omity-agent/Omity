@@ -1,11 +1,12 @@
-import { argument, command, constant, flag, option } from "@optique/core/primitives";
-import { integer, string } from "@optique/core/valueparser";
+import type { InferValue } from "@optique/core";
+import { object, or, seq } from "@optique/core/constructs";
 import { message, text } from "@optique/core/message";
 import { multiple, optional } from "@optique/core/modifiers";
-import { object, or, seq } from "@optique/core/constructs";
-import type { HostMode } from "../types";
-import type { InferValue } from "@optique/core";
+import { argument, command, constant, flag, option } from "@optique/core/primitives";
+import { integer, string } from "@optique/core/valueparser";
+
 import { localize } from "../i18n/server";
+import type { HostMode } from "../types";
 
 type HostAction = HostMode["kind"] | "delete";
 const sessionId = argument(string({ metavar: "SESSION_ID", pattern: /\S/u }), {

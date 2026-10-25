@@ -1,14 +1,15 @@
+import { uniq } from "es-toolkit";
+
+import { suppressTerminalError } from "../../../failures/output";
+import { localize } from "../../../i18n/server";
+import { collectReadableZodIssues } from "../tools/issues";
+import { createSecretFilter } from "./secretFilter";
 import {
   type McpConnection,
   type McpFailure,
   type McpLoadDetails,
   mcpLoadDetailsSchema,
 } from "./wireFormat";
-import { collectReadableZodIssues } from "../tools/issues";
-import { createSecretFilter } from "./secretFilter";
-import { localize } from "../../../i18n/server";
-import { suppressTerminalError } from "../../../failures/output";
-import { uniq } from "es-toolkit";
 
 interface FailureContext extends Omit<McpFailure, "connection" | "error" | "transportErrors"> {
   connection?: McpConnection;

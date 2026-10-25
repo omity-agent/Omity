@@ -1,7 +1,8 @@
 import type { SharedV4ProviderOptions } from "@ai-sdk/provider";
+import { z } from "zod";
+
 import { isProviderOptions } from "../../../../../agent/toolProviderOptions";
 import { localize } from "../../../../../i18n/server";
-import { z } from "zod";
 
 export const toolProviderOptionsSchema = z.record(
   z.string(),

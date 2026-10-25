@@ -1,8 +1,10 @@
 import { expect, test } from "bun:test";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
+
 import { isPlainObject } from "es-toolkit";
+
+import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { parseModelSettings } from "../../../src/infrastructure/configuration/settings/schema";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 
 test("Responses WebSocket adapter bridges response events to SSE", async () => {
   let handshakeHeaders: Headers | undefined;

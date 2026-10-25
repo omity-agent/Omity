@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { coordinateStartup } from "./startupCoordinator";
-import { isProcessRunning } from "../../../../src/infrastructure/process/ownership";
+
 import { mcpLoadDetailsSchema } from "../../../../src/infrastructure/mcp/failures/wireFormat";
 import { snapshotMcpTools } from "../../../../src/infrastructure/mcp/tools/definitions";
+import { isProcessRunning } from "../../../../src/infrastructure/process/ownership";
+import { coordinateStartup } from "./startupCoordinator";
 
 test("session MCP pipelines overlap while preserving tool order and reusing the session pool", async () => {
   const fixture = await coordinateStartup({

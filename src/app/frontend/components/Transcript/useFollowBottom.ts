@@ -1,4 +1,5 @@
 import { type RefObject, type UIEventHandler, useCallback, useLayoutEffect, useRef } from "react";
+
 import { BottomFollower } from "./scrolling/BottomFollower";
 
 export function useFollowBottom<T extends HTMLElement>({

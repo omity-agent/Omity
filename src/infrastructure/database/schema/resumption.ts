@@ -7,6 +7,7 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+
 import { runs } from "./execution";
 
 export const checkpoints = sqliteTable(

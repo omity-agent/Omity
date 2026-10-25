@@ -1,6 +1,6 @@
-import type { BrowserWarning, HostActivity, StreamEvent } from "../../types";
 import type { ErrorDetails } from "../../failures/details";
 import type { HostObserver } from "../../runtime/context";
+import type { BrowserWarning, HostActivity, StreamEvent } from "../../types";
 
 export interface RunningHost {
   activity: HostActivity;

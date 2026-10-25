@@ -1,11 +1,13 @@
-import { type Boundaries, SpanRecorder } from "./spanRecorder";
-import { type PhaseTiming, summarizePhases } from "./phaseBreakdown";
-import { measuredCallId, responseFrames } from "../responseFrames";
-import { Client } from "@modelcontextprotocol/client";
-import { MethodTracing } from "./methodTracing";
 import assert from "node:assert/strict";
+
+import { Client } from "@modelcontextprotocol/client";
 import { raceSignal } from "race-signal";
 import { z } from "zod";
+
+import { measuredCallId, responseFrames } from "../responseFrames";
+import { MethodTracing } from "./methodTracing";
+import { type PhaseTiming, summarizePhases } from "./phaseBreakdown";
+import { type Boundaries, SpanRecorder } from "./spanRecorder";
 
 export interface RoundtripSample extends Boundaries {
   phases: PhaseTiming[];

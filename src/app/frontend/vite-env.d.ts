@@ -1,5 +1,4 @@
 /// <reference types="vite/client" />
-
 type BuiltInAiAvailability = "available" | "downloadable" | "downloading" | "unavailable";
 interface BuiltInAiMonitor {
   addEventListener: (type: "downloadprogress", listener: (event: ProgressEvent) => void) => void;

@@ -1,4 +1,5 @@
 import { isPlainObject as isRecord } from "es-toolkit";
+
 import { localize } from "../i18n/server";
 
 export function trimFreeformInput(input: string) {

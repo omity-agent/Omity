@@ -1,18 +1,19 @@
 /* oxlint-disable @pandacss/no-margin-properties -- Tool input and output panels use deliberate transcript spacing. */
+import { Wrench } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import { formatToolInput } from "../../../../fileLinks/toolInput";
 import {
+  canCancelToolCall,
   type DisplayToolCall,
   type DisplayToolOutput,
   type ToolCallPhase,
-  canCancelToolCall,
 } from "../../../timeline";
-import { Frame } from "./Frame";
-import { HighlightedCode } from "../HighlightedCode";
-import { Wrench } from "lucide-react";
-import { css } from "styled-system/css";
 import { formatTokens } from "../../tokenUnits";
-import { formatToolInput } from "../../../../fileLinks/toolInput";
+import { HighlightedCode } from "../HighlightedCode";
+import { Frame } from "./Frame";
 import { useToolAccessory } from "./ToolAccessory";
-import { useTranslation } from "react-i18next";
 
 const ioGrid = css({
     borderBlockStartWidth: "hairline",

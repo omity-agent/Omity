@@ -1,6 +1,7 @@
 import { type ChangeEvent, useCallback } from "react";
-import { Field, Select } from "../ParkUI";
 import { useTranslation } from "react-i18next";
+
+import { Field, Select } from "../ParkUI";
 
 export function ProfilePicker({
   available,

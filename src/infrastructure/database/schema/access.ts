@@ -1,6 +1,6 @@
-import { blob, check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { WebAuthnCredential } from "@simplewebauthn/server";
 import { sql } from "drizzle-orm";
+import { blob, check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const credentials = sqliteTable("credentials", {
   counter: integer().notNull(),

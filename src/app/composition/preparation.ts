@@ -1,5 +1,6 @@
-import { localize } from "../../i18n/server";
 import { z } from "zod";
+
+import { localize } from "../../i18n/server";
 
 const sessionPreparationSchema = z.strictObject({
   message: z.string(),

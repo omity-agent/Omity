@@ -1,11 +1,13 @@
 import { expect, test } from "bun:test";
+
+import { ToolMessage } from "@langchain/core/messages";
+import { z } from "zod";
+
+import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { Logger } from "../../../../src/infrastructure/logging/logger";
 import { McpClientPool } from "../../../../src/infrastructure/mcp/client/pool";
-import { ToolMessage } from "@langchain/core/messages";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
 import { loadServerTools } from "../../../../src/infrastructure/mcp/loadServers";
 import { structuredToolOutput } from "../../../../src/infrastructure/mcp/tools/structured";
-import { z } from "zod";
 
 test.each(["modern", "legacy"] as const)(
   "%s HTTP catalog owns one connection and preserves multimodal results and tool errors",

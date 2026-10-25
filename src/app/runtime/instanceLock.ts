@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   closeSync,
   existsSync,
@@ -7,11 +8,12 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { isProcessRunning } from "../../infrastructure/process/ownership";
-import { localize } from "../../i18n/server";
-import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
+
 import { z } from "zod";
+
+import { localize } from "../../i18n/server";
+import { isProcessRunning } from "../../infrastructure/process/ownership";
 
 const ownerSchema = z.object({
   pid: z.number().int().positive(),

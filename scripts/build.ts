@@ -1,7 +1,9 @@
-import { backendPlugins, frontendOutput } from "../settings/bundling";
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+
 import { build } from "vite";
+
+import { backendPlugins, frontendOutput } from "../settings/bundling";
 import { localize } from "../src/i18n/server";
 import { prepareMagikaAssets } from "./magikaModel";
 
@@ -130,7 +132,7 @@ async function flattenMigration(specification: typeof database) {
   await rm(generatedDirectory, { recursive: true });
 }
 async function runTests() {
-  const child = Bun.spawn([process.execPath, "test"], {
+  const child = Bun.spawn([process.execPath, "test", ...process.argv.slice(3)], {
       cwd: root,
       stderr: "inherit",
       stdout: "inherit",

@@ -1,8 +1,9 @@
+import { writeSync } from "node:fs";
+
 import {
   pickWorkspaceDirectory,
   workspaceDialogArgument,
 } from "../../../src/app/workspaceDialog/bridge";
-import { writeSync } from "node:fs";
 
 const warning = "libpng warning: iCCP: known incorrect sRGB profile",
   [mode] = process.argv.slice(2);

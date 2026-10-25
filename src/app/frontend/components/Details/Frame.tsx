@@ -1,9 +1,10 @@
 /* oxlint-disable @pandacss/no-descendant-selectors -- The frame styles generated pre content and owns disclosure state. */
 /* oxlint-disable @pandacss/no-margin-properties -- The detail overlap aligns content with its disclosure header. */
-import { ChevronUp, type LucideIcon } from "lucide-react";
-import { css, cx, sva } from "styled-system/css";
 import { Collapsible } from "@ark-ui/react/collapsible";
+import { ChevronUp, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { css, cx, sva } from "styled-system/css";
+
 import { useDisclosure } from "../Transcript/disclosures";
 
 const openDisclosure = css({ transform: "rotate(180deg)" }),

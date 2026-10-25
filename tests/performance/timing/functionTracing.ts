@@ -1,15 +1,16 @@
 /* oxlint-disable import/no-namespace -- spyOn 持有模块命名空间才能替换并恢复实际 ESM 导出。 */
+import { spyOn } from "bun:test";
+
 import * as aiMessages from "../../../src/agent/aiMessages";
-import * as fileSources from "../../../src/fileLinks/messageSources";
-import * as historySync from "../../../src/infrastructure/database/records/transcript/messages/sync";
 import * as incomingMessages from "../../../src/agent/fromAiMessages";
-import * as largeOutput from "../../../src/runtime/largeOutput";
 import * as modelProvider from "../../../src/agent/model/provider";
 import * as modelRequests from "../../../src/agent/model/request";
+import * as fileSources from "../../../src/fileLinks/messageSources";
+import * as historySync from "../../../src/infrastructure/database/records/transcript/messages/sync";
 import * as streamEvents from "../../../src/runtime/aiStream";
+import * as largeOutput from "../../../src/runtime/largeOutput";
 import * as tokenizer from "../../../src/runtime/tokenizer";
 import type { SpanRecorder } from "./spanRecorder";
-import { spyOn } from "bun:test";
 
 export class FunctionTracing {
   private readonly restorations: { mockRestore: () => void }[] = [];

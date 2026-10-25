@@ -1,12 +1,14 @@
-import { type Browser, type Page, chromium } from "playwright";
-import { type ViteDevServer, createServer } from "vite";
+import { resolve as resolvePath } from "node:path";
+
+import { type Browser, chromium, type Page } from "playwright";
+import { createServer, type ViteDevServer } from "vite";
+
 import {
   fixtureDependencies,
   fixtureServer,
   regressionViewport,
   scrollingBrowser,
 } from "../../../../settings/verification";
-import { resolve as resolvePath } from "node:path";
 import viteConfig from "../../../../vite.config";
 
 export class BrowserSession {
@@ -32,17 +34,22 @@ export class BrowserSession {
     this.browser = await chromium.launch(scrollingBrowser);
   }
   async open(mode: string) {
-    if (!this.browser || !this.origin) {
-      throw new Error("Scrolling browser session has not started");
-    }
-    const page = await this.browser.newPage({ viewport: regressionViewport });
-    await page.goto(`${this.origin}/tests/app/frontend/scrolling/streamingPage.html?mode=${mode}`, {
-      waitUntil: "networkidle",
-    });
+    const page = await this.openFixture(
+      `/tests/app/frontend/scrolling/streamingPage.html?mode=${mode}`,
+    );
     await page.waitForFunction(
       () => Object.hasOwn(globalThis, "scrolling") && document.querySelectorAll("pre").length === 3,
     );
     await settleLayout(page);
+    return page;
+  }
+  async openFixture(path: string, setup?: (page: Page) => Promise<void>) {
+    if (!this.browser || !this.origin) {
+      throw new Error("Browser fixture session has not started");
+    }
+    const page = await this.browser.newPage({ locale: "zh-CN", viewport: regressionViewport });
+    await setup?.(page);
+    await page.goto(`${this.origin}${path}`, { waitUntil: "networkidle" });
     return page;
   }
   async stop() {

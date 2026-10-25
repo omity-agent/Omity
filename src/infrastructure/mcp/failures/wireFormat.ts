@@ -1,6 +1,7 @@
+import { z } from "zod";
+
 import { errorDetailsSchema } from "../../../failures/details";
 import type { parseMcpConnection } from "../configuration/connections";
-import { z } from "zod";
 
 const connectionDiagnosticSchema = z.discriminatedUnion("transport", [
     z.strictObject({

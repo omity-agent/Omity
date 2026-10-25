@@ -1,8 +1,10 @@
-import { join, resolve } from "node:path";
-import { deepmerge } from "deepmerge-ts";
-import { readMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
-import { stringify } from "yaml";
 import { writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+
+import { deepmerge } from "deepmerge-ts";
+import { stringify } from "yaml";
+
+import { readMcpConfiguration } from "../../src/infrastructure/mcp/configuration";
 
 function repositoryToolbox() {
   return readMcpConfiguration(resolve(import.meta.dir, "../../settings/toolbox.yaml"));

@@ -1,6 +1,7 @@
-import { composerActions, composerControls } from "../layout";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+
+import { composerActions, composerControls } from "../layout";
 
 export function ActionPanel({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   const { t } = useTranslation();

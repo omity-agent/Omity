@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+
 import { isPlainObject } from "es-toolkit";
+
 import { startRecordingProxy } from "./localProxyFixture";
 
 test("model, Codex refresh and HTTP MCP requests all use the installed network policy", async () => {

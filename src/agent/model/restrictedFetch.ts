@@ -1,8 +1,9 @@
-import type { ModelApi } from "../../types";
-import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
-import { localize } from "../../i18n/server";
-import { modelToolPolicy } from "../../../settings/modelToolPolicy";
 import { z } from "zod";
+
+import { modelToolPolicy } from "../../../settings/modelToolPolicy";
+import { localize } from "../../i18n/server";
+import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
+import type { ModelApi } from "../../types";
 
 const modelRequestSchema = z.looseObject({
     tools: z.array(z.looseObject({ type: z.string().optional() })).default([]),

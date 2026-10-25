@@ -1,11 +1,12 @@
 import "./panda.css";
-import { i18nReady, localize } from "./i18n";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createRoot } from "react-dom/client";
+
 import { App } from "./App";
 import { MarkdownModeProvider } from "./components/Markdown/DisplayMode";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { createQueryClient } from "./services/remoteStore";
-import { createRoot } from "react-dom/client";
+import { i18nReady, localize } from "./i18n";
 import { reportError } from "./services/errors";
+import { createQueryClient } from "./services/remoteStore";
 
 await i18nReady;
 const root = document.getElementById("root");

@@ -1,9 +1,10 @@
-import type { LoadedMcp } from "./catalog";
-import type { McpConfiguration } from "../configuration";
 import type { StructuredToolInterface } from "@langchain/core/tools";
-import { configureFreeformMcpTools } from "./freeform";
-import { localize } from "../../../i18n/server";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
+
+import { localize } from "../../../i18n/server";
+import type { McpConfiguration } from "../configuration";
+import type { LoadedMcp } from "./catalog";
+import { configureFreeformMcpTools } from "./freeform";
 
 export interface ModelToolDefinition {
   deferLoading?: boolean;

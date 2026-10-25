@@ -1,4 +1,5 @@
 import type { BaseMessage } from "@langchain/core/messages";
+
 import { contentToText } from "./content";
 
 export function messageContentParts(message: BaseMessage) {

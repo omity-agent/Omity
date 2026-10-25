@@ -1,11 +1,13 @@
-import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
-import { type MessageStorageMode, messageInsert } from "./serialization";
 import type { Database } from "bun:sqlite";
-import { decodeMessage } from "./hydration";
-import { localize } from "../../../../../i18n/server";
-import { messageMutations } from "./writing";
 import { randomUUID } from "node:crypto";
+
+import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
+
+import { localize } from "../../../../../i18n/server";
 import { transcriptMessageRows } from "../../../projections/transcriptRows";
+import { decodeMessage } from "./hydration";
+import { messageInsert, type MessageStorageMode } from "./serialization";
+import { messageMutations } from "./writing";
 
 export function insertUserMessage(
   db: Database,

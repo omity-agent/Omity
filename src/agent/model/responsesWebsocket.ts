@@ -1,10 +1,11 @@
-import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
-import { type FailureEvent, ResponsesWebsocketError, responseEventError } from "./websocketFailure";
-import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
-import { StreamEvidence } from "./streamEvidence";
 import { isPlainObject } from "es-toolkit";
+import type { CloseEvent, ErrorEvent, MessageEvent } from "undici/index.js";
+
 import { localize } from "../../i18n/server";
+import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
 import { openOutboundSocket } from "../../infrastructure/network/socketTransport";
+import { StreamEvidence } from "./streamEvidence";
+import { type FailureEvent, responseEventError, ResponsesWebsocketError } from "./websocketFailure";
 
 interface ResponsesWebsocketSettings {
   apiKey: string;

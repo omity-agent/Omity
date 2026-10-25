@@ -1,12 +1,14 @@
-import type { HookRule, HookWhen } from "../types";
-import { type HookToolOutput, readToolOutput } from "./storage/outputs";
-import { createHookCallId, hookCallDetails } from "./storage/calls";
 import type { Database } from "bun:sqlite";
-import type { Logger } from "../infrastructure/logging/logger";
-import type { StructuredToolInterface } from "@langchain/core/tools";
+
 import type { ToolMessage } from "@langchain/core/messages";
-import { consumeHookUsage } from "./storage/usage";
+import type { StructuredToolInterface } from "@langchain/core/tools";
+
 import { localize } from "../i18n/server";
+import type { Logger } from "../infrastructure/logging/logger";
+import type { HookRule, HookWhen } from "../types";
+import { createHookCallId, hookCallDetails } from "./storage/calls";
+import { type HookToolOutput, readToolOutput } from "./storage/outputs";
+import { consumeHookUsage } from "./storage/usage";
 import { resolveHookArgs } from "./variables";
 
 interface HookExecutionOptions {

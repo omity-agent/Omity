@@ -1,5 +1,10 @@
-import { HumanMessage, ToolMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
+
+import { HumanMessage, ToolMessage } from "@langchain/core/messages";
+
+import { toModelMessages } from "../../../src/agent/aiMessages";
+import { streamAiModel } from "../../../src/agent/model/request";
+import { aiModelTools } from "../../../src/agent/model/tools";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../../support/database";
 import {
   deferredDefinition,
@@ -8,9 +13,6 @@ import {
   responsesSearchEvents,
   wireModel,
 } from "./wireFixtures";
-import { aiModelTools } from "../../../src/agent/model/tools";
-import { streamAiModel } from "../../../src/agent/model/request";
-import { toModelMessages } from "../../../src/agent/aiMessages";
 
 afterEach(cleanupDatabaseDirs);
 test.each(["responses", "messages"] as const)(

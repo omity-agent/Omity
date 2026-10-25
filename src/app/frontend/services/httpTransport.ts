@@ -1,9 +1,10 @@
+import { hc } from "hono/client";
+
 import {
   type McpLoadDetails,
   mcpLoadDetailsSchema,
 } from "../../../infrastructure/mcp/failures/wireFormat";
 import type { createApi } from "../../http/handler";
-import { hc } from "hono/client";
 import { localize } from "../i18n";
 import { z } from "./validation";
 

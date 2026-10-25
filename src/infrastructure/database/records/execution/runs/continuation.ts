@@ -1,6 +1,8 @@
-import { and, eq, gt, sql } from "drizzle-orm";
-import { inputs, runs } from "../../../schema/execution";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, gt, sql } from "drizzle-orm";
+
+import { inputs, runs } from "../../../schema/execution";
 import { sessionDatabase } from "../../../sqlite/connection";
 
 export function carryPendingInputs(db: Database, runId: number, sessionId: string) {

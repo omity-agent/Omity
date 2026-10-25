@@ -1,6 +1,8 @@
-import { ConnectionEvidence, connectionContext } from "./connectionEvidence";
-import { type DiagnosticsChannel, type Dispatcher } from "undici/index.js";
 import { subscribe, unsubscribe } from "node:diagnostics_channel";
+
+import { type DiagnosticsChannel, type Dispatcher } from "undici/index.js";
+
+import { connectionContext, ConnectionEvidence } from "./connectionEvidence";
 import { forwardDispatchHandler } from "./dispatchProxied";
 
 interface ChannelMessages {

@@ -1,5 +1,6 @@
-import { clearTestArtifacts, testArtifactsRoot } from "./support/artifacts";
 import { afterAll } from "bun:test";
+
+import { clearTestArtifacts, testArtifactsRoot } from "./support/artifacts";
 
 clearTestArtifacts();
 process.env["TEMP"] = testArtifactsRoot;

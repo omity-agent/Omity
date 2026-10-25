@@ -1,6 +1,8 @@
 import { join, normalize, relative, resolve } from "node:path";
-import { Hono } from "hono";
+
 import type { HttpBindings } from "@hono/node-server";
+import { Hono } from "hono";
+
 import { localize } from "../../i18n/server";
 
 export function createStaticApp(root: string) {

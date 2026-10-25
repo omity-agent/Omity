@@ -1,8 +1,8 @@
-import { type ActiveRun, CanceledRunError, cancelRun, pauseFailedRun, setRunStatus } from "../run";
-import { type HostContext, waitForWake } from "../context";
 import { captureError } from "../../failures/details";
-import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
 import { localize } from "../../i18n/server";
+import { findMcpStdioUnavailable } from "../../infrastructure/mcp/client/availability";
+import { type HostContext, waitForWake } from "../context";
+import { type ActiveRun, CanceledRunError, cancelRun, pauseFailedRun, setRunStatus } from "../run";
 
 export function pauseForStop(ctx: HostContext, run: ActiveRun) {
   if (!ctx.stopping?.aborted && !ctx.controller.signal.aborted) {

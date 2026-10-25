@@ -1,12 +1,12 @@
+import { DomainError } from "../../../errors";
+import { localize } from "../../../i18n/server";
+import type { ModelPrefixSettings, ModelSettings, Settings } from "../../../types";
+import type { LoadedMcp } from "../../mcp/tools/catalog";
 import {
-  type McpToolSnapshot,
   emptyMcpToolSnapshot,
+  type McpToolSnapshot,
   snapshotMcpTools,
 } from "../../mcp/tools/definitions";
-import type { ModelPrefixSettings, ModelSettings, Settings } from "../../../types";
-import { DomainError } from "../../../errors";
-import type { LoadedMcp } from "../../mcp/tools/catalog";
-import { localize } from "../../../i18n/server";
 
 export interface SessionDefinition {
   hookOverrides?: Record<string, boolean>;

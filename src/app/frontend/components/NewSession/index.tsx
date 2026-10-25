@@ -1,15 +1,16 @@
-import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
-import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { ConfigurationPanel } from "./options/ConfigurationPanel";
+
+import type { AttachmentSettings, PendingAttachment } from "../../../attachments/contract";
 import type { InitialSessionState } from "../../../initialState";
-import { LatestMessage } from "./editor/LatestMessage";
-import { MessageStack } from "./MessageStack";
 import { PendingAttachments } from "../Chat/Composer/attachments";
-import { WorkspacePicker } from "./WorkspacePicker";
+import { LatestMessage } from "./editor/LatestMessage";
 import { useNewSessionDraft } from "./editor/preparationState";
 import { useSessionCreation } from "./editor/submission";
+import { conversation, scroll, scrollContent, setup, setupFirst } from "./layout";
+import { MessageStack } from "./MessageStack";
+import { ConfigurationPanel } from "./options/ConfigurationPanel";
 import { useSessionPreferences } from "./options/preferences";
+import { WorkspacePicker } from "./WorkspacePicker";
 
 export function NewSessionPage({
   attachmentSettings,

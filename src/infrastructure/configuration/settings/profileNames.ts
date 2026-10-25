@@ -1,5 +1,6 @@
-import { localize } from "../../../i18n/server";
 import { z } from "zod";
+
+import { localize } from "../../../i18n/server";
 
 export const settingsProfileNameSchema = z
   .string()

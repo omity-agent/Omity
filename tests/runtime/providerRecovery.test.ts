@@ -1,16 +1,17 @@
-import { type ErrorDetails, summarizeError } from "../../src/failures/details";
 import { afterEach, expect, spyOn, test } from "bun:test";
-import { cleanupDatabaseDirs, required, workspace } from "../support/database";
-import { providerFailures, recoveringModel, websocketFailures } from "./support/failureResponses";
-import type { BrowserWarning } from "../../src/types";
-import { agentFixture } from "./support/agentFixture";
-import { createNetworkRuntime } from "../../src/infrastructure/network/installNetworking";
+
 import { createResponsesWebsocketFetch } from "../../src/agent/model/responsesWebsocket";
-import { generationFailures } from "./support/generationFailures";
-import { isRetryableModelError } from "../../src/runtime/transientErrors";
-import { processInput } from "../../src/runtime/consumeInputs";
 import { reportBrowserWarning } from "../../src/app/frontend/services/events/console";
+import { type ErrorDetails, summarizeError } from "../../src/failures/details";
 import { transcriptInputRows } from "../../src/infrastructure/database/records/execution/queue/workItems";
+import { createNetworkRuntime } from "../../src/infrastructure/network/installNetworking";
+import { processInput } from "../../src/runtime/consumeInputs";
+import { isRetryableModelError } from "../../src/runtime/transientErrors";
+import type { BrowserWarning } from "../../src/types";
+import { cleanupDatabaseDirs, required, workspace } from "../support/database";
+import { agentFixture } from "./support/agentFixture";
+import { providerFailures, recoveringModel, websocketFailures } from "./support/failureResponses";
+import { generationFailures } from "./support/generationFailures";
 
 interface ModelFailureCase {
   errorName?: string;

@@ -1,12 +1,13 @@
+import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
+
+import { reportPromiseErrors } from "../../../services/errors";
 import { Button } from "../../ParkUI";
+import { setupFirst } from "../layout";
+import { ProfilePicker } from "../ProfilePicker";
 import { CapabilityGroup } from "./CapabilityGroup";
 import { ModelInput } from "./ModelInput";
-import { ProfilePicker } from "../ProfilePicker";
-import { reportPromiseErrors } from "../../../services/errors";
-import { setupFirst } from "../layout";
-import { useCallback } from "react";
 import type { useSessionPreferences } from "./preferences";
-import { useTranslation } from "react-i18next";
 
 export function ConfigurationPanel({
   availableProfiles,

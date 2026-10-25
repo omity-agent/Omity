@@ -1,6 +1,7 @@
+import type { Database } from "bun:sqlite";
+
 import type { StreamEvent, StreamEventDraft } from "../../../types";
 import { appendIndexedStream, insertPlainStream } from "./historySync";
-import type { Database } from "bun:sqlite";
 import type { FileLinkIndexer } from "./linkScanner";
 
 export function appendFileLinkStream(options: {

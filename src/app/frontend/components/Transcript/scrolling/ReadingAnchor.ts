@@ -1,6 +1,7 @@
-import { BottomFollower } from "./BottomFollower";
 import type { VirtualizerHandle } from "virtua";
+
 import { localize } from "../../../i18n";
+import { BottomFollower } from "./BottomFollower";
 
 interface FooterSnapshot {
   bottom: number;
@@ -40,12 +41,6 @@ export class ReadingAnchor {
   stabilize() {
     const { content, viewport } = this;
     content.style.translate = "";
-    if (this.following.isFollowing) {
-      this.pending = undefined;
-      this.following.align(viewport);
-      this.capture();
-      return;
-    }
     this.pending ??= this.footers.findLast(
       ({ element, height }) =>
         element.isConnected && element.getBoundingClientRect().height !== height,
@@ -76,12 +71,15 @@ export class ReadingAnchor {
     this.capture();
   }
   scroll() {
+    const userIntent = this.following.consumeUserIntent();
     this.following.update(this.viewport);
     if (this.viewport.scrollTop === this.previousTop) {
-      return false;
+      return { changed: false, userIntent };
     }
-    this.release();
-    return true;
+    if (userIntent) {
+      this.release();
+    }
+    return { changed: true, userIntent };
   }
   release() {
     this.pending = undefined;

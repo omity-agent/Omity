@@ -1,16 +1,18 @@
 import { expect, test } from "bun:test";
-import { join, resolve } from "node:path";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
-import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
-import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
-import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
-import { liveApplication } from "../liveApplication";
-import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
-import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { submissionForm } from "../../../../src/app/attachments/submission";
-import { writeToolboxConfiguration } from "../../../support/builtins";
+import { join, resolve } from "node:path";
+
 import { z } from "zod";
+
+import { submissionForm } from "../../../../src/app/attachments/submission";
+import { createAppMcp } from "../../../../src/app/runtime/resources/toolPool";
+import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
+import { createSettingsContext } from "../../../../src/infrastructure/configuration/settings/context";
+import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
+import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
+import { AskUserRuntime } from "../../../../src/infrastructure/toolbox/runtime";
+import { writeToolboxConfiguration } from "../../../support/builtins";
+import { liveApplication } from "../liveApplication";
 
 const sessionResponse = z.object({ session: z.object({ id: z.string() }) });
 test.each([true, false])(

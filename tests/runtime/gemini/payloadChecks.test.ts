@@ -1,13 +1,15 @@
-import { Output, generateText } from "ai";
-import { echoDefinition, geminiApis, geminiWire } from "./endpointFixture";
 import { expect, test } from "bun:test";
-import { replyStream, structuredReply } from "./exchangeSamples";
-import { HumanMessage } from "@langchain/core/messages";
-import { aiModelTools } from "../../../src/agent/model/tools";
+
 import { google } from "@ai-sdk/google";
-import { streamAiModel } from "../../../src/agent/model/request";
-import { structuredRequestOptions } from "../../../src/agent/model/provider";
+import { HumanMessage } from "@langchain/core/messages";
+import { generateText, Output } from "ai";
 import { z } from "zod";
+
+import { structuredRequestOptions } from "../../../src/agent/model/provider";
+import { streamAiModel } from "../../../src/agent/model/request";
+import { aiModelTools } from "../../../src/agent/model/tools";
+import { echoDefinition, geminiApis, geminiWire } from "./endpointFixture";
+import { replyStream, structuredReply } from "./exchangeSamples";
 
 test.each([...geminiApis])(
   "%s supports tool-free streaming and structured prediction",

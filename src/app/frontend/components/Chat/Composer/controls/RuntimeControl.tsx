@@ -1,12 +1,13 @@
 import { LoaderCircle, Pause, Play, StepForward } from "lucide-react";
-import type { ChatControlState } from "../../actionState";
-import type { Control } from "../../../../../../types";
-import { IconButton } from "../../../ParkUI";
-import { css } from "styled-system/css";
-import { reportPromiseErrors } from "../../../../services/errors";
-import { runtimeControls } from "../layout";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { Control } from "../../../../../../types";
+import { reportPromiseErrors } from "../../../../services/errors";
+import { IconButton } from "../../../ParkUI";
+import type { ChatControlState } from "../../actionState";
+import { runtimeControls } from "../layout";
 
 type RequestedControl = Extract<Control, "running" | "step" | "pause">;
 const activeIcon = css({ animation: "progressPulse" });

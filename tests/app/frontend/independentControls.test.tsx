@@ -1,10 +1,12 @@
 import { beforeAll, expect, test } from "bun:test";
-import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
-import { Frame } from "../../../src/app/frontend/components/Details/Frame";
+
 import { Wrench } from "lucide-react";
-import { i18nReady } from "../../../src/app/frontend/i18n";
 import { renderToStaticMarkup } from "react-dom/server";
+
+import { Frame } from "../../../src/app/frontend/components/Details/Frame";
 import { useToolAccessory } from "../../../src/app/frontend/components/Details/ToolAccessory";
+import { DisclosureProvider } from "../../../src/app/frontend/components/Transcript/disclosures";
+import { i18nReady } from "../../../src/app/frontend/i18n";
 
 const releaseDetail = () => undefined,
   registerDetail = () => releaseDetail;

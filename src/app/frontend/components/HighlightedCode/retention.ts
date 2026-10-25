@@ -1,5 +1,6 @@
-import type { HighlightedCodeResult } from "./background/dispatch";
 import { escape as escapeHtml } from "es-toolkit";
+
+import type { HighlightedCodeResult } from "./background/dispatch";
 
 export function retainedLineMarkup({
   appendOnly,

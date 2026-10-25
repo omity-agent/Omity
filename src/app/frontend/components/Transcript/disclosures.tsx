@@ -1,13 +1,14 @@
 import {
+  createContext,
   type ReactNode,
   type RefObject,
-  createContext,
   useCallback,
   useContext,
   useMemo,
   useRef,
   useState,
 } from "react";
+
 import { localize } from "../../i18n";
 
 type RegisterDetail = (element: HTMLDivElement) => () => void;

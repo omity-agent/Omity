@@ -1,29 +1,31 @@
+import type { Database } from "bun:sqlite";
+
 import { type BaseMessage, ToolMessage } from "@langchain/core/messages";
-import { contentToText, messageReasoning } from "../runtime/content";
-import { messageContentParts, messageContentToText } from "../runtime/modelContent";
+
+import { localize } from "../i18n/server";
+import {
+  transcriptEvents,
+  transcriptMessageRows,
+} from "../infrastructure/database/projections/transcriptRows";
+import { transcriptInputRows } from "../infrastructure/database/records/execution/queue/workItems";
 import {
   readControlRecord,
   readDefinitionRecord,
   readTranscriptRevisionRecord,
 } from "../infrastructure/database/records/session/metadata";
-import {
-  transcriptEvents,
-  transcriptMessageRows,
-} from "../infrastructure/database/projections/transcriptRows";
-import type { Database } from "bun:sqlite";
-import type { DisplayMessage } from "./timeline";
-import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
-import { extractToolActivity } from "./timeline/tool/extraction";
-import { extractToolImages } from "../runtime/multimodal";
 import { loadFileLinkUnits } from "../infrastructure/database/records/transcript/fileLinks";
+import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { loadReasoningTranslations } from "../infrastructure/database/records/transcript/reasoningTranslations";
-import { localize } from "../i18n/server";
-import { modelTokenUsage } from "./timeline/tokenCounts";
-import { prependInstructions } from "./timeline/build/instructions";
-import { runTransaction } from "../infrastructure/database/sqlite/connection";
 import { streamEventCursor } from "../infrastructure/database/records/transcript/streamEvents";
+import { runTransaction } from "../infrastructure/database/sqlite/connection";
+import { contentToText, messageReasoning } from "../runtime/content";
+import { messageContentParts, messageContentToText } from "../runtime/modelContent";
+import { extractToolImages } from "../runtime/multimodal";
 import { toolOutputTokens } from "../runtime/toolOutput";
-import { transcriptInputRows } from "../infrastructure/database/records/execution/queue/workItems";
+import type { DisplayMessage } from "./timeline";
+import { prependInstructions } from "./timeline/build/instructions";
+import { modelTokenUsage } from "./timeline/tokenCounts";
+import { extractToolActivity } from "./timeline/tool/extraction";
 
 export function loadTranscript(db: Database, sessionId: string) {
   return runTransaction(db, () => {

@@ -2,12 +2,13 @@
 // oxlint-disable-next-line import/no-unassigned-import -- Initialize Reflect metadata before loading WebAuthn dependencies.
 import "reflect-metadata";
 import { message, text } from "@optique/core/message";
-import { cliParser } from "./commandLine/parser";
-import { installNetworking } from "./infrastructure/network/installNetworking";
-import { loadUserEnvironment } from "./infrastructure/configuration/settings/files";
-import { localize } from "./i18n/server";
 import { run } from "@optique/run";
+
 import { workspaceDialogArgument } from "./app/workspaceDialog/bridge";
+import { cliParser } from "./commandLine/parser";
+import { localize } from "./i18n/server";
+import { loadUserEnvironment } from "./infrastructure/configuration/settings/files";
+import { installNetworking } from "./infrastructure/network/installNetworking";
 
 async function main() {
   loadUserEnvironment();

@@ -1,9 +1,11 @@
-import { MarkdownInline, MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
 import { beforeAll, describe, expect, test } from "bun:test";
-import { FileLinkProvider } from "../../../src/app/frontend/components/FileLink/context";
+
 import { escape as escapeHtml } from "es-toolkit";
-import { i18nReady } from "../../../src/app/frontend/i18n";
 import { renderToStaticMarkup } from "react-dom/server";
+
+import { FileLinkProvider } from "../../../src/app/frontend/components/FileLink/context";
+import { MarkdownInline, MarkdownView } from "../../../src/app/frontend/components/MarkdownView";
+import { i18nReady } from "../../../src/app/frontend/i18n";
 
 const renderers = [
     ["正文", MarkdownView],

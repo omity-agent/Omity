@@ -1,10 +1,12 @@
-import { and, eq, exists, gt, not, sql } from "drizzle-orm";
-import { hostLeases, runs, sessions } from "../../schema";
 import type { Database } from "bun:sqlite";
-import type { SessionDefinition } from "../../session/sessionDefinition";
-import { requireSessionRecord } from "./metadata";
-import { sessionDatabase } from "../../sqlite/connection";
+
+import { and, eq, exists, gt, not, sql } from "drizzle-orm";
+
 import { sessionProfileBusy } from "../../../../errors";
+import { hostLeases, runs, sessions } from "../../schema";
+import type { SessionDefinition } from "../../session/sessionDefinition";
+import { sessionDatabase } from "../../sqlite/connection";
+import { requireSessionRecord } from "./metadata";
 
 export function writeSessionConfigurationRecord(
   db: Database,

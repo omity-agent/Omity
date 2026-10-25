@@ -1,40 +1,40 @@
-import type { AppRegistry, RegisteredSession } from "./registry";
+import { setSessionControl } from "../client";
+import type { FileLinkAction } from "../fileLinks/types";
+import type { SettingsContext } from "../infrastructure/configuration/settings/context";
+import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
+import { appOwner } from "../infrastructure/process/ownership";
+import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
+import { deleteHostSession } from "../storedSessions";
 import type { Control, Settings } from "../types";
-import {
-  type ControllerOptions,
-  bootstrapPayload,
-  prepareController,
-} from "./runtime/prepareController";
 import type { MessageSubmission, SessionSubmission } from "./attachments/contract";
-import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
+import { enqueueMessageWithAttachments } from "./attachments/message";
 import {
   readPreparationDraft,
   writePreparationDraft,
   writeSessionDraft,
 } from "./composition/draftStorage";
 import { AppEvents } from "./events";
-import type { AppHosts } from "./hosts";
-import { AskUserRuntime } from "../infrastructure/toolbox/runtime";
-import type { FileLinkAction } from "../fileLinks/types";
-import { PredictionService } from "./prediction/service";
-import type { SettingsContext } from "../infrastructure/configuration/settings/context";
 import { activateFileLink } from "./fileLinks/launch";
-import { appOwner } from "../infrastructure/process/ownership";
+import { controllerSessionInfo, createControllerHosts } from "./hostCoordination";
+import type { AppHosts } from "./hosts";
+import { PredictionService } from "./prediction/service";
+import type { AppRegistry, RegisteredSession } from "./registry";
 import { availableSessionOptions } from "./runtime/availableOptions";
-import { cancelSessionTool } from "./sessionCommands";
-import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
-import { closeControllerResources } from "./runtime/shutdown";
-import { createSnapshotSession } from "./runtime/sessionSnapshot";
-import { deleteHostSession } from "../storedSessions";
-import { enqueueMessageWithAttachments } from "./attachments/message";
+import {
+  bootstrapPayload,
+  type ControllerOptions,
+  prepareController,
+} from "./runtime/prepareController";
 import { hasLiveHostLease } from "./runtime/recovery";
+import { materializeAppFork } from "./runtime/sessionActions";
+import { updateSessionProfile } from "./runtime/sessionProfile";
+import { createSnapshotSession } from "./runtime/sessionSnapshot";
+import { closeControllerResources } from "./runtime/shutdown";
+import { clearAgentTemporaryFiles } from "./runtime/temporaryFiles";
+import { cancelSessionTool } from "./sessionCommands";
 import { loadTranscript } from "./transcript";
 import { loadUserMessages } from "./userMessages";
-import { materializeAppFork } from "./runtime/sessionActions";
 import { pickWorkspaceDirectory } from "./workspaceDialog/bridge";
-import { readComposerDraftRecord } from "../infrastructure/database/records/session/composerDrafts";
-import { setSessionControl } from "../client";
-import { updateSessionProfile } from "./runtime/sessionProfile";
 
 export class AppController {
   readonly events: AppEvents;

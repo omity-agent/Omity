@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+
 import { liveApplication } from "./liveApplication";
 
 test("real HTTP access rejects public reads and cross-site writes while registration tickets are single-use", async () => {

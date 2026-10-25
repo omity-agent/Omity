@@ -1,7 +1,8 @@
-import type { BuiltInPreferences } from "./metadata";
-import { countTokens } from "../../runtime/tokenizer";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+
+import { countTokens } from "../../runtime/tokenizer";
+import type { BuiltInPreferences } from "./metadata";
 
 export function createTitleTool(settings: NonNullable<BuiltInPreferences["update_title"]>) {
   const { title } = settings.parameters,

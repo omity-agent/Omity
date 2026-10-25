@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+
 import type { AttachmentSettings } from "../../../../../attachments/contract";
 import { PendingAttachments } from "../attachments";
 

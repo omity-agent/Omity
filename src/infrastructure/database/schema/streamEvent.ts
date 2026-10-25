@@ -1,18 +1,19 @@
-import { fileLinkUnitSchema } from "../../../fileLinks/types";
 import { z } from "zod";
 
-const toolOutputSnapshotSchema = z.object({
-    content: z.string(),
-    images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
-    outputTokens: z.number().int().nonnegative().optional(),
-  }),
-  streamEventBaseSchema = z.object({
-    fileLinks: z.array(fileLinkUnitSchema).optional(),
-    id: z.number().int().positive(),
-    inputId: z.number().int().positive(),
-    messageId: z.string().min(1),
-    partId: z.string().min(1),
-  });
+import { fileLinkUnitSchema } from "../../../fileLinks/types";
+
+export const toolOutputSnapshotSchema = z.object({
+  content: z.string(),
+  images: z.array(z.object({ mimeType: z.string(), src: z.string() })),
+  outputTokens: z.number().int().nonnegative().optional(),
+});
+const streamEventBaseSchema = z.object({
+  fileLinks: z.array(fileLinkUnitSchema).optional(),
+  id: z.number().int().positive(),
+  inputId: z.number().int().positive(),
+  messageId: z.string().min(1),
+  partId: z.string().min(1),
+});
 export const streamEventSchema = z.discriminatedUnion("kind", [
   streamEventBaseSchema.extend({
     kind: z.literal("assistant_reasoning_delta"),

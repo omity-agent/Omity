@@ -1,5 +1,6 @@
-import type { FileLinkSurface, FilePathMatch } from "../../../fileLinks/types";
 import { foreignKey, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+
+import type { FileLinkSurface, FilePathMatch } from "../../../fileLinks/types";
 import { inputs } from "./execution";
 import { sessions } from "./session";
 

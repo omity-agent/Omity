@@ -5,6 +5,12 @@ import {
   type ToolCall,
   ToolMessage,
 } from "@langchain/core/messages";
+import { isPlainObject as isRecord } from "es-toolkit";
+
+import { readCacheExpectation } from "../../../../../agent/model/cacheExpectation";
+import { omitToolItemIds } from "../../../../../agent/toolProviderOptions";
+import { localize } from "../../../../../i18n/server";
+import { structuredToolOutput } from "../../../../mcp/tools/structured";
 import {
   type StoredAi,
   type StoredConversationMessage,
@@ -12,11 +18,6 @@ import {
   type StoredUsage,
   toolProviderOptionsSchema,
 } from "./replayShape";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { localize } from "../../../../../i18n/server";
-import { omitToolItemIds } from "../../../../../agent/toolProviderOptions";
-import { readCacheExpectation } from "../../../../../agent/model/cacheExpectation";
-import { structuredToolOutput } from "../../../../mcp/tools/structured";
 
 export type MessageStorageMode = "history" | "recovery";
 export function encodeMessage(message: BaseMessage, mode: MessageStorageMode) {

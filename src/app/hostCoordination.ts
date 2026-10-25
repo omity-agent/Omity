@@ -1,12 +1,12 @@
-import { type AppHostEvents, AppHosts } from "./hosts";
-import type { BrowserWarning, Settings } from "../types";
-import { type SessionInfo, projectSession } from "./sessionState";
-import type { AppEvents } from "./events";
-import type { AskUserRuntime } from "../infrastructure/toolbox/runtime";
-import type { ProcessOwner } from "../infrastructure/process/ownership";
-import type { RegisteredSession } from "./registry";
 import type { SettingsContext } from "../infrastructure/configuration/settings/context";
+import type { ProcessOwner } from "../infrastructure/process/ownership";
+import type { AskUserRuntime } from "../infrastructure/toolbox/runtime";
+import type { BrowserWarning, Settings } from "../types";
+import type { AppEvents } from "./events";
+import { type AppHostEvents, AppHosts } from "./hosts";
+import type { RegisteredSession } from "./registry";
 import { createAppMcp } from "./runtime/resources/toolPool";
+import { projectSession, type SessionInfo } from "./sessionState";
 
 function controllerHostEvents(
   events: AppEvents,

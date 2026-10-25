@@ -1,37 +1,39 @@
+import type { Database } from "bun:sqlite";
+
+import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
+import type { StructuredToolInterface } from "@langchain/core/tools";
 import {
   Annotation,
   type BaseCheckpointSaver,
   END,
+  getConfig,
+  getWriter,
   type LangGraphRunnableConfig,
   MessagesAnnotation,
   START,
   StateGraph,
-  getConfig,
-  getWriter,
   task,
 } from "@langchain/langgraph";
-import { type BaseMessage, type ToolCall } from "@langchain/core/messages";
-import { type HookPlan, agentPlan, toolPlan } from "../../hooks/plan";
+import type { LanguageModel } from "ai";
+
+import { BunSqliteSaver } from "../../checkpointer/saver";
+import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
+import { createHookNode } from "../../hooks/graph/node";
+import { agentPlan, type HookPlan, toolPlan } from "../../hooks/plan";
+import type { HookRuntime } from "../../hooks/runtime";
+import type { HookToolOutput } from "../../hooks/storage/outputs";
 import {
   type ModelToolDefinition,
   modelToolDefinitions,
 } from "../../infrastructure/mcp/tools/definitions";
-import { buildAiModel, modelApi } from "../model/provider";
-import { hookNode, modelNode, toolsNode } from "../../hooks/graph/commands";
-import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
-import { BunSqliteSaver } from "../../checkpointer/saver";
-import type { Database } from "bun:sqlite";
-import type { HookRuntime } from "../../hooks/runtime";
-import type { HookToolOutput } from "../../hooks/storage/outputs";
-import type { LanguageModel } from "ai";
 import type { Settings } from "../../types";
-import type { StructuredToolInterface } from "@langchain/core/tools";
-import type { ToolExecutions } from "../toolExecutions";
-import { aiModelTools } from "../model/tools";
-import { createHookNode } from "../../hooks/graph/node";
-import { createResultRouter } from "./resultRouting";
-import { createToolInvoker } from "../toolExecution";
+import { buildAiModel, modelApi } from "../model/provider";
 import { streamAiModel } from "../model/request";
+import { aiModelTools } from "../model/tools";
+import { createToolInvoker } from "../toolExecution";
+import type { ToolExecutions } from "../toolExecutions";
+import { createResultRouter } from "./resultRouting";
+import { invokeToolBatch, pendingToolBatch } from "./toolBatch";
 
 const AgentState = Annotation.Root({
   ...MessagesAnnotation.spec,

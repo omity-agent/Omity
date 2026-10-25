@@ -1,8 +1,9 @@
-import { Button, Code, LinkButton } from "../ParkUI";
 import { KeyRound, ShieldCheck } from "lucide-react";
-import type { AccessStatus } from "../../services/access";
-import { css } from "styled-system/css";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { AccessStatus } from "../../services/access";
+import { Button, Code, LinkButton } from "../ParkUI";
 
 const page = css({
     alignItems: "center",

@@ -1,11 +1,13 @@
-import type { BrowserWarning, SessionFailure } from "./events/contracts";
-import { ContentChannel } from "./events/contentChannel";
-import type { Context } from "hono";
-import type { DisplayEvent } from "./timeline";
-import type { SessionInfo } from "./sessionState";
-import { StateChannel } from "./events/stateChannel";
 import { once } from "node:events";
 import { setTimeout as sleep } from "node:timers/promises";
+
+import type { Context } from "hono";
+
+import { ContentChannel } from "./events/contentChannel";
+import type { BrowserWarning, SessionFailure } from "./events/contracts";
+import { StateChannel } from "./events/stateChannel";
+import type { SessionInfo } from "./sessionState";
+import type { DisplayEvent } from "./timeline";
 
 export class AppEvents {
   private readonly bus = new EventTarget();

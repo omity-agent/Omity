@@ -1,9 +1,11 @@
-import { activeRuns, runs } from "../schema/execution";
-import { and, eq, isNotNull, max, sql } from "drizzle-orm";
-import { messages, sessions } from "../schema";
 import type { Database } from "bun:sqlite";
-import { sessionDatabase } from "../sqlite/connection";
+
+import { and, eq, isNotNull, max, sql } from "drizzle-orm";
+
 import { settingsProfileNamesSchema } from "../../configuration/settings/context";
+import { messages, sessions } from "../schema";
+import { activeRuns, runs } from "../schema/execution";
+import { sessionDatabase } from "../sqlite/connection";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareOverviews>>();
 export function sessionOverviewRows(db: Database, sessionId?: string) {

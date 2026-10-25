@@ -1,6 +1,7 @@
-import { localize } from "../../i18n/server";
 import { once } from "es-toolkit";
 import pMap from "p-map";
+
+import { localize } from "../../i18n/server";
 
 interface Closeable {
   close: () => Promise<void>;

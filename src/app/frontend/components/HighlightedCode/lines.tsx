@@ -1,9 +1,10 @@
 import DOMPurify from "dompurify";
-import type { FilePathMatch } from "../../../../fileLinks/types";
-import type { HighlightedCodeResult } from "./background/dispatch";
-import { HighlightedText } from "../FileLink/HighlightedText";
 import { escape as escapeHtml } from "es-toolkit";
 import { memo } from "react";
+
+import type { FilePathMatch } from "../../../../fileLinks/types";
+import { HighlightedText } from "../FileLink/HighlightedText";
+import type { HighlightedCodeResult } from "./background/dispatch";
 import { retainedLineMarkup } from "./retention";
 
 interface CodeLine {

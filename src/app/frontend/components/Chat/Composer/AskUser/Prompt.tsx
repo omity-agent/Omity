@@ -1,8 +1,9 @@
+import { useTranslation } from "react-i18next";
 import { css, cx } from "styled-system/css";
+
+import { MarkdownEditor } from "../../MarkdownEditor";
 import type { AskUserQuestion } from "../../toolActions";
 import { ChoiceOptions } from "./Options";
-import { MarkdownEditor } from "../../MarkdownEditor";
-import { useTranslation } from "react-i18next";
 
 const choiceLayout = css({
     borderColor: "lineStrong",

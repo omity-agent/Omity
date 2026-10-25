@@ -1,6 +1,7 @@
-import { emptyAs } from "../../configuration/settings/values";
-import { localize } from "../../../i18n/server";
 import { z } from "zod";
+
+import { localize } from "../../../i18n/server";
+import { emptyAs } from "../../configuration/settings/fieldSchemas";
 
 export const mcpServerSchema = z.looseObject({
   defer_loading: z.boolean().optional(),

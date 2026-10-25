@@ -1,10 +1,11 @@
 import { Fragment, useLayoutEffect, useMemo, useRef } from "react";
-import { HighlightedLine, codeLines } from "../HighlightedCode/lines";
-import { fitSourceHeight, observeSourceSpace } from "./fittedSource";
 import { css } from "styled-system/css";
-import { highlightMarkdownSource } from "./syntax";
+
 import { localize } from "../../i18n";
+import { codeLines, HighlightedLine } from "../HighlightedCode/lines";
+import { fitSourceHeight, observeSourceSpace } from "./fittedSource";
 import { source } from "./styles";
+import { highlightMarkdownSource } from "./syntax";
 
 const container = css({ inset: "zero", overflow: "clip", position: "absolute" });
 export function MarkdownSource({ content }: { content: string }) {

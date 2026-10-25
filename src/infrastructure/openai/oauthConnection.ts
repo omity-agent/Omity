@@ -1,15 +1,16 @@
-import { type CloudflareCookieStore, sharedCloudflareStore } from "./cloudflareStore";
 import {
   DEFAULT_CODEX_BASE_URL,
   type OpenAIOAuth,
   type OpenAIOAuthSession,
 } from "@openai-oauth/core";
 import { type LocalOpenAIOAuthOptions, openaiCredentials } from "@openai-oauth/local";
-import { codexDefaultHeaders } from "./clientIdentity";
+
 import { codexProtocol } from "../../../settings/openai/codexProtocol";
-import { createCodexVersionResolver } from "./codexVersion";
-import { fetchWithExplicitHeaders } from "../network/explicitHeaders";
 import { localize } from "../../i18n/server";
+import { fetchWithExplicitHeaders } from "../network/explicitHeaders";
+import { codexDefaultHeaders } from "./clientIdentity";
+import { type CloudflareCookieStore, sharedCloudflareStore } from "./cloudflareStore";
+import { createCodexVersionResolver } from "./codexVersion";
 
 interface CodexConnectionOptions extends Pick<LocalOpenAIOAuthOptions, "authFilePath" | "fetch"> {
   cookieStore?: CloudflareCookieStore;

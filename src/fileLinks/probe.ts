@@ -1,4 +1,5 @@
-import { MAX_LEVEL, findExistingPaths } from "pathprobe";
+import { findExistingPaths, MAX_LEVEL } from "pathprobe";
+
 import type { FilePathMatch } from "./types";
 
 const searchLevel = MAX_LEVEL - 1;

@@ -1,16 +1,17 @@
+import { useEffect, useRef, useState } from "react";
+
+import { claimShortId } from "../../../../../infrastructure/randomId";
 import {
   type EditablePair,
-  type SessionPreparation,
   emptyPreparation,
   parsePreparation,
+  type SessionPreparation,
 } from "../../../../composition/preparation";
+import type { InitialMessagePair } from "../../../../initialState";
+import { localize } from "../../../i18n";
 import { flushComposerDraft, readComposerDraft } from "../../../services/composerDrafts";
 import { reportError, reportPromiseErrors } from "../../../services/errors";
-import { useEffect, useRef, useState } from "react";
 import { DraftSaver } from "../../../services/scheduling/draftSaver";
-import type { InitialMessagePair } from "../../../../initialState";
-import { claimShortId } from "../../../../../infrastructure/randomId";
-import { localize } from "../../../i18n";
 
 const target = { kind: "new" } as const;
 export function useNewSessionDraft(saveDelayMs?: number) {

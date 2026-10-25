@@ -1,6 +1,6 @@
-import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 const [endpoint, name] = process.argv.slice(2);
 if (!endpoint || !name) {

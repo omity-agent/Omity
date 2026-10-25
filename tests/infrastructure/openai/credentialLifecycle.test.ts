@@ -1,11 +1,13 @@
-import { createOAuthFile, createTestJwt } from "./authSessionFixture";
 import { expect, test } from "bun:test";
+
 import { DEFAULT_OPENAI_OAUTH_CLIENT_ID } from "@openai-oauth/core";
-import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { fetchWithExplicitHeaders } from "../../../src/infrastructure/network/explicitHeaders";
 import { openaiCredentials } from "@openai-oauth/local";
 import { z } from "zod";
+
+import { fetchWithExplicitHeaders } from "../../../src/infrastructure/network/explicitHeaders";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
+import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
+import { createOAuthFile, createTestJwt } from "./authSessionFixture";
 
 test.each([
   { reason: "expired token", refreshAgeMs: 0, remainingMs: -1000 },

@@ -1,9 +1,10 @@
-import { predictionSettingsSchema, prepareMainSettings } from "./models";
-import { emptyAs } from "./values";
 import ipaddr from "ipaddr.js";
+import { z } from "zod";
+
 import { localize } from "../../../i18n/server";
 import { logLevelSchema } from "../../../types";
-import { z } from "zod";
+import { attachmentSettingsSchema, emptyAs, frontendSettingsSchema } from "./fieldSchemas";
+import { predictionSettingsSchema, prepareMainSettings } from "./models";
 
 export { omitCodexConnectionSettings, parseModelSettings } from "./models";
 const promptFileSchema = z
@@ -41,13 +42,6 @@ const promptFileSchema = z
       maxTokens: z.number().int().positive(),
     }),
   }),
-  suffixSchema = z
-    .string()
-    .trim()
-    .toLowerCase()
-    .min(2)
-    .max(32)
-    .regex(/^\.[a-z0-9][a-z0-9_+-]*$/u),
   publicOriginSchema = z
     .url()
     .refine((value) => {
@@ -78,30 +72,8 @@ const promptFileSchema = z
     ),
   mainSettingsSchema = z.strictObject({
     access: accessSchema,
-    attachments: z.strictObject({
-      allowedSuffixes: z
-        .array(suffixSchema)
-        .min(1)
-        .refine(
-          (suffixes) => new Set(suffixes).size === suffixes.length,
-          localize("configuration:settings.schema.duplicateSuffixes"),
-        ),
-      maxSizeBytes: z
-        .number()
-        .int()
-        .positive()
-        .max(Number.MAX_SAFE_INTEGER - 1024 * 1024),
-    }),
-    frontend: z.strictObject({
-      cacheHitWarningRatio: z.number().min(0).max(1),
-      draftSaveDelayMs: z.number().int().positive(),
-      reasoningTranslation: z.strictObject({
-        enabled: z.boolean(),
-        highConfidenceThreshold: z.number().min(0).max(1),
-        minimumIntervalMs: z.number().int().nonnegative(),
-      }),
-      transcriptSnapshotThrottleMs: z.number().int().positive(),
-    }),
+    attachments: attachmentSettingsSchema,
+    frontend: frontendSettingsSchema,
     host: z.object({
       idleLogMs: z.number().int().positive(),
       pausePollMs: z.number().int().positive(),

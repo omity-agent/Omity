@@ -1,4 +1,4 @@
-import { type GeminiApi, eventStream } from "./endpointFixture";
+import { eventStream, type GeminiApi } from "./endpointFixture";
 
 const generateUsage = {
     cachedContentTokenCount: 3,

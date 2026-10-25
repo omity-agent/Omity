@@ -1,4 +1,5 @@
 import { createBirpc } from "birpc";
+
 import type { createCodeHighlighter } from "./tokenization";
 
 type Highlighter = ReturnType<typeof createCodeHighlighter>;

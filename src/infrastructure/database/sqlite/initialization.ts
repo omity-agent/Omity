@@ -1,8 +1,9 @@
 import type { Database } from "bun:sqlite";
-import { applicationAssetPath } from "../../applicationAssets";
-import { join } from "node:path";
-import { localize } from "../../../i18n/server";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { localize } from "../../../i18n/server";
+import { applicationAssetPath } from "../../applicationAssets";
 
 export function initializeDatabase(db: Database, root = process.cwd()) {
   const execute = Reflect.get(db, "exec");

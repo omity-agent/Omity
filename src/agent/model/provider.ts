@@ -1,12 +1,13 @@
-import type { LanguageModelV4CallOptions, SharedV4ProviderOptions } from "@ai-sdk/provider";
-import type { ModelApi, ModelSettings, Settings } from "../../types";
-import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { createCodexConnection } from "../../infrastructure/openai/oauthConnection";
 import { createGoogle } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
-import { createResponsesWebsocketFetch } from "./responsesWebsocket";
+import type { LanguageModelV4CallOptions, SharedV4ProviderOptions } from "@ai-sdk/provider";
+
 import { localize } from "../../i18n/server";
+import { conversationHeaders } from "../../infrastructure/openai/conversationHeaders";
+import { createCodexConnection } from "../../infrastructure/openai/oauthConnection";
+import type { ModelApi, ModelSettings, Settings } from "../../types";
+import { createResponsesWebsocketFetch } from "./responsesWebsocket";
 import { restrictedModelFetch } from "./restrictedFetch";
 
 export function buildAiModel(settings: Settings, codexVersion?: string) {
@@ -48,6 +49,7 @@ export function aiRequestOptions(
     reasoningEffort: settings.model.reasoning_effort,
     reasoningSummary: "detailed" as const,
     store: false,
+    textVerbosity: "low" as const,
   };
   return api === "completions"
     ? {
@@ -110,6 +112,7 @@ export function structuredRequestOptions(model: ModelSettings): {
       openai: {
         reasoningEffort: model.reasoning_effort,
         store: false,
+        textVerbosity: "low" as const,
       },
     },
   };

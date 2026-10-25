@@ -1,15 +1,17 @@
-import type { StreamEvent, StreamEventDraft } from "../../../types";
-import { publicFileLinkUnits, upsertFileLinkUnits } from "../records/transcript/fileLinks";
-import type { BaseMessage } from "@langchain/core/messages";
 import type { Database } from "bun:sqlite";
-import type { FileLinkIndexer } from "./linkScanner";
-import { clearCompletedCancellations } from "../records/execution/toolCancellations";
-import { finishToolStreams } from "../records/transcript/toolCompletion";
-import { insertStreamEvent } from "../records/transcript/streamEvents";
+
+import type { BaseMessage } from "@langchain/core/messages";
+
 import { messageFileLinkSources } from "../../../fileLinks/messageSources";
-import { prepareMessageSync } from "../records/transcript/messages/sync";
-import { runTransaction } from "../sqlite/connection";
+import type { StreamEvent, StreamEventDraft } from "../../../types";
+import { clearCompletedCancellations } from "../records/execution/toolCancellations";
 import { touchSessionRecord } from "../records/session/metadata";
+import { publicFileLinkUnits, upsertFileLinkUnits } from "../records/transcript/fileLinks";
+import { prepareMessageSync } from "../records/transcript/messages/sync";
+import { insertStreamEvent } from "../records/transcript/streamEvents";
+import { finishToolStreams } from "../records/transcript/toolCompletion";
+import { runTransaction } from "../sqlite/connection";
+import type { FileLinkIndexer } from "./linkScanner";
 
 export async function syncIndexedHistory(options: {
   db: Database;

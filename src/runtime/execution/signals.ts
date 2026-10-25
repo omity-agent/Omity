@@ -1,5 +1,5 @@
-import type { Logger } from "../../infrastructure/logging/logger";
 import { localize } from "../../i18n/server";
+import type { Logger } from "../../infrastructure/logging/logger";
 
 interface HostSignalOptions {
   enabled: boolean;

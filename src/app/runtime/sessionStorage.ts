@@ -1,20 +1,21 @@
-import { type InitialMessagePair, initialHistory } from "../initialState";
-import {
-  type SessionDefinition,
-  emptySessionDefinition,
-} from "../../infrastructure/database/session/sessionDefinition";
+import { existsSync } from "node:fs";
+
 import {
   databasePath,
   resolveSessionPaths,
   sessionPaths,
 } from "../../infrastructure/configuration/sessionPaths";
 import { AgentDatabase } from "../../infrastructure/database/agentDatabase";
-import { UserMessageStorage } from "../../infrastructure/database/session/userMessages";
-import { existsSync } from "node:fs";
-import { forkDatabaseBeforeMessage } from "../fork";
 import { initializeConversation } from "../../infrastructure/database/session/initialConversation";
-import { openStoredSession } from "../../storedSessions";
+import {
+  emptySessionDefinition,
+  type SessionDefinition,
+} from "../../infrastructure/database/session/sessionDefinition";
+import { UserMessageStorage } from "../../infrastructure/database/session/userMessages";
 import { removeDatabaseDirectory } from "../../infrastructure/database/sqlite/connection";
+import { openStoredSession } from "../../storedSessions";
+import { forkDatabaseBeforeMessage } from "../fork";
+import { initialHistory, type InitialMessagePair } from "../initialState";
 
 export function createSessionStorage(
   sessionId: string,

@@ -1,6 +1,8 @@
-import { GLIBC, MUSL, familySync } from "detect-libc";
-import type { BunPlugin } from "bun";
 import { fileURLToPath } from "node:url";
+
+import type { BunPlugin } from "bun";
+import { familySync, GLIBC, MUSL } from "detect-libc";
+
 import { localize } from "../src/i18n/server.ts";
 
 export const proxyAddon: BunPlugin = {

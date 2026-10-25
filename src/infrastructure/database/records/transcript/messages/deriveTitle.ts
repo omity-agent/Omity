@@ -1,8 +1,10 @@
 import type { Database } from "bun:sqlite";
-import { cachedQuery } from "../../../sqlite/connection";
-import { localize } from "../../../../../i18n/server";
-import { storedConversationSchema } from "./replayShape";
+
 import { z } from "zod";
+
+import { localize } from "../../../../../i18n/server";
+import { cachedQuery } from "../../../sqlite/connection";
+import { storedConversationSchema } from "./replayShape";
 
 export function deriveSessionTitle(db: Database, sessionId: string) {
   const row = cachedQuery<{ message_json: string; call_index: number }>(

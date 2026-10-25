@@ -1,7 +1,8 @@
-import { BrowserSession, settleLayout } from "./browserSession";
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import type { FilePathMatch } from "../../../../src/fileLinks/types";
+
 import { createCodeHighlighter } from "../../../../src/app/frontend/components/HighlightedCode/background/tokenization";
+import type { FilePathMatch } from "../../../../src/fileLinks/types";
+import { BrowserSession, settleLayout } from "./browserSession";
 
 const session = new BrowserSession(),
   paths = [

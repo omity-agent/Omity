@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+
 import { compactViewport } from "../../../../../settings/appearance";
 
 function subscribe(listener: () => void) {

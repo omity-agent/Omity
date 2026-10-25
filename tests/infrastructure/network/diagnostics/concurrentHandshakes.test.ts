@@ -1,9 +1,11 @@
-import { Agent, fetch as requestDirect } from "undici/index.js";
 import { expect, test } from "bun:test";
 import { channel } from "node:diagnostics_channel";
+import { once } from "node:events";
+
+import { Agent, fetch as requestDirect } from "undici/index.js";
+
 import { createProxyDispatcher } from "../../../../src/infrastructure/network/dispatchProxied";
 import { createSocketTransport } from "../../../../src/infrastructure/network/socketTransport";
-import { once } from "node:events";
 import { startRecordingProxy } from "../localProxyFixture";
 
 type Connection = ReturnType<ReturnType<typeof createSocketTransport>["connect"]>;

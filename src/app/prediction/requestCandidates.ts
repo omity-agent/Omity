@@ -1,8 +1,9 @@
-import { Output, generateText } from "ai";
+import { generateText, Output } from "ai";
+import { z } from "zod";
+
 import { buildConfiguredAiModel, structuredRequestOptions } from "../../agent/model/provider";
 import type { PredictionSample } from "./samples";
 import type { PredictionSettings } from "./selectExamples";
-import { z } from "zod";
 
 export async function requestCandidates(
   config: PredictionSettings,

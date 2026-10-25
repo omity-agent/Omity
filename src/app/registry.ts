@@ -1,12 +1,13 @@
 import type { Database } from "bun:sqlite";
-import { DatabaseReader } from "./runtime/resources/databaseReader";
-import { deriveSessionTitle } from "../infrastructure/database/records/transcript/messages/deriveTitle";
 import { existsSync } from "node:fs";
-import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
-import { runTransaction } from "../infrastructure/database/sqlite/connection";
+
 import { sessionNotFound } from "../errors";
+import { resolveSessionPaths } from "../infrastructure/configuration/sessionPaths";
 import { sessionOverviewRows } from "../infrastructure/database/projections/sessionOverview";
+import { deriveSessionTitle } from "../infrastructure/database/records/transcript/messages/deriveTitle";
 import { streamEventCursor } from "../infrastructure/database/records/transcript/streamEvents";
+import { runTransaction } from "../infrastructure/database/sqlite/connection";
+import { DatabaseReader } from "./runtime/resources/databaseReader";
 
 type SessionOverview = ReturnType<typeof sessionOverviewRows>[number];
 export type RegisteredSession = SessionOverview & {

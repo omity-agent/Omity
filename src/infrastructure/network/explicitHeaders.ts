@@ -1,5 +1,6 @@
-import type { Dispatcher } from "undici/index.js";
 import { isPlainObject } from "es-toolkit";
+import type { Dispatcher } from "undici/index.js";
+
 import { localize } from "../../i18n/server";
 
 export type HeaderPolicy = "explicit";

@@ -1,7 +1,8 @@
-import { captureError, summarizeError } from "../../../src/failures/details";
 import { expect, test } from "bun:test";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
+
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
+import { captureError, summarizeError } from "../../../src/failures/details";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
 import { isRetryableModelError } from "../../../src/runtime/transientErrors";
 
 test("a policy close retains its reason and stream progress without being retried", async () => {

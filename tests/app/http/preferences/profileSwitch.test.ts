@@ -1,13 +1,15 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
-import type { AppController } from "../../../../src/app/controller";
 import { join } from "node:path";
-import { liveApplication } from "../liveApplication";
-import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
-import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
-import { submissionForm } from "../../../../src/app/attachments/submission";
+
 import { z } from "zod";
+
+import { submissionForm } from "../../../../src/app/attachments/submission";
+import type { AppController } from "../../../../src/app/controller";
+import { sessionPaths } from "../../../../src/infrastructure/configuration/sessionPaths";
+import { AgentDatabase } from "../../../../src/infrastructure/database/agentDatabase";
+import { readDefinitionRecord } from "../../../../src/infrastructure/database/records/session/metadata";
+import { liveApplication } from "../liveApplication";
 
 test("idle sessions can move a profile to the top without changing frozen tool schemas", async () => {
   await using app = await liveApplication();

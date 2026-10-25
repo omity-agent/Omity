@@ -1,9 +1,11 @@
-import { homedir } from "node:os";
-import { isPlainObject as isRecord } from "es-toolkit";
-import { join } from "node:path";
-import { localize } from "../../i18n/server";
-import { parseAllDocuments } from "yaml";
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+import { isPlainObject as isRecord } from "es-toolkit";
+import { parseAllDocuments } from "yaml";
+
+import { localize } from "../../i18n/server";
 
 const exactPlaceholder = /^\$\{(?<name>[^}]+)\}$/,
   embeddedPlaceholder = /\$\{(?<name>[^}]+)\}/g,

@@ -1,13 +1,15 @@
 import { afterEach, expect, test } from "bun:test";
-import { agentFixture, toolResponse } from "./support/agentFixture";
-import { cleanupDatabaseDirs, required, workspace } from "../support/database";
-import { MockLanguageModelV4 } from "ai/test";
+
 import { ToolMessage } from "@langchain/core/messages";
+import { tool } from "@langchain/core/tools";
+import { MockLanguageModelV4 } from "ai/test";
+import { z } from "zod";
+
 import { buildTimeline } from "../../src/app/timeline";
 import { loadTranscript } from "../../src/app/transcript";
 import { processInput } from "../../src/runtime/consumeInputs";
-import { tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { cleanupDatabaseDirs, required, workspace } from "../support/database";
+import { agentFixture, toolResponse } from "./support/agentFixture";
 
 afterEach(cleanupDatabaseDirs);
 test("paused cancellation is visible immediately and survives host reconstruction", async () => {
@@ -51,7 +53,7 @@ test("paused cancellation is visible immediately and survives host reconstructio
         (message) => message.parts,
       );
     expect(parts.find((part) => part.type === "tool")).toMatchObject({
-      output: { content: "工具运行 0 毫秒 后被用户手动终止。" },
+      output: { content: "工具运行 0 毫秒后被用户手动终止。" },
       phase: "completed",
     });
     first.executions.close();
@@ -61,7 +63,7 @@ test("paused cancellation is visible immediately and survives host reconstructio
     expect(called).toBe(0);
     expect(db.nextInput("target")).toBeNull();
     expect(db.history("target").find((message) => ToolMessage.isInstance(message))?.text).toBe(
-      "工具运行 0 毫秒 后被用户手动终止。",
+      "工具运行 0 毫秒后被用户手动终止。",
     );
     expect(resumed.model.doStreamCalls).toHaveLength(1);
     resumed.executions.close();

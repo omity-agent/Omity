@@ -1,13 +1,15 @@
-import { activeRuns, inputs, runs } from "../../../schema/execution";
-import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, sql } from "drizzle-orm";
+
 import { DomainError } from "../../../../../errors";
-import type { QueuedInput } from "../../../../../types";
-import { createRunRecord } from "../runs/mutations";
-import { insertUserMessage } from "../../transcript/messages/history";
 import { localize } from "../../../../../i18n/server";
+import type { QueuedInput } from "../../../../../types";
 import { messages } from "../../../schema/conversation";
+import { activeRuns, inputs, runs } from "../../../schema/execution";
 import { sessionDatabase } from "../../../sqlite/connection";
+import { insertUserMessage } from "../../transcript/messages/history";
+import { createRunRecord } from "../runs/mutations";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareAdmission>>();
 export function enqueueInputRecord(

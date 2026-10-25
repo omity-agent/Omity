@@ -1,5 +1,7 @@
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { afterEach, expect, test } from "bun:test";
+
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+
 import { completion, createPredictionFixture } from "./modelFixture";
 
 const fixtures: Awaited<ReturnType<typeof createPredictionFixture>>[] = [];

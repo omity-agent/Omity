@@ -1,14 +1,15 @@
 /* oxlint-disable unicorn/prefer-structured-clone -- Checkpoints preserve LangChain message prototypes. */
+import { BaseMessage } from "@langchain/core/messages";
 import type {
   Checkpoint,
   CheckpointMetadata,
   CheckpointTuple,
   SerializerProtocol,
 } from "@langchain/langgraph-checkpoint";
-import { BaseMessage } from "@langchain/core/messages";
-import type { RecoverySnapshot } from "../infrastructure/database/records/restoration";
 import { cloneDeepWith } from "es-toolkit";
 import { z } from "zod";
+
+import type { RecoverySnapshot } from "../infrastructure/database/records/restoration";
 
 interface DecodedHead {
   checkpoint: Checkpoint;

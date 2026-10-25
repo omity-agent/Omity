@@ -1,12 +1,13 @@
-import { captureError, summarizeError } from "../../../../src/failures/details";
 import { expect, test } from "bun:test";
+import { once } from "node:events";
+import { createServer } from "node:net";
+import { promisify } from "node:util";
+
+import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
+import { captureError, summarizeError } from "../../../../src/failures/details";
 import type { ResolveOutboundProxy } from "../../../../src/infrastructure/network/dispatchProxied";
 import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
-import { createServer } from "node:net";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
-import { once } from "node:events";
-import { promisify } from "node:util";
 import { startRecordingProxy } from "../localProxyFixture";
 
 async function requestFailure(resolveProxy: ResolveOutboundProxy) {

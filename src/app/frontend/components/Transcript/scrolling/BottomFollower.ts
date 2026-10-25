@@ -1,5 +1,5 @@
-import { observeScrollIntent } from "./scrollIntent";
 import { transcriptWindow } from "../../../../../../settings/rendering";
+import { observeScrollIntent } from "./scrollIntent";
 
 type ScrollViewport = Pick<HTMLElement, "clientHeight" | "scrollHeight" | "scrollTop">;
 export class BottomFollower {
@@ -7,8 +7,14 @@ export class BottomFollower {
   private dragging = false;
   private following = true;
   private previousTop = 0;
+  private userIntent = false;
   get isFollowing() {
     return this.following;
+  }
+  consumeUserIntent() {
+    const intent = this.userIntent;
+    this.userIntent = false;
+    return intent;
   }
   align(element: ScrollViewport) {
     if (!this.following) {
@@ -27,6 +33,7 @@ export class BottomFollower {
       this.following = false;
     }
     if (
+      !this.dragging &&
       this.direction > 0 &&
       scrollHeight - clientHeight - scrollTop <= transcriptWindow.followThreshold
     ) {
@@ -39,6 +46,7 @@ export class BottomFollower {
     return observeScrollIntent(
       element,
       (delta) => {
+        this.userIntent = true;
         this.direction = Math.sign(delta);
         if (delta < 0) {
           this.following = false;
@@ -47,6 +55,7 @@ export class BottomFollower {
       },
       (active) => {
         if (active) {
+          this.userIntent = true;
           this.direction = 0;
           this.following = false;
         }

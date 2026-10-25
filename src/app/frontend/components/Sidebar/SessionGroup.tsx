@@ -1,6 +1,10 @@
-import { Button, LinkButton } from "../ParkUI";
-import { type SessionGroup as Group, isRunning, workspaceLabel } from "./sessions";
+import { ChevronDown } from "lucide-react";
 import { type MouseEvent, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { cx } from "styled-system/css";
+
+import { navigateLink, pagePath } from "../../route";
+import { Button, LinkButton } from "../ParkUI";
 import {
   caption,
   chevron,
@@ -19,13 +23,10 @@ import {
   unreadCaption,
   workspaceName,
 } from "./groupStyles";
-import { navigateLink, pagePath } from "../../route";
-import { ChevronDown } from "lucide-react";
 import { OverflowCaption } from "./OverflowCaption";
 import { RelativeTime } from "./RelativeTime";
+import { isRunning, type SessionGroup as Group, workspaceLabel } from "./sessions";
 import { Status } from "./Status";
-import { cx } from "styled-system/css";
-import { useTranslation } from "react-i18next";
 
 interface Props {
   group: Group;
@@ -83,8 +84,9 @@ export function SessionGroup({
     toggleHistory = useCallback(() => {
       setHistoryExpanded((value) => !value);
     }, []),
+    hasUnreadSessions = group.sessions.some(({ id }) => unreadIds.has(id)),
     { expanded, toggleExpanded } = useWorkspaceExpansion(
-      !hasRunningSessions || group.runningCount > 0,
+      !hasRunningSessions || group.runningCount > 0 || hasUnreadSessions,
     ),
     runningSessions = group.sessions.filter(isRunning),
     historySessions = group.sessions.filter((session) => !isRunning(session)),

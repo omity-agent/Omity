@@ -1,5 +1,7 @@
-import { BrowserSession, readScrollPositions, settleLayout } from "./browserSession";
 import { afterAll, beforeAll, expect, test } from "bun:test";
+
+import { BrowserSession, readScrollPositions, settleLayout } from "./browserSession";
+import { collapseLatestTool, expandOffscreenTool, expandTallTool } from "./disclosureScenarios";
 
 const session = new BrowserSession();
 beforeAll(() => session.start(), 60_000);
@@ -74,6 +76,11 @@ test.each(["wheel", "keyboard", "scrollbar"])(
         await page.mouse.move(scrollbarX, bounds.y + bounds.height - 35);
         await page.mouse.down();
         await page.mouse.move(scrollbarX, bounds.y + bounds.height - 200, { steps: 10 });
+        const escaped = await viewport.evaluate((element) => ({
+          maximum: element.scrollHeight - element.clientHeight,
+          top: element.scrollTop,
+        }));
+        expect(escaped.top).toBeLessThan(escaped.maximum - 1);
         await page.mouse.up();
       }
       await settleLayout(page);
@@ -112,19 +119,18 @@ test("wrapping code after viewport resizes preserves bottom following", async ()
     await page.close();
   }
 }, 30_000);
-test("collapsing and expanding the latest tool keeps the timeline and panels at the bottom", async () => {
-  const page = await session.open("append");
-  try {
-    const disclosure = page.locator('[data-part="trigger"][aria-expanded]').last();
-    for (const expanded of [false, true]) {
-      await disclosure.click();
-      await page.waitForFunction(() => document.getAnimations().length === 0);
-      await settleLayout(page);
-      expect(await disclosure.getAttribute("aria-expanded")).toBe(String(expanded));
-      const positions = await readScrollPositions(page);
-      expect(positions.filter(({ gap }) => gap > 1)).toEqual([]);
-    }
-  } finally {
-    await page.close();
-  }
-}, 30_000);
+test(
+  "collapsing and expanding the latest tool keeps the timeline and panels at the bottom",
+  () => collapseLatestTool(session),
+  30_000,
+);
+test(
+  "expanding a tool whose top is above the viewport keeps its output mounted",
+  () => expandOffscreenTool(session),
+  30_000,
+);
+test(
+  "expanding a tall tool at the bottom keeps the visible part mounted",
+  () => expandTallTool(session),
+  30_000,
+);

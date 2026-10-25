@@ -1,8 +1,9 @@
 import { isEqual, isPlainObject as isRecord, omit } from "es-toolkit";
-import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
-import { localize } from "../i18n/server";
 import { serializeError } from "serialize-error";
 import { z } from "zod";
+
+import { structuredErrorNames, uninformativeCauseNames } from "../../settings/resilience";
+import { localize } from "../i18n/server";
 
 type ErrorValue = z.infer<z.ZodJSONSchema>;
 export interface ErrorDetails {

@@ -1,16 +1,18 @@
+import { once } from "node:events";
+import { rmSync } from "node:fs";
+import { createServer } from "node:http";
+import { type Socket } from "node:net";
+import { join } from "node:path";
+
+import { getRequestListener } from "@hono/node-server";
+
+import { requestListenerOptions } from "../../../settings/networking";
 import { AccessService } from "../../../src/app/access/service";
 import { AppController } from "../../../src/app/controller";
-import { type Socket } from "node:net";
-import { closeAppResources } from "../../../src/app/runtime/shutdown";
 import { createApi } from "../../../src/app/http/handler";
-import { createServer } from "node:http";
-import { createTestDirectory } from "../../support/artifacts";
-import { getRequestListener } from "@hono/node-server";
-import { join } from "node:path";
+import { closeAppResources } from "../../../src/app/runtime/shutdown";
 import { loadSettings } from "../../../src/infrastructure/configuration/settings/load";
-import { once } from "node:events";
-import { requestListenerOptions } from "../../../settings/networking";
-import { rmSync } from "node:fs";
+import { createTestDirectory } from "../../support/artifacts";
 import { writeTestConfiguration } from "../../support/configuration";
 
 export async function liveApplication(adapter: "completions" | "responses-sse" = "completions") {

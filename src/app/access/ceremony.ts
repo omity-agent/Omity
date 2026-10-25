@@ -1,15 +1,16 @@
 import {
   type AuthenticationResponseJSON,
-  type RegistrationResponseJSON,
   generateAuthenticationOptions,
   generateRegistrationOptions,
+  type RegistrationResponseJSON,
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import type { AccessStore } from "./store";
-import { HttpError } from "../http/errors";
-import type { Settings } from "../../types";
+
 import { localize } from "../../i18n/server";
+import type { Settings } from "../../types";
+import { HttpError } from "../http/errors";
+import type { AccessStore } from "./store";
 
 export class WebAuthnCeremony {
   constructor(

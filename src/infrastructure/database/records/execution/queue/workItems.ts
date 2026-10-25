@@ -1,9 +1,11 @@
-import { type SQL, and, eq, min, ne, sql } from "drizzle-orm";
-import { activeRuns, inputs, runs } from "../../../schema/execution";
 import type { Database } from "bun:sqlite";
+
+import { and, eq, min, ne, type SQL, sql } from "drizzle-orm";
+
 import { messages } from "../../../schema/conversation";
-import { requireSessionRecord } from "../../session/metadata";
+import { activeRuns, inputs, runs } from "../../../schema/execution";
 import { sessionDatabase } from "../../../sqlite/connection";
+import { requireSessionRecord } from "../../session/metadata";
 
 const statements = new WeakMap<Database, ReturnType<typeof prepareWorkQueries>>();
 export function pendingInputRows(db: Database, sessionId: string) {

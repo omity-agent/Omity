@@ -1,9 +1,10 @@
 import { type RefObject, type SubmitEvent, useLayoutEffect, useRef, useState } from "react";
+
+import type { PendingAttachment } from "../../../../attachments/contract";
 import type { EditablePair } from "../../../../composition/preparation";
 import type { InitialSessionState } from "../../../../initialState";
-import type { PendingAttachment } from "../../../../attachments/contract";
-import type { PendingAttachments } from "../../Chat/Composer/attachments";
 import { reportPromiseErrors } from "../../../services/errors";
+import type { PendingAttachments } from "../../Chat/Composer/attachments";
 
 export function useSessionCreation({
   attachmentsRef,

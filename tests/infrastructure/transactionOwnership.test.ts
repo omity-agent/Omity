@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
-import { cleanupDatabaseDirs, makeDatabases, required, workspace } from "../support/database";
+
 import { runTransaction } from "../../src/infrastructure/database/sqlite/connection";
+import { cleanupDatabaseDirs, makeDatabases, required, workspace } from "../support/database";
 
 afterEach(cleanupDatabaseDirs);
 test("independent SQLite connections enforce lease takeover, input claims and rollback boundaries", () => {

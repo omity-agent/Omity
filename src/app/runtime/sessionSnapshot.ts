@@ -1,15 +1,15 @@
+import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
 import {
-  type SettingsContext,
   prioritizeSettingsProfile,
+  type SettingsContext,
   settingsProfileNames,
 } from "../../infrastructure/configuration/settings/context";
-import type { AppMcp } from "./resources/toolPool";
-import type { SessionSubmission } from "../attachments/contract";
-import { cleanupFailedInitialization } from "../../infrastructure/mcp/lifecycle";
-import { createAppSession } from "./sessionActions";
-import { createSessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
 import { loadSettings } from "../../infrastructure/configuration/settings/load";
-import { resolveSessionPaths } from "../../infrastructure/configuration/sessionPaths";
+import { createSessionDefinition } from "../../infrastructure/database/session/sessionDefinition";
+import { cleanupFailedInitialization } from "../../infrastructure/mcp/lifecycle";
+import type { SessionSubmission } from "../attachments/contract";
+import type { AppMcp } from "./resources/toolPool";
+import { createAppSession } from "./sessionActions";
 
 export async function createSnapshotSession(options: {
   baseContext: SettingsContext;

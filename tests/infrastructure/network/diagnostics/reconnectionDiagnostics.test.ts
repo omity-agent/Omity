@@ -1,13 +1,14 @@
-import { type RetryOriginMode, startRetryOrigin } from "./retryOrigin";
+import { expect, test } from "bun:test";
+
+import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
 import { captureError, summarizeError } from "../../../../src/failures/details";
+import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
 import {
   createSocketTransport,
   registerSocketTransport,
 } from "../../../../src/infrastructure/network/socketTransport";
-import { expect, test } from "bun:test";
-import { createNetworkRuntime } from "../../../../src/infrastructure/network/installNetworking";
-import { createResponsesWebsocketFetch } from "../../../../src/agent/model/responsesWebsocket";
 import { isRetryableModelError } from "../../../../src/runtime/transientErrors";
+import { type RetryOriginMode, startRetryOrigin } from "./retryOrigin";
 
 async function runRetriedRequest(mode: RetryOriginMode) {
   const origin = await startRetryOrigin(mode),

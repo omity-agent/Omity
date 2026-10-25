@@ -1,5 +1,6 @@
-import type { HistoryDirection, UserMessageHistory } from "../history";
 import { useCallback, useLayoutEffect, useRef } from "react";
+
+import type { HistoryDirection, UserMessageHistory } from "../history";
 import type { UserInputPrediction } from "../prediction";
 import { useHistoryNavigation } from "./history";
 

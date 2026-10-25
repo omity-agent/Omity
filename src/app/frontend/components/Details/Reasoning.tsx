@@ -1,13 +1,14 @@
 /* oxlint-disable @pandacss/no-margin-properties -- Reasoning content uses a deliberate inset and native reset. */
-import { MarkdownInline, MarkdownView } from "../MarkdownView";
-import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
-import { BrainCircuit } from "lucide-react";
-import type { FilePathMatch } from "../../../../fileLinks/types";
-import { Frame } from "./Frame";
-import { createElement } from "react";
-import { css } from "styled-system/css";
 import { useCollapsibleContext } from "@ark-ui/react/collapsible";
+import { BrainCircuit } from "lucide-react";
+import { createElement } from "react";
 import { useTranslation } from "react-i18next";
+import { css } from "styled-system/css";
+
+import type { FilePathMatch } from "../../../../fileLinks/types";
+import type { ReasoningTranslation, TimelinePart } from "../../../timeline";
+import { MarkdownInline, MarkdownView } from "../MarkdownView";
+import { Frame } from "./Frame";
 
 const content = css({
     borderBlockStartWidth: "hairline",
@@ -38,16 +39,14 @@ export function Reasoning({
   detailKey,
   fileLinks,
   latest,
-  liveTranslation,
 }: {
   detailKey: string;
   fileLinks?: FilePathMatch[];
   latest: boolean;
-  liveTranslation?: ReasoningTranslation;
   part: Extract<TimelinePart, { type: "reasoning" }>;
 }) {
   const { t } = useTranslation(),
-    reasoning = translatedReasoning(part, navigator.languages, liveTranslation),
+    reasoning = translatedReasoning(part, navigator.languages),
     title = createElement(ReasoningTitle, { label: t("reasoning"), reasoning });
   return (
     <Frame
@@ -82,18 +81,20 @@ function singleLineReasoning(text: string) {
 function preferredTranslation(
   part: Extract<TimelinePart, { type: "reasoning" }>,
   preferredLanguages: readonly string[],
-  liveTranslation?: ReasoningTranslation,
 ) {
-  const translations = [
-    ...(part.translations ?? []),
-    ...(liveTranslation && liveTranslation.messageId === part.messageId ? [liveTranslation] : []),
-  ];
   for (const language of preferredLanguages) {
-    const match = translations.find(
-      (translation) =>
-        translation.source === part.content &&
-        new Intl.Locale(translation.targetLanguage).language === new Intl.Locale(language).language,
-    );
+    let match: ReasoningTranslation | undefined;
+    for (const translation of part.translations ?? []) {
+      if (
+        translation.messageId === part.messageId &&
+        part.content.startsWith(translation.source) &&
+        new Intl.Locale(translation.targetLanguage).language ===
+          new Intl.Locale(language).language &&
+        (!match || translation.source.length > match.source.length)
+      ) {
+        match = translation;
+      }
+    }
     if (match) {
       return match;
     }
@@ -103,29 +104,9 @@ function preferredTranslation(
 function translatedReasoning(
   part: Extract<TimelinePart, { type: "reasoning" }>,
   preferredLanguages: readonly string[],
-  liveTranslation?: ReasoningTranslation,
 ) {
-  const exact = preferredTranslation(part, preferredLanguages, liveTranslation);
-  if (exact) {
-    return exact.translated;
-  }
-  if (
-    !liveTranslation ||
-    liveTranslation.messageId !== part.messageId ||
-    part.streaming !== true ||
-    !part.content.startsWith(liveTranslation.source) ||
-    !supportsLanguage(liveTranslation, preferredLanguages)
-  ) {
-    return part.content;
-  }
-  return liveTranslation.translated + part.content.slice(liveTranslation.source.length);
-}
-function supportsLanguage(
-  translation: ReasoningTranslation,
-  preferredLanguages: readonly string[],
-) {
-  return preferredLanguages.some(
-    (language) =>
-      new Intl.Locale(translation.targetLanguage).language === new Intl.Locale(language).language,
-  );
+  const translation = preferredTranslation(part, preferredLanguages);
+  return translation
+    ? translation.translated + part.content.slice(translation.source.length)
+    : part.content;
 }

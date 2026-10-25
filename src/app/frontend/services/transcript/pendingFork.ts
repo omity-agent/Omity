@@ -1,12 +1,10 @@
-import {
-  type ComposerDraftTarget,
-  clearTemporaryComposerDraft,
-  composerDraftKey,
-  readComposerDraft,
-} from "../composerDrafts";
-import { type ForkPage, type Page, forkPage, sessionPage } from "../../route";
 import { type QueryClient, useQueryClient } from "@tanstack/react-query";
-import { addSession, removeSession } from "../queries";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+
+import type { Control } from "../../../../types";
+import type { PendingAttachment } from "../../../attachments/contract";
+import { localize } from "../../i18n";
+import { type ForkPage, forkPage, type Page, sessionPage } from "../../route";
 import {
   deleteSession,
   loadComposerDraft,
@@ -14,11 +12,14 @@ import {
   saveComposerDraft,
   setControl,
 } from "../client";
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import type { Control } from "../../../../types";
+import {
+  clearTemporaryComposerDraft,
+  composerDraftKey,
+  type ComposerDraftTarget,
+  readComposerDraft,
+} from "../composerDrafts";
+import { addSession, removeSession } from "../queries";
 import type { OptimisticUser } from "./optimistic";
-import type { PendingAttachment } from "../../../attachments/contract";
-import { localize } from "../../i18n";
 
 type Navigate = (page: Page, replace?: boolean) => void;
 type SubmitMessage = (

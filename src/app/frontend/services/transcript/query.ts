@@ -1,19 +1,20 @@
+import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+
+import type { DisplayEvent } from "../../../timeline";
+import { localize } from "../../i18n";
+import { contentEvents, loadTranscript } from "../client";
+import { reportError } from "../errors";
+import { readContentSyncEvent, readTranscriptEvent } from "../events/data";
+import { subscribeEvents } from "../events/subscription";
+import { FrameBatcher } from "../scheduling/frameBatcher";
 import {
-  type TranscriptData,
   appendTranscriptEvents,
   emptyTranscriptData,
   reconcileTranscript,
+  type TranscriptData,
 } from "./cache";
-import { contentEvents, loadTranscript } from "../client";
-import { readContentSyncEvent, readTranscriptEvent } from "../events/data";
-import { useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { DisplayEvent } from "../../../timeline";
-import { FrameBatcher } from "../scheduling/frameBatcher";
-import { localize } from "../../i18n";
-import { reportError } from "../errors";
-import { subscribeEvents } from "../events/subscription";
-import { useAsyncThrottler } from "@tanstack/react-pacer/async-throttler";
 
 export const transcriptKey = (sessionId: string) => ["transcript", sessionId] as const;
 const emptyTranscript = emptyTranscriptData();

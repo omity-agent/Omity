@@ -1,10 +1,12 @@
 import { expect, test } from "bun:test";
-import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
-import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
-import { createOAuthFile } from "../../infrastructure/openai/authSessionFixture";
+
+import { z } from "zod";
+
 import { createResponsesWebsocketFetch } from "../../../src/agent/model/responsesWebsocket";
 import { restrictedModelFetch } from "../../../src/agent/model/restrictedFetch";
-import { z } from "zod";
+import { createNetworkRuntime } from "../../../src/infrastructure/network/installNetworking";
+import { createCodexConnection } from "../../../src/infrastructure/openai/oauthConnection";
+import { createOAuthFile } from "../../infrastructure/openai/authSessionFixture";
 
 test("Codex OAuth preserves explicit tool restrictions and hosted discovery", async () => {
   using auth = await createOAuthFile({ accessToken: "local-test", accountId: "local-account" });

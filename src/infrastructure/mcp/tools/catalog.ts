@@ -1,21 +1,22 @@
+import type { StructuredToolInterface } from "@langchain/core/tools";
+import { omit } from "es-toolkit";
+
+import { DomainError } from "../../../errors";
+import { localize } from "../../../i18n/server";
+import type { SessionPlaceholders } from "../../configuration/placeholders";
+import { createSettingsContext, type SettingsContext } from "../../configuration/settings/context";
+import type { Logger } from "../../logging/logger";
 import { type BuiltInToolOptions, loadBuiltInTools } from "../../toolbox/loadBuiltIns";
+import { McpClientPool } from "../client/pool";
 import {
-  type McpConfiguration,
   emptyMcpConfiguration,
+  type McpConfiguration,
   readProfileMcpConfiguration,
   readSessionMcpConfiguration,
 } from "../configuration";
-import { McpLoadError, createMcpLoadError, reportMcpFailure } from "../failures/reportConstruction";
-import { type McpToolSnapshot, applyMcpToolSnapshot, emptyMcp } from "./definitions";
-import { type SettingsContext, createSettingsContext } from "../../configuration/settings/context";
-import { DomainError } from "../../../errors";
-import type { Logger } from "../../logging/logger";
-import { McpClientPool } from "../client/pool";
-import type { SessionPlaceholders } from "../../configuration/placeholders";
-import type { StructuredToolInterface } from "@langchain/core/tools";
+import { createMcpLoadError, McpLoadError, reportMcpFailure } from "../failures/reportConstruction";
 import { loadServerTools } from "../loadServers";
-import { localize } from "../../../i18n/server";
-import { omit } from "es-toolkit";
+import { applyMcpToolSnapshot, emptyMcp, type McpToolSnapshot } from "./definitions";
 import { renameMcpTools } from "./descriptions";
 import { sessionModelTools } from "./freeform";
 

@@ -1,10 +1,11 @@
-import { type MessageSpan, messageSpans, visibleCopies } from "./messageSpans";
 import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { CopyButton } from "../../Chat/CopyButton";
-import type { VirtualizerHandle } from "virtua";
 import { css } from "styled-system/css";
+import type { VirtualizerHandle } from "virtua";
+
 import { localize } from "../../../i18n";
+import { CopyButton } from "../../Chat/CopyButton";
 import type { segmentTranscript } from "../segments";
+import { type MessageSpan, messageSpans, visibleCopies } from "./messageSpans";
 
 interface MountedCopy {
   element: HTMLDivElement;

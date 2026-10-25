@@ -1,6 +1,7 @@
-import { type TOptions, t, use } from "i18next";
+import { t, type TOptions, use } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+
 import { resources } from "../../../i18n/resources";
 
 export const i18nReady = use(LanguageDetector)
@@ -13,7 +14,6 @@ export const i18nReady = use(LanguageDetector)
     },
     resources,
   });
-
 export function localize(key: string, options?: TOptions) {
   return t(key, options);
 }

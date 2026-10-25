@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
-import type { SessionInfo } from "../../services/client";
-import { isRunningStatus } from "../../../../types";
-import { statusLabelKey } from "./sessions";
 import { useTranslation } from "react-i18next";
+
+import { isRunningStatus } from "../../../../types";
+import type { SessionInfo } from "../../services/client";
+import { statusLabelKey } from "./sessions";
 
 export function useSessionPresentation(
   sessions: SessionInfo[],

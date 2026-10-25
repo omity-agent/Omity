@@ -1,13 +1,14 @@
+import { fetch as undiciFetch, type RequestInit as UndiciRequestInit } from "undici/index.js";
+
+import { localize } from "../../i18n/server";
+import { createProxyDispatcher, type ResolveOutboundProxy } from "./dispatchProxied";
 import {
-  type HeaderPolicy,
   explicitHeaderDispatcher,
+  type HeaderPolicy,
   registerExplicitFetch,
 } from "./explicitHeaders";
-import { type ResolveOutboundProxy, createProxyDispatcher } from "./dispatchProxied";
-import { type RequestInit as UndiciRequestInit, fetch as undiciFetch } from "undici/index.js";
-import { createSocketTransport, registerSocketTransport } from "./socketTransport";
 import { OutboundRouting } from "./resolveOutbound";
-import { localize } from "../../i18n/server";
+import { createSocketTransport, registerSocketTransport } from "./socketTransport";
 
 export function createNetworkRuntime(resolveProxy?: ResolveOutboundProxy) {
   const routing = resolveProxy ? undefined : new OutboundRouting(),

@@ -1,13 +1,14 @@
 /* oxlint-disable @pandacss/no-margin-properties -- Message separation is part of the transcript layout. */
-import type { ReasoningTranslation, TimelineMessage } from "../../../timeline";
-import { css, cva, cx } from "styled-system/css";
-import { Body } from "../Transcript/Body";
-import { CopyButton } from "./CopyButton";
 import { GitFork } from "lucide-react";
-import { IconButton } from "../ParkUI";
-import { reportPromiseErrors } from "../../services/errors";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { css, cva, cx } from "styled-system/css";
+
+import type { TimelineMessage } from "../../../timeline";
+import { reportPromiseErrors } from "../../services/errors";
+import { IconButton } from "../ParkUI";
+import { Body } from "../Transcript/Body";
+import { CopyButton } from "./CopyButton";
 
 const row = css({
     '&[data-last="true"]': { marginBlockEnd: "4" },
@@ -96,7 +97,6 @@ export function Message({
   canFork,
   forkDisabled,
   item,
-  liveTranslation,
   latestReasoningIndex,
   latestToolIndex,
   onCancelTool,
@@ -106,7 +106,6 @@ export function Message({
   canFork: boolean;
   forkDisabled: boolean;
   item: TimelineMessage;
-  liveTranslation?: ReasoningTranslation;
   latestReasoningIndex?: number;
   latestToolIndex?: number;
   onCancelTool: (toolCallId: string) => Promise<void>;
@@ -155,7 +154,6 @@ export function Message({
           item={item}
           latestReasoningIndex={latestReasoningIndex}
           latestToolIndex={latestToolIndex}
-          liveTranslation={liveTranslation}
           onCancelTool={onCancelTool}
           partIndex={partIndex}
         />

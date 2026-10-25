@@ -1,16 +1,17 @@
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
-import type { DisplayMessage, DisplayToolCall } from "../contracts/projection";
+import { isPlainObject } from "es-toolkit";
+
+import { assistantContent } from "../../../agent/aiMessages";
+import type { StoredAiSdkPart } from "../../../agent/fromAiMessages";
+import { localize } from "../../../i18n/server";
+import { rawFreeformInput } from "../../../runtime/freeform";
 import {
   displayToolInput,
   textOutputSnapshot,
   toolOutputText,
   toolValueText,
 } from "../../../runtime/toolOutput";
-import type { StoredAiSdkPart } from "../../../agent/fromAiMessages";
-import { assistantContent } from "../../../agent/aiMessages";
-import { isPlainObject } from "es-toolkit";
-import { localize } from "../../../i18n/server";
-import { rawFreeformInput } from "../../../runtime/freeform";
+import type { DisplayMessage, DisplayToolCall } from "../contracts/projection";
 import { toolInputTokens } from "../tokenCounts";
 
 type StoredToolResult = Extract<StoredAiSdkPart, { type: "tool-result" }>;

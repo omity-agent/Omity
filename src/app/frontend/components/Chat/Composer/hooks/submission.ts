@@ -1,11 +1,12 @@
-import type { AskUserAnswer, AskUserQuestion } from "../../toolActions";
-import { type ComposerDraftTarget, composerDraftKey } from "../../../../services/composerDrafts";
-import type { ComposerProps } from "../props";
-import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
-import type { PendingAttachment } from "../../../../../attachments/contract";
 import type { RefObject } from "react";
-import { createOptimisticUser } from "../../../../services/transcript/optimistic";
+
+import type { PendingAttachment } from "../../../../../attachments/contract";
 import { localize } from "../../../../i18n";
+import { composerDraftKey, type ComposerDraftTarget } from "../../../../services/composerDrafts";
+import type { DraftSaver } from "../../../../services/scheduling/draftSaver";
+import { createOptimisticUser } from "../../../../services/transcript/optimistic";
+import type { AskUserAnswer, AskUserQuestion } from "../../toolActions";
+import type { ComposerProps } from "../props";
 import { submitMessage } from "./submit";
 
 export function useComposerSubmit({
