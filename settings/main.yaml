@@ -50,7 +50,7 @@ leases:
   hostTtlMs: 30000
 
 prediction:
-  enabled: false
+  enabled: true
   sampleContextTokens: 50000
   maxUserMessageTokens: 200
   sampleCount: 10

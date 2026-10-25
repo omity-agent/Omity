@@ -1,3 +1,4 @@
+import type { JSONSchema7 } from "@ai-sdk/provider";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import { toJsonSchema } from "@langchain/core/utils/json_schema";
 
@@ -10,7 +11,7 @@ export interface ModelToolDefinition {
   deferLoading?: boolean;
   description: string;
   freeform: boolean;
-  inputSchema: ReturnType<typeof toJsonSchema>;
+  inputSchema: JSONSchema7;
   name: string;
 }
 export interface McpToolSnapshot {

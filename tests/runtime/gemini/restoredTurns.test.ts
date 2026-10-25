@@ -68,7 +68,7 @@ test.each([...geminiApis])(
         generation_config: {
           thinking_level: "high",
           thinking_summaries: "auto",
-          tool_choice: "auto",
+          tool_choice: "validated",
         },
         input: expect.arrayContaining([
           {

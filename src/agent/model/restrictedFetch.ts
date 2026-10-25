@@ -4,6 +4,7 @@ import { modelToolPolicy } from "../../../settings/modelToolPolicy";
 import { localize } from "../../i18n/server";
 import type { OutboundFetch } from "../../infrastructure/network/explicitHeaders";
 import type { ModelApi } from "../../types";
+import { isStrictSchema } from "./tools/eligibility";
 
 const modelRequestSchema = z.looseObject({
     tools: z.array(z.looseObject({ type: z.string().optional() })).default([]),
@@ -64,8 +65,13 @@ function configureGeminiTools(body: z.infer<typeof modelRequestSchema>, api: Mod
     return;
   }
   if (api === "interactions") {
-    const configuration = objectSchema.parse(body["generation_config"] ?? {});
-    configuration["tool_choice"] ??= "auto";
+    const configuration = objectSchema.parse(body["generation_config"] ?? {}),
+      strict = body.tools.every((tool) =>
+        isStrictSchema(objectSchema.parse(tool["parameters"]), "interactions"),
+      );
+    if (configuration["tool_choice"] === undefined || configuration["tool_choice"] === "auto") {
+      configuration["tool_choice"] = strict ? "validated" : "auto";
+    }
     body["generation_config"] = configuration;
     return;
   }
