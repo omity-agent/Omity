@@ -4,7 +4,11 @@ import { z } from "zod";
 import { localize } from "../../../i18n/server";
 import { logLevelSchema } from "../../../types";
 import { attachmentSettingsSchema, emptyAs, frontendSettingsSchema } from "./fieldSchemas";
-import { predictionSettingsSchema, prepareMainSettings } from "./models";
+import {
+  createPredictionSettingsSchema,
+  type parseModelSettings,
+  prepareMainSettings,
+} from "./models";
 
 export { omitCodexConnectionSettings, parseModelSettings } from "./models";
 const promptFileSchema = z
@@ -87,14 +91,17 @@ const promptFileSchema = z
       level: logLevelSchema,
       streamTokens: z.boolean(),
     }),
-    prediction: emptyAs(predictionSettingsSchema.optional(), undefined).optional(),
     server: z.strictObject({
       host: z.string().min(1),
       port: z.number().int().min(0).max(65_535),
     }),
   });
-export function parseMainSettings(value: unknown) {
-  return mainSettingsSchema.parse(prepareMainSettings(value));
+export function parseMainSettings(value: unknown, model: ReturnType<typeof parseModelSettings>) {
+  return mainSettingsSchema
+    .extend({
+      prediction: emptyAs(createPredictionSettingsSchema(model).optional(), undefined).optional(),
+    })
+    .parse(prepareMainSettings(value, model));
 }
 export function parseAgentSettings(value: unknown) {
   return agentSettingsSchema.parse(value);

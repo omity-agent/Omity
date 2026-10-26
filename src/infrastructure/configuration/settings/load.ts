@@ -29,18 +29,6 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
   const configRoot = resolve(root),
     cwd = normalizeWorkspacePath(options.cwd ?? configRoot, configRoot),
     context = options.settingsContext ?? createSettingsContext(configRoot, options.userSettingsDir),
-    main = parseMainSettings(
-      requireLayeredYaml(
-        context,
-        "global",
-        "main.yaml",
-        {},
-        {
-          beforePlaceholders: prepareMainSettings,
-        },
-      ).value,
-    ),
-    agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
     model = parseModelSettings(
       requireLayeredYaml(
         context,
@@ -52,6 +40,19 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
         },
       ).value,
     ),
+    main = parseMainSettings(
+      requireLayeredYaml(
+        context,
+        "global",
+        "main.yaml",
+        {},
+        {
+          beforePlaceholders: (value) => prepareMainSettings(value, model),
+        },
+      ).value,
+      model,
+    ),
+    agent = parseAgentSettings(requireLayeredYaml(context, "profile", "agent.yaml").value),
     storageDirectory = userDataDirectory(),
     session = options.sessionId
       ? resolve(storageDirectory, "sessions", safeId(options.sessionId))

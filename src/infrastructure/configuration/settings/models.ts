@@ -32,7 +32,7 @@ const sharedModelSettings = {
     sampleCount: z.number().int().positive(),
     task: z.string().min(1),
   },
-  modelDraftSchema = z.preprocess(
+  modelOverridesSchema = z.preprocess(
     (value) =>
       isRecord(value)
         ? Object.fromEntries(
@@ -46,27 +46,58 @@ const sharedModelSettings = {
       .extend({ adapter: z.union([modelAdapterSchema, z.literal("codex")]) })
       .partial(),
   );
-export const predictionSettingsSchema = z.discriminatedUnion("enabled", [
-  z.strictObject({
-    ...predictionFields,
-    enabled: z.literal(true),
-    model: modelSettingsSchema,
-  }),
-  z.strictObject({
-    ...predictionFields,
-    enabled: z.literal(false),
-    model: emptyAs(modelDraftSchema.optional(), undefined).optional(),
-  }),
-]);
+export function createPredictionSettingsSchema(primaryModel: z.output<typeof modelSettingsSchema>) {
+  return z.discriminatedUnion("enabled", [
+    z.strictObject({
+      ...predictionFields,
+      enabled: z.literal(true),
+      model: z.preprocess(
+        (value) => inheritModelSettings(value, primaryModel),
+        modelSettingsSchema,
+      ),
+    }),
+    z.strictObject({
+      ...predictionFields,
+      enabled: z.literal(false),
+      model: emptyAs(modelOverridesSchema.optional(), undefined).optional(),
+    }),
+  ]);
+}
 export function parseModelSettings(value: unknown) {
   return modelSettingsSchema.parse(omitCodexConnectionSettings(value));
 }
-export function omitCodexConnectionSettings(value: unknown) {
-  return isRecord(value) && value["adapter"] === "codex"
+function inheritModelSettings(value: unknown, primaryModel: z.output<typeof modelSettingsSchema>) {
+  if (value === undefined || value === null || value === "") {
+    return primaryModel;
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+  return omitCodexConnectionSettings({
+    ...primaryModel,
+    ...Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        item === undefined || item === null || item === "" ? Reflect.get(primaryModel, key) : item,
+      ]),
+    ),
+  });
+}
+export function omitCodexConnectionSettings(value: unknown, inheritedAdapter?: string) {
+  if (!isRecord(value)) {
+    return value;
+  }
+  const { adapter } = value;
+  return (adapter === undefined || adapter === null || adapter === ""
+    ? inheritedAdapter
+    : adapter) === "codex"
     ? omit(value, ["apiKeyEnv", "baseURL"])
     : value;
 }
-export function prepareMainSettings(value: unknown) {
+export function prepareMainSettings(
+  value: unknown,
+  primaryModel: z.output<typeof modelSettingsSchema>,
+) {
   if (!isRecord(value) || !isRecord(value["prediction"])) {
     return value;
   }
@@ -76,7 +107,7 @@ export function prepareMainSettings(value: unknown) {
     prediction: {
       ...prediction,
       ...(Object.hasOwn(prediction, "model")
-        ? { model: omitCodexConnectionSettings(prediction["model"]) }
+        ? { model: omitCodexConnectionSettings(prediction["model"], primaryModel.adapter) }
         : {}),
     },
   };
