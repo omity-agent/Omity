@@ -3,13 +3,12 @@ import { toUIMessageChunk } from "ai";
 
 import { pendingToolBatch } from "../agent/graph/toolBatch";
 import { type AiStreamEvent, hasModelContent } from "../agent/model/request";
-import { localize } from "../i18n/server";
 import { findToolStreamIdentity } from "../infrastructure/database/records/transcript/toolStreamIdentity";
 import { appendReasoningDelta, flushReasoning } from "./content";
 import type { HostContext } from "./context";
 import type { StreamLogState } from "./stream";
 import { recordInvocation } from "./stream/invocations";
-import { acceptMessageId, sequentialPart } from "./stream/parts";
+import { sequentialPart } from "./stream/parts";
 
 type AiStreamContext = Pick<
   HostContext,
@@ -31,7 +30,7 @@ export async function recordAiStreamPart(
     if (!value) {
       return;
     }
-    const messageId = streamMessageId(state, chunk.id);
+    const { messageId } = state.parts;
     await ctx.db.appendStream(ctx.sessionId, {
       inputId,
       kind: "assistant_reasoning_delta",
@@ -43,7 +42,7 @@ export async function recordAiStreamPart(
   }
   if (chunk?.type === "text-delta" || chunk?.type === "reasoning-delta") {
     const kind = chunk.type === "text-delta" ? "assistant_text_delta" : "assistant_reasoning_delta",
-      messageId = streamMessageId(state, chunk.id),
+      { messageId } = state.parts,
       value =
         chunk.type === "reasoning-delta"
           ? appendReasoningDelta(chunk.id, chunk.delta, state.parts.reasoning)
@@ -88,11 +87,4 @@ export async function recordToolStarted(
       value: callId,
     });
   }
-}
-function streamMessageId(state: StreamLogState, partId: string) {
-  const messageId = acceptMessageId(state.parts, state.parts.messageId ?? partId);
-  if (!messageId) {
-    throw new Error(localize("runtime:stream.stableMessageIdMissing"));
-  }
-  return messageId;
 }

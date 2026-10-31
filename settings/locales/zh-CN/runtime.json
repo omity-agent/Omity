@@ -1,9 +1,7 @@
 {
   "stream": {
-    "stableMessageIdMissing": "AI SDK 流缺少稳定消息 ID",
     "toolResultCallMissing": "服务端工具结果缺少调用记录：{{value0}}",
-    "toolErrorEventInvalid": "服务端工具错误事件格式无效：{{value0}}",
-    "messageIdMissing": "工具流缺少稳定消息 ID"
+    "toolErrorEventInvalid": "服务端工具错误事件格式无效：{{value0}}"
   },
   "append": {
     "inputAddedAtBoundary": "已在节点边界追加输入",

@@ -40,8 +40,8 @@ test.each([true, false])(
           },
         },
         toolNameOverrides: {
-          [sourceName]: "renamed_tool",
           missing_source: "unused_alias",
+          [sourceName]: "renamed_tool",
         },
       };
     mkdirSync(workspace);

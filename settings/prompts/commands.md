@@ -1,7 +1,8 @@
 <commands_instructions>
 
 为确保可靠性，在使用命令行或写命令脚本时，必须使用命令和参数的全称，避免使用简写或兼容性写法。
-可以使用 `bunx name@latest`、`uvx name@latest` 运行所需的任何工具，无需申请。必须为 `latest` 版本。
+Bun 可以直接解释 TypeScript 代码，所以不要写 `.mjs`/`.cjs`/`.js`。
+可以使用 `bunx name@latest`、`uvx name@latest` 运行所需的任何工具，无需申请。版本必须为 `latest`。
 使用管理员权限无需询问用户。
 Do not chain shell commands with separators like `echo \"====\";` or `printf '---'`; the output becomes noisy in a way that makes the user's side of the conversation worse.
 默认不可以运行 `git` 命令，需要使用必须申请。

@@ -7,7 +7,7 @@ import { findToolStreamIdentity } from "../../infrastructure/database/records/tr
 import type { HostContext } from "../context";
 import type { StreamLogState } from "../stream";
 import { displayToolInput, textOutputSnapshot, toolOutputText, toolValueText } from "../toolOutput";
-import { acceptMessageId, toolPart } from "./parts";
+import { toolPart } from "./parts";
 
 type InvocationContext = Pick<HostContext, "db" | "sessionId" | "toolExecutions">;
 export async function recordInvocation(
@@ -71,7 +71,7 @@ export async function recordInvocation(
     if (chunk.type === "tool-output-available" && chunk.preliminary) {
       return;
     }
-    const identity = state.aiToolIndexes.has(chunk.toolCallId)
+    const identity = state.toolIndexes.has(chunk.toolCallId)
       ? invocationIdentity(state, chunk.toolCallId)
       : findToolStreamIdentity(ctx.db.db, ctx.sessionId, chunk.toolCallId);
     if (!identity) {
@@ -100,14 +100,10 @@ export async function recordInvocation(
   }
 }
 function invocationIdentity(state: StreamLogState, callId: string) {
-  const messageId = acceptMessageId(state.parts, state.parts.messageId ?? callId);
-  if (!messageId) {
-    throw new Error(localize("runtime:stream.messageIdMissing"));
-  }
-  let index = state.aiToolIndexes.get(callId);
+  let index = state.toolIndexes.get(callId);
   if (index === undefined) {
-    index = state.aiToolIndexes.size;
-    state.aiToolIndexes.set(callId, index);
+    index = state.toolIndexes.size;
+    state.toolIndexes.set(callId, index);
   }
-  return { index, messageId, partId: toolPart(state.parts, index) };
+  return { index, messageId: state.parts.messageId, partId: toolPart(state.parts, index) };
 }

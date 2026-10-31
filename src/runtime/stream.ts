@@ -2,19 +2,15 @@ import type { HostContext } from "./context";
 import { createStreamPartState } from "./stream/parts";
 
 export interface StreamLogState {
-  aiToolIndexes: Map<string, number>;
   modelResponding: boolean;
   parts: ReturnType<typeof createStreamPartState>;
-  seenFacts: Set<string>;
-  seenStructures: Set<string>;
+  toolIndexes: Map<string, number>;
 }
 export function createStreamLogState(): StreamLogState {
   return {
-    aiToolIndexes: new Map(),
     modelResponding: false,
     parts: createStreamPartState(),
-    seenFacts: new Set(),
-    seenStructures: new Set(),
+    toolIndexes: new Map(),
   };
 }
 export function discardActiveStream(ctx: HostContext, state: StreamLogState, inputId: number) {
@@ -23,7 +19,7 @@ export function discardActiveStream(ctx: HostContext, state: StreamLogState, inp
   completeActiveStream(state);
 }
 export function completeActiveStream(state: StreamLogState) {
-  state.aiToolIndexes.clear();
+  state.toolIndexes.clear();
   state.modelResponding = false;
   state.parts = createStreamPartState();
 }
