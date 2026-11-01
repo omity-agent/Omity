@@ -23,12 +23,8 @@
     "pendingWriteExpired": "checkpoint pending write 已过期：{{value0}}"
   },
   "transcript": {
-    "reasoningSourceChanged": "思维链原文已发生变化：{{value0}}",
-    "reasoningMessageMissing": "思维链消息不存在：{{value0}}",
     "streamCursorUnsafe": "流式事件游标超出安全整数范围：{{value0}}",
-    "toolStreamIdentityDuplicate": "工具调用 {{value0}} 绑定了多个流身份",
     "toolEventCallIdMissing": "工具{{value0}}事件缺少调用 ID",
-    "toolOutputMissing": "工具完成事件缺少输出：{{value0}}",
     "formalCallStreamIdentityDuplicate": "正式工具调用 ID {{value0}} 绑定了多个流身份",
     "streamEventInvalid": "持久化流式事件无效"
   },
@@ -46,12 +42,5 @@
     "runMissingForRead": "执行轮次不存在：{{value0}}",
     "runMissingForUpdate": "执行轮次不存在：{{value0}}",
     "inputClaimConflict": "输入认领冲突：{{value0}}"
-  },
-  "indexing": {
-    "crossQueueStream": "文件链接流跨越多个队列：{{value0}}",
-    "nonStringEventPayload": "文本流事件内容不是字符串",
-    "offsetOutOfRange": "文件链接索引超出文本范围：{{value0}}",
-    "tooManyUnits": "文件链接索引单元多于消息文本：{{value0}}",
-    "textMismatch": "文件链接索引与消息文本不一致：{{value0}}"
   }
 }

@@ -14,11 +14,8 @@ export function transcriptMessageRows(db: Database, sessionId: string) {
 export function transcriptEvents(db: Database, sessionId: string) {
   return queries(db)
     .events.all({ sessionId })
-    .map(({ fileLinks, ...event }) => {
-      const parsed = streamEventSchema.safeParse({
-        ...event,
-        ...(Array.isArray(fileLinks) && fileLinks.length === 0 ? {} : { fileLinks }),
-      });
+    .map((event) => {
+      const parsed = streamEventSchema.safeParse(event);
       if (!parsed.success) {
         throw new Error(localize("database:transcript.streamEventInvalid"), {
           cause: parsed.error,
@@ -36,7 +33,6 @@ function prepareTranscriptRows(db: Database) {
   return {
     events: orm
       .select({
-        fileLinks: events.fileLinks,
         id: events.id,
         inputId: events.inputId,
         kind: events.kind,

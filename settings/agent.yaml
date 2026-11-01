@@ -10,7 +10,7 @@ prompts:
   - agents_md.md
 
 toolOutput:
-  maxTokens: 10000
+  maxTokens: 15000
 
 toolExecution:
   parallel: true

@@ -1,27 +1,28 @@
-import type { FileLinkUnit, FilePathMatch } from "../../../fileLinks/types";
+import type { FileLinkSet, FilePathMatch } from "../../../fileLinks/types";
 
 export function localStreamLinks(
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   ownerId: string,
   surface: "content" | "reasoning",
   part: { content: string; offset: number },
 ) {
   return fileLinks
-    .filter(
-      (unit) =>
-        unit.ownerId === ownerId &&
-        unit.surface === surface &&
-        unit.start >= part.offset &&
-        unit.end <= part.offset + part.content.length,
-    )
+    .filter((link) => link.ownerId === ownerId && link.surface === surface)
     .flatMap((unit) =>
-      unit.matches.map((match) => ({
-        ...match,
-        position: {
-          end: match.position.end - part.offset,
-          start: match.position.start - part.offset,
-        },
-      })),
+      unit.matches
+        .filter(
+          (match) =>
+            match.position.start >= part.offset &&
+            match.position.end <= part.offset + part.content.length,
+        )
+        .map((match) =>
+          Object.assign(match, {
+            position: {
+              end: match.position.end - part.offset,
+              start: match.position.start - part.offset,
+            },
+          }),
+        ),
     );
 }
 export function optionalStreamLinks(matches: FilePathMatch[]) {

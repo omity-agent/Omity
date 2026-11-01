@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { fileLinkUnitSchema } from "../../../fileLinks/types";
+import { fileLinkSetSchema } from "../../../fileLinks/types";
 
 export const toolOutputSnapshotSchema = z.object({
   content: z.string(),
@@ -8,7 +8,7 @@ export const toolOutputSnapshotSchema = z.object({
   outputTokens: z.number().int().nonnegative().optional(),
 });
 const streamEventBaseSchema = z.object({
-  fileLinks: z.array(fileLinkUnitSchema).optional(),
+  fileLinks: z.array(fileLinkSetSchema).optional(),
   id: z.number().int().positive(),
   inputId: z.number().int().positive(),
   messageId: z.string().min(1),

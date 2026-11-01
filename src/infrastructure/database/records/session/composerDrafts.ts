@@ -29,9 +29,9 @@ export function writeComposerDraftRecord(
   const orm = sessionDatabase(db);
   orm
     .insert(composerDrafts)
-    .values({ content, revision, sessionId, updatedAt: sql`unixepoch()` })
+    .values({ content, revision, sessionId })
     .onConflictDoUpdate({
-      set: { content, revision, updatedAt: sql`unixepoch()` },
+      set: { content, revision },
       setWhere: gt(sql`${revision}`, composerDrafts.revision),
       target: composerDrafts.sessionId,
     })
@@ -53,9 +53,9 @@ export function writeComposerDraftRecord(
 export function clearComposerDraftRecord(db: Database, sessionId: string, revision: number) {
   sessionDatabase(db)
     .insert(composerDrafts)
-    .values({ content: "", revision, sessionId, updatedAt: sql`unixepoch()` })
+    .values({ content: "", revision, sessionId })
     .onConflictDoUpdate({
-      set: { content: "", revision, updatedAt: sql`unixepoch()` },
+      set: { content: "", revision },
       setWhere: gte(sql`${revision}`, composerDrafts.revision),
       target: composerDrafts.sessionId,
     })
@@ -73,9 +73,9 @@ export function writePreparationDraftRecord(db: Database, content: string, revis
   const orm = sessionDatabase(db);
   orm
     .insert(preparationDrafts)
-    .values({ content, id: 1, revision, updatedAt: sql`unixepoch()` })
+    .values({ content, id: 1, revision })
     .onConflictDoUpdate({
-      set: { content, revision, updatedAt: sql`unixepoch()` },
+      set: { content, revision },
       setWhere: gt(sql`${revision}`, preparationDrafts.revision),
       target: preparationDrafts.id,
     })
@@ -93,9 +93,9 @@ export function writePreparationDraftRecord(db: Database, content: string, revis
 export function clearPreparationDraftRecord(db: Database, content: string, revision: number) {
   sessionDatabase(db)
     .insert(preparationDrafts)
-    .values({ content, id: 1, revision, updatedAt: sql`unixepoch()` })
+    .values({ content, id: 1, revision })
     .onConflictDoUpdate({
-      set: { content, revision, updatedAt: sql`unixepoch()` },
+      set: { content, revision },
       setWhere: gte(sql`${revision}`, preparationDrafts.revision),
       target: preparationDrafts.id,
     })

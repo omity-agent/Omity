@@ -5,7 +5,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { ErrorDetails } from "../../../../../failures/details";
 import { localize } from "../../../../../i18n/server";
 import type { RunStatus } from "../../../../../types";
-import { checkpoints, events, fileLinkUnits } from "../../../schema";
+import { checkpoints, events, fileLinkSets } from "../../../schema";
 import { activeRuns, inputs, runs } from "../../../schema/execution";
 import { sessionDatabase } from "../../../sqlite/connection";
 import { requireSessionRecord } from "../../session/metadata";
@@ -62,9 +62,9 @@ export function setRunStatusRecord(
     carryPendingInputs(db, runId, run.sessionId);
     const ownedInputs = orm.select({ id: inputs.id }).from(inputs).where(eq(inputs.runId, runId));
     orm.delete(events).where(inArray(events.inputId, ownedInputs)).run();
+    orm.delete(fileLinkSets).where(inArray(fileLinkSets.inputId, ownedInputs)).run();
     if (status === "canceled") {
       discardedInputIds = ownedInputs.all().map(({ id }) => id);
-      orm.delete(fileLinkUnits).where(inArray(fileLinkUnits.inputId, ownedInputs)).run();
     }
   }
   return { discardedInputIds, sessionId: run.sessionId };

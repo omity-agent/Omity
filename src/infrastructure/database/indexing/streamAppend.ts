@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 
 import type { StreamEvent, StreamEventDraft } from "../../../types";
 import { appendIndexedStream, insertPlainStream } from "./historySync";
-import type { FileLinkIndexer } from "./linkScanner";
+import type { FileLinkIndexer } from "./surfaceIndexer";
 
 export function appendFileLinkStream(options: {
   db: Database;

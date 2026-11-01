@@ -36,13 +36,11 @@ export const composerDrafts = sqliteTable("composer_drafts", {
   sessionId: text("session_id")
     .primaryKey()
     .references(() => sessions.id, { onDelete: "cascade" }),
-  updatedAt: integer("updated_at").notNull(),
 });
 export const preparationDrafts = sqliteTable("preparation_drafts", {
   content: text().notNull(),
   id: integer().primaryKey(),
   revision: integer().notNull(),
-  updatedAt: integer("updated_at").notNull(),
 });
 export const inputPredictions = sqliteTable("input_predictions", {
   candidates: text("candidates_json", { mode: "json" }).$type<string[]>().notNull(),
@@ -50,7 +48,6 @@ export const inputPredictions = sqliteTable("input_predictions", {
     .primaryKey()
     .references(() => sessions.id, { onDelete: "cascade" }),
   transcriptRevision: integer("transcript_revision").notNull(),
-  updatedAt: integer("updated_at").notNull(),
 });
 export const hookUsage = sqliteTable(
   "hook_usage",

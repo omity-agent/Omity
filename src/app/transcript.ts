@@ -13,7 +13,7 @@ import {
   readDefinitionRecord,
   readTranscriptRevisionRecord,
 } from "../infrastructure/database/records/session/metadata";
-import { loadFileLinkUnits } from "../infrastructure/database/records/transcript/fileLinks";
+import { loadFileLinkSets } from "../infrastructure/database/records/transcript/matchedFiles";
 import { decodeMessage } from "../infrastructure/database/records/transcript/messages/hydration";
 import { loadReasoningTranslations } from "../infrastructure/database/records/transcript/reasoningTranslations";
 import { streamEventCursor } from "../infrastructure/database/records/transcript/streamEvents";
@@ -37,7 +37,7 @@ export function loadTranscript(db: Database, sessionId: string) {
       ),
       queue = transcriptInputRows(db, sessionId),
       events = transcriptEvents(db, sessionId),
-      fileLinks = loadFileLinkUnits(db, sessionId),
+      fileLinks = loadFileLinkSets(db, sessionId),
       reasoningTranslations = loadReasoningTranslations(db, sessionId),
       eventCursor = streamEventCursor(db);
     return {

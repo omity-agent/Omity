@@ -3,8 +3,8 @@ import type { BaseMessage } from "@langchain/core/messages";
 import type { ErrorDetails } from "../../failures/details";
 import type { Control, QueuedInput, RunStatus } from "../../types";
 import { syncIndexedHistory } from "./indexing/historySync";
-import { FileLinkIndexer } from "./indexing/linkScanner";
 import { appendFileLinkStream } from "./indexing/streamAppend";
+import { FileLinkIndexer } from "./indexing/surfaceIndexer";
 import { deleteSessionStorage, resetSessionStorage } from "./maintenance";
 import { InputSubmissionStore } from "./records/execution/acceptance";
 import { RecoverableDatabase } from "./records/execution/interruption";
@@ -31,7 +31,7 @@ import {
   touchSessionRecord,
   writeControlRecord,
 } from "./records/session/metadata";
-import { deleteInputFileLinkUnits } from "./records/transcript/fileLinks";
+import { deleteInputFileLinks } from "./records/transcript/matchedFiles";
 import { loadMessages } from "./records/transcript/messages/history";
 import {
   deleteInputStream,
@@ -49,13 +49,11 @@ import {
 
 export class AgentDatabase extends RecoverableDatabase {
   private notify?: (event: StreamEvent) => void;
-  private readonly fileLinks: FileLinkIndexer;
-  private readonly queueSubmissions: InputSubmissionStore;
+  private readonly fileLinks = new FileLinkIndexer(this.db);
+  private readonly queueSubmissions = new InputSubmissionStore(this.db);
   private storageReclaimPending = false;
   constructor(path: string, root = process.cwd()) {
     super(openSessionDatabase(path, root));
-    this.fileLinks = new FileLinkIndexer(this.db);
-    this.queueSubmissions = new InputSubmissionStore(this.db);
   }
   close() {
     closeDatabase(this.db);
@@ -73,9 +71,11 @@ export class AgentDatabase extends RecoverableDatabase {
     initialDefinition: SessionDefinition = emptySessionDefinition(),
   ) {
     resetSessionStorage(this.db, sessionId, workspace, profiles, initialDefinition);
+    this.fileLinks.discardSession(sessionId);
   }
   deleteSession(sessionId: string) {
     deleteSessionStorage(this.db, sessionId);
+    this.fileLinks.discardSession(sessionId);
   }
   requestStorageReclaim() {
     this.storageReclaimPending = true;
@@ -164,7 +164,6 @@ export class AgentDatabase extends RecoverableDatabase {
     }
   }
   history(sessionId: string): BaseMessage[] {
-    requireSessionRecord(this.db, sessionId);
     return loadMessages(this.db, sessionId);
   }
   control(sessionId: string): Control {
@@ -194,7 +193,7 @@ export class AgentDatabase extends RecoverableDatabase {
     runTransaction(this.db, () => {
       touchInputSessionRecord(this.db, inputId);
       deleteInputStream(this.db, inputId);
-      deleteInputFileLinkUnits(this.db, inputId);
+      deleteInputFileLinks(this.db, inputId);
     });
     this.fileLinks.discardInputs([inputId]);
   }

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { errorDetailsSchema } from "../../../failures/details";
-import { fileLinkUnitSchema, filePathMatchSchema } from "../../../fileLinks/types";
+import { fileLinkSetSchema, filePathMatchSchema } from "../../../fileLinks/types";
 import { toolOutputSnapshotSchema } from "../../../infrastructure/database/schema/streamEvent";
 import { controlSchema, runStatusSchema, streamEventSchema } from "../../../types";
 
@@ -62,7 +62,7 @@ export const transcriptResponseSchema = z.object({
   control: controlSchema,
   eventCursor: integer.nonnegative(),
   events: z.array(streamEventSchema),
-  fileLinks: z.array(fileLinkUnitSchema),
+  fileLinks: z.array(fileLinkSetSchema),
   messages: z.array(messageSchema),
   queue: z.array(queueSchema),
   reasoningTranslations: z.array(reasoningTranslationSchema),

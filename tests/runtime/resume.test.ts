@@ -12,6 +12,7 @@ import { queryAll } from "../../src/infrastructure/database/sqlite/connection";
 import { Logger } from "../../src/infrastructure/logging/logger";
 import { processInput } from "../../src/runtime/consumeInputs";
 import type { HostContext } from "../../src/runtime/context";
+import type { StreamEvent } from "../../src/types";
 import { cleanupDatabaseDirs, makeDb, required, workspace } from "../support/database";
 import { testSettings } from "../support/settings";
 
@@ -21,7 +22,7 @@ const usage = {
 };
 afterEach(cleanupDatabaseDirs);
 test("a paused run resumes from the model boundary without repeating the model call", async () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("session", workspace);
   db.appendUser("session", "run tool");
   const calls: string[] = [],
@@ -61,13 +62,13 @@ test("a paused run resumes from the model boundary without repeating the model c
   expect(db.nextInput("session")).toBeNull();
   expect(model.doStreamCalls).toHaveLength(2);
   expect(calls).toEqual(["tool", "tool"]);
-  db.close();
 });
 test("a paused run steps through one model request or a complete tool batch", async () => {
-  const db = makeDb();
+  using db = makeDb();
   db.resetSession("session", workspace);
   db.appendUser("session", "run tool");
   const calls: string[] = [],
+    delivered: StreamEvent[] = [],
     invoked = Promise.withResolvers<string>(),
     release = Promise.withResolvers<string>(),
     echo = tool(
@@ -90,6 +91,7 @@ test("a paused run steps through one model request or a complete tool batch", as
       tools: [echo],
     });
   db.setControl("session", "step");
+  db.onChange((event) => delivered.push(event));
   await processInput(stepContext(db, saver, graph), required(db.nextInput("session")));
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
@@ -107,21 +109,18 @@ test("a paused run steps through one model request or a complete tool batch", as
     ).map(({ kind }) => kind),
   ).toEqual(["tool_started", "tool_started"]);
   expect(calls).toEqual(["echo-call-1", "echo-call-2"]);
+  const cursor = db.eventCursor();
   release.resolve("echoed");
   await toolStep;
   expect(db.nextInput("session")?.status).toBe("paused");
   expect(db.control("session")).toBe("pause");
   expect(model.doStreamCalls).toHaveLength(1);
   expect(calls).toEqual(["echo-call-1", "echo-call-2"]);
-  expect(
-    queryAll<{ kind: string }>(
-      db.db,
-      `SELECT kind FROM events
-       WHERE kind IN ('tool_started', 'tool_finished')
-       ORDER BY id`,
-    ).map(({ kind }) => kind),
-  ).toEqual(["tool_started", "tool_started", "tool_finished", "tool_finished"]);
-  db.close();
+  expect(db.db.query("SELECT id FROM events WHERE kind <> 'user_appended'").all()).toEqual([]);
+  const finished = delivered.filter((event) => event.kind === "tool_finished");
+  expect(finished).toHaveLength(2);
+  expect(finished.every((event) => event.id > cursor)).toBe(true);
+  expect(db.eventCursor()).toBe(required(finished.at(-1)).id);
 });
 function context(
   db: ReturnType<typeof makeDb>,

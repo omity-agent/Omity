@@ -8,7 +8,6 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import type { FileLinkUnit } from "../../../fileLinks/types";
 import type { StreamEventKind, StreamEventValues } from "../../../types";
 import type { StoredConversationMessage } from "../records/transcript/messages/replayShape";
 import { inputs } from "./execution";
@@ -53,10 +52,8 @@ export const reasoningTranslations = sqliteTable(
     sessionId: text("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
-    source: text().notNull(),
     targetLanguage: text("target_language").notNull(),
     translated: text().notNull(),
-    updatedAt: integer("updated_at").notNull(),
   },
   (table) => [
     uniqueIndex("reasoning_translations_identity").on(
@@ -64,13 +61,16 @@ export const reasoningTranslations = sqliteTable(
       table.messageId,
       table.targetLanguage,
     ),
+    foreignKey({
+      columns: [table.sessionId, table.messageId],
+      foreignColumns: [messages.sessionId, messages.sourceId],
+    }).onDelete("cascade"),
   ],
 );
 export const events = sqliteTable(
   "events",
   {
-    fileLinks: text("file_links_json", { mode: "json" }).$type<FileLinkUnit[]>().notNull(),
-    id: integer().primaryKey({ autoIncrement: true }),
+    id: integer().primaryKey(),
     inputId: integer("input_id").notNull(),
     kind: text({ enum: streamEventKinds }).notNull(),
     messageId: text("message_id").notNull(),
@@ -95,3 +95,7 @@ export const events = sqliteTable(
     ),
   ],
 );
+export const streamClock = sqliteTable("stream_clock", {
+  id: integer().primaryKey(),
+  value: integer().notNull(),
+});

@@ -9,7 +9,6 @@ import { formatToolInput } from "./toolInput";
 import type { FileLinkSurface } from "./types";
 
 export interface FileLinkSource {
-  mode: "lines" | "output";
   ownerId: string;
   surface: FileLinkSurface;
   text: string;
@@ -22,7 +21,6 @@ function messageSources(message: BaseMessage): FileLinkSource[] {
   if (ToolMessage.isInstance(message)) {
     return [
       {
-        mode: "output",
         ownerId: message.tool_call_id,
         surface: "tool_output",
         text: contentToText(message.content),
@@ -31,9 +29,7 @@ function messageSources(message: BaseMessage): FileLinkSource[] {
   }
   const content = contentToText(message.content);
   return [
-    ...(content
-      ? [{ mode: "lines", ownerId: message.id, surface: "content", text: content } as const]
-      : []),
+    ...(content ? [{ ownerId: message.id, surface: "content", text: content } as const] : []),
     ...(AIMessage.isInstance(message) ? aiSources(message) : []),
   ];
 }
@@ -44,15 +40,12 @@ function aiSources(message: AIMessage): FileLinkSource[] {
   const ownerId = message.id,
     reasoning = messageReasoning(message);
   return [
-    ...(reasoning
-      ? [{ mode: "lines", ownerId, surface: "reasoning", text: reasoning } as const]
-      : []),
+    ...(reasoning ? [{ ownerId, surface: "reasoning", text: reasoning } as const] : []),
     ...(message.tool_calls ?? []).map((call, index): FileLinkSource => {
       const callOwnerId = call.id ?? `tool-${index.toString()}`,
         input = call.args,
         freeform = Reflect.get(call, "isCustomTool") === true;
       return {
-        mode: "lines",
         ownerId: callOwnerId,
         surface: "tool_input",
         text: formatToolInput({

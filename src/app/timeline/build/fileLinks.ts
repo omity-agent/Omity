@@ -1,20 +1,20 @@
-import type { FileLinkSurface, FileLinkUnit, FilePathMatch } from "../../../fileLinks/types";
+import type { FileLinkSet, FileLinkSurface, FilePathMatch } from "../../../fileLinks/types";
 import type { DisplayToolCall, DisplayToolOutput } from "../contracts/projection";
 
-export function linkedCall(call: DisplayToolCall, fileLinks: FileLinkUnit[]) {
+export function linkedCall(call: DisplayToolCall, fileLinks: FileLinkSet[]) {
   return {
     ...call,
     ...optionalLinks(matchesFor(fileLinks, call.id, "tool_input")),
   };
 }
-export function linkedOutput(output: DisplayToolOutput, callId: string, fileLinks: FileLinkUnit[]) {
+export function linkedOutput(output: DisplayToolOutput, callId: string, fileLinks: FileLinkSet[]) {
   return {
     ...output,
     ...optionalLinks(matchesFor(fileLinks, callId, "tool_output")),
   };
 }
 export function matchesFor(
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   ownerId: string | undefined,
   surface: FileLinkSurface,
 ) {

@@ -1,4 +1,4 @@
-import type { FileLinkUnit } from "../../fileLinks/types";
+import type { FileLinkSet } from "../../fileLinks/types";
 import type {
   DisplayEvent,
   DisplayToolOutput,
@@ -33,7 +33,7 @@ export function streamTimelineMessages(
   events: DisplayEvent[],
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
-  fileLinks: FileLinkUnit[] = [],
+  fileLinks: FileLinkSet[] = [],
   reasoningTranslations: ReasoningTranslation[] = [],
 ): TimelineMessage[] {
   const messages = new Map<string, StreamMessage>();

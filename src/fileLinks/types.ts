@@ -13,16 +13,13 @@ export const filePathMatchSchema = z.object({
   path: z.string(),
   position: positionSchema,
 });
-export const fileLinkUnitSchema = z.object({
-  end: offsetSchema,
+export const fileLinkSetSchema = z.object({
   matches: z.array(filePathMatchSchema),
   ownerId: z.string(),
-  start: offsetSchema,
   surface: fileLinkSurfaceSchema,
-  unitIndex: offsetSchema,
 });
 export type FileLinkAction = z.infer<typeof fileLinkActionSchema>;
 export type FileLinkSurface = z.infer<typeof fileLinkSurfaceSchema>;
 export type FilePathKind = z.infer<typeof filePathKindSchema>;
 export type FilePathMatch = z.infer<typeof filePathMatchSchema>;
-export type FileLinkUnit = z.infer<typeof fileLinkUnitSchema>;
+export type FileLinkSet = z.infer<typeof fileLinkSetSchema>;

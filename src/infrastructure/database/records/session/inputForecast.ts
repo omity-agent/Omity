@@ -57,13 +57,12 @@ export function writePredictionRecord(
 ) {
   return (
     db.run(
-      `INSERT INTO input_predictions (session_id, transcript_revision, candidates_json, updated_at)
-     SELECT id, transcript_revision, ?, unixepoch() FROM sessions
+      `INSERT INTO input_predictions (session_id, transcript_revision, candidates_json)
+     SELECT id, transcript_revision, ? FROM sessions
      WHERE id = ? AND transcript_revision = ?
      ON CONFLICT(session_id) DO UPDATE SET
        transcript_revision = excluded.transcript_revision,
-       candidates_json = excluded.candidates_json,
-       updated_at = excluded.updated_at`,
+       candidates_json = excluded.candidates_json`,
       [JSON.stringify(candidatesSchema.parse(candidates)), sessionId, revision],
     ).changes === 1
   );

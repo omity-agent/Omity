@@ -6,12 +6,16 @@ import { messageFileLinkSources } from "../../../fileLinks/messageSources";
 import type { StreamEvent, StreamEventDraft } from "../../../types";
 import { clearCompletedCancellations } from "../records/execution/toolCancellations";
 import { touchSessionRecord } from "../records/session/metadata";
-import { publicFileLinkUnits, upsertFileLinkUnits } from "../records/transcript/fileLinks";
+import {
+  clearMessageLinks,
+  clearStreamLinks,
+  writeFileLinkSets,
+} from "../records/transcript/matchedFiles";
 import { prepareMessageSync } from "../records/transcript/messages/sync";
 import { insertStreamEvent } from "../records/transcript/streamEvents";
 import { finishToolStreams } from "../records/transcript/toolCompletion";
 import { runTransaction } from "../sqlite/connection";
-import type { FileLinkIndexer } from "./linkScanner";
+import type { FileLinkIndexer } from "./surfaceIndexer";
 
 export async function syncIndexedHistory(options: {
   db: Database;
@@ -20,22 +24,27 @@ export async function syncIndexedHistory(options: {
   sessionId: string;
   workspace: string;
 }) {
-  const units = await options.fileLinks.prepareSources(
-    options.sessionId,
-    options.workspace,
-    messageFileLinkSources(options.messages),
-  );
-  return runTransaction(options.db, () => {
-    const history = prepareMessageSync(options.db, options.sessionId, options.messages);
-    history.commit();
-    upsertFileLinkUnits(options.db, options.sessionId, units);
-    const streams = finishToolStreams(options.db, options.sessionId, options.messages);
-    clearCompletedCancellations(options.db, options.sessionId, options.messages);
-    if (history.changed || streams.changed || units.length > 0) {
-      touchSessionRecord(options.db, options.sessionId);
-    }
-    return streams.events;
-  });
+  const history = prepareMessageSync(options.db, options.sessionId, options.messages),
+    prepared = await options.fileLinks.prepareHistory({ ...options, updated: history.updated }),
+    obsoleteOwners = messageFileLinkSources(history.previous).map((source) => source.ownerId),
+    finished = runTransaction(options.db, () => {
+      history.commit();
+      clearMessageLinks(
+        options.db,
+        options.sessionId,
+        prepared.replaceAll ? undefined : obsoleteOwners,
+      );
+      const clearedLinks = clearStreamLinks(options.db, options.sessionId);
+      writeFileLinkSets(options.db, options.sessionId, prepared.links);
+      const streams = finishToolStreams(options.db, options.sessionId, options.messages);
+      clearCompletedCancellations(options.db, options.sessionId, options.messages);
+      if (history.changed || streams.changed || clearedLinks > 0) {
+        touchSessionRecord(options.db, options.sessionId);
+      }
+      return streams.events;
+    });
+  prepared.commit();
+  return finished;
 }
 export async function appendIndexedStream(options: {
   db: Database;
@@ -58,13 +67,19 @@ export async function appendIndexedStream(options: {
         : undefined,
     enriched = {
       ...event,
-      ...(prepared && prepared.units.length > 0
-        ? { fileLinks: publicFileLinkUnits(prepared.units) }
+      ...(prepared && prepared.links.length > 0
+        ? {
+            fileLinks: prepared.links.map(({ matches, ownerId, surface }) => ({
+              matches,
+              ownerId,
+              surface,
+            })),
+          }
         : {}),
     },
     inserted = runTransaction(options.db, () => {
       if (prepared) {
-        upsertFileLinkUnits(options.db, options.sessionId, prepared.units);
+        writeFileLinkSets(options.db, options.sessionId, prepared.links);
       }
       const result = insertStreamEvent(options.db, options.sessionId, enriched);
       touchSessionRecord(options.db, options.sessionId);

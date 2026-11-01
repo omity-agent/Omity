@@ -5,6 +5,7 @@ import type { BaseMessage } from "@langchain/core/messages";
 
 import { transcriptMessageRows } from "../../../projections/transcriptRows";
 import { messageInputId, storePreparedMessage } from "./history";
+import { decodeMessage } from "./hydration";
 import { type MessageInsert, messageInsert } from "./serialization";
 import { messageMutations, pruneUnreferencedMessages } from "./writing";
 
@@ -38,6 +39,8 @@ export function prepareMessageSync(db: Database, sessionId: string, messages: Ba
       }
       pruneUnreferencedMessages(db, sessionId);
     },
+    previous: existing.slice(changedAt).map((row) => decodeMessage(row.messageJson, row.sourceId)),
+    updated: items.slice(changedAt).map((item) => item.message),
   };
 }
 function firstChangedIndex(

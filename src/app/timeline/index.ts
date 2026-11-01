@@ -1,4 +1,4 @@
-import type { FileLinkUnit } from "../../fileLinks/types";
+import type { FileLinkSet } from "../../fileLinks/types";
 import { persistedTimelineMessage } from "./build/message";
 import { syntheticMessage } from "./build/synthetic";
 import type {
@@ -32,7 +32,7 @@ export function buildTimeline(
   queue: DisplayQueue[],
   events: DisplayEvent[],
   optimistic: TimelineMessage[] = [],
-  fileLinks: FileLinkUnit[] = [],
+  fileLinks: FileLinkSet[] = [],
   reasoningTranslations: ReasoningTranslation[] = [],
 ): TimelineMessage[] {
   const outputs = new Map(
@@ -108,7 +108,7 @@ function timelineTail(
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ReturnType<typeof toolCallLifecycle>,
   persistedToolCalls: DisplayToolCall[],
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   reasoningTranslations: ReasoningTranslation[],
 ) {
   const result: TimelineMessage[] = [];

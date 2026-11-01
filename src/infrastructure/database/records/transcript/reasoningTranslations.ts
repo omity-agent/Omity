@@ -1,10 +1,9 @@
 import type { Database } from "bun:sqlite";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
-import { localize } from "../../../../i18n/server";
 import { messageReasoning } from "../../../../runtime/content";
-import { reasoningTranslations } from "../../schema";
+import { messages, reasoningTranslations } from "../../schema";
 import { sessionDatabase } from "../../sqlite/connection";
 import { decodeMessage } from "./messages/hydration";
 
@@ -18,37 +17,42 @@ export function loadReasoningTranslations(db: Database, sessionId: string): Reas
   return sessionDatabase(db)
     .select({
       messageId: reasoningTranslations.messageId,
-      source: reasoningTranslations.source,
+      messageJson: sql<string>`${messages.message}`,
       targetLanguage: reasoningTranslations.targetLanguage,
       translated: reasoningTranslations.translated,
     })
     .from(reasoningTranslations)
+    .innerJoin(
+      messages,
+      and(
+        eq(messages.sessionId, reasoningTranslations.sessionId),
+        eq(messages.sourceId, reasoningTranslations.messageId),
+      ),
+    )
     .where(eq(reasoningTranslations.sessionId, sessionId))
-    .all();
+    .all()
+    .map(({ messageJson, ...translation }) =>
+      Object.assign(translation, {
+        source: messageReasoning(decodeMessage(messageJson, translation.messageId)),
+      }),
+    );
 }
 export function storeReasoningTranslation(
   db: Database,
   sessionId: string,
   translation: ReasoningTranslation,
 ) {
-  const source = persistedReasoningSource(db, sessionId, translation.messageId);
-  if (source !== translation.source) {
-    throw new Error(
-      localize("database:transcript.reasoningSourceChanged", { value0: translation.messageId }),
-    );
-  }
   sessionDatabase(db)
     .insert(reasoningTranslations)
     .values({
-      ...translation,
+      messageId: translation.messageId,
       sessionId,
-      updatedAt: sql`unixepoch()`,
+      targetLanguage: translation.targetLanguage,
+      translated: translation.translated,
     })
     .onConflictDoUpdate({
       set: {
-        source: translation.source,
         translated: translation.translated,
-        updatedAt: sql`unixepoch()`,
       },
       target: [
         reasoningTranslations.sessionId,
@@ -57,16 +61,4 @@ export function storeReasoningTranslation(
       ],
     })
     .run();
-}
-function persistedReasoningSource(db: Database, sessionId: string, messageId: string) {
-  const message = db
-    .query<{ message_json: string }, [string, string]>(
-      `SELECT message_json FROM messages
-       WHERE session_id = ? AND source_id = ? AND position IS NOT NULL`,
-    )
-    .get(sessionId, messageId);
-  if (!message) {
-    throw new Error(localize("database:transcript.reasoningMessageMissing", { value0: messageId }));
-  }
-  return messageReasoning(decodeMessage(message.message_json, messageId));
 }

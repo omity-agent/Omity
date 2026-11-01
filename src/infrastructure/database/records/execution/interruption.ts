@@ -3,7 +3,7 @@ import type { Database } from "bun:sqlite";
 import { and, eq, inArray, ne } from "drizzle-orm";
 
 import type { ErrorDetails } from "../../../../failures/details";
-import { checkpoints, events } from "../../schema";
+import { checkpoints, events, fileLinkSets } from "../../schema";
 import { activeRuns, inputs, runs } from "../../schema/execution";
 import { runTransaction, sessionDatabase } from "../../sqlite/connection";
 import {
@@ -88,6 +88,7 @@ function cancelActiveRuns(
       .from(inputs)
       .where(and(inArray(inputs.runId, ownedRuns), ne(inputs.delivery, "canceled")));
   orm.delete(events).where(inArray(events.inputId, activeInputs)).run();
+  orm.delete(fileLinkSets).where(inArray(fileLinkSets.inputId, activeInputs)).run();
   orm.delete(checkpoints).where(inArray(checkpoints.runId, ownedRuns)).run();
   orm
     .update(runs)

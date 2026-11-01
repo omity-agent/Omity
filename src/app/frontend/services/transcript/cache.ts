@@ -1,7 +1,7 @@
 import { replaceEqualDeep } from "@tanstack/react-query";
 import { keyBy, sortBy } from "es-toolkit";
 
-import type { FileLinkUnit } from "../../../../fileLinks/types";
+import type { FileLinkSet } from "../../../../fileLinks/types";
 import { buildTimeline, type DisplayEvent, type TimelineMessage } from "../../../timeline";
 import type { TranscriptSnapshot } from "../../../timeline/contracts/records";
 
@@ -93,13 +93,8 @@ function buildTranscript(
     view: current ? replaceEqualDeep(current.view, view) : view,
   };
 }
-function mergeFileLinks(left: FileLinkUnit[], right: FileLinkUnit[]) {
-  return Object.values(
-    keyBy(
-      [...left, ...right],
-      (unit) => `${unit.ownerId}\0${unit.surface}\0${unit.unitIndex.toString()}`,
-    ),
-  );
+function mergeFileLinks(left: FileLinkSet[], right: FileLinkSet[]) {
+  return Object.values(keyBy([...left, ...right], (link) => `${link.ownerId}\0${link.surface}`));
 }
 function mergeEvents(left: DisplayEvent[], right: DisplayEvent[]) {
   return sortBy(Object.values(keyBy([...left, ...right], (event) => event.id)), [

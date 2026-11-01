@@ -1,4 +1,4 @@
-import type { FileLinkUnit } from "../../../fileLinks/types";
+import type { FileLinkSet } from "../../../fileLinks/types";
 import { localize } from "../../../i18n/server";
 import { countTokens } from "../../../runtime/tokenizer";
 import { allContent, lastContentGroup } from "../contentSelection";
@@ -63,7 +63,7 @@ export function projectStreamMessage(
   message: StreamMessage,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: Map<string, { phase: "running" } | { output: DisplayToolOutput; phase: "completed" }>,
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   reasoningTranslations: ReasoningTranslation[],
 ): TimelineMessage {
   const parts = message.order.flatMap((partId): TimelinePart[] => {
@@ -107,7 +107,7 @@ function textTimelinePart(
   part: TextPart,
   ownerId: string,
   surface: "content" | "reasoning",
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   reasoningTranslations: ReasoningTranslation[],
 ): TimelinePart[] {
   if (!part.content.trim()) {
@@ -135,7 +135,7 @@ function toolTimelinePart(
   messageId: string,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: Map<string, { phase: "running" } | { output: DisplayToolOutput; phase: "completed" }>,
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
 ): Extract<TimelinePart, { type: "tool" }> {
   const callId = part.id ?? streamCallKey(messageId, partId),
     call = displayCall(
@@ -158,7 +158,7 @@ function displayCall(
   part: ToolPart,
   messageId: string,
   partId: string,
-  units: FileLinkUnit[],
+  units: FileLinkSet[],
 ): DisplayToolCall {
   const inputText = part.args;
   return {

@@ -5,6 +5,7 @@ import { type BaseMessage, HumanMessage } from "@langchain/core/messages";
 
 import { localize } from "../../../../../i18n/server";
 import { transcriptMessageRows } from "../../../projections/transcriptRows";
+import { requireSessionRecord } from "../../session/metadata";
 import { decodeMessage } from "./hydration";
 import { messageInsert, type MessageStorageMode } from "./serialization";
 import { messageMutations } from "./writing";
@@ -52,6 +53,7 @@ export function messageInputId(sessionId: string, message: BaseMessage) {
   return inputId;
 }
 export function loadMessages(db: Database, sessionId: string): BaseMessage[] {
+  requireSessionRecord(db, sessionId);
   return transcriptMessageRows(db, sessionId).map((row) =>
     decodeMessage(row.messageJson, row.sourceId),
   );

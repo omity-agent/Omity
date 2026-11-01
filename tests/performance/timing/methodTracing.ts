@@ -10,7 +10,7 @@ import { AppController } from "../../../src/app/controller";
 import { AppRegistry } from "../../../src/app/registry";
 import { BunSqliteSaver } from "../../../src/checkpointer/saver";
 import { AgentDatabase } from "../../../src/infrastructure/database/agentDatabase";
-import { FileLinkIndexer } from "../../../src/infrastructure/database/indexing/linkScanner";
+import { FileLinkIndexer } from "../../../src/infrastructure/database/indexing/surfaceIndexer";
 import { RestartingStdioClient } from "../../../src/infrastructure/mcp/client/restarting";
 import { FunctionTracing } from "./functionTracing";
 import type { SpanRecorder } from "./spanRecorder";
@@ -41,7 +41,7 @@ export class MethodTracing {
       }
       this.install(AgentDatabase.prototype, "appendStream", "流事件落库");
       this.install(AgentDatabase.prototype, "syncHistory", "历史同步");
-      this.install(FileLinkIndexer.prototype, "prepareSources", "文件链接索引准备");
+      this.install(FileLinkIndexer.prototype, "prepareHistory", "文件链接索引准备");
       this.install(FileLinkIndexer.prototype, "prepareDelta", "增量文件链接索引");
       this.install(BunSqliteSaver.prototype, "getTuple", "读取检查点");
       this.install(BunSqliteSaver.prototype, "put", "保存完整检查点");

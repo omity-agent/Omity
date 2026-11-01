@@ -9,7 +9,6 @@ type ErrorValue = z.infer<z.ZodJSONSchema>;
 export interface ErrorDetails {
   name: string;
   message: string;
-  stack?: string;
   cause?: ErrorDetails;
   details?: Record<string, ErrorValue>;
 }
@@ -28,7 +27,6 @@ export const errorDetailsSchema: z.ZodType<ErrorDetails> = z.lazy(() =>
     details: z.record(z.string(), errorValueSchema).optional(),
     message: z.string(),
     name: z.string(),
-    stack: z.string().optional(),
   }),
 );
 const errorValuesSchema = z.record(z.string(), errorValueSchema),
@@ -81,20 +79,56 @@ export function parseError(value: string): ErrorDetails {
   }
   return result.data;
 }
-function adaptSerializedError(serialized: Record<string, unknown>): ErrorDetails {
+function adaptSerializedError(
+  serialized: Record<string, unknown>,
+  inherited: Record<string, ErrorValue> = {},
+): ErrorDetails {
   const { cause } = serialized,
-    parsedDetails = errorValuesSchema.parse(omit(serialized, structuralErrorKeys));
+    parsedDetails = errorValuesSchema.parse(omit(serialized, structuralErrorKeys)),
+    { requestBodyValues } = parsedDetails,
+    details =
+      requestBodyValues === undefined
+        ? parsedDetails
+        : {
+            ...omit(parsedDetails, ["requestBodyValues"]),
+            ...distinctRequestFields({ requestBodyValues }, inherited),
+          };
   return {
     message: typeof serialized["message"] === "string" ? serialized["message"] : "Unknown error",
     name: typeof serialized["name"] === "string" ? serialized["name"] : "Error",
-    ...(typeof serialized["stack"] === "string" ? { stack: serialized["stack"] } : {}),
     ...(cause === undefined
       ? {}
       : {
-          cause: adaptSerializedError(isRecord(cause) ? cause : serializeError(cause)),
+          cause: adaptSerializedError(isRecord(cause) ? cause : serializeError(cause), {
+            ...inherited,
+            ...parsedDetails,
+          }),
         }),
-    ...(Object.keys(parsedDetails).length > 0 ? { details: parsedDetails } : {}),
+    ...(Object.keys(details).length > 0 ? { details } : {}),
   };
+}
+function distinctRequestFields(
+  details: Record<string, ErrorValue>,
+  inherited: Record<string, ErrorValue>,
+): Record<string, ErrorValue> {
+  return Object.fromEntries(
+    Object.entries(details).flatMap(([key, value]) => {
+      const previous = inherited[key];
+      if (key in inherited && isEqual(value, previous)) {
+        return [];
+      }
+      if (
+        isRecord(value) &&
+        isRecord(previous) &&
+        !Array.isArray(value) &&
+        !Array.isArray(previous)
+      ) {
+        const nested = distinctRequestFields(value, previous);
+        return Object.keys(nested).length > 0 ? [[key, nested]] : [];
+      }
+      return [[key, value]];
+    }),
+  );
 }
 function summarizeLevel(error: ErrorDetails): ErrorSummaryItem {
   const details = omit(error.details ?? {}, hiddenDetailKeys);

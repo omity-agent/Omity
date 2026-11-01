@@ -1,4 +1,4 @@
-import type { FileLinkUnit } from "../../../fileLinks/types";
+import type { FileLinkSet } from "../../../fileLinks/types";
 import type {
   DisplayMessage,
   DisplayToolCall,
@@ -18,7 +18,7 @@ export function persistedTimelineMessage(
   message: DisplayMessage,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ToolLifecycle,
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
   reasoningTranslations: ReasoningTranslation[],
 ): TimelineMessage {
   const contentParts = message.contentParts ?? (message.content.trim() ? [message.content] : []);
@@ -63,7 +63,7 @@ function toolPart(
   call: DisplayToolCall,
   outputs: Map<string, DisplayToolOutput>,
   lifecycle: ToolLifecycle,
-  fileLinks: FileLinkUnit[],
+  fileLinks: FileLinkSet[],
 ): Extract<TimelinePart, { type: "tool" }> {
   const key = displayToolCallKey(call),
     withLinks = linkedCall(call, fileLinks),
