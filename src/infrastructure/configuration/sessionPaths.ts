@@ -10,6 +10,7 @@ export function databasePath(storageDirectory = userDataDirectory()) {
 export function sessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {
   const paths = resolveSessionPaths(sessionId, storageDirectory);
   mkdirSync(paths.dir, { recursive: true });
+  mkdirSync(paths.tempDir, { recursive: true });
   return paths;
 }
 export function resolveSessionPaths(sessionId: string, storageDirectory = userDataDirectory()) {

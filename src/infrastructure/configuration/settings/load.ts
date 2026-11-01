@@ -74,7 +74,9 @@ export function loadSettings(root = process.cwd(), options: LoadSettingsOptions 
             matched: true,
             value: (skillsList ??= buildSkillsList({ skills })),
           }
-        : { matched: false },
+        : name === "toolOutputMaxTokens"
+          ? { matched: true, value: agent.toolOutput.maxTokens }
+          : { matched: false },
   };
   mkdirSync(storageDirectory, { recursive: true });
   return {

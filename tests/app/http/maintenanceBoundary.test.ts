@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { AppController } from "../../../src/app/controller";
@@ -37,7 +37,6 @@ test("controller permits cleanup while running and rejects unknown sessions", as
     ttlMs: 30_000,
   });
   db.close();
-  mkdirSync(paths.tempDir);
   writeFileSync(join(paths.tempDir, "scratch.txt"), "temporary");
   const controller = new AppController(root);
   try {
